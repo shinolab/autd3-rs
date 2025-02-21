@@ -46,6 +46,7 @@ struct FociSTMUpdate {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) unsafe fn write_foci_stm(&mut self, data: &[u8]) -> u8 {
         unsafe {
             let d = Self::cast::<FociSTM>(data);
@@ -234,6 +235,7 @@ impl CPUEmulator {
         }
     }
 
+    #[must_use]
     pub(crate) unsafe fn change_foci_stm_segment(&mut self, data: &[u8]) -> u8 {
         unsafe {
             let d = Self::cast::<FociSTMUpdate>(data);

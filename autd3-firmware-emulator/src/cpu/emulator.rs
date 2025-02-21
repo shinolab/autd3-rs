@@ -55,6 +55,7 @@ pub struct CPUEmulator {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub fn new(id: usize, num_transducers: usize) -> Self {
         let mut s = Self {
             idx: id,
@@ -95,7 +96,8 @@ impl CPUEmulator {
         s
     }
 
-    pub fn rx(&self) -> RxMessage {
+    #[must_use]
+    pub const fn rx(&self) -> RxMessage {
         RxMessage::new(self.rx_data, self.ack)
     }
 
@@ -106,7 +108,7 @@ impl CPUEmulator {
     pub fn init(&mut self) {
         self.fpga.init();
         unsafe {
-            self.clear(&[]);
+            _ = self.clear(&[]);
         }
     }
 
@@ -120,6 +122,7 @@ impl CPUEmulator {
         self.dc_sys_time = sys_time;
     }
 
+    #[must_use]
     pub const fn should_update(&self) -> bool {
         self.reads_fpga_state
     }
@@ -131,14 +134,17 @@ impl CPUEmulator {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) const fn cast<T>(data: &[u8]) -> T {
         unsafe { (data.as_ptr() as *const T).read_unaligned() }
     }
 
+    #[must_use]
     const fn get_addr(select: u8, addr: u16) -> u16 {
         ((select as u16 & 0x0003) << 14) | (addr & 0x3FFF)
     }
 
+    #[must_use]
     pub(crate) fn bram_read(&self, select: u8, addr: u16) -> u16 {
         let addr = Self::get_addr(select, addr);
         self.fpga.read(addr)
@@ -179,6 +185,7 @@ impl CPUEmulator {
         }
     }
 
+    #[must_use]
     fn handle_payload(&mut self, data: &[u8]) -> u8 {
         unsafe {
             match data[0] {

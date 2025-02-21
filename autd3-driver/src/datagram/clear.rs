@@ -3,11 +3,18 @@ use std::convert::Infallible;
 use crate::firmware::operation::ClearOp;
 
 use crate::datagram::*;
-use derive_new::new;
 
 /// [`Datagram`] to clear all data in the devices.
-#[derive(Default, Debug, new)]
+#[derive(Default, Debug)]
 pub struct Clear {}
+
+impl Clear {
+    /// Creates a new [`Clear`].
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {}
+    }
+}
 
 pub struct ClearOpGenerator {}
 

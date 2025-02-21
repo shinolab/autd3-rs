@@ -19,6 +19,7 @@ pub(crate) struct STMFocus {
 }
 
 impl STMFocus {
+    #[must_use]
     fn to_fixed_num(x: f32) -> i32 {
         (x / FOCI_STM_FIXED_NUM_UNIT).round() as i32
     }

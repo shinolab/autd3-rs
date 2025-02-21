@@ -17,7 +17,6 @@ rand = { workspace = true, features = ["thread_rng"] }
 derive_more = { workspace = true }
 rayon = { workspace = true }
 tynm = { workspace = true }
-derive-new = { workspace = true }
 zerocopy = { workspace = true }
 
 [dev-dependencies]

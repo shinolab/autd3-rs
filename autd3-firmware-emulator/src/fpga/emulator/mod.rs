@@ -31,6 +31,7 @@ pub struct FPGAEmulator {
 }
 
 impl FPGAEmulator {
+    #[must_use]
     pub(crate) fn new(num_transducers: usize) -> Self {
         let mut fpga = Self {
             mem: Memory::new(num_transducers),
@@ -102,6 +103,7 @@ impl FPGAEmulator {
         self.mem.update(fpga_state);
     }
 
+    #[must_use]
     pub fn fpga_state(&self) -> u16 {
         self.mem.controller_bram.borrow()[ADDR_FPGA_STATE]
     }
@@ -114,10 +116,12 @@ impl FPGAEmulator {
         self.mem.controller_bram.borrow_mut()[ADDR_FPGA_STATE] &= !(1 << 0);
     }
 
+    #[must_use]
     pub fn is_thermo_asserted(&self) -> bool {
         (self.mem.controller_bram.borrow()[ADDR_FPGA_STATE] & (1 << 0)) != 0
     }
 
+    #[must_use]
     pub fn is_force_fan(&self) -> bool {
         (self.mem.controller_bram.borrow()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
     }

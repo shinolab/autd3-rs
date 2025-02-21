@@ -1,15 +1,22 @@
 use autd3_core::derive::*;
 
 use autd3_driver::firmware::fpga::Drive;
-use derive_new::new;
 
 /// [`Gain`] that output uniform phase and intensity
-#[derive(Gain, Clone, PartialEq, Debug, new)]
+#[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Uniform {
     /// The intensity of the gain.
     pub intensity: EmitIntensity,
     /// The phase of the gain.
     pub phase: Phase,
+}
+
+impl Uniform {
+    /// Create a new [`Uniform`]
+    #[must_use]
+    pub const fn new(intensity: EmitIntensity, phase: Phase) -> Self {
+        Self { intensity, phase }
+    }
 }
 
 impl GainCalculator for Uniform {

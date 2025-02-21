@@ -18,12 +18,14 @@ pub struct Angle {
 
 impl Angle {
     /// Returns the angle in radian
-    pub fn radian(self) -> f32 {
+    #[must_use]
+    pub const fn radian(self) -> f32 {
         self.radian
     }
 
     /// Returns the angle in degree
-    pub fn degree(self) -> f32 {
+    #[must_use]
+    pub const fn degree(self) -> f32 {
         self.radian.to_degrees()
     }
 }

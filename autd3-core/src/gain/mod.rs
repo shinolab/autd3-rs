@@ -23,10 +23,12 @@ use crate::{
 /// [`Gain`]: crate::gain::Gain
 pub trait GainCalculator: Send + Sync {
     /// Calculates the phase and intensity for the transducer.
+    #[must_use]
     fn calc(&self, tr: &Transducer) -> Drive;
 }
 
 impl GainCalculator for Box<dyn GainCalculator> {
+    #[must_use]
     fn calc(&self, tr: &Transducer) -> Drive {
         self.as_ref().calc(tr)
     }
@@ -38,6 +40,7 @@ pub trait GainCalculatorGenerator {
     type Calculator: GainCalculator;
 
     /// Generate a calculator for the given device.
+    #[must_use]
     fn generate(&mut self, device: &Device) -> Self::Calculator;
 }
 

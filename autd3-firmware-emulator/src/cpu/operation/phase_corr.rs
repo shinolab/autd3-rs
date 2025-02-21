@@ -9,6 +9,7 @@ struct PhaseCorr {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) unsafe fn phase_corr(&mut self, data: &[u8]) -> u8 {
         let _d = Self::cast::<PhaseCorr>(data);
 

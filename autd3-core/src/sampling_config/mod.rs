@@ -74,6 +74,7 @@ impl SamplingConfig {
     pub const FREQ_4K: Self = SamplingConfig::Freq(Freq { freq: 4000. });
 
     /// Creates a new [`SamplingConfig`].
+    #[must_use]
     pub fn new(value: impl Into<SamplingConfig>) -> Self {
         value.into()
     }
@@ -145,7 +146,8 @@ impl SamplingConfig {
 
 impl SamplingConfig {
     /// Converts to a [`SamplingConfig`] with the nearest frequency or period among the possible values.
-    pub fn into_nearest(self) -> SamplingConfig {
+    #[must_use]
+    pub const fn into_nearest(self) -> SamplingConfig {
         match self {
             SamplingConfig::Freq(freq) => SamplingConfig::FreqNearest(Nearest(freq)),
             #[cfg(not(feature = "dynamic_freq"))]

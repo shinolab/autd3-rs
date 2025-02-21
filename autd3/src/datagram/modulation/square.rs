@@ -3,7 +3,6 @@ use autd3_core::{defined::Freq, derive::*};
 use super::sampling_mode::{Nearest, SamplingMode};
 
 use derive_more::Debug;
-use derive_new::new;
 
 /// The option of [`Square`].
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -31,12 +30,20 @@ impl Default for SquareOption {
 }
 
 /// Square wave modulation
-#[derive(Modulation, Clone, PartialEq, Debug, new)]
+#[derive(Modulation, Clone, PartialEq, Debug)]
 pub struct Square<S: Into<SamplingMode> + std::fmt::Debug> {
     /// The frequency of the square wave.
     pub freq: S,
     /// The option of the modulation.
     pub option: SquareOption,
+}
+
+impl<S: Into<SamplingMode> + std::fmt::Debug> Square<S> {
+    /// Create a new [`Square`].
+    #[must_use]
+    pub const fn new(freq: S, option: SquareOption) -> Self {
+        Self { freq, option }
+    }
 }
 
 impl Square<Freq<f32>> {
@@ -51,7 +58,8 @@ impl Square<Freq<f32>> {
     ///     option: Default::default(),
     /// }.into_nearest();
     /// ```
-    pub fn into_nearest(self) -> Square<Nearest> {
+    #[must_use]
+    pub const fn into_nearest(self) -> Square<Nearest> {
         Square {
             freq: Nearest(self.freq),
             option: self.option,

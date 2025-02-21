@@ -8,7 +8,6 @@ use crate::{
 
 use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
 use derive_more::Debug;
-use derive_new::new;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`GS`].
@@ -36,7 +35,7 @@ impl<D: Directivity> Default for GSOption<D> {
 /// Gerchberg-Saxton algorithm
 ///
 /// See [Marzo, et al., 2019](https://www.pnas.org/doi/full/10.1073/pnas.1813047115) for more details.
-#[derive(Gain, Debug, new)]
+#[derive(Gain, Debug)]
 pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
@@ -45,6 +44,18 @@ pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
     /// The backend of calculation.
     #[debug("{}", tynm::type_name::<B>())]
     pub backend: Arc<B>,
+}
+
+impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
+    /// Create a new [`GS`].
+    #[must_use]
+    pub const fn new(foci: Vec<(Point3, Amplitude)>, option: GSOption<D>, backend: Arc<B>) -> Self {
+        Self {
+            foci,
+            option,
+            backend,
+        }
+    }
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for GS<D, B> {

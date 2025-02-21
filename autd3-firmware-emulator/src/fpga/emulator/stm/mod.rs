@@ -11,6 +11,7 @@ mod foci;
 mod gain;
 
 impl FPGAEmulator {
+    #[must_use]
     pub fn is_stm_gain_mode(&self, segment: Segment) -> bool {
         match segment {
             Segment::S0 => self.mem.controller_bram.borrow()[ADDR_STM_MODE0] == STM_MODE_GAIN,
@@ -18,6 +19,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn stm_freq_division(&self, segment: Segment) -> u16 {
         Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
@@ -28,6 +30,7 @@ impl FPGAEmulator {
         )
     }
 
+    #[must_use]
     pub fn stm_cycle(&self, segment: Segment) -> usize {
         self.mem.controller_bram.borrow()[match segment {
             Segment::S0 => ADDR_STM_CYCLE0,
@@ -36,6 +39,7 @@ impl FPGAEmulator {
             + 1
     }
 
+    #[must_use]
     pub fn stm_loop_behavior(&self, segment: Segment) -> LoopBehavior {
         match Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
@@ -49,6 +53,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn stm_transition_mode(&self) -> TransitionMode {
         match self.mem.controller_bram.borrow()[ADDR_STM_TRANSITION_MODE] as u8 {
             TRANSITION_MODE_SYNC_IDX => TransitionMode::SyncIdx,
@@ -77,6 +82,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn req_stm_segment(&self) -> Segment {
         match self.mem.controller_bram.borrow()[ADDR_STM_REQ_RD_SEGMENT] {
             0 => Segment::S0,
@@ -85,10 +91,12 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn drives(&self) -> Vec<Drive> {
         self.drives_at(self.current_stm_segment(), self.current_stm_idx())
     }
 
+    #[must_use]
     pub fn drives_at(&self, segment: Segment, idx: usize) -> Vec<Drive> {
         let mut dst = vec![Drive::NULL; self.mem.num_transducers];
         self.drives_at_inplace(segment, idx, &mut dst);

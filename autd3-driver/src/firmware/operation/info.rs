@@ -5,7 +5,6 @@ use crate::{
     geometry::Device,
 };
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(u8)]
@@ -27,12 +26,15 @@ struct FirmInfo {
     ty: FirmwareVersionType,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct FirmInfoOp {
-    #[new(default)]
     is_done: bool,
     ty: FirmwareVersionType,
+}
+
+impl FirmInfoOp {
+    pub(crate) const fn new(ty: FirmwareVersionType) -> Self {
+        Self { is_done: false, ty }
+    }
 }
 
 impl Operation for FirmInfoOp {

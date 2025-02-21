@@ -9,6 +9,7 @@ struct Clk {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) unsafe fn configure_clk(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<Clk>(data);
 

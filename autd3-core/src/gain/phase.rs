@@ -22,7 +22,8 @@ impl Phase {
     pub const PI: Self = Self(0x80);
 
     /// Converts the phase into a radian.
-    pub fn radian(&self) -> f32 {
+    #[must_use]
+    pub const fn radian(&self) -> f32 {
         self.0 as f32 / 256.0 * 2.0 * PI
     }
 }

@@ -8,7 +8,6 @@ use crate::{
 
 use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
 use derive_more::Debug;
-use derive_new::new;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`GSPAT`].
@@ -36,7 +35,7 @@ impl<D: Directivity> Default for GSPATOption<D> {
 /// Gershberg-Saxon for Phased Arrays of Transducers
 ///
 /// See [Plasencia, et al., 2020](https://dl.acm.org/doi/10.1145/3386569.3392492) for more details.
-#[derive(Gain, Debug, new)]
+#[derive(Gain, Debug)]
 pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
@@ -45,6 +44,22 @@ pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
     /// The backend of linear algebra calculation.
     #[debug("{}", tynm::type_name::<B>())]
     pub backend: Arc<B>,
+}
+
+impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
+    /// Create a new [`GSPAT`].
+    #[must_use]
+    pub const fn new(
+        foci: Vec<(Point3, Amplitude)>,
+        option: GSPATOption<D>,
+        backend: Arc<B>,
+    ) -> Self {
+        Self {
+            foci,
+            option,
+            backend,
+        }
+    }
 }
 
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {

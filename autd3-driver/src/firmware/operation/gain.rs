@@ -10,7 +10,6 @@ use crate::{
 };
 
 use autd3_core::gain::GainCalculator;
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[derive(Clone, Copy, IntoBytes, Immutable)]
@@ -33,14 +32,26 @@ struct Gain {
     __: u8,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct GainOp<Calculator: GainCalculator> {
-    #[new(default)]
     is_done: bool,
     segment: Segment,
     transition: Option<TransitionMode>,
     calculator: Calculator,
+}
+
+impl<Calculator: GainCalculator> GainOp<Calculator> {
+    pub(crate) const fn new(
+        segment: Segment,
+        transition: Option<TransitionMode>,
+        calculator: Calculator,
+    ) -> Self {
+        Self {
+            is_done: false,
+            segment,
+            transition,
+            calculator,
+        }
+    }
 }
 
 impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {

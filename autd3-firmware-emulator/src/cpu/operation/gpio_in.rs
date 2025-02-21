@@ -7,6 +7,7 @@ struct GPIOIn {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) fn emulate_gpio_in(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<GPIOIn>(data);
         if (d.flag & GPIO_IN_FLAG_0) == GPIO_IN_FLAG_0 {

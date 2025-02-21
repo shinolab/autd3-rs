@@ -14,6 +14,7 @@ pub struct ModulationError {
 
 impl ModulationError {
     /// Creates a new [`ModulationError`].
+    #[must_use]
     pub fn new(msg: impl ToString) -> Self {
         Self {
             msg: msg.to_string(),

@@ -3,12 +3,14 @@ use autd3_driver::firmware::fpga::EmitIntensity;
 use super::FPGAEmulator;
 
 impl FPGAEmulator {
+    #[must_use]
     pub fn pulse_width_encoder_table_at(&self, idx: usize) -> u8 {
         let v = self.mem.duty_table_bram.borrow()[idx >> 1];
         let v = if idx % 2 == 0 { v & 0xFF } else { v >> 8 };
         v as u8
     }
 
+    #[must_use]
     pub fn pulse_width_encoder_table(&self) -> Vec<u8> {
         let mut dst = vec![0; 256];
         self.pulse_width_encoder_table_inplace(&mut dst);
@@ -25,6 +27,7 @@ impl FPGAEmulator {
             .for_each(|(i, v)| dst[i] = v);
     }
 
+    #[must_use]
     pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u8 {
         let key = (a.0 as usize * b as usize) / 255;
         self.pulse_width_encoder_table_at(key)

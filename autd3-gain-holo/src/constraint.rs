@@ -15,6 +15,7 @@ pub enum EmissionConstraint {
 
 impl EmissionConstraint {
     #[doc(hidden)]
+    #[must_use]
     pub fn convert(&self, value: f32, max_value: f32) -> EmitIntensity {
         match self {
             EmissionConstraint::Normalize => {

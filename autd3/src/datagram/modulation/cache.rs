@@ -29,6 +29,7 @@ impl<M: Modulation> Clone for Cache<M> {
 
 impl<M: Modulation> Cache<M> {
     /// Create a new cached [`Modulation`].
+    #[must_use]
     pub fn new(m: M) -> Self {
         Self {
             sampling_config: m.sampling_config(),
@@ -47,6 +48,7 @@ impl<M: Modulation> Cache<M> {
     }
 
     /// Get the number of references to the cache.
+    #[must_use]
     pub fn count(&self) -> usize {
         Rc::strong_count(&self.cache)
     }

@@ -66,6 +66,7 @@ pub const GAIN_STM_BUF_SIZE_MAX: usize = 1024;
 #[doc(hidden)]
 pub const PWE_BUF_SIZE: usize = 256;
 
-pub(crate) fn ec_time_to_sys_time(time: &DcSysTime) -> u64 {
+#[must_use]
+pub(crate) const fn ec_time_to_sys_time(time: &DcSysTime) -> u64 {
     (time.sys_time() / 3125) << 5
 }

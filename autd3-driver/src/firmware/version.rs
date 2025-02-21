@@ -9,6 +9,7 @@ pub struct Major(pub u8);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
 pub struct Minor(pub u8);
 
+#[must_use]
 fn version_map(major: Major, minor: Minor) -> String {
     let major = major.0;
     let minor = minor.0;
@@ -47,11 +48,13 @@ impl FPGAVersion {
     pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
 
     #[doc(hidden)]
+    #[must_use]
     pub const fn dynamic_freq_enabled(&self) -> bool {
         (self.function_bits & Self::DYNAMIC_FREQ_BIT) == Self::DYNAMIC_FREQ_BIT
     }
 
     #[doc(hidden)]
+    #[must_use]
     pub const fn is_emulator(&self) -> bool {
         (self.function_bits & Self::ENABLED_EMULATOR_BIT) == Self::ENABLED_EMULATOR_BIT
     }
@@ -108,11 +111,13 @@ impl FirmwareVersion {
     pub const LATEST_VERSION_NUM_MINOR: Minor = Minor(0x01);
 
     #[doc(hidden)]
+    #[must_use]
     pub const fn is_emulator(&self) -> bool {
         self.fpga.is_emulator()
     }
 
     /// Gets the latest version.
+    #[must_use]
     pub fn latest() -> String {
         version_map(
             Self::LATEST_VERSION_NUM_MAJOR,

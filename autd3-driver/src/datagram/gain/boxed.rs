@@ -8,10 +8,12 @@ use autd3_core::derive::*;
 
 #[cfg(not(feature = "lightweight"))]
 pub trait DGainCalculatorGenerator {
+    #[must_use]
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator>;
 }
 #[cfg(feature = "lightweight")]
 pub trait DGainCalculatorGenerator: Send + Sync {
+    #[must_use]
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator>;
 }
 
@@ -119,6 +121,7 @@ impl Gain for BoxedGain {
 /// Trait to convert [`Gain`] to [`BoxedGain`].
 pub trait IntoBoxedGain {
     /// Convert [`Gain`] to [`BoxedGain`].
+    #[must_use]
     fn into_boxed(self) -> BoxedGain;
 }
 

@@ -5,7 +5,6 @@ use crate::{
     geometry::Device,
 };
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
@@ -15,12 +14,18 @@ struct ForceFan {
     value: bool,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct ForceFanOp {
-    #[new(default)]
     is_done: bool,
     value: bool,
+}
+
+impl ForceFanOp {
+    pub(crate) const fn new(value: bool) -> Self {
+        Self {
+            is_done: false,
+            value,
+        }
+    }
 }
 
 impl Operation for ForceFanOp {

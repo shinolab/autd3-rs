@@ -70,6 +70,7 @@ impl Device {
     }
 
     #[doc(hidden)]
+    #[must_use]
     pub fn new(idx: u16, rot: UnitQuaternion, transducers: Vec<Transducer>) -> Self {
         let mut dev = Self {
             idx,
@@ -89,11 +90,13 @@ impl Device {
     }
 
     /// Gets the index of the device.
+    #[must_use]
     pub const fn idx(&self) -> usize {
         self.idx as _
     }
 
     /// Gets the number of transducers of the device.
+    #[must_use]
     pub fn num_transducers(&self) -> usize {
         self.transducers.len()
     }
@@ -144,15 +147,20 @@ impl Device {
     }
 
     /// Gets the wavelength of the ultrasound.
+    #[must_use]
+    #[cfg_attr(not(feature = "dynamic_freq"), const_fn::const_fn)]
     pub fn wavelength(&self) -> f32 {
         self.sound_speed / ultrasound_freq().hz() as f32
     }
 
     /// Gets the wavenumber of the ultrasound.
+    #[must_use]
+    #[cfg_attr(not(feature = "dynamic_freq"), const_fn::const_fn)]
     pub fn wavenumber(&self) -> f32 {
         2.0 * PI * ultrasound_freq().hz() as f32 / self.sound_speed
     }
 
+    #[must_use]
     fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> UnitVector3 {
         let dir: UnitQuaternion = UnitQuaternion::from_quaternion(Quaternion::from_imag(dir));
         UnitVector3::new_normalize((rotation * dir * rotation.conjugate()).imag())
@@ -162,6 +170,7 @@ impl Device {
 /// Trait for converting to [`Device`].
 pub trait IntoDevice {
     /// Converts to [`Device`].
+    #[must_use]
     fn into_device(self, dev_idx: u16) -> Device;
 }
 

@@ -9,7 +9,6 @@ use crate::{
 };
 
 use autd3_core::gain::EmitIntensity;
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
@@ -19,12 +18,15 @@ struct Pwe {
     __: u8,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct PulseWidthEncoderOp<F: Fn(EmitIntensity) -> u8> {
-    #[new(default)]
     is_done: bool,
     f: F,
+}
+
+impl<F: Fn(EmitIntensity) -> u8> PulseWidthEncoderOp<F> {
+    pub(crate) const fn new(f: F) -> Self {
+        Self { is_done: false, f }
+    }
 }
 
 impl<F: Fn(EmitIntensity) -> u8 + Send + Sync> Operation for PulseWidthEncoderOp<F> {

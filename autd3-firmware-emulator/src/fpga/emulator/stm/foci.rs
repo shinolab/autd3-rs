@@ -17,6 +17,7 @@ struct STMFocus {
 }
 
 impl FPGAEmulator {
+    #[must_use]
     pub fn sound_speed(&self, segment: Segment) -> u16 {
         self.mem.controller_bram.borrow()[match segment {
             Segment::S0 => ADDR_STM_SOUND_SPEED0,
@@ -24,6 +25,7 @@ impl FPGAEmulator {
         }]
     }
 
+    #[must_use]
     pub fn num_foci(&self, segment: Segment) -> u8 {
         self.mem.controller_bram.borrow()[match segment {
             Segment::S0 => ADDR_STM_NUM_FOCI0,
@@ -81,6 +83,7 @@ impl FPGAEmulator {
             });
     }
 
+    #[must_use]
     pub fn local_tr_pos(&self) -> &[u64] {
         &self.mem.tr_pos
     }

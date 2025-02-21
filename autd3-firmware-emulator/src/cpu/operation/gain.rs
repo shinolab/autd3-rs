@@ -15,6 +15,7 @@ struct GainUpdate {
 }
 
 impl CPUEmulator {
+    #[must_use]
     pub(crate) unsafe fn write_gain(&mut self, data: &[u8]) -> u8 {
         unsafe {
             let d = Self::cast::<Gain>(data);
@@ -69,6 +70,7 @@ impl CPUEmulator {
         }
     }
 
+    #[must_use]
     pub(crate) unsafe fn change_gain_segment(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<GainUpdate>(data);
 

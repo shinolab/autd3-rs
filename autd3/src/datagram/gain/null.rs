@@ -1,10 +1,17 @@
 use autd3_core::derive::*;
 use autd3_driver::firmware::fpga::Drive;
-use derive_new::new;
 
 /// [`Gain`] that output nothing
-#[derive(Gain, Default, Clone, Copy, PartialEq, Eq, Debug, new)]
+#[derive(Gain, Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Null;
+
+impl Null {
+    /// Create a new [`Null`]
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {}
+    }
+}
 
 impl GainCalculator for Null {
     fn calc(&self, _: &Transducer) -> Drive {

@@ -12,7 +12,6 @@ use crate::{
     geometry::Device,
 };
 
-use derive_new::new;
 use zerocopy::{Immutable, IntoBytes};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, IntoBytes, Immutable)]
@@ -49,18 +48,34 @@ struct ModulationSubseq {
     size: u16,
 }
 
-#[derive(new)]
-#[new(visibility = "pub(crate)")]
 pub struct ModulationOp {
     modulation: Arc<Vec<u8>>,
-    #[new(default)]
     sent: usize,
-    #[new(default)]
     is_done: bool,
     config: SamplingConfig,
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
+}
+
+impl ModulationOp {
+    pub(crate) const fn new(
+        modulation: Arc<Vec<u8>>,
+        config: SamplingConfig,
+        loop_behavior: LoopBehavior,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
+    ) -> Self {
+        Self {
+            modulation,
+            sent: 0,
+            is_done: false,
+            config,
+            loop_behavior,
+            segment,
+            transition_mode,
+        }
+    }
 }
 
 impl Operation for ModulationOp {

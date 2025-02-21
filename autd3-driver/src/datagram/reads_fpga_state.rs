@@ -3,14 +3,21 @@ use std::convert::Infallible;
 use crate::{datagram::*, firmware::operation::ReadsFPGAStateOp};
 
 use derive_more::Debug;
-use derive_new::new;
 
 /// [`Datagram`] to enable reading the FPGA state.
-#[derive(Debug, new)]
+#[derive(Debug)]
 pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
+}
+
+impl<F: Fn(&Device) -> bool> ReadsFPGAState<F> {
+    /// Creates a new [`ReadsFPGAState`].
+    #[must_use]
+    pub const fn new(f: F) -> Self {
+        Self { f }
+    }
 }
 
 pub struct ReadsFPGAStateOpGenerator<F: Fn(&Device) -> bool> {

@@ -20,6 +20,7 @@ pub struct SilencerEmulator<T> {
 
 impl SilencerEmulator<Phase> {
     #[allow(clippy::collapsible_else_if)]
+    #[must_use]
     fn update_rate(&mut self, input: u8) -> u16 {
         if self.fixed_update_rate_mode {
             self.value
@@ -58,6 +59,7 @@ impl SilencerEmulator<Phase> {
     }
 
     #[allow(clippy::collapsible_else_if)]
+    #[must_use]
     pub fn apply(&mut self, input: u8) -> u8 {
         let update_rate = self.update_rate(input) as i32;
         let step = ((input as i32) << 8) - self.current;
@@ -85,6 +87,7 @@ impl SilencerEmulator<Phase> {
 
 impl SilencerEmulator<EmitIntensity> {
     #[allow(clippy::collapsible_else_if)]
+    #[must_use]
     fn update_rate(&mut self, input: u8) -> u16 {
         if self.fixed_update_rate_mode {
             self.value
@@ -118,6 +121,7 @@ impl SilencerEmulator<EmitIntensity> {
     }
 
     #[allow(clippy::collapsible_else_if)]
+    #[must_use]
     pub fn apply(&mut self, input: u8) -> u8 {
         let update_rate = self.update_rate(input) as i32;
         let step = ((input as i32) << 8) - self.current;
@@ -139,6 +143,7 @@ impl SilencerEmulator<EmitIntensity> {
 }
 
 impl FPGAEmulator {
+    #[must_use]
     pub fn silencer_update_rate(&self) -> FixedUpdateRate {
         unsafe {
             FixedUpdateRate {
@@ -152,6 +157,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn silencer_completion_steps(&self) -> FixedCompletionSteps {
         FixedCompletionSteps {
             intensity: NonZeroU16::new(
@@ -166,16 +172,19 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn silencer_fixed_update_rate_mode(&self) -> bool {
         (self.mem.controller_bram.borrow()[ADDR_SILENCER_FLAG]
             & SILENCER_FLAG_FIXED_UPDATE_RATE_MODE)
             == SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
     }
 
+    #[must_use]
     pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
         !self.silencer_fixed_update_rate_mode()
     }
 
+    #[must_use]
     pub fn silencer_target(&self) -> SilencerTarget {
         if (self.mem.controller_bram.borrow()[ADDR_SILENCER_FLAG] & SILENCER_FLAG_PULSE_WIDTH)
             == SILENCER_FLAG_PULSE_WIDTH
@@ -186,6 +195,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn silencer_emulator_phase(&self, initial: u8) -> SilencerEmulator<Phase> {
         SilencerEmulator {
             current: (initial as i32) << 8,
@@ -202,6 +212,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn silencer_emulator_phase_continue_with(
         &self,
         prev: SilencerEmulator<Phase>,
@@ -231,6 +242,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn silencer_emulator_intensity(&self, initial: u8) -> SilencerEmulator<EmitIntensity> {
         SilencerEmulator {
             current: (initial as i32) << 8,
@@ -247,6 +259,7 @@ impl FPGAEmulator {
         }
     }
 
+    #[must_use]
     pub fn silencer_emulator_intensity_continue_with(
         &self,
         prev: SilencerEmulator<EmitIntensity>,
@@ -389,7 +402,7 @@ mod tests {
         fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x01;
 
         let mut silencer = fpga.silencer_emulator_phase(0);
-        silencer.apply(0xFF);
+        _ = silencer.apply(0xFF);
 
         let SilencerEmulator {
             current,
@@ -444,7 +457,7 @@ mod tests {
         fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x01;
 
         let mut silencer = fpga.silencer_emulator_intensity(0);
-        silencer.apply(0xFF);
+        _ = silencer.apply(0xFF);
 
         let SilencerEmulator {
             current,
