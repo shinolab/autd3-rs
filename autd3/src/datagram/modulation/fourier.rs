@@ -35,8 +35,11 @@ pub struct Fourier<S: Into<SamplingMode> + Clone + Debug> {
 impl<S: Into<SamplingMode> + Clone + Debug> Fourier<S> {
     /// Create a new [`Fourier`].
     #[must_use]
-    pub const fn new(components: Vec<Sine<S>>, option: FourierOption) -> Self {
-        Self { components, option }
+    pub fn new(components: impl IntoIterator<Item = Sine<S>>, option: FourierOption) -> Self {
+        Self {
+            components: components.into_iter().collect(),
+            option,
+        }
     }
 }
 

@@ -44,13 +44,13 @@ pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
 impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
     /// Create a new [`Naive`].
     #[must_use]
-    pub const fn new(
-        foci: Vec<(Point3, Amplitude)>,
+    pub fn new(
+        foci: impl IntoIterator<Item = (Point3, Amplitude)>,
         option: NaiveOption<D>,
         backend: Arc<B>,
     ) -> Self {
         Self {
-            foci,
+            foci: foci.into_iter().collect(),
             option,
             backend,
         }
