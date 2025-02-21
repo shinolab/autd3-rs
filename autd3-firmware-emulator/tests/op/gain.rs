@@ -115,11 +115,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
                 )
             })
             .collect();
-        let g = WithSegment {
-            inner: TestGain { data: buf.clone() },
-            segment: Segment::S1,
-            transition_mode: None,
-        };
+        let g = WithSegment::new(TestGain { data: buf.clone() }, Segment::S1, None);
 
         assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
 

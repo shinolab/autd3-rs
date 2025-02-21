@@ -118,10 +118,7 @@ mod tests {
         let geometry = create_geometry(1);
 
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
-        let g = Plane {
-            dir,
-            option: PlaneOption::default(),
-        };
+        let g = Plane::new(dir, PlaneOption::default());
         plane_check(g, dir, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
 
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));

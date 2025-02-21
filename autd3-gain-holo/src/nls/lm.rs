@@ -308,15 +308,15 @@ mod tests {
         let geometry = create_geometry(1, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
-        let g = LM {
-            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
-            backend,
-            option: LMOption {
+        let g = LM::new(
+            vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
+            LMOption {
                 k_max: NonZeroUsize::new(2).unwrap(),
                 constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
                 ..Default::default()
             },
-        };
+            backend,
+        );
 
         assert_eq!(
             g.init_full(&geometry, None, false).map(|mut res| {

@@ -110,11 +110,7 @@ mod tests {
         let path = dir.path().join("tmp.csv");
         create_csv(&path, &data)?;
 
-        let m = Csv {
-            path,
-            sampling_config: sample_rate,
-            option: CsvOption::default(),
-        };
+        let m = Csv::new(path, sample_rate, CsvOption::default());
         assert_eq!(sample_rate.hz(), m.sampling_config().freq()?.hz());
         assert_eq!(data, *m.calc()?);
 

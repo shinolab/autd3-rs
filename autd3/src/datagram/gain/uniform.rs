@@ -60,7 +60,7 @@ mod tests {
 
         let intensity = EmitIntensity(rng.random());
         let phase = Phase(rng.random());
-        let g = Uniform { intensity, phase };
+        let g = Uniform::new(intensity, phase);
 
         let mut b = g.init()?;
         geometry.iter().for_each(|dev| {
