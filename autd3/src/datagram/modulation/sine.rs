@@ -187,10 +187,7 @@ mod tests {
         #[case] expect: Result<Vec<u8>, ModulationError>,
         #[case] freq: impl Into<SamplingMode> + Clone + std::fmt::Debug,
     ) {
-        let m = Sine {
-            freq,
-            option: SineOption::default(),
-        };
+        let m = Sine::new(freq, SineOption::default());
         assert_eq!(u8::MAX, m.option.intensity);
         assert_eq!(0x80, m.option.offset);
         assert_eq!(0. * rad, m.option.phase);

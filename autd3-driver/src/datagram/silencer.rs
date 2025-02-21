@@ -232,10 +232,8 @@ mod tests {
     #[test]
     #[cfg(not(feature = "dynamic_freq"))]
     fn fixed_completion_time_default() {
-        let s: Silencer<FixedCompletionTime> = Silencer {
-            config: Default::default(),
-            target: Default::default(),
-        };
+        let s: Silencer<FixedCompletionTime> =
+            Silencer::new(Default::default(), Default::default());
         assert_eq!(std::time::Duration::from_micros(250), s.config.intensity);
         assert_eq!(std::time::Duration::from_micros(1000), s.config.phase);
         assert!(s.config.strict_mode);

@@ -117,14 +117,14 @@ mod tests {
         let geometry = create_geometry(1, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
-        let g = Naive {
-            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
-            backend,
-            option: NaiveOption {
+        let g = Naive::new(
+            vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
+            NaiveOption {
                 constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
                 ..Default::default()
             },
-        };
+            backend,
+        );
 
         assert_eq!(
             g.init_full(&geometry, None, false).map(|mut res| {

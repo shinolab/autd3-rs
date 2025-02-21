@@ -116,10 +116,7 @@ mod tests {
         let geometry = create_geometry(1);
 
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
-        let g = Focus {
-            pos,
-            option: Default::default(),
-        };
+        let g = Focus::new(pos, Default::default());
         focus_check(g, pos, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
 
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);

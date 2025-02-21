@@ -44,12 +44,10 @@ mod tests {
     fn test_sampling_config(#[case] config: SamplingConfig) {
         assert_eq!(
             config,
-            RadiationPressure {
-                target: Custom {
-                    buffer: vec![u8::MIN; 2],
-                    sampling_config: config,
-                }
-            }
+            RadiationPressure::new(Custom {
+                buffer: vec![u8::MIN; 2],
+                sampling_config: config,
+            })
             .sampling_config()
         );
     }

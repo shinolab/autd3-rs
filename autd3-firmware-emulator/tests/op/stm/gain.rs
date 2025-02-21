@@ -86,14 +86,13 @@ fn send_gain_stm_phase_intensity_full_unsafe(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
     );
     let d = WithLoopBehavior {
-        inner: GainSTM {
-            config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
-            gains: bufs
-                .iter()
+        inner: GainSTM::new(
+            bufs.iter()
                 .map(|buf| TestGain { data: buf.clone() })
                 .collect::<Vec<_>>(),
-            option: GainSTMOption::default(),
-        },
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            GainSTMOption::default(),
+        ),
         loop_behavior,
         segment,
         transition_mode,

@@ -156,12 +156,12 @@ mod tests {
 
         let geometry = create_geometry(1);
 
-        let g = Bessel {
-            pos: Point3::origin(),
-            dir: Vector3::z_axis(),
-            theta: 0. * rad,
-            option: BesselOption::default(),
-        };
+        let g = Bessel::new(
+            Point3::origin(),
+            Vector3::z_axis(),
+            0. * rad,
+            BesselOption::default(),
+        );
         assert_eq!(EmitIntensity::MAX, g.option.intensity);
         assert_eq!(Phase::ZERO, g.option.phase_offset);
 

@@ -200,10 +200,10 @@ mod tests {
     fn test_greedy_all() {
         let geometry = create_geometry(1, 1);
 
-        let g = Greedy::<Sphere> {
-            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
-            option: GreedyOption::default(),
-        };
+        let g = Greedy::<Sphere>::new(
+            vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
+            GreedyOption::default(),
+        );
         assert_eq!(
             g.init_full(&geometry, None, false).map(|mut res| {
                 let f = res.generate(&geometry[0]);

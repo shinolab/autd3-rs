@@ -41,6 +41,7 @@ pub use controller::Controller;
 
 #[cfg(test)]
 mod tests {
+    use autd3_core::geometry::UnitQuaternion;
     use autd3_driver::{
         autd3_device::AUTD3,
         geometry::{Geometry, IntoDevice, Point3, Vector3},
@@ -99,11 +100,7 @@ mod tests {
         Geometry::new(
             (0..n)
                 .map(|i| {
-                    AUTD3 {
-                        pos: Point3::origin(),
-                        ..Default::default()
-                    }
-                    .into_device(i as _)
+                    AUTD3::new(Point3::origin(), UnitQuaternion::identity()).into_device(i as _)
                 })
                 .collect(),
         )

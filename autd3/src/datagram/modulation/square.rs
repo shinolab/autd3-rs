@@ -171,10 +171,7 @@ mod tests {
         #[case] expect: Result<Vec<u8>, ModulationError>,
         #[case] freq: impl Into<SamplingMode> + std::fmt::Debug,
     ) {
-        let m = Square {
-            freq,
-            option: SquareOption::default(),
-        };
+        let m = Square::new(freq, SquareOption::default());
         assert_eq!(u8::MIN, m.option.low);
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
