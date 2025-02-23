@@ -14,7 +14,7 @@ async-trait = { workspace = true, optional = true }
 autd3-derive = { workspace = true, optional = true }
 bit-vec = { workspace = true, optional = true }
 bvh = { workspace = true, optional = true }
-const_fn = { workspace = true } 
+const_fn = { workspace = true }
 derive_more = { workspace = true, optional = true }
 getset = { workspace = true, optional = true }
 nalgebra = { workspace = true, optional = true }
@@ -48,7 +48,7 @@ geometry = ["nalgebra", "bvh", "paste", "getset", "defined", "derive_more", "der
 left_handed = []
 link = ["zerocopy", "getset", "ethercat", "datagram", "geometry", "derive_more", "derive_more/display"]
 modulation = ["getset", "sampling_config", "utils", "defined", "datagram", "derive_more", "derive_more/display"]
-sampling_config = []
+sampling_config = ["defined", "thiserror", "utils"]
 use_meter = []
 utils = ["windows"]
 
