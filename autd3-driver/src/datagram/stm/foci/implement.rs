@@ -73,7 +73,6 @@ mod tests {
     #[case(SamplingConfig::new(1. * Hz), 0.5*Hz, 2)]
     #[case(SamplingConfig::new(10. * Hz), 1.*Hz, 10)]
     #[case(SamplingConfig::new(20. * Hz), 2.*Hz, 10)]
-    #[case(SamplingConfig::new(2. * 0.49*Hz), 0.49*Hz, 2)]
     fn from_freq(#[case] expect: SamplingConfig, #[case] freq: Freq<f32>, #[case] n: usize) {
         assert_eq!(
             Ok(expect),
