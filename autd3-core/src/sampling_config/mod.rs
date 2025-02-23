@@ -168,7 +168,7 @@ impl SamplingConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::defined::Hz;
+    use crate::defined::{Hz, kHz};
 
     #[cfg(not(feature = "dynamic_freq"))]
     use crate::defined::ultrasound_period;
@@ -281,6 +281,21 @@ mod tests {
     #[test]
     fn into_nearest(#[case] expect: SamplingConfig, #[case] config: SamplingConfig) {
         assert_eq!(expect, config.into_nearest());
+    }
+
+    #[rstest::rstest]
+    #[case(true, SamplingConfig::FREQ_40K, SamplingConfig::FREQ_40K)]
+    #[case(true, SamplingConfig::FREQ_40K, SamplingConfig::new(NonZeroU16::MIN))]
+    #[case(true, SamplingConfig::FREQ_40K, SamplingConfig::new(40.0 * kHz))]
+    #[cfg(not(feature = "dynamic_freq"))]
+    #[case(
+        true,
+        SamplingConfig::FREQ_40K,
+        SamplingConfig::new(std::time::Duration::from_micros(25))
+    )]
+    #[case(false, SamplingConfig::new(40.1 * kHz), SamplingConfig::new(40.1 * kHz))]
+    fn partial_eq(#[case] expect: bool, #[case] lhs: SamplingConfig, #[case] rhs: SamplingConfig) {
+        assert_eq!(expect, lhs == rhs);
     }
 
     #[rstest::rstest]
