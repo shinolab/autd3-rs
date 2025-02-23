@@ -1,3 +1,7 @@
+# 30.0.1
+
+- Fix `PartialEq` implementation for `SamplingConfig`
+
 # 30.0.0
 
 - `Modulation::sampling_config` now returns `SamplingConfig` instead of `Result<SamplingConfig, ModulationError>`

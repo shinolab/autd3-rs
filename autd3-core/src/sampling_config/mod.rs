@@ -14,7 +14,7 @@ pub use error::SamplingConfigError;
 pub struct Nearest<T: Copy + Clone + Debug + PartialEq>(pub T);
 
 /// The configuration for sampling.
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy)]
 pub enum SamplingConfig {
     #[doc(hidden)]
     Division(NonZeroU16),
@@ -28,6 +28,15 @@ pub enum SamplingConfig {
     #[cfg(not(feature = "dynamic_freq"))]
     #[doc(hidden)]
     PeriodNearest(Nearest<std::time::Duration>),
+}
+
+impl PartialEq for SamplingConfig {
+    fn eq(&self, other: &Self) -> bool {
+        match (self.division(), other.division()) {
+            (Ok(lhs), Ok(rhs)) => lhs == rhs,
+            _ => false,
+        }
+    }
 }
 
 impl std::fmt::Debug for SamplingConfig {
