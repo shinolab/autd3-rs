@@ -267,16 +267,20 @@ mod tests {
         SamplingConfig::Division(NonZeroU16::MIN)
     )]
     #[case(SamplingConfig::FreqNearest(Nearest(1. * Hz)), SamplingConfig::Freq(1. * Hz))]
-    #[cfg(not(feature = "dynamic_freq"))]
-    #[case(
-        SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1))),
-        SamplingConfig::Period(Duration::from_micros(1))
+    #[cfg_attr(
+        not(feature = "dynamic_freq"),
+        case(
+            SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1))),
+            SamplingConfig::Period(Duration::from_micros(1))
+        )
     )]
     #[case(SamplingConfig::FreqNearest(Nearest(1. * Hz)), SamplingConfig::FreqNearest(Nearest(1. * Hz)))]
-    #[cfg(not(feature = "dynamic_freq"))]
-    #[case(
-        SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1))),
-        SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1)))
+    #[cfg_attr(
+        not(feature = "dynamic_freq"),
+        case(
+            SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1))),
+            SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1)))
+        )
     )]
     #[test]
     fn into_nearest(#[case] expect: SamplingConfig, #[case] config: SamplingConfig) {
@@ -286,14 +290,17 @@ mod tests {
     #[rstest::rstest]
     #[case(true, SamplingConfig::FREQ_40K, SamplingConfig::FREQ_40K)]
     #[case(true, SamplingConfig::FREQ_40K, SamplingConfig::new(NonZeroU16::MIN))]
-    #[case(true, SamplingConfig::FREQ_40K, SamplingConfig::new(40.0 * kHz))]
-    #[cfg(not(feature = "dynamic_freq"))]
-    #[case(
-        true,
-        SamplingConfig::FREQ_40K,
-        SamplingConfig::new(std::time::Duration::from_micros(25))
+    #[case(true, SamplingConfig::FREQ_40K, SamplingConfig::new(40. * kHz))]
+    #[cfg_attr(
+        not(feature = "dynamic_freq"),
+        case(
+            true,
+            SamplingConfig::FREQ_40K,
+            SamplingConfig::new(std::time::Duration::from_micros(25))
+        )
     )]
-    #[case(false, SamplingConfig::new(40.1 * kHz), SamplingConfig::new(40.1 * kHz))]
+    #[case(false, SamplingConfig::new(41. * kHz), SamplingConfig::new(41. * kHz))]
+    #[test]
     fn partial_eq(#[case] expect: bool, #[case] lhs: SamplingConfig, #[case] rhs: SamplingConfig) {
         assert_eq!(expect, lhs == rhs);
     }
@@ -304,16 +311,20 @@ mod tests {
         SamplingConfig::Division(NonZeroU16::MIN)
     )]
     #[case("SamplingConfig::Freq(1 Hz)", SamplingConfig::Freq(1. * Hz))]
-    #[cfg(not(feature = "dynamic_freq"))]
-    #[case(
-        "SamplingConfig::Period(1µs)",
-        SamplingConfig::Period(Duration::from_micros(1))
+    #[cfg_attr(
+        not(feature = "dynamic_freq"),
+        case(
+            "SamplingConfig::Period(1µs)",
+            SamplingConfig::Period(Duration::from_micros(1))
+        )
     )]
     #[case("SamplingConfig::FreqNearest(Nearest(1 Hz))", SamplingConfig::FreqNearest(Nearest(1. * Hz)))]
-    #[cfg(not(feature = "dynamic_freq"))]
-    #[case(
-        "SamplingConfig::PeriodNearest(Nearest(1µs))",
-        SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1)))
+    #[cfg_attr(
+        not(feature = "dynamic_freq"),
+        case(
+            "SamplingConfig::PeriodNearest(Nearest(1µs))",
+            SamplingConfig::PeriodNearest(Nearest(Duration::from_micros(1)))
+        )
     )]
     #[test]
     fn debug(#[case] expect: &str, #[case] config: SamplingConfig) {
