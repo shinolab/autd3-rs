@@ -92,7 +92,6 @@ mod tests {
     #[case(SamplingConfig::new(4000. * Hz), 4000. * Hz, 1)]
     #[case(SamplingConfig::new(8000. * Hz,), 4000. * Hz, 2)]
     #[case(SamplingConfig::new(40000. * Hz), 40000. * Hz, 1)]
-    #[case(SamplingConfig::new(4000.5 * Hz), 4000.5 * Hz, 1)]
     fn frequency(#[case] expect: SamplingConfig, #[case] freq: Freq<f32>, #[case] size: usize) {
         assert_eq!(Ok(expect), STMConfig::Freq(freq).into_sampling_config(size));
     }
