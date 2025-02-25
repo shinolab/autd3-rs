@@ -2,10 +2,14 @@ use std::net::SocketAddr;
 
 use autd3_core::geometry::{Device, Geometry, IntoDevice};
 
+use derive_more::Deref;
+
 use crate::{OpenRequestLightweight, traits::*};
 
+#[derive(Deref)]
 pub struct LightweightClient {
     client: crate::pb::ecat_light_client::EcatLightClient<tonic::transport::Channel>,
+    #[deref]
     geometry: Geometry,
 }
 

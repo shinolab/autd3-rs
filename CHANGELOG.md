@@ -1,3 +1,7 @@
+# 30.1.0
+
+- impl `Deref<Target = Geometry>` for `LightweightClient`
+
 # 30.0.1
 
 - Fix `PartialEq` implementation for `SamplingConfig`
