@@ -7,6 +7,7 @@ use paste::paste;
 macro_rules! make_euler_angle_intrinsic {
     ($({$first:ident, $second:ident, $third:ident}),*) => {
         paste! {
+            #[derive(Debug, Clone, Copy)]
             /// Euler angle (intrinsic)
             pub enum EulerAngleIntrinsic {
                 $(
@@ -44,6 +45,7 @@ macro_rules! make_euler_angle_intrinsic {
 macro_rules! make_euler_angle_extrinsic {
     ($({$first:ident, $second:ident, $third:ident}),*) => {
         paste! {
+            #[derive(Debug, Clone, Copy)]
             /// Euler angle (extrinsic)
             pub enum EulerAngleExtrinsic {
                 $(
@@ -104,7 +106,7 @@ mod tests {
     #[case(PI / 2., 90. * deg)]
     #[case(0., 0. * rad)]
     #[case(PI / 2., PI / 2. * rad)]
-    fn test_to_radians(#[case] expected: f32, #[case] angle: Angle) {
+    fn to_radians(#[case] expected: f32, #[case] angle: Angle) {
         approx::assert_abs_diff_eq!(expected, angle.radian());
     }
 
@@ -115,7 +117,7 @@ mod tests {
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 0. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 90. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XYZ(90. * deg, 90. * deg, 0. * deg))]
-    fn test_rotation_xyz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+    fn xyz_intrinsic(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);
     }
@@ -127,7 +129,7 @@ mod tests {
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 0. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 90. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYZ(90. * deg, 90. * deg, 0. * deg))]
-    fn test_rotation_zyz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+    fn zyz_intrinsic(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);
     }
@@ -139,10 +141,7 @@ mod tests {
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(0. * deg, 0. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(0. * deg, 90. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(90. * deg, 90. * deg, 0. * deg))]
-    fn test_rotation_xyz_extrinsic(
-        #[case] expected: UnitQuaternion,
-        #[case] angle: EulerAngleExtrinsic,
-    ) {
+    fn xyz_extrinsic(#[case] expected: UnitQuaternion, #[case] angle: EulerAngleExtrinsic) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);
     }
@@ -154,10 +153,7 @@ mod tests {
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(0. * deg, 0. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(0. * deg, 90. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(90. * deg, 90. * deg, 0. * deg))]
-    fn test_rotation_zyz_extrinsic(
-        #[case] expected: UnitQuaternion,
-        #[case] angle: EulerAngleExtrinsic,
-    ) {
+    fn zyz_extrinsic(#[case] expected: UnitQuaternion, #[case] angle: EulerAngleExtrinsic) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);
     }
