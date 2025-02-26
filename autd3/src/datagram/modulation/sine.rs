@@ -11,7 +11,6 @@ use derive_more::Debug;
 
 /// The option of [`Sine`].
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[repr(C)]
 pub struct SineOption {
     /// The intensity of the modulation. The default value is [`u8::MAX`].
     pub intensity: u8,
