@@ -16,6 +16,14 @@ macro_rules! make_euler_angle_intrinsic {
                 )*
             }
 
+            impl EulerAngleIntrinsic {
+                /// The rotation identity.
+                #[must_use]
+                pub const fn identity() -> Self {
+                    Self::XYZ(Angle::ZERO, Angle::ZERO, Angle::ZERO)
+                }
+            }
+
             impl From<EulerAngleIntrinsic> for UnitQuaternion {
                 fn from(angle: EulerAngleIntrinsic) -> Self {
                     match angle {
@@ -43,6 +51,14 @@ macro_rules! make_euler_angle_extrinsic {
                     #[doc = "euler angle."]
                     [<$first:upper $second:upper $third:upper>](Angle, Angle, Angle),
                 )*
+            }
+
+            impl EulerAngleExtrinsic {
+                /// The rotation identity.
+                #[must_use]
+                pub const fn identity() -> Self {
+                    Self::XYZ(Angle::ZERO, Angle::ZERO, Angle::ZERO)
+                }
             }
 
             impl From<EulerAngleExtrinsic> for UnitQuaternion {
@@ -144,5 +160,14 @@ mod tests {
     ) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(EulerAngleExtrinsic::identity())]
+    #[case(EulerAngleIntrinsic::identity())]
+    #[test]
+    fn identity(#[case] angle: impl Into<UnitQuaternion>) {
+        let angle: UnitQuaternion = angle.into();
+        assert_eq!(UnitQuaternion::identity(), angle);
     }
 }
