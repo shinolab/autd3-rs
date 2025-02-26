@@ -3,17 +3,18 @@ use crate::{
     geometry::{Device, IntoDevice, Isometry, Point3, Transducer, Translation, UnitQuaternion},
 };
 use getset::Getters;
+use std::fmt::Debug;
 
 /// AUTD3 device.
 #[derive(Clone, Copy, Debug, Getters)]
-pub struct AUTD3 {
+pub struct AUTD3<R: Into<UnitQuaternion> + Debug> {
     /// The position of the AUTD3 device.
     pub pos: Point3,
     /// The rotation of the AUTD3 device.
-    pub rot: UnitQuaternion,
+    pub rot: R,
 }
 
-impl Default for AUTD3 {
+impl Default for AUTD3<UnitQuaternion> {
     fn default() -> Self {
         Self {
             pos: Point3::origin(),
@@ -22,7 +23,7 @@ impl Default for AUTD3 {
     }
 }
 
-impl AUTD3 {
+impl AUTD3<UnitQuaternion> {
     /// The number of transducers in x-axis.
     pub const NUM_TRANS_X: usize = 18;
     /// The number of transducers in y-axis.
@@ -35,12 +36,6 @@ impl AUTD3 {
     pub const DEVICE_WIDTH: f32 = 192.0 * mm;
     /// The height of the device (including the substrate).
     pub const DEVICE_HEIGHT: f32 = 151.4 * mm;
-
-    /// Create a new AUTD3 device.
-    #[must_use]
-    pub const fn new(pos: Point3, rot: UnitQuaternion) -> Self {
-        Self { pos, rot }
-    }
 
     #[must_use]
     const fn is_missing_transducer(x: usize, y: usize) -> bool {
@@ -63,23 +58,32 @@ impl AUTD3 {
     }
 }
 
-impl IntoDevice for AUTD3 {
+impl<R: Into<UnitQuaternion> + Debug> AUTD3<R> {
+    /// Create a new AUTD3 device.
+    #[must_use]
+    pub fn new(pos: Point3, rot: R) -> Self {
+        Self { pos, rot: rot }
+    }
+}
+
+impl<R: Into<UnitQuaternion> + Debug> IntoDevice for AUTD3<R> {
     fn into_device(self, dev_idx: u16) -> Device {
         tracing::debug!("Configure device[{}]: {:?}", dev_idx, self);
+        let rot = self.rot.into();
         let isometry = Isometry {
-            rotation: self.rot,
+            rotation: rot,
             translation: Translation::from(self.pos),
         };
         Device::new(
             dev_idx,
-            self.rot,
-            itertools::iproduct!(0..Self::NUM_TRANS_Y, 0..Self::NUM_TRANS_X)
-                .filter(|&(y, x)| !Self::is_missing_transducer(x, y))
+            rot,
+            itertools::iproduct!(0..AUTD3::NUM_TRANS_Y, 0..AUTD3::NUM_TRANS_X)
+                .filter(|&(y, x)| !AUTD3::is_missing_transducer(x, y))
                 .map(|(y, x)| {
                     isometry
                         * Point3::new(
-                            x as f32 * Self::TRANS_SPACING,
-                            y as f32 * Self::TRANS_SPACING,
+                            x as f32 * AUTD3::TRANS_SPACING,
+                            y as f32 * AUTD3::TRANS_SPACING,
                             0.,
                         )
                 })
