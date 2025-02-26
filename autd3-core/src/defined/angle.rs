@@ -17,6 +17,14 @@ pub struct Angle {
 }
 
 impl Angle {
+    /// An angle of zero
+    pub const ZERO: Self = Self { radian: 0.0 };
+
+    /// An angle of π
+    pub const PI: Self = Self {
+        radian: std::f32::consts::PI,
+    };
+
     /// Returns the angle in radian
     #[must_use]
     pub const fn radian(self) -> f32 {
