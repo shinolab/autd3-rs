@@ -6,7 +6,6 @@ use derive_more::Debug;
 
 /// The option of [`Square`].
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[repr(C)]
 pub struct SquareOption {
     /// The low value of the modulation. The default value is [`u8::MIN`].
     pub low: u8,

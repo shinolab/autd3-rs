@@ -2,7 +2,6 @@ use std::num::NonZeroU16;
 
 /// The behavior of the loop.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-#[repr(C)]
 pub enum LoopBehavior {
     /// Infinite loop.
     Infinite,
