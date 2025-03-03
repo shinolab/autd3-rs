@@ -30,7 +30,7 @@ pub use clear::Clear;
 pub use clock::ConfigureFPGAClock;
 #[doc(hidden)]
 pub use cpu_gpio_out::{CpuGPIO, CpuGPIOPort};
-pub use debug::DebugSettings;
+pub use debug::GPIOOutputs;
 pub use force_fan::ForceFan;
 pub use gain::{BoxedGain, IntoBoxedGain};
 #[doc(hidden)]

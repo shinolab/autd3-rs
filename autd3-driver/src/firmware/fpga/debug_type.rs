@@ -5,9 +5,9 @@ use zerocopy::{Immutable, IntoBytes};
 
 use super::ec_time_to_sys_time;
 
-/// Output of the GPIO pin. See also [`DebugSettings`].
+/// Output of the GPIO pin. See also [`GPIOOutputs`].
 ///
-/// [`DebugSettings`]: crate::datagram::DebugSettings
+/// [`GPIOOutputs`]: crate::datagram::GPIOOutputs
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub enum DebugType<'a> {
