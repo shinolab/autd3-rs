@@ -6,9 +6,7 @@ use getset::Getters;
 
 use crate::defined::{METER, ultrasound_freq};
 
-use super::{
-    Isometry, Point3, Quaternion, Transducer, Translation, UnitQuaternion, UnitVector3, Vector3,
-};
+use super::{Isometry, Point3, Quaternion, Transducer, UnitQuaternion, UnitVector3, Vector3};
 
 /// An AUTD device unit.
 #[derive(Getters, Deref, IntoIterator)]
@@ -99,39 +97,6 @@ impl Device {
     #[must_use]
     pub fn num_transducers(&self) -> usize {
         self.transducers.len()
-    }
-
-    /// Translates the device to the target position.
-    pub fn translate_to(&mut self, t: Point3) {
-        self.translate(t - self.transducers[0].position());
-    }
-
-    /// Rotates the device to the target rotation.
-    pub fn rotate_to(&mut self, r: UnitQuaternion) {
-        self.rotate(r * self.rotation.conjugate());
-    }
-
-    /// Translates the device.
-    pub fn translate(&mut self, t: Vector3) {
-        self.affine(t, UnitQuaternion::identity());
-    }
-
-    /// Rotates the device.
-    pub fn rotate(&mut self, r: UnitQuaternion) {
-        self.affine(Vector3::zeros(), r);
-    }
-
-    /// Translates and rotates the device.
-    pub fn affine(&mut self, t: Vector3, r: UnitQuaternion) {
-        let isometry = Isometry {
-            translation: Translation::from(t),
-            rotation: r,
-        };
-        self.transducers
-            .iter_mut()
-            .for_each(|tr| tr.affine(&isometry));
-        self.rotation = r * self.rotation;
-        self.init();
     }
 
     /// Sets the sound speed of enabled devices from the temperature `t`.
@@ -266,138 +231,6 @@ pub(crate) mod tests {
     ) {
         let device = TestDevice::new_autd3_with_rot(origin, rot).into_device(0);
         assert_approx_eq_vec3!(expected, device.inv.transform_point(&Point3::from(target)));
-    }
-
-    #[test]
-    fn translate_to() {
-        let mut rng = rand::rng();
-        let origin = Point3::new(rng.random(), rng.random(), rng.random());
-
-        let mut device = TestDevice::new_autd3(origin).into_device(0);
-
-        let t = Point3::new(40., 50., 60.);
-        device.translate_to(t);
-
-        TestDevice::new_autd3(t)
-            .into_device(0)
-            .iter()
-            .zip(device.iter())
-            .for_each(|(expect, tr)| {
-                assert_approx_eq_vec3!(expect.position(), tr.position());
-            });
-    }
-
-    #[test]
-    fn rotate_to() {
-        let mut rng = rand::rng();
-        let mut device = TestDevice::new_autd3_with_rot(
-            Point3::origin(),
-            UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.random())
-                * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.random())
-                * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.random()),
-        )
-        .into_device(0);
-
-        let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
-            * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
-            * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.);
-        device.rotate_to(rot);
-
-        let expect_x = Vector3::new(0., 1., 0.);
-        let expect_y = Vector3::new(-1., 0., 0.);
-        let expect_z = if cfg!(feature = "left_handed") {
-            Vector3::new(0., 0., -1.) // GRCOV_EXCL_LINE
-        } else {
-            Vector3::new(0., 0., 1.)
-        };
-        assert_approx_eq_quat!(rot, device.rotation());
-        assert_approx_eq_vec3!(expect_x, device.x_direction());
-        assert_approx_eq_vec3!(expect_y, device.y_direction());
-        assert_approx_eq_vec3!(expect_z, device.axial_direction());
-        TestDevice::new_autd3_with_rot(Point3::origin(), rot)
-            .into_device(0)
-            .iter()
-            .zip(device.iter())
-            .for_each(|(expect, tr)| {
-                assert_approx_eq_vec3!(expect.position(), tr.position());
-            });
-    }
-
-    #[test]
-    fn translate() {
-        let mut rng = rand::rng();
-        let origin = Point3::new(rng.random(), rng.random(), rng.random());
-
-        let mut device = TestDevice::new_autd3(origin).into_device(0);
-
-        let t = Vector3::new(40., 50., 60.);
-        device.translate(t);
-        TestDevice::new_autd3(origin + t)
-            .into_device(0)
-            .iter()
-            .zip(device.iter())
-            .for_each(|(expect, tr)| {
-                assert_approx_eq_vec3!(expect.position(), tr.position());
-            });
-    }
-
-    #[test]
-    fn rotate() {
-        let mut device = TestDevice::new_autd3(Point3::origin()).into_device(0);
-
-        let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
-            * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
-            * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.);
-        device.rotate(rot);
-        let expect_x = Vector3::new(0., 1., 0.);
-        let expect_y = Vector3::new(-1., 0., 0.);
-        let expect_z = if cfg!(feature = "left_handed") {
-            Vector3::new(0., 0., -1.) // GRCOV_EXCL_LINE
-        } else {
-            Vector3::new(0., 0., 1.)
-        };
-        assert_approx_eq_quat!(rot, device.rotation());
-        assert_approx_eq_vec3!(expect_x, device.x_direction());
-        assert_approx_eq_vec3!(expect_y, device.y_direction());
-        assert_approx_eq_vec3!(expect_z, device.axial_direction());
-        TestDevice::new_autd3_with_rot(Point3::origin(), rot)
-            .into_device(0)
-            .iter()
-            .zip(device.iter())
-            .for_each(|(expect, tr)| {
-                assert_approx_eq_vec3!(expect.position(), tr.position());
-            });
-    }
-
-    #[test]
-    fn affine() {
-        let mut device = TestDevice::new_autd3(Point3::origin()).into_device(0);
-
-        let t = Vector3::new(40., 50., 60.);
-        let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), 0.)
-            * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), 0.)
-            * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.);
-        device.affine(t, rot);
-
-        let expect_x = Vector3::new(0., 1., 0.);
-        let expect_y = Vector3::new(-1., 0., 0.);
-        let expect_z = if cfg!(feature = "left_handed") {
-            Vector3::new(0., 0., -1.) // GRCOV_EXCL_LINE
-        } else {
-            Vector3::new(0., 0., 1.)
-        };
-        assert_approx_eq_quat!(rot, device.rotation());
-        assert_approx_eq_vec3!(expect_x, device.x_direction());
-        assert_approx_eq_vec3!(expect_y, device.y_direction());
-        assert_approx_eq_vec3!(expect_z, device.axial_direction());
-
-        TestDevice::new_autd3_with_rot(Point3::from(t), rot)
-            .into_device(0)
-            .iter()
-            .zip(device.iter())
-            .for_each(|(expect, tr)| {
-                assert_approx_eq_vec3!(expect.position(), tr.position());
-            });
     }
 
     #[rstest::rstest]
