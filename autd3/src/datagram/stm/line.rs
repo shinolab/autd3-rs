@@ -157,8 +157,6 @@ mod tests {
 
     #[test]
     fn line() {
-        use autd3_driver::geometry::IntoDevice;
-
         let length = 30.0 * mm;
         let line = Line {
             start: Point3::new(0., -length / 2., 0.),
@@ -175,7 +173,7 @@ mod tests {
             Point3::new(0., length / 2., 0.),
         ];
 
-        let device = autd3_driver::autd3_device::AUTD3::default().into_device(0);
+        let device = autd3_driver::autd3_device::AUTD3::default().into();
         {
             let mut stm = FociSTM {
                 foci: line.clone(),

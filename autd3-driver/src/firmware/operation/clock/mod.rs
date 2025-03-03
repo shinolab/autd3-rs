@@ -285,7 +285,7 @@ mod tests {
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
 
         let mut op = ConfigureClockOp::new(freq);
 
@@ -379,7 +379,7 @@ mod tests {
     #[case::f1(Err(AUTDDriverError::InvalidFrequency(1*Hz)), 1*Hz)]
     #[case::f32(Err(AUTDDriverError::InvalidFrequency(125*Hz)), 125*Hz)]
     fn config_clk_validate(#[case] expect: Result<(), AUTDDriverError>, #[case] freq: Freq<u32>) {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; size_of::<Clk>() + DRP_ROM_SIZE * size_of::<u64>()];
 
         let mut op = ConfigureClockOp::new(freq);

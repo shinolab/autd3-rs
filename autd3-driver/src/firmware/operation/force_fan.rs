@@ -67,7 +67,7 @@ mod tests {
     #[case(0x01, true)]
     #[case(0x00, false)]
     fn test(#[case] expect: u8, #[case] value: bool) {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<ForceFan>()];
 

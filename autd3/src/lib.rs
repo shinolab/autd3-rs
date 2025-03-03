@@ -44,7 +44,7 @@ mod tests {
     use autd3_core::geometry::UnitQuaternion;
     use autd3_driver::{
         autd3_device::AUTD3,
-        geometry::{Geometry, IntoDevice, Point3, Vector3},
+        geometry::{Geometry, Point3, Vector3},
     };
 
     #[macro_export]
@@ -99,9 +99,7 @@ mod tests {
     pub fn create_geometry(n: usize) -> Geometry {
         Geometry::new(
             (0..n)
-                .map(|i| {
-                    AUTD3::new(Point3::origin(), UnitQuaternion::identity()).into_device(i as _)
-                })
+                .map(|_| AUTD3::new(Point3::origin(), UnitQuaternion::identity()).into())
                 .collect(),
         )
     }

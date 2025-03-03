@@ -70,7 +70,7 @@ mod tests {
     fn debug_op() {
         const FRAME_SIZE: usize = size_of::<DebugSetting>();
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let mut op = DebugSettingOp::new([

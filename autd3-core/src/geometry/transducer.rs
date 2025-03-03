@@ -1,6 +1,6 @@
 use getset::Getters;
 
-use super::{Isometry, Point3};
+use super::Point3;
 
 /// A ultrasound transducer.
 #[derive(Clone, Debug, PartialEq, Getters)]
@@ -15,10 +15,10 @@ pub struct Transducer {
 impl Transducer {
     /// Creates a new [`Transducer`].
     #[must_use]
-    pub const fn new(idx: u8, dev_idx: u16, position: Point3) -> Self {
+    pub const fn new(position: Point3) -> Self {
         Self {
-            idx,
-            dev_idx,
+            idx: 0,
+            dev_idx: 0,
             position,
         }
     }
@@ -42,8 +42,8 @@ mod tests {
 
     #[test]
     fn idx() {
-        let tr = Transducer::new(1, 2, Point3::origin());
-        assert_eq!(1, tr.idx());
-        assert_eq!(2, tr.dev_idx());
+        let tr = Transducer::new(Point3::origin());
+        assert_eq!(0, tr.idx());
+        assert_eq!(0, tr.dev_idx());
     }
 }

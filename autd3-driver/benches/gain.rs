@@ -8,7 +8,7 @@ use autd3_driver::{
         fpga::{Drive, EmitIntensity, Phase},
         operation::OperationHandler,
     },
-    geometry::{Device, Geometry, IntoDevice, Point3, Transducer},
+    geometry::{Device, Geometry, Point3, Transducer},
 };
 
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
@@ -22,7 +22,7 @@ pub fn generate_geometry(size: usize) -> Geometry {
                     pos: Point3::new(i as f32 * AUTD3::DEVICE_WIDTH, 0., 0.),
                     ..Default::default()
                 }
-                .into_device(i as _)
+                .into()
             })
             .collect(),
     )

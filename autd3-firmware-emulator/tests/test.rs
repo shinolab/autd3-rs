@@ -7,7 +7,7 @@ use autd3_driver::{
         cpu::TxMessage,
         operation::{OperationGenerator, OperationHandler},
     },
-    geometry::{Geometry, IntoDevice, Point3},
+    geometry::{Geometry, Point3},
 };
 use autd3_firmware_emulator::{CPUEmulator, cpu::params::ERR_BIT};
 use zerocopy::FromZeros;
@@ -17,12 +17,12 @@ mod op;
 pub fn create_geometry(n: usize) -> Geometry {
     Geometry::new(
         (0..n)
-            .map(|i| {
+            .map(|_| {
                 AUTD3 {
                     pos: Point3::origin(),
                     ..Default::default()
                 }
-                .into_device(i as _)
+                .into()
             })
             .collect(),
     )

@@ -50,15 +50,11 @@ mod tests {
     #[rstest::fixture]
     fn tr() -> Transducer {
         let mut rng = rand::rng();
-        Transducer::new(
-            0,
-            0,
-            Point3::new(
-                rng.random_range(-100.0..100.0),
-                rng.random_range(-100.0..100.0),
-                rng.random_range(-100.0..100.0),
-            ),
-        )
+        Transducer::new(Point3::new(
+            rng.random_range(-100.0..100.0),
+            rng.random_range(-100.0..100.0),
+            rng.random_range(-100.0..100.0),
+        ))
     }
 
     #[rstest::fixture]
@@ -95,7 +91,7 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_propagate(tr: Transducer, rot: UnitQuaternion, target: Point3, sound_speed: f32) {
-        let mut device = Device::new(0, rot, vec![tr.clone()]);
+        let mut device = Device::new(rot, vec![tr.clone()]);
         device.sound_speed = sound_speed;
         let wavenumber = device.wavenumber();
         assert_complex_approx_eq!(

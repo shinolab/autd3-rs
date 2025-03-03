@@ -107,10 +107,10 @@ mod tests {
         assert_eq!("StmIdx(1)", format!("{:?}", DebugType::StmIdx(1)));
         assert_eq!("IsStmMode", format!("{:?}", DebugType::IsStmMode));
         assert_eq!(
-            "PwmOut(1)",
+            "PwmOut(0)",
             format!(
                 "{:?}",
-                DebugType::PwmOut(&Transducer::new(1, 1, Point3::origin()))
+                DebugType::PwmOut(&Transducer::new(Point3::origin()))
             )
         );
         assert_eq!("Direct(true)", format!("{:?}", DebugType::Direct(true)));
