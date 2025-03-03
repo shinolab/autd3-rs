@@ -1,5 +1,7 @@
-# 30.1.0
+# 31.0.0
 
+- Remove `Device::translate`, `Device::translate_to`, `Device::rotate`, `Device::rotate_to`, and `Device::affine`
+  - Add `Geometry::reconfigure` instead
 - impl `Deref<Target = Geometry>` for `LightweightClient`
 
 # 30.0.1
