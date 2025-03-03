@@ -23,13 +23,13 @@ impl CpuGPIOPort {
 
 #[derive(Debug)]
 #[doc(hidden)]
-pub struct CpuGPIO<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> {
+pub struct CpuGPIOOutputs<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> {
     #[debug(ignore)]
     f: F,
 }
 
-impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> CpuGPIO<F> {
-    /// Creates a new [`CpuGPIO`].
+impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> CpuGPIOOutputs<F> {
+    /// Creates a new [`CpuGPIOOutputs`].
     #[must_use]
     pub const fn new(f: F) -> Self {
         Self { f }
@@ -50,7 +50,7 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator for CpuGPIO
     }
 }
 
-impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIO<F> {
+impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIOOutputs<F> {
     type G = CpuGPIOOutOpGenerator<F>;
     type Error = Infallible;
 
