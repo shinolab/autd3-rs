@@ -29,7 +29,7 @@ pub use clear::Clear;
 #[cfg(feature = "dynamic_freq")]
 pub use clock::ConfigureFPGAClock;
 #[doc(hidden)]
-pub use cpu_gpio_out::{CpuGPIO, CpuGPIOPort};
+pub use cpu_gpio_out::{CpuGPIOOutputs, CpuGPIOPort};
 pub use debug::GPIOOutputs;
 pub use force_fan::ForceFan;
 pub use gain::{BoxedGain, IntoBoxedGain};
