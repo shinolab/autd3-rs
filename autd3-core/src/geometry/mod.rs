@@ -42,10 +42,24 @@ impl Geometry {
     /// Creates a new [`Geometry`].
     #[must_use]
     pub fn new(devices: Vec<Device>) -> Self {
-        Self {
+        let mut geometry = Self {
             devices,
             version: 0,
-        }
+        };
+        geometry.assign_idx();
+        geometry
+    }
+
+    fn assign_idx(&mut self) {
+        self.devices
+            .iter_mut()
+            .enumerate()
+            .for_each(|(dev_idx, dev)| {
+                dev.idx = dev_idx as _;
+                dev.transducers.iter_mut().for_each(|tr| {
+                    tr.dev_idx = dev_idx as _;
+                });
+            });
     }
 
     /// Gets the number of enabled devices.
@@ -101,6 +115,13 @@ impl Geometry {
     pub fn aabb(&self) -> Aabb<f32, 3> {
         self.devices()
             .fold(Aabb::empty(), |aabb, dev| aabb.join(dev.aabb()))
+    }
+
+    /// Reconfigure the geometry.
+    pub fn reconfigure<D: Into<Device>, F: Fn(&Device) -> D>(&mut self, f: F) {
+        self.devices = self.devices.iter().map(f).map(|dev| dev.into()).collect();
+        self.assign_idx();
+        self.version += 1;
     }
 }
 
@@ -287,5 +308,33 @@ pub(crate) mod tests {
         );
         assert_approx_eq_vec3!(expect.min, geometry.aabb().min);
         assert_approx_eq_vec3!(expect.max, geometry.aabb().max);
+    }
+
+    #[test]
+    fn reconfigure() {
+        let mut geometry = Geometry::new(vec![
+            TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
+            TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
+        ]);
+
+        let mut rng = rand::rng();
+        let t = Point3::new(rng.random(), rng.random(), rng.random());
+        let rot = UnitQuaternion::new_normalize(Quaternion::new(
+            rng.random(),
+            rng.random(),
+            rng.random(),
+            rng.random(),
+        ));
+
+        geometry.reconfigure(|dev| match dev.idx() {
+            0 => TestDevice::new_autd3_with_rot(t, rot),
+            _ => TestDevice::new_autd3_with_rot(*dev[0].position(), *dev.rotation()),
+        });
+
+        assert_eq!(1, geometry.version());
+        assert_eq!(t, *geometry[0][0].position());
+        assert_eq!(rot, *geometry[0].rotation());
+        assert_eq!(Point3::origin(), *geometry[1][0].position());
+        assert_eq!(UnitQuaternion::identity(), *geometry[1].rotation());
     }
 }
