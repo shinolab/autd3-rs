@@ -13,9 +13,9 @@ use derive_more::Debug;
 /// # Example
 ///
 /// ```
-/// # use autd3_driver::datagram::DebugSettings;
+/// # use autd3_driver::datagram::GPIOOutputs;
 /// # use autd3_driver::firmware::fpga::{DebugType, GPIOOut};
-/// DebugSettings::new(|dev, gpio| match gpio {
+/// GPIOOutputs::new(|dev, gpio| match gpio {
 ///     GPIOOut::O0 => DebugType::BaseSignal,
 ///     GPIOOut::O1 => DebugType::Sync,
 ///     GPIOOut::O2 => DebugType::PwmOut(&dev[0]),
@@ -23,13 +23,13 @@ use derive_more::Debug;
 /// });
 /// ```
 #[derive(Debug)]
-pub struct DebugSettings<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {
+pub struct GPIOOutputs<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> {
     #[debug(ignore)]
     f: F,
 }
 
-impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> DebugSettings<F> {
-    /// Creates a new [`DebugSettings`].
+impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> GPIOOutputs<F> {
+    /// Creates a new [`GPIOOutputs`].
     #[must_use]
     pub const fn new(f: F) -> Self {
         Self { f }
@@ -57,7 +57,7 @@ impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> OperationGenerator
     }
 }
 
-impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram for DebugSettings<F> {
+impl<F: Fn(&Device, GPIOOut) -> DebugType + Send + Sync> Datagram for GPIOOutputs<F> {
     type G = DebugSettingOpGenerator<F>;
     type Error = Infallible;
 

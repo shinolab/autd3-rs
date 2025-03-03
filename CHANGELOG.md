@@ -2,6 +2,7 @@
 
 - Remove `Device::translate`, `Device::translate_to`, `Device::rotate`, `Device::rotate_to`, and `Device::affine`
   - Add `Geometry::reconfigure` instead
+- Rename from `DebugSettings` to `GPIOOutputs`
 - impl `Deref<Target = Geometry>` for `LightweightClient`
 
 # 30.0.1
