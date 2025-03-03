@@ -20,7 +20,7 @@ pub use autd3_core::modulation::Modulation;
 pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
-        Clear, ControlPoint, ControlPoints, DebugSettings, FixedUpdateRate, FociSTM, ForceFan,
+        Clear, ControlPoint, ControlPoints, FixedUpdateRate, FociSTM, ForceFan, GPIOOutputs,
         GainSTM, GainSTMOption, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer,
         SwapSegment, WithLoopBehavior, WithSegment,
     },
