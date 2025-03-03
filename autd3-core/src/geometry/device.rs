@@ -11,10 +11,10 @@ use super::{Isometry, Point3, Quaternion, Transducer, UnitQuaternion, UnitVector
 /// An AUTD device unit.
 #[derive(Getters, Deref, IntoIterator)]
 pub struct Device {
-    idx: u16,
+    pub(crate) idx: u16,
     #[deref]
     #[into_iterator(ref)]
-    transducers: Vec<Transducer>,
+    pub(crate) transducers: Vec<Transducer>,
     /// enable flag
     pub enable: bool,
     /// speed of sound
@@ -69,9 +69,13 @@ impl Device {
 
     #[doc(hidden)]
     #[must_use]
-    pub fn new(idx: u16, rot: UnitQuaternion, transducers: Vec<Transducer>) -> Self {
+    pub fn new(rot: UnitQuaternion, transducers: Vec<Transducer>) -> Self {
+        let mut transducers = transducers;
+        transducers.iter_mut().enumerate().for_each(|(tr_idx, tr)| {
+            tr.idx = tr_idx as _;
+        });
         let mut dev = Self {
-            idx,
+            idx: 0,
             transducers,
             enable: true,
             sound_speed: 340.0 * METER,
@@ -132,24 +136,8 @@ impl Device {
     }
 }
 
-/// Trait for converting to [`Device`].
-pub trait IntoDevice {
-    /// Converts to [`Device`].
-    #[must_use]
-    fn into_device(self, dev_idx: u16) -> Device;
-}
-
-impl IntoDevice for Device {
-    fn into_device(mut self, dev_idx: u16) -> Device {
-        self.idx = dev_idx;
-        self
-    }
-}
-
 #[cfg(test)]
 pub(crate) mod tests {
-    use rand::Rng;
-
     use super::*;
     use crate::{
         defined::{PI, mm},
@@ -164,21 +152,9 @@ pub(crate) mod tests {
         };
     }
 
-    macro_rules! assert_approx_eq_quat {
-        ($a:expr, $b:expr) => {
-            approx::assert_abs_diff_eq!($a.w, $b.w, epsilon = 1e-3);
-            approx::assert_abs_diff_eq!($a.i, $b.i, epsilon = 1e-3);
-            approx::assert_abs_diff_eq!($a.j, $b.j, epsilon = 1e-3);
-            approx::assert_abs_diff_eq!($a.k, $b.k, epsilon = 1e-3);
-        };
-    }
-
-    #[rstest::rstest]
     #[test]
-    #[case(0)]
-    #[case(1)]
-    fn idx(#[case] expect: u16) {
-        assert_eq!(expect, create_device(expect, 249).idx() as u16);
+    fn idx() {
+        assert_eq!(0, create_device(249).idx());
     }
 
     #[rstest::rstest]
@@ -186,12 +162,12 @@ pub(crate) mod tests {
     #[case(1)]
     #[case(249)]
     fn num_transducers(#[case] n: u8) {
-        assert_eq!(n, create_device(0, n).num_transducers() as u8);
+        assert_eq!(n, create_device(n).num_transducers() as u8);
     }
 
     #[test]
     fn center() {
-        let device = TestDevice::new_autd3(Point3::origin()).into_device(0);
+        let device: Device = TestDevice::new_autd3(Point3::origin()).into();
         let expected =
             device.iter().map(|t| t.position().coords).sum::<Vector3>() / device.len() as f32;
         assert_approx_eq_vec3!(expected, device.center());
@@ -229,7 +205,7 @@ pub(crate) mod tests {
         #[case] origin: Point3,
         #[case] rot: UnitQuaternion,
     ) {
-        let device = TestDevice::new_autd3_with_rot(origin, rot).into_device(0);
+        let device: Device = TestDevice::new_autd3_with_rot(origin, rot).into();
         assert_approx_eq_vec3!(expected, device.inv.transform_point(&Point3::from(target)));
     }
 
@@ -239,7 +215,7 @@ pub(crate) mod tests {
     #[case(343.23497e3, 20.)]
     #[case(349.04013e3, 30.)]
     fn set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
-        let mut device = create_device(0, 249);
+        let mut device = create_device(249);
         device.set_sound_speed_from_temp(temp);
         approx::assert_abs_diff_eq!(expected * mm, device.sound_speed, epsilon = 1e-3);
     }
@@ -249,7 +225,7 @@ pub(crate) mod tests {
     #[case(8.5, 340e3)]
     #[case(10., 400e3)]
     fn wavelength(#[case] expect: f32, #[case] c: f32) {
-        let mut device = create_device(0, 249);
+        let mut device = create_device(249);
         device.sound_speed = c;
         approx::assert_abs_diff_eq!(expect, device.wavelength());
     }
@@ -259,45 +235,8 @@ pub(crate) mod tests {
     #[case(0.739_198_27, 340e3)]
     #[case(0.628_318_55, 400e3)]
     fn wavenumber(#[case] expect: f32, #[case] c: f32) {
-        let mut device = create_device(0, 249);
+        let mut device = create_device(249);
         device.sound_speed = c;
         approx::assert_abs_diff_eq!(expect, device.wavenumber());
-    }
-
-    #[test]
-    fn into_device() {
-        let mut rng = rand::rng();
-        let t = Vector3::new(rng.random(), rng.random(), rng.random());
-        let rot = UnitQuaternion::from_axis_angle(&Vector3::x_axis(), rng.random())
-            * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), rng.random())
-            * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), rng.random());
-        let Device {
-            idx: _idx,
-            transducers: expect_transducers,
-            enable: expect_enable,
-            sound_speed: expect_sound_speed,
-            rotation: expect_rotation,
-            center: expect_center,
-            x_direction: expect_x_direction,
-            y_direction: expect_y_direction,
-            axial_direction: expect_axial_direction,
-            inv: expect_inv,
-            aabb: expect_aabb,
-        } = TestDevice::new_autd3_with_rot(Point3::from(t), rot).into_device(0);
-        let dev = TestDevice::new_autd3_with_rot(Point3::from(t), rot)
-            .into_device(0)
-            .into_device(1);
-        assert_eq!(1, dev.idx());
-        assert_eq!(expect_transducers, dev.transducers);
-        assert_eq!(expect_enable, dev.enable);
-        assert_eq!(expect_sound_speed, dev.sound_speed);
-        assert_eq!(expect_rotation, dev.rotation);
-        assert_eq!(expect_center, dev.center);
-        assert_eq!(expect_x_direction, dev.x_direction);
-        assert_eq!(expect_y_direction, dev.y_direction);
-        assert_eq!(expect_axial_direction, dev.axial_direction);
-        assert_eq!(expect_inv, dev.inv);
-        assert_eq!(expect_aabb.min, dev.aabb.min);
-        assert_eq!(expect_aabb.max, dev.aabb.max);
     }
 }

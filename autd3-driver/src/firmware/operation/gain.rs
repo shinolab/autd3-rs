@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
+        let device = create_device(NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; size_of::<Gain>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
 
@@ -163,7 +163,7 @@ mod tests {
 
     #[test]
     fn invalid_transition_mode() {
-        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
+        let device = create_device(NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; size_of::<Gain>() + NUM_TRANS_IN_UNIT * size_of::<Drive>()];
 

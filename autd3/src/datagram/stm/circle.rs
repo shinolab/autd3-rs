@@ -165,7 +165,6 @@ mod tests {
     use autd3_driver::{
         datagram::{FociSTM, GainSTM},
         defined::mm,
-        geometry::IntoDevice,
     };
 
     use crate::assert_near_vector3;
@@ -217,7 +216,7 @@ mod tests {
         assert_eq!(4, FociSTMGenerator::len(&circle));
         assert_eq!(4, GainSTMGenerator::len(&circle));
 
-        let device = autd3_driver::autd3_device::AUTD3::default().into_device(0);
+        let device = autd3_driver::autd3_device::AUTD3::default().into();
         {
             let mut stm = FociSTM {
                 foci: circle.clone(),

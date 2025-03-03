@@ -3,7 +3,7 @@ mod sender;
 
 use crate::{controller::SenderOption, error::AUTDError, gain::Null, modulation::Static};
 
-use autd3_core::{defined::DEFAULT_TIMEOUT, geometry::IntoDevice, link::AsyncLink};
+use autd3_core::{defined::DEFAULT_TIMEOUT, link::AsyncLink};
 
 use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
@@ -44,7 +44,7 @@ pub struct Controller<L: AsyncLink> {
 
 impl<L: AsyncLink> Controller<L> {
     /// Equivalent to [`Self::open_with_option`] with a timeout of [`DEFAULT_TIMEOUT`].
-    pub async fn open<D: IntoDevice, F: IntoIterator<Item = D>>(
+    pub async fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
         devices: F,
         link: L,
     ) -> Result<Controller<L>, AUTDError> {
@@ -62,20 +62,14 @@ impl<L: AsyncLink> Controller<L> {
     /// Opens a controller with a timeout.
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    pub async fn open_with_option<D: IntoDevice, F: IntoIterator<Item = D>, S: AsyncSleep>(
+    pub async fn open_with_option<D: Into<Device>, F: IntoIterator<Item = D>, S: AsyncSleep>(
         devices: F,
         mut link: L,
         option: SenderOption<S>,
     ) -> Result<Self, AUTDError> {
         tracing::debug!("Opening a controller with option {:?})", option);
 
-        let devices = devices
-            .into_iter()
-            .enumerate()
-            .map(|(i, d)| d.into_device(i as _))
-            .collect();
-
-        let geometry = Geometry::new(devices);
+        let geometry = Geometry::new(devices.into_iter().map(|d| d.into()).collect());
         link.open(&geometry).await?;
         Controller {
             link,

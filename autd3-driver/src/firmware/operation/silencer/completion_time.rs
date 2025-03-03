@@ -115,7 +115,7 @@ mod tests {
     #[case(SilencerControlFlags::STRICT_MODE.bits(), true)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict_mode: bool) {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionTime>()];
 
@@ -181,7 +181,7 @@ mod tests {
         #[case] time_intensity: Duration,
         #[case] time_phase: Duration,
     ) {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionTime>()];
 

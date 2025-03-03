@@ -67,10 +67,6 @@ pub(crate) mod tests {
     use super::*;
 
     pub fn create_geometry(n: u16, num_trans_in_unit: u8) -> Geometry {
-        Geometry::new(
-            (0..n)
-                .map(|i| create_device(i, num_trans_in_unit))
-                .collect(),
-        )
+        Geometry::new((0..n).map(|_| create_device(num_trans_in_unit)).collect())
     }
 }

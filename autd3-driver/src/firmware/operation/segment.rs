@@ -139,7 +139,7 @@ mod tests {
     fn gain() {
         const FRAME_SIZE: usize = size_of::<SwapSegmentT>();
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let mut op = SwapSegmentOp::new(SwapSegment::Gain(Segment::S0, TransitionMode::Immediate));
@@ -155,7 +155,7 @@ mod tests {
     fn gain_invalid_transition_mode() {
         const FRAME_SIZE: usize = size_of::<SwapSegmentT>();
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let mut op = SwapSegmentOp::new(SwapSegment::Gain(Segment::S0, TransitionMode::Ext));
@@ -170,7 +170,7 @@ mod tests {
     fn modulation() {
         const FRAME_SIZE: usize = size_of::<SwapSegmentTWithTransition>();
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let sys_time = DcSysTime::ZERO + std::time::Duration::from_nanos(0x0123456789ABCDEF);
@@ -198,7 +198,7 @@ mod tests {
     fn foci_stm() {
         const FRAME_SIZE: usize = size_of::<SwapSegmentTWithTransition>();
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let sys_time = DcSysTime::ZERO + std::time::Duration::from_nanos(0x0123456789ABCDEF);
@@ -226,7 +226,7 @@ mod tests {
     fn gain_stm() {
         const FRAME_SIZE: usize = size_of::<SwapSegmentTWithTransition>();
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let sys_time = DcSysTime::ZERO + std::time::Duration::from_nanos(0x0123456789ABCDEF);

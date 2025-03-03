@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use autd3_core::geometry::{Device, Geometry, IntoDevice};
+use autd3_core::geometry::{Device, Geometry};
 
 use derive_more::Deref;
 
@@ -14,19 +14,11 @@ pub struct LightweightClient {
 }
 
 impl LightweightClient {
-    pub async fn open<D: IntoDevice, F: IntoIterator<Item = D>>(
+    pub async fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
         devices: F,
         addr: SocketAddr,
     ) -> Result<Self, crate::error::AUTDProtoBufError> {
-        LightweightClient::open_impl(
-            devices
-                .into_iter()
-                .enumerate()
-                .map(|(i, d)| d.into_device(i as _))
-                .collect(),
-            addr,
-        )
-        .await
+        LightweightClient::open_impl(devices.into_iter().map(|d| d.into()).collect(), addr).await
     }
 
     async fn open_impl(

@@ -1,6 +1,6 @@
 use crate::{
     defined::mm,
-    geometry::{Device, IntoDevice, Isometry, Point3, Transducer, Translation, UnitQuaternion},
+    geometry::{Device, Isometry, Point3, Transducer, Translation, UnitQuaternion},
 };
 use getset::Getters;
 use std::fmt::Debug;
@@ -8,7 +8,7 @@ use std::fmt::Debug;
 /// AUTD3 device.
 #[derive(Clone, Copy, Debug, Getters)]
 pub struct AUTD3<R: Into<UnitQuaternion> + Debug> {
-    /// The position of the AUTD3 device.
+    /// The global position of the AUTD3 device.
     pub pos: Point3,
     /// The rotation of the AUTD3 device.
     pub rot: R,
@@ -62,20 +62,19 @@ impl<R: Into<UnitQuaternion> + Debug> AUTD3<R> {
     /// Create a new AUTD3 device.
     #[must_use]
     pub fn new(pos: Point3, rot: R) -> Self {
-        Self { pos, rot: rot }
+        Self { pos, rot }
     }
 }
 
-impl<R: Into<UnitQuaternion> + Debug> IntoDevice for AUTD3<R> {
-    fn into_device(self, dev_idx: u16) -> Device {
-        tracing::debug!("Configure device[{}]: {:?}", dev_idx, self);
-        let rot = self.rot.into();
+impl<R: Into<UnitQuaternion> + Debug> From<AUTD3<R>> for Device {
+    fn from(autd3: AUTD3<R>) -> Self {
+        tracing::debug!("Configure device: {:?}", &autd3);
+        let rot = autd3.rot.into();
         let isometry = Isometry {
             rotation: rot,
-            translation: Translation::from(self.pos),
+            translation: Translation::from(autd3.pos),
         };
-        Device::new(
-            dev_idx,
+        Self::new(
             rot,
             itertools::iproduct!(0..AUTD3::NUM_TRANS_Y, 0..AUTD3::NUM_TRANS_X)
                 .filter(|&(y, x)| !AUTD3::is_missing_transducer(x, y))
@@ -87,8 +86,7 @@ impl<R: Into<UnitQuaternion> + Debug> IntoDevice for AUTD3<R> {
                             0.,
                         )
                 })
-                .enumerate()
-                .map(|(i, p)| Transducer::new(i as _, dev_idx, p.xyz()))
+                .map(|p| Transducer::new(p.xyz()))
                 .collect(),
         )
     }
@@ -96,23 +94,104 @@ impl<R: Into<UnitQuaternion> + Debug> IntoDevice for AUTD3<R> {
 
 #[cfg(test)]
 mod tests {
+    use autd3_core::geometry::Vector3;
+
     use super::*;
 
     #[test]
-    fn test_num_devices() {
-        let dev = AUTD3::default().into_device(0);
+    fn num_devices() {
+        let dev: Device = AUTD3::default().into();
         assert_eq!(AUTD3::NUM_TRANS_IN_UNIT, dev.num_transducers());
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(0, Point3::new(0., 0., 0.))]
-    #[case(1, Point3::new(AUTD3::TRANS_SPACING, 0., 0.))]
-    #[case(18, Point3::new(0., AUTD3::TRANS_SPACING, 0.))]
-    #[case(248, Point3::new(17. * AUTD3::TRANS_SPACING, 13. * AUTD3::TRANS_SPACING, 0.))]
-    fn test_position(#[case] idx: usize, #[case] expected: Point3) {
-        let dev = AUTD3::default().into_device(0);
-        assert_eq!(&expected, dev[idx].position());
+    #[case(
+        Point3::new(0., 0., 0.),
+        0,
+        Point3::origin(),
+        UnitQuaternion::identity()
+    )]
+    #[case(
+        Point3::new(AUTD3::TRANS_SPACING, 0., 0.),
+        1,
+        Point3::origin(),
+        UnitQuaternion::identity()
+    )]
+    #[case(
+        Point3::new(0., AUTD3::TRANS_SPACING, 0.),
+        18,
+        Point3::origin(),
+        UnitQuaternion::identity()
+    )]
+    #[case(Point3::new(17. * AUTD3::TRANS_SPACING, 13. * AUTD3::TRANS_SPACING, 0.), 248, Point3::origin(), UnitQuaternion::identity())]
+    #[case(
+        Point3::new(1., 2., 3.),
+        0,
+        Point3::new(1., 2., 3.),
+        UnitQuaternion::identity()
+    )]
+    #[case(
+        Point3::new(AUTD3::TRANS_SPACING + 1., 2., 3.),
+        1,
+        Point3::new(1., 2., 3.),
+        UnitQuaternion::identity()
+    )]
+    #[case(
+        Point3::new(1., AUTD3::TRANS_SPACING + 2., 3.),
+        18,
+        Point3::new(1., 2., 3.),
+        UnitQuaternion::identity()
+    )]
+    #[case(Point3::new(17. * AUTD3::TRANS_SPACING + 1., 13. * AUTD3::TRANS_SPACING + 2., 3.), 248, Point3::new(1., 2., 3.), UnitQuaternion::identity())]
+    #[case(
+        Point3::new(0., 0., 0.),
+        0,
+        Point3::origin(),
+        UnitQuaternion::new(Vector3::y() * std::f32::consts::FRAC_PI_2)
+    )]
+    #[case(
+        Point3::new(0., 0., -AUTD3::TRANS_SPACING),
+        1,
+        Point3::origin(),
+        UnitQuaternion::new(Vector3::y() * std::f32::consts::FRAC_PI_2)
+    )]
+    #[case(
+        Point3::new(0., AUTD3::TRANS_SPACING, 0.),
+        18,
+        Point3::origin(),
+        UnitQuaternion::new(Vector3::y() * std::f32::consts::FRAC_PI_2)
+    )]
+    #[case(Point3::new(0., 13. * AUTD3::TRANS_SPACING, -17. * AUTD3::TRANS_SPACING), 248, Point3::origin(), UnitQuaternion::new(Vector3::y() * std::f32::consts::FRAC_PI_2))]
+    #[case(
+        Point3::new(1., 2., 3.),
+        0,
+        Point3::new(1., 2., 3.),
+        UnitQuaternion::new(Vector3::y() * std::f32::consts::FRAC_PI_2)
+    )]
+    #[case(
+        Point3::new(1., 2., 3. - AUTD3::TRANS_SPACING),
+        1,
+        Point3::new(1., 2., 3.),
+        UnitQuaternion::new(Vector3::y() * std::f32::consts::FRAC_PI_2)
+    )]
+    #[case(
+        Point3::new(1., 2. + AUTD3::TRANS_SPACING, 3.),
+        18,
+        Point3::new(1., 2., 3.),
+        UnitQuaternion::new(Vector3::y() * std::f32::consts::FRAC_PI_2)
+    )]
+    #[case(Point3::new(1., 2. + 13. * AUTD3::TRANS_SPACING, 3. - 17. * AUTD3::TRANS_SPACING), 248, Point3::new(1., 2., 3.), UnitQuaternion::new(Vector3::y() * std::f32::consts::FRAC_PI_2))]
+    fn position(
+        #[case] expected: Point3,
+        #[case] idx: usize,
+        #[case] pos: Point3,
+        #[case] rot: impl Into<UnitQuaternion> + Debug,
+    ) {
+        let dev: Device = AUTD3 { pos, rot }.into();
+        approx::assert_relative_eq!(expected.x, dev[idx].position().x, epsilon = 1e-6);
+        approx::assert_relative_eq!(expected.y, dev[idx].position().y, epsilon = 1e-6);
+        approx::assert_relative_eq!(expected.z, dev[idx].position().z, epsilon = 1e-6);
     }
 
     #[rstest::rstest]

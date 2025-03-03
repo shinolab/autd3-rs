@@ -212,13 +212,10 @@ pub(crate) mod tests {
 
     use super::*;
 
-    pub fn create_device(idx: u16, n: u8) -> Device {
+    pub fn create_device(n: u8) -> Device {
         Device::new(
-            idx,
             UnitQuaternion::identity(),
-            (0..n)
-                .map(|i| Transducer::new(i, idx, Point3::origin()))
-                .collect(),
+            (0..n).map(|_| Transducer::new(Point3::origin())).collect(),
         )
     }
 
@@ -257,9 +254,8 @@ pub(crate) mod tests {
         use crate::geometry::Point3;
 
         let geometry = Geometry::new(vec![Device::new(
-            0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Point3::origin())],
+            vec![Transducer::new(Point3::origin())],
         )]);
 
         let mut op = vec![Some((
@@ -310,9 +306,8 @@ pub(crate) mod tests {
     #[test]
     fn test_first() {
         let geometry = Geometry::new(vec![Device::new(
-            0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Point3::origin())],
+            vec![Transducer::new(Point3::origin())],
         )]);
 
         let mut op = vec![Some((
@@ -345,9 +340,8 @@ pub(crate) mod tests {
     #[test]
     fn test_second() {
         let geometry = Geometry::new(vec![Device::new(
-            0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Point3::origin())],
+            vec![Transducer::new(Point3::origin())],
         )]);
 
         let mut op = vec![Some((
@@ -380,9 +374,8 @@ pub(crate) mod tests {
     #[test]
     fn test_broken_pack() {
         let geometry = Geometry::new(vec![Device::new(
-            0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Point3::origin())],
+            vec![Transducer::new(Point3::origin())],
         )]);
 
         let mut op = vec![Some((
@@ -437,9 +430,8 @@ pub(crate) mod tests {
     #[test]
     fn test_finished() {
         let geometry = Geometry::new(vec![Device::new(
-            0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Point3::origin())],
+            vec![Transducer::new(Point3::origin())],
         )]);
 
         let mut op = vec![Some((
@@ -467,9 +459,8 @@ pub(crate) mod tests {
     #[test]
     fn msg_id() {
         let geometry = Geometry::new(vec![Device::new(
-            0,
             UnitQuaternion::identity(),
-            vec![Transducer::new(0, 0, Point3::origin())],
+            vec![Transducer::new(Point3::origin())],
         )]);
 
         let mut tx = vec![TxMessage::new_zeroed(); 1];
