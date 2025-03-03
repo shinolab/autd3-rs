@@ -144,6 +144,8 @@ impl std::ops::DerefMut for Geometry {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    use rand::Rng;
+
     use crate::defined::{deg, mm};
 
     use super::*;
@@ -175,11 +177,8 @@ pub(crate) mod tests {
             Self {
                 rotation,
                 transducers: itertools::iproduct!(0..14, 0..18)
-                    .enumerate()
-                    .map(|(i, (y, x))| {
+                    .map(|(y, x)| {
                         Transducer::new(
-                            i as _,
-                            i as _,
                             (isometry * (10.16 * mm * Point3::new(x as f32, y as f32, 0.))).xyz(),
                         )
                     })
@@ -188,34 +187,27 @@ pub(crate) mod tests {
         }
     }
 
-    impl IntoDevice for TestDevice {
-        fn into_device(self, dev_idx: u16) -> Device {
-            Device::new(dev_idx, self.rotation, self.transducers)
+    impl From<TestDevice> for Device {
+        fn from(dev: TestDevice) -> Self {
+            Self::new(dev.rotation, dev.transducers)
         }
     }
 
-    pub fn create_device(idx: u16, n: u8) -> Device {
+    pub fn create_device(n: u8) -> Device {
         Device::new(
-            idx,
             UnitQuaternion::identity(),
-            (0..n)
-                .map(|i| Transducer::new(i, idx, Point3::origin()))
-                .collect(),
+            (0..n).map(|_| Transducer::new(Point3::origin())).collect(),
         )
     }
 
     pub fn create_geometry(n: u16, num_trans_in_unit: u8) -> Geometry {
-        Geometry::new(
-            (0..n)
-                .map(|i| create_device(i, num_trans_in_unit))
-                .collect(),
-        )
+        Geometry::new((0..n).map(|_| create_device(num_trans_in_unit)).collect())
     }
 
     #[rstest::rstest]
     #[test]
-    #[case(1, vec![create_device(0, 249)])]
-    #[case(2, vec![create_device(0, 249), create_device(0, 249)])]
+    #[case(1, vec![create_device(249)])]
+    #[case(2, vec![create_device(249), create_device(249)])]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
@@ -225,8 +217,8 @@ pub(crate) mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(249, vec![create_device(0, 249)])]
-    #[case(498, vec![create_device(0, 249), create_device(0, 249)])]
+    #[case(249, vec![create_device(249)])]
+    #[case(498, vec![create_device(249), create_device(249)])]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
@@ -237,8 +229,8 @@ pub(crate) mod tests {
     #[test]
     fn test_center() {
         let geometry = Geometry::new(vec![
-            TestDevice::new_autd3(Point3::origin()).into_device(0),
-            TestDevice::new_autd3(Point3::new(10., 20., 30.)).into_device(1),
+            TestDevice::new_autd3(Point3::origin()).into(),
+            TestDevice::new_autd3(Point3::new(10., 20., 30.)).into(),
         ]);
         let expect = geometry
             .iter()
@@ -300,14 +292,24 @@ pub(crate) mod tests {
         TestDevice::new_autd3_with_rot(Point3::new(0., -10. * mm, 10. * mm), EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg))
     ])]
     fn aabb(#[case] expect: Aabb<f32, 3>, #[case] dev: Vec<TestDevice>) {
-        let geometry = Geometry::new(
-            dev.into_iter()
-                .enumerate()
-                .map(|(idx, d)| d.into_device(idx as _))
-                .collect(),
-        );
+        let geometry = Geometry::new(dev.into_iter().map(|d| d.into()).collect());
         assert_approx_eq_vec3!(expect.min, geometry.aabb().min);
         assert_approx_eq_vec3!(expect.max, geometry.aabb().max);
+    }
+
+    #[test]
+    fn idx() {
+        let geometry = Geometry::new(vec![
+            TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
+            TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
+        ]);
+        (0..2).for_each(|dev_idx| {
+            assert_eq!(dev_idx, geometry[dev_idx].idx());
+            (0..14 * 18).for_each(|tr_idx| {
+                assert_eq!(tr_idx, geometry[dev_idx][tr_idx].idx());
+                assert_eq!(dev_idx, geometry[dev_idx][tr_idx].dev_idx());
+            });
+        });
     }
 
     #[test]

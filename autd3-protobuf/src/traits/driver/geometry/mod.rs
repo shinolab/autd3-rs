@@ -1,5 +1,3 @@
-use autd3_core::geometry::IntoDevice;
-
 use crate::{
     AUTDProtoBufError,
     pb::*,
@@ -103,8 +101,7 @@ impl FromMessage<Geometry> for autd3_core::geometry::Geometry {
         Ok(autd3_core::geometry::Geometry::new(
             msg.devices
                 .into_iter()
-                .enumerate()
-                .map(|(i, dev_msg)| {
+                .map(|dev_msg| {
                     let pos = dev_msg
                         .pos
                         .map(autd3_core::geometry::Point3::from_msg)
@@ -115,8 +112,8 @@ impl FromMessage<Geometry> for autd3_core::geometry::Geometry {
                         .map(autd3_core::geometry::UnitQuaternion::from_msg)
                         .transpose()?
                         .unwrap_or(autd3_core::geometry::UnitQuaternion::identity());
-                    let mut dev =
-                        autd3_driver::autd3_device::AUTD3 { pos, rot }.into_device(i as _);
+                    let mut dev: autd3_core::geometry::Device =
+                        autd3_driver::autd3_device::AUTD3 { pos, rot }.into();
                     if let Some(sound_speed) = dev_msg.sound_speed {
                         dev.sound_speed = sound_speed;
                     }
@@ -178,11 +175,11 @@ mod tests {
     #[test]
     fn geometry() {
         let mut rng = rand::rng();
-        let mut dev = AUTD3 {
+        let mut dev: autd3_core::geometry::Device = AUTD3 {
             pos: Point3::new(rng.random(), rng.random(), rng.random()),
             rot: UnitQuaternion::identity(),
         }
-        .into_device(0);
+        .into();
         dev.sound_speed = rng.random();
         let geometry = Geometry::new(vec![dev]);
         let msg = geometry.to_msg(None).unwrap();

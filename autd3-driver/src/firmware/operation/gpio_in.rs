@@ -84,7 +84,7 @@ mod tests {
     #[case(0b1001, [true, false, false, true])]
     #[case(0b0110, [false, true, true, false])]
     fn test(#[case] expected: u8, #[case] value: [bool; 4]) {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<EmulateGPIOIn>()];
 

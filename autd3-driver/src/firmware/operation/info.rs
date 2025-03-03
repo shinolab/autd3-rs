@@ -77,7 +77,7 @@ mod tests {
     #[case(FirmwareVersionType::FPGAFunctions)]
     #[case(FirmwareVersionType::Clear)]
     fn test(#[case] ty: FirmwareVersionType) {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; size_of::<FirmInfo>()];
 

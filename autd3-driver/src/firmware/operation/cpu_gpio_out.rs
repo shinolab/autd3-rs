@@ -72,7 +72,7 @@ mod tests {
     fn debug_op(#[case] expect: u8, #[case] pa5: bool, #[case] pa7: bool) {
         const FRAME_SIZE: usize = size_of::<CpuGPIOOut>();
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let mut op = CpuGPIOOutOp::new(pa5, pa7);

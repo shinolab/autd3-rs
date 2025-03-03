@@ -293,7 +293,7 @@ mod tests {
         const GAIN_STM_SIZE: usize = 3;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
+        let device = create_device(NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -443,7 +443,7 @@ mod tests {
         const GAIN_STM_SIZE: usize = 5;
         const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
+        let device = create_device(NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -575,7 +575,7 @@ mod tests {
     fn test_phase_half() {
         const GAIN_STM_SIZE: usize = 9;
 
-        let device = create_device(0, NUM_TRANS_IN_UNIT as _);
+        let device = create_device(NUM_TRANS_IN_UNIT as _);
 
         let mut tx = vec![TxMessage::new_zeroed(); 1];
         let tx = tx[0].payload_mut();
@@ -725,7 +725,7 @@ mod tests {
     fn out_of_range(#[case] expected: Result<(), AUTDDriverError>, #[case] size: usize) {
         let send = |n: usize| {
             const FRAME_SIZE: usize = size_of::<GainSTMHead>() + NUM_TRANS_IN_UNIT * 2;
-            let device = create_device(0, NUM_TRANS_IN_UNIT as _);
+            let device = create_device(NUM_TRANS_IN_UNIT as _);
             let mut tx = vec![0x00u8; FRAME_SIZE];
             let data = (0..n)
                 .map(|_| vec![Drive::NULL; NUM_TRANS_IN_UNIT])

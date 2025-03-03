@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let device = create_device(0, NUM_TRANS_IN_UNIT);
+        let device = create_device(NUM_TRANS_IN_UNIT);
 
         let mut tx = [0x00u8; 2 * (size_of::<Pwe>() + PWE_BUF_SIZE)];
 
