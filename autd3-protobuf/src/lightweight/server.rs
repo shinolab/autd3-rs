@@ -661,6 +661,39 @@ where
         }
     }
 
+    async fn fpga_state(
+        &self,
+        _req: Request<FpgaStateRequestLightweight>,
+    ) -> Result<Response<FpgaStateResponseLightweight>, Status> {
+        if let Some(autd) = self.autd.write().await.as_mut() {
+            match autd.fpga_state().await {
+                Ok(list) => Ok(Response::new(FpgaStateResponseLightweight {
+                    err: false,
+                    msg: String::new(),
+                    fpga_state_list: list
+                        .iter()
+                        .map(|f| fpga_state_response_lightweight::FpgaState {
+                            state: f.map(|s| s.state() as _),
+                        })
+                        .collect(),
+                })),
+                Err(e) => {
+                    return Ok(Response::new(FpgaStateResponseLightweight {
+                        err: true,
+                        msg: format!("{}", e),
+                        fpga_state_list: Vec::new(),
+                    }));
+                }
+            }
+        } else {
+            Ok(Response::new(FpgaStateResponseLightweight {
+                err: true,
+                msg: "Geometry is not configured".to_string(),
+                fpga_state_list: Vec::new(),
+            }))
+        }
+    }
+
     async fn send(
         &self,
         req: Request<Datagram>,

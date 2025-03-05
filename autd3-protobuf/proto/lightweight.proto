@@ -45,6 +45,16 @@ message FirmwareVersionResponseLightweight {
   repeated FirmwareVersion firmware_version_list = 3;
 }
 
+message FPGAStateRequestLightweight {}
+message FPGAStateResponseLightweight {
+  message FPGAState {
+    optional uint32 state = 1;
+  }
+  bool err = 1;
+  string msg = 2;
+  repeated FPGAState fpga_state_list = 3;
+}
+
 message CloseRequestLightweight {}
 
 message OpenRequestLightweight { Geometry geometry = 1; }
@@ -53,6 +63,8 @@ service ECATLight {
   rpc Open(OpenRequestLightweight) returns (SendResponseLightweight) {}
   rpc FirmwareVersion(FirmwareVersionRequestLightweight)
       returns (FirmwareVersionResponseLightweight) {}
+  rpc FpgaState(FPGAStateRequestLightweight)
+      returns (FPGAStateResponseLightweight) {}
   rpc Send(Datagram) returns (SendResponseLightweight) {}
   rpc Close(CloseRequestLightweight) returns (SendResponseLightweight) {}
 }

@@ -1,4 +1,5 @@
 mod emit_intensity;
+mod fpga_state;
 mod gpio;
 mod loop_behavior;
 mod phase;

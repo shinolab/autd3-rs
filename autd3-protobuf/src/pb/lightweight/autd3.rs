@@ -1730,6 +1730,25 @@ pub mod firmware_version_response_lightweight {
     }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct FpgaStateRequestLightweight {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FpgaStateResponseLightweight {
+    #[prost(bool, tag = "1")]
+    pub err: bool,
+    #[prost(string, tag = "2")]
+    pub msg: ::prost::alloc::string::String,
+    #[prost(message, repeated, tag = "3")]
+    pub fpga_state_list: ::prost::alloc::vec::Vec<fpga_state_response_lightweight::FpgaState>,
+}
+/// Nested message and enum types in `FPGAStateResponseLightweight`.
+pub mod fpga_state_response_lightweight {
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+    pub struct FpgaState {
+        #[prost(uint32, optional, tag = "1")]
+        pub state: ::core::option::Option<u32>,
+    }
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct CloseRequestLightweight {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OpenRequestLightweight {
@@ -1847,6 +1866,21 @@ pub mod ecat_light_client {
                 .insert(GrpcMethod::new("autd3.ECATLight", "FirmwareVersion"));
             self.inner.unary(req, path, codec).await
         }
+        pub async fn fpga_state(
+            &mut self,
+            request: impl tonic::IntoRequest<super::FpgaStateRequestLightweight>,
+        ) -> std::result::Result<tonic::Response<super::FpgaStateResponseLightweight>, tonic::Status>
+        {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/autd3.ECATLight/FpgaState");
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("autd3.ECATLight", "FpgaState"));
+            self.inner.unary(req, path, codec).await
+        }
         pub async fn send(
             &mut self,
             request: impl tonic::IntoRequest<super::Datagram>,
@@ -1903,6 +1937,10 @@ pub mod ecat_light_server {
             tonic::Response<super::FirmwareVersionResponseLightweight>,
             tonic::Status,
         >;
+        async fn fpga_state(
+            &self,
+            request: tonic::Request<super::FpgaStateRequestLightweight>,
+        ) -> std::result::Result<tonic::Response<super::FpgaStateResponseLightweight>, tonic::Status>;
         async fn send(
             &self,
             request: tonic::Request<super::Datagram>,
@@ -2049,6 +2087,47 @@ pub mod ecat_light_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = FirmwareVersionSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/autd3.ECATLight/FpgaState" => {
+                    #[allow(non_camel_case_types)]
+                    struct FpgaStateSvc<T: EcatLight>(pub Arc<T>);
+                    impl<T: EcatLight>
+                        tonic::server::UnaryService<super::FpgaStateRequestLightweight>
+                        for FpgaStateSvc<T>
+                    {
+                        type Response = super::FpgaStateResponseLightweight;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::FpgaStateRequestLightweight>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut =
+                                async move { <T as EcatLight>::fpga_state(&inner, request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = FpgaStateSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
