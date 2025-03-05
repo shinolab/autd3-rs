@@ -7,18 +7,18 @@ use derive_more::Deref;
 use crate::{OpenRequestLightweight, traits::*};
 
 #[derive(Deref)]
-pub struct LightweightClient {
+pub struct Controller {
     client: crate::pb::ecat_light_client::EcatLightClient<tonic::transport::Channel>,
     #[deref]
     geometry: Geometry,
 }
 
-impl LightweightClient {
+impl Controller {
     pub async fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
         devices: F,
         addr: SocketAddr,
     ) -> Result<Self, crate::error::AUTDProtoBufError> {
-        LightweightClient::open_impl(devices.into_iter().map(|d| d.into()).collect(), addr).await
+        Controller::open_impl(devices.into_iter().map(|d| d.into()).collect(), addr).await
     }
 
     async fn open_impl(
