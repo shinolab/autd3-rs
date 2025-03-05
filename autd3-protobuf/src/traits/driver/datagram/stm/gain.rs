@@ -48,26 +48,19 @@ impl FromMessage<GainStmOption> for autd3_driver::datagram::GainSTMOption {
     }
 }
 
-impl<G, C: Into<STMConfig> + Copy> ToMessage for autd3_driver::datagram::GainSTM<Vec<G>, C>
-where
-    G: autd3_core::gain::Gain + ToMessage<Message = Datagram>,
-{
-    type Message = GainStm;
+impl<C: Into<STMConfig> + Copy> ToMessage for autd3_driver::datagram::GainSTM<Vec<Gain>, C> {
+    type Message = Datagram;
 
     fn to_msg(
         &self,
         _: Option<&autd3_core::geometry::Geometry>,
     ) -> Result<Self::Message, AUTDProtoBufError> {
         Ok(Self::Message {
-            gains: self
-                .iter()
-                .map(|g| match g.to_msg(None)?.datagram {
-                    Some(datagram::Datagram::Gain(gain)) => Ok(gain),
-                    _ => unreachable!(),
-                })
-                .collect::<Result<_, AUTDProtoBufError>>()?,
-            sampling_config: Some(self.sampling_config()?.to_msg(None)?),
-            option: Some(self.option.to_msg(None)?),
+            datagram: Some(datagram::Datagram::GainStm(GainStm {
+                gains: self.iter().cloned().collect(),
+                sampling_config: Some(self.sampling_config()?.to_msg(None)?),
+                option: Some(self.option.to_msg(None)?),
+            })),
         })
     }
 }
