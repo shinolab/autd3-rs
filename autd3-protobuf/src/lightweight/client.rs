@@ -98,6 +98,23 @@ impl Controller {
         Vec::from_msg(res)
     }
 
+    pub async fn fpga_state(
+        &mut self,
+    ) -> Result<Vec<Option<autd3_driver::firmware::fpga::FPGAState>>, crate::error::AUTDProtoBufError>
+    {
+        let res = self
+            .client
+            .fpga_state(tonic::Request::new(
+                crate::pb::FpgaStateRequestLightweight {},
+            ))
+            .await?
+            .into_inner();
+        if res.err {
+            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
+        }
+        Vec::from_msg(res)
+    }
+
     pub async fn send(
         &mut self,
         datagram: impl Datagram,
