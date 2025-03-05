@@ -1,10 +1,10 @@
 use autd3::prelude::*;
 
-use autd3_protobuf::lightweight::LightweightClient;
+use autd3_protobuf::lightweight::Controller;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mut autd = LightweightClient::open([AUTD3::default()], "127.0.0.1:8080".parse()?).await?;
+    let mut autd = Controller::open([AUTD3::default()], "127.0.0.1:8080".parse()?).await?;
 
     println!("======== AUTD3 firmware information ========");
     autd.firmware_version().await?.iter().for_each(|firm_info| {
