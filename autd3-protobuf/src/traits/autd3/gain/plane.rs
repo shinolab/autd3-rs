@@ -1,7 +1,7 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{FromMessage, ToMessage, driver::datagram::gain::IntoLightweightGain},
 };
 
 impl ToMessage for autd3::gain::PlaneOption {
@@ -36,21 +36,14 @@ impl FromMessage<PlaneOption> for autd3::gain::PlaneOption {
     }
 }
 
-impl ToMessage for autd3::gain::Plane {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            datagram: Some(datagram::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Plane(Plane {
-                    dir: Some(self.dir.to_msg(None)?),
-                    option: Some(self.option.to_msg(None)?),
-                })),
+impl IntoLightweightGain for autd3::gain::Plane {
+    fn into_lightweight(&self) -> Gain {
+        Gain {
+            gain: Some(gain::Gain::Plane(Plane {
+                dir: Some(self.dir.to_msg(None).unwrap()),
+                option: Some(self.option.to_msg(None).unwrap()),
             })),
-        })
+        }
     }
 }
 

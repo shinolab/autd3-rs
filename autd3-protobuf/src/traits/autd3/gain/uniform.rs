@@ -1,24 +1,17 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{FromMessage, ToMessage, driver::datagram::gain::IntoLightweightGain},
 };
 
-impl ToMessage for autd3::gain::Uniform {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            datagram: Some(datagram::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Uniform(Uniform {
-                    intensity: Some(self.intensity.to_msg(None)?),
-                    phase: Some(self.phase.to_msg(None)?),
-                })),
+impl IntoLightweightGain for autd3::gain::Uniform {
+    fn into_lightweight(&self) -> Gain {
+        Gain {
+            gain: Some(gain::Gain::Uniform(Uniform {
+                intensity: Some(self.intensity.to_msg(None).unwrap()),
+                phase: Some(self.phase.to_msg(None).unwrap()),
             })),
-        })
+        }
     }
 }
 

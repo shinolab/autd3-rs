@@ -4,7 +4,7 @@ use crate::{
     AUTDProtoBufError,
     pb::*,
     to_holo,
-    traits::{FromMessage, ToMessage},
+    traits::{FromMessage, ToMessage, driver::datagram::gain::IntoLightweightGain},
 };
 use autd3_core::acoustics::directivity::Sphere;
 
@@ -43,21 +43,14 @@ impl FromMessage<GreedyOption> for autd3_gain_holo::GreedyOption<Sphere> {
     }
 }
 
-impl ToMessage for autd3_gain_holo::Greedy<Sphere> {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            datagram: Some(datagram::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Greedy(Greedy {
-                    holo: to_holo!(self),
-                    option: Some(self.option.to_msg(None)?),
-                })),
+impl IntoLightweightGain for autd3_gain_holo::Greedy<Sphere> {
+    fn into_lightweight(&self) -> Gain {
+        Gain {
+            gain: Some(gain::Gain::Greedy(Greedy {
+                holo: to_holo!(self),
+                option: Some(self.option.to_msg(None).unwrap()),
             })),
-        })
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 #[cfg(feature = "lightweight")]
-mod datagram;
+pub(crate) mod datagram;
 mod defined;
 mod firmware;
 mod geometry;

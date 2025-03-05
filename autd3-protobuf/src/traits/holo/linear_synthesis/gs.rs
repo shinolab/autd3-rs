@@ -6,7 +6,7 @@ use crate::{
     AUTDProtoBufError,
     pb::*,
     to_holo,
-    traits::{FromMessage, ToMessage},
+    traits::{FromMessage, ToMessage, driver::datagram::gain::IntoLightweightGain},
 };
 use autd3_core::acoustics::directivity::Sphere;
 
@@ -45,26 +45,19 @@ impl FromMessage<GsOption> for autd3_gain_holo::GSOption<Sphere> {
     }
 }
 
-impl ToMessage
+impl IntoLightweightGain
     for autd3_gain_holo::GS<
         autd3_core::acoustics::directivity::Sphere,
         NalgebraBackend<autd3_core::acoustics::directivity::Sphere>,
     >
 {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            datagram: Some(datagram::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Gs(Gs {
-                    holo: to_holo!(self),
-                    option: Some(self.option.to_msg(None)?),
-                })),
+    fn into_lightweight(&self) -> Gain {
+        Gain {
+            gain: Some(gain::Gain::Gs(Gs {
+                holo: to_holo!(self),
+                option: Some(self.option.to_msg(None).unwrap()),
             })),
-        })
+        }
     }
 }
 

@@ -1,21 +1,14 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{FromMessage, driver::datagram::gain::IntoLightweightGain},
 };
 
-impl ToMessage for autd3::gain::Null {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            datagram: Some(datagram::Datagram::Gain(Gain {
-                gain: Some(gain::Gain::Null(Null {})),
-            })),
-        })
+impl IntoLightweightGain for autd3::gain::Null {
+    fn into_lightweight(&self) -> Gain {
+        Gain {
+            gain: Some(gain::Gain::Null(Null {})),
+        }
     }
 }
 
@@ -27,6 +20,8 @@ impl FromMessage<Null> for autd3::gain::Null {
 
 #[cfg(test)]
 mod tests {
+    use crate::ToMessage;
+
     use super::*;
 
     #[test]

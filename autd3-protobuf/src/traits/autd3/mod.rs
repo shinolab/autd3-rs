@@ -1,5 +1,3 @@
-mod gain;
-mod modulation;
-
-#[cfg(feature = "lightweight")]
 mod controller;
+pub(crate) mod gain;
+mod modulation;
