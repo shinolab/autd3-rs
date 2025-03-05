@@ -12,16 +12,18 @@ async fn main() -> anyhow::Result<()> {
     });
     println!("============================================");
 
-    autd.send(Sine {
+    let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
+
+    let g = Focus {
+        pos: center,
+        option: Default::default(),
+    };
+    let m = Sine {
         freq: 150. * Hz,
         option: Default::default(),
-    })
-    .await?;
-    autd.send(Focus {
-        pos: autd.center() + Vector3::new(0., 0., 150.),
-        option: Default::default(),
-    })
-    .await?;
+    };
+
+    autd.send((m, g)).await?;
 
     println!("Press enter to exit...");
     let mut _s = String::new();
