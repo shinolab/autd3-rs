@@ -6,11 +6,48 @@ use derive_more::Deref;
 
 use crate::{OpenRequestLightweight, traits::*};
 
+type Client = crate::pb::ecat_light_client::EcatLightClient<tonic::transport::Channel>;
+
 #[derive(Deref)]
 pub struct Controller {
-    client: crate::pb::ecat_light_client::EcatLightClient<tonic::transport::Channel>,
+    client: Client,
     #[deref]
     geometry: Geometry,
+}
+
+pub trait Datagram {
+    fn send(
+        self,
+        client: &mut Client,
+    ) -> impl std::future::Future<Output = Result<(), crate::error::AUTDProtoBufError>>;
+}
+
+impl<T> Datagram for T
+where
+    T: ToMessage<Message = crate::pb::Datagram>,
+{
+    async fn send(self, client: &mut Client) -> Result<(), crate::error::AUTDProtoBufError> {
+        let res = client
+            .send(tonic::Request::new(self.to_msg(None)?))
+            .await?
+            .into_inner();
+        if res.err {
+            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
+        }
+        Ok(())
+    }
+}
+
+impl<T1, T2> Datagram for (T1, T2)
+where
+    T1: ToMessage<Message = crate::pb::Datagram>,
+    T2: ToMessage<Message = crate::pb::Datagram>,
+{
+    async fn send(self, client: &mut Client) -> Result<(), crate::error::AUTDProtoBufError> {
+        let (d1, d2) = self;
+        d1.send(client).await?;
+        d2.send(client).await
+    }
 }
 
 impl Controller {
@@ -63,17 +100,9 @@ impl Controller {
 
     pub async fn send(
         &mut self,
-        datagram: impl ToMessage<Message = crate::pb::Datagram>,
+        datagram: impl Datagram,
     ) -> Result<(), crate::error::AUTDProtoBufError> {
-        let res = self
-            .client
-            .send(tonic::Request::new(datagram.to_msg(Some(&self.geometry))?))
-            .await?
-            .into_inner();
-        if res.err {
-            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
-        }
-        Ok(())
+        datagram.send(&mut self.client).await
     }
 
     pub async fn close(mut self) -> Result<(), crate::error::AUTDProtoBufError> {
