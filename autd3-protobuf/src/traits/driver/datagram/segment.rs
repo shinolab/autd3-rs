@@ -5,39 +5,41 @@ use crate::{
 };
 
 impl ToMessage for autd3_driver::datagram::SwapSegment {
-    type Message = SwapSegment;
+    type Message = Datagram;
 
     fn to_msg(
         &self,
         _: Option<&autd3_core::geometry::Geometry>,
     ) -> Result<Self::Message, AUTDProtoBufError> {
         Ok(Self::Message {
-            variant: Some(match self {
-                autd3_driver::datagram::SwapSegment::Gain(segment, transition) => {
-                    swap_segment::Variant::Gain(swap_segment::Gain {
-                        segment: *segment as _,
-                        transition_mode: Some(transition.to_msg(None)?),
-                    })
-                }
-                autd3_driver::datagram::SwapSegment::Modulation(segment, transition) => {
-                    swap_segment::Variant::Modulation(swap_segment::Modulation {
-                        segment: *segment as _,
-                        transition_mode: Some(transition.to_msg(None)?),
-                    })
-                }
-                autd3_driver::datagram::SwapSegment::FociSTM(segment, transition) => {
-                    swap_segment::Variant::FociStm(swap_segment::FociStm {
-                        segment: *segment as _,
-                        transition_mode: Some(transition.to_msg(None)?),
-                    })
-                }
-                autd3_driver::datagram::SwapSegment::GainSTM(segment, transition) => {
-                    swap_segment::Variant::GainStm(swap_segment::GainStm {
-                        segment: *segment as _,
-                        transition_mode: Some(transition.to_msg(None)?),
-                    })
-                }
-            }),
+            datagram: Some(datagram::Datagram::SwapSegment(SwapSegment {
+                variant: Some(match self {
+                    autd3_driver::datagram::SwapSegment::Gain(segment, transition) => {
+                        swap_segment::Variant::Gain(swap_segment::Gain {
+                            segment: *segment as _,
+                            transition_mode: Some(transition.to_msg(None)?),
+                        })
+                    }
+                    autd3_driver::datagram::SwapSegment::Modulation(segment, transition) => {
+                        swap_segment::Variant::Modulation(swap_segment::Modulation {
+                            segment: *segment as _,
+                            transition_mode: Some(transition.to_msg(None)?),
+                        })
+                    }
+                    autd3_driver::datagram::SwapSegment::FociSTM(segment, transition) => {
+                        swap_segment::Variant::FociStm(swap_segment::FociStm {
+                            segment: *segment as _,
+                            transition_mode: Some(transition.to_msg(None)?),
+                        })
+                    }
+                    autd3_driver::datagram::SwapSegment::GainSTM(segment, transition) => {
+                        swap_segment::Variant::GainStm(swap_segment::GainStm {
+                            segment: *segment as _,
+                            transition_mode: Some(transition.to_msg(None)?),
+                        })
+                    }
+                }),
+            })),
         })
     }
 }
