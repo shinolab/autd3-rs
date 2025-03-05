@@ -1701,6 +1701,60 @@ pub struct DatagramTuple {
     #[prost(message, optional, tag = "2")]
     pub second: ::core::option::Option<Datagram>,
 }
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct StdSleeper {
+    #[prost(uint32, optional, tag = "1")]
+    pub timer_resolution: ::core::option::Option<u32>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct SpinSleeper {
+    #[prost(uint32, tag = "1")]
+    pub native_accuracy_ns: u32,
+    #[prost(enumeration = "SpinStrategy", tag = "2")]
+    pub spin_strategy: i32,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct WaitableSleeper {}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct AsyncSleeper {
+    #[prost(uint32, optional, tag = "1")]
+    pub timer_resolution: ::core::option::Option<u32>,
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct SenderOption {
+    #[prost(uint64, tag = "1")]
+    pub send_interval_ns: u64,
+    #[prost(uint64, tag = "2")]
+    pub receive_interval_ns: u64,
+    #[prost(uint64, optional, tag = "3")]
+    pub timeout_ns: ::core::option::Option<u64>,
+    #[prost(enumeration = "ParallelMode", tag = "4")]
+    pub parallel: i32,
+    #[prost(oneof = "sender_option::Sleeper", tags = "5, 6, 7, 8")]
+    pub sleeper: ::core::option::Option<sender_option::Sleeper>,
+}
+/// Nested message and enum types in `SenderOption`.
+pub mod sender_option {
+    #[non_exhaustive]
+    #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
+    pub enum Sleeper {
+        #[prost(message, tag = "5")]
+        Std(super::StdSleeper),
+        #[prost(message, tag = "6")]
+        Spin(super::SpinSleeper),
+        #[prost(message, tag = "7")]
+        Waitable(super::WaitableSleeper),
+        #[prost(message, tag = "8")]
+        Async(super::AsyncSleeper),
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SendRequestLightweight {
+    #[prost(message, optional, tag = "1")]
+    pub datagram: ::core::option::Option<DatagramTuple>,
+    #[prost(message, optional, tag = "2")]
+    pub sender_option: ::core::option::Option<SenderOption>,
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SendResponseLightweight {
     #[prost(bool, tag = "1")]
@@ -1761,6 +1815,65 @@ pub struct CloseRequestLightweight {}
 pub struct OpenRequestLightweight {
     #[prost(message, optional, tag = "1")]
     pub geometry: ::core::option::Option<Geometry>,
+    #[prost(message, optional, tag = "2")]
+    pub sender_option: ::core::option::Option<SenderOption>,
+}
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ParallelMode {
+    Auto = 0,
+    On = 1,
+    Off = 2,
+}
+impl ParallelMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Auto => "Auto",
+            Self::On => "On",
+            Self::Off => "Off",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "Auto" => Some(Self::Auto),
+            "On" => Some(Self::On),
+            "Off" => Some(Self::Off),
+            _ => None,
+        }
+    }
+}
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SpinStrategy {
+    YieldThread = 0,
+    SpinLoopHint = 1,
+}
+impl SpinStrategy {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::YieldThread => "YieldThread",
+            Self::SpinLoopHint => "SpinLoopHint",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "YieldThread" => Some(Self::YieldThread),
+            "SpinLoopHint" => Some(Self::SpinLoopHint),
+            _ => None,
+        }
+    }
 }
 /// Generated client implementations.
 pub mod ecat_light_client {
@@ -1890,7 +2003,7 @@ pub mod ecat_light_client {
         }
         pub async fn send(
             &mut self,
-            request: impl tonic::IntoRequest<super::DatagramTuple>,
+            request: impl tonic::IntoRequest<super::SendRequestLightweight>,
         ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>
         {
             self.inner.ready().await.map_err(|e| {
@@ -1950,7 +2063,7 @@ pub mod ecat_light_server {
         ) -> std::result::Result<tonic::Response<super::FpgaStateResponseLightweight>, tonic::Status>;
         async fn send(
             &self,
-            request: tonic::Request<super::DatagramTuple>,
+            request: tonic::Request<super::SendRequestLightweight>,
         ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>;
         async fn close(
             &self,
@@ -2153,12 +2266,12 @@ pub mod ecat_light_server {
                 "/autd3.ECATLight/Send" => {
                     #[allow(non_camel_case_types)]
                     struct SendSvc<T: EcatLight>(pub Arc<T>);
-                    impl<T: EcatLight> tonic::server::UnaryService<super::DatagramTuple> for SendSvc<T> {
+                    impl<T: EcatLight> tonic::server::UnaryService<super::SendRequestLightweight> for SendSvc<T> {
                         type Response = super::SendResponseLightweight;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::DatagramTuple>,
+                            request: tonic::Request<super::SendRequestLightweight>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move { <T as EcatLight>::send(&inner, request).await };

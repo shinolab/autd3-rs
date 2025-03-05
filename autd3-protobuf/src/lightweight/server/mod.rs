@@ -1,13 +1,18 @@
 mod gain;
 mod modulation;
+mod null;
 mod tuple;
+
+use std::{num::NonZeroU32, time::Duration};
 
 use crate::{error::*, pb::*, traits::*};
 
+use autd3::datagram::IntoBoxedDatagram;
 use autd3_core::link::LinkError;
 use autd3_driver::datagram::BoxedDatagram;
 use gain::gain_into_boxed;
 use modulation::modulation_into_boxed;
+use null::NullDatagram;
 use tokio::sync::RwLock;
 use tonic::{Request, Response, Status};
 
@@ -429,19 +434,107 @@ where
 
     async fn send(
         &self,
-        req: Request<DatagramTuple>,
+        req: Request<SendRequestLightweight>,
     ) -> Result<Response<SendResponseLightweight>, Status> {
         if let Some(autd) = self.autd.write().await.as_mut() {
-            let datagram = req.into_inner();
+            let req = req.into_inner();
+            let option = req.sender_option;
+            let datagram = req.datagram.ok_or(AUTDProtoBufError::DataParseError)?;
             let d1 = datagram.first.ok_or(AUTDProtoBufError::DataParseError)?;
             let d1 = into_boxed_datagram(d1.datagram.ok_or(AUTDProtoBufError::DataParseError)?)?;
-            let res = if let Some(d2) = datagram.second {
-                let d2 =
-                    into_boxed_datagram(d2.datagram.ok_or(AUTDProtoBufError::DataParseError)?)?;
-                autd.send(tuple::BoxedDatagramTuple { d1, d2 }).await
+            let d2 = if let Some(d2) = datagram.second {
+                into_boxed_datagram(d2.datagram.ok_or(AUTDProtoBufError::DataParseError)?)?
             } else {
-                autd.send(d1).await
+                NullDatagram.into_boxed()
             };
+            let res =
+                match option {
+                    Some(option) => {
+                        let send_interval = Duration::from_nanos(option.send_interval_ns);
+                        let receive_interval = Duration::from_nanos(option.receive_interval_ns);
+                        let timeout = option.timeout_ns.map(Duration::from_nanos);
+                        let parallel = autd3::controller::ParallelMode::from_msg(option.parallel)?;
+                        match option.sleeper.ok_or(AUTDProtoBufError::DataParseError)? {
+                            sender_option::Sleeper::Std(std_sleeper) => {
+                                autd.sender(autd3::controller::SenderOption::<
+                                    autd3::controller::StdSleeper,
+                                > {
+                                    send_interval,
+                                    receive_interval,
+                                    timeout,
+                                    parallel,
+                                    sleeper: autd3::controller::StdSleeper {
+                                        timer_resolution: std_sleeper
+                                            .timer_resolution
+                                            .and_then(NonZeroU32::new),
+                                    },
+                                })
+                                .send(tuple::BoxedDatagramTuple { d1, d2 })
+                                .await
+                            }
+                            sender_option::Sleeper::Spin(spin_sleeper) => {
+                                autd.sender(autd3::controller::SenderOption::<
+                                    autd3::controller::SpinSleeper,
+                                > {
+                                    send_interval,
+                                    receive_interval,
+                                    timeout,
+                                    parallel,
+                                    sleeper: autd3::controller::SpinSleeper::new(
+                                        spin_sleeper.native_accuracy_ns,
+                                    )
+                                    .with_spin_strategy(autd3::controller::SpinStrategy::from_msg(
+                                        spin_sleeper.spin_strategy,
+                                    )?),
+                                })
+                                .send(tuple::BoxedDatagramTuple { d1, d2 })
+                                .await
+                            }
+                            #[cfg(target_os = "windows")]
+                            sender_option::Sleeper::Waitable(_) => {
+                                autd.sender(autd3::controller::SenderOption::<
+                                    autd3::controller::WaitableSleeper,
+                                > {
+                                    send_interval,
+                                    receive_interval,
+                                    timeout,
+                                    parallel,
+                                    sleeper: autd3::controller::WaitableSleeper::new().map_err(
+                                        |_| {
+                                            AUTDProtoBufError::Status(tonic::Status::unknown(
+                                                "WaitableSleeper",
+                                            ))
+                                        },
+                                    )?,
+                                })
+                                .send(tuple::BoxedDatagramTuple { d1, d2 })
+                                .await
+                            }
+                            #[cfg(not(target_os = "windows"))]
+                            sender_option::Sleeper::Waitable(_) => Err(AUTDProtoBufError::Status(
+                                tonic::Status::unimplemented("WaitableSleeper"),
+                            )),
+                            sender_option::Sleeper::Async(async_sleeper) => {
+                                autd.sender(autd3::controller::SenderOption::<
+                                    autd3::r#async::controller::AsyncSleeper,
+                                > {
+                                    send_interval,
+                                    receive_interval,
+                                    timeout,
+                                    parallel,
+                                    sleeper: autd3::r#async::controller::AsyncSleeper {
+                                        timer_resolution: async_sleeper
+                                            .timer_resolution
+                                            .and_then(NonZeroU32::new),
+                                    },
+                                })
+                                .send(tuple::BoxedDatagramTuple { d1, d2 })
+                                .await
+                            }
+                        }
+                    }
+                    None => autd.send(tuple::BoxedDatagramTuple { d1, d2 }).await,
+                };
             match res {
                 Ok(_) => Ok(Response::new(SendResponseLightweight {
                     err: false,

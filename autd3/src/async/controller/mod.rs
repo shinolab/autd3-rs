@@ -17,11 +17,10 @@ use autd3_driver::{
     geometry::{Device, Geometry},
 };
 
-pub use sender::{AsyncSleeper, Sender};
+pub use sender::{AsyncSleeper, Sender, sleep::AsyncSleep};
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
-use sender::sleep::AsyncSleep;
 use tracing;
 use zerocopy::FromZeros;
 

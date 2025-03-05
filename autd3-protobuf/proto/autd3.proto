@@ -8,12 +8,12 @@ message TxRawData {
   bytes data = 1;
   uint32 n = 2;
 }
-message SendResponse { }
+message SendResponse {}
 message RxMessage { bytes data = 1; }
 message ReadRequest {}
 
 message CloseRequest {}
-message CloseResponse { }
+message CloseResponse {}
 
 message GeometryResponse {}
 

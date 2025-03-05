@@ -5,6 +5,7 @@ pub use spin_sleep::SpinSleeper;
 
 use crate::controller::StdSleeper;
 
+#[doc(hidden)]
 pub trait AsyncSleep: std::fmt::Debug {
     fn sleep_until(&self, deadline: Instant) -> impl std::future::Future<Output = ()>;
 }
