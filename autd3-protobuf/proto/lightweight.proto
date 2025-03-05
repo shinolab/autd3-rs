@@ -49,7 +49,7 @@ message SpinSleeper {
   SpinStrategy spin_strategy = 2;
 }
 
-message WaitableSleeper { }
+message WaitableSleeper {}
 
 message AsyncSleeper { optional uint32 timer_resolution = 1; }
 
@@ -73,6 +73,12 @@ message SendRequestLightweight {
 message SendResponseLightweight {
   bool err = 1;
   string msg = 2;
+}
+
+message GroupSendRequestLightweight {
+  repeated int32 keys = 1;
+  repeated DatagramTuple datagrams = 2;
+  optional SenderOption sender_option = 3;
 }
 
 message FirmwareVersionRequestLightweight {}
@@ -111,5 +117,7 @@ service ECATLight {
   rpc FpgaState(FPGAStateRequestLightweight)
       returns (FPGAStateResponseLightweight) {}
   rpc Send(SendRequestLightweight) returns (SendResponseLightweight) {}
+  rpc GroupSend(GroupSendRequestLightweight) returns (SendResponseLightweight) {
+  }
   rpc Close(CloseRequestLightweight) returns (SendResponseLightweight) {}
 }
