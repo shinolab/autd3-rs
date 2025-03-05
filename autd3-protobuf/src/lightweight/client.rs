@@ -28,7 +28,10 @@ where
 {
     async fn send(self, client: &mut Client) -> Result<(), crate::error::AUTDProtoBufError> {
         let res = client
-            .send(tonic::Request::new(self.to_msg(None)?))
+            .send(tonic::Request::new(crate::DatagramTuple {
+                first: Some(self.to_msg(None)?),
+                second: None,
+            }))
             .await?
             .into_inner();
         if res.err {
@@ -45,8 +48,17 @@ where
 {
     async fn send(self, client: &mut Client) -> Result<(), crate::error::AUTDProtoBufError> {
         let (d1, d2) = self;
-        d1.send(client).await?;
-        d2.send(client).await
+        let res = client
+            .send(tonic::Request::new(crate::DatagramTuple {
+                first: Some(d1.to_msg(None)?),
+                second: Some(d2.to_msg(None)?),
+            }))
+            .await?
+            .into_inner();
+        if res.err {
+            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
+        }
+        Ok(())
     }
 }
 

@@ -1695,6 +1695,13 @@ pub mod datagram {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DatagramTuple {
+    #[prost(message, optional, tag = "1")]
+    pub first: ::core::option::Option<Datagram>,
+    #[prost(message, optional, tag = "2")]
+    pub second: ::core::option::Option<Datagram>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SendResponseLightweight {
     #[prost(bool, tag = "1")]
     pub err: bool,
@@ -1883,7 +1890,7 @@ pub mod ecat_light_client {
         }
         pub async fn send(
             &mut self,
-            request: impl tonic::IntoRequest<super::Datagram>,
+            request: impl tonic::IntoRequest<super::DatagramTuple>,
         ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>
         {
             self.inner.ready().await.map_err(|e| {
@@ -1943,7 +1950,7 @@ pub mod ecat_light_server {
         ) -> std::result::Result<tonic::Response<super::FpgaStateResponseLightweight>, tonic::Status>;
         async fn send(
             &self,
-            request: tonic::Request<super::Datagram>,
+            request: tonic::Request<super::DatagramTuple>,
         ) -> std::result::Result<tonic::Response<super::SendResponseLightweight>, tonic::Status>;
         async fn close(
             &self,
@@ -2146,12 +2153,12 @@ pub mod ecat_light_server {
                 "/autd3.ECATLight/Send" => {
                     #[allow(non_camel_case_types)]
                     struct SendSvc<T: EcatLight>(pub Arc<T>);
-                    impl<T: EcatLight> tonic::server::UnaryService<super::Datagram> for SendSvc<T> {
+                    impl<T: EcatLight> tonic::server::UnaryService<super::DatagramTuple> for SendSvc<T> {
                         type Response = super::SendResponseLightweight;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::Datagram>,
+                            request: tonic::Request<super::DatagramTuple>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move { <T as EcatLight>::send(&inner, request).await };
