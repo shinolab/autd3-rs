@@ -15,8 +15,13 @@ pub trait DOperationGenerator {
     fn dyn_generate(&mut self, device: &Device) -> (BoxedOperation, BoxedOperation);
 }
 
+#[cfg(feature = "lightweight")]
+type DynDOperationGenerator = Box<dyn DOperationGenerator + Send>;
+#[cfg(not(feature = "lightweight"))]
+type DynDOperationGenerator = Box<dyn DOperationGenerator>;
+
 pub struct DynOperationGenerator {
-    g: Box<dyn DOperationGenerator>,
+    g: DynDOperationGenerator,
 }
 
 impl OperationGenerator for DynOperationGenerator {
@@ -45,14 +50,18 @@ pub trait DDatagram: std::fmt::Debug {
         &mut self,
         geometry: &Geometry,
         parallel: bool,
-    ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError>;
+    ) -> Result<DynDOperationGenerator, AUTDDriverError>;
     #[must_use]
     fn dyn_option(&self) -> DatagramOption;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
-impl<E, G: DOperationGenerator + 'static, T: Datagram<G = G, Error = E>> DDatagram
-    for MaybeUninit<T>
+impl<
+    E,
+    #[cfg(feature = "lightweight")] G: DOperationGenerator + Send + 'static,
+    #[cfg(not(feature = "lightweight"))] G: DOperationGenerator + 'static,
+    T: Datagram<G = G, Error = E>,
+> DDatagram for MaybeUninit<T>
 where
     AUTDDriverError: From<E>,
 {
@@ -60,7 +69,7 @@ where
         &mut self,
         geometry: &Geometry,
         parallel: bool,
-    ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError> {
+    ) -> Result<DynDOperationGenerator, AUTDDriverError> {
         let mut tmp = MaybeUninit::<T>::uninit();
         std::mem::swap(&mut tmp, self);
         let d = unsafe { tmp.assume_init() };
@@ -93,7 +102,12 @@ impl std::fmt::Debug for BoxedDatagram {
 }
 
 impl BoxedDatagram {
-    fn new<E, G: OperationGenerator + 'static, D: Datagram<G = G, Error = E> + 'static>(
+    fn new<
+        E,
+        #[cfg(feature = "lightweight")] G: OperationGenerator + Send + 'static,
+        #[cfg(not(feature = "lightweight"))] G: OperationGenerator + 'static,
+        D: Datagram<G = G, Error = E> + 'static,
+    >(
         d: D,
     ) -> Self
     where
@@ -135,9 +149,10 @@ pub trait IntoBoxedDatagram {
 
 impl<
     E,
-    G: OperationGenerator + 'static,
+    #[cfg(feature = "lightweight")] G: OperationGenerator + Send + 'static,
+    #[cfg(not(feature = "lightweight"))] G: OperationGenerator + 'static,
+    #[cfg(feature = "lightweight")] D: Datagram<Error = E, G = G> + Send + 'static,
     #[cfg(not(feature = "lightweight"))] D: Datagram<Error = E, G = G> + 'static,
-    #[cfg(feature = "lightweight")] D: Datagram<Error = E, G = G> + Send + Sync + 'static,
 > IntoBoxedDatagram for D
 where
     AUTDDriverError: From<E>,

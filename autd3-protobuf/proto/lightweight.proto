@@ -26,6 +26,11 @@ message Datagram {
   }
 }
 
+message DatagramTuple {
+  Datagram first = 1;
+  optional Datagram second = 2;
+}
+
 message SendResponseLightweight {
   bool err = 1;
   string msg = 2;
@@ -65,6 +70,6 @@ service ECATLight {
       returns (FirmwareVersionResponseLightweight) {}
   rpc FpgaState(FPGAStateRequestLightweight)
       returns (FPGAStateResponseLightweight) {}
-  rpc Send(Datagram) returns (SendResponseLightweight) {}
+  rpc Send(DatagramTuple) returns (SendResponseLightweight) {}
   rpc Close(CloseRequestLightweight) returns (SendResponseLightweight) {}
 }
