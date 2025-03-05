@@ -2,7 +2,7 @@ use crate::AUTDProtoBufError;
 
 #[cfg(feature = "lightweight")]
 mod autd3;
-mod driver;
+pub(crate) mod driver;
 #[cfg(feature = "lightweight")]
 mod holo;
 

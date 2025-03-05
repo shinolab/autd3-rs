@@ -10,12 +10,10 @@ macro_rules! to_holo {
         $self
             .foci
             .iter()
-            .map(|(p, a)| {
-                Ok(Holo {
-                    pos: Some(p.to_msg(None)?),
-                    amp: Some(a.to_msg(None)?),
-                })
+            .map(|(p, a)| Holo {
+                pos: Some(p.to_msg(None).unwrap()),
+                amp: Some(a.to_msg(None).unwrap()),
             })
-            .collect::<Result<Vec<_>, AUTDProtoBufError>>()?
+            .collect()
     };
 }
