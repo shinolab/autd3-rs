@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{collections::HashMap, fmt::Debug, hash::Hash, net::SocketAddr};
 
 use autd3_core::geometry::{Device, Geometry};
 
@@ -24,36 +24,18 @@ where
 }
 
 pub trait Datagram {
-    fn send(
-        self,
-        client: &mut Client,
-        sender_option: Option<crate::SenderOption>,
-    ) -> impl std::future::Future<Output = Result<(), crate::error::AUTDProtoBufError>>;
+    fn into_lightweight(self) -> crate::DatagramTuple;
 }
 
 impl<T> Datagram for T
 where
     T: ToMessage<Message = crate::pb::Datagram>,
 {
-    async fn send(
-        self,
-        client: &mut Client,
-        sender_option: Option<crate::SenderOption>,
-    ) -> Result<(), crate::error::AUTDProtoBufError> {
-        let res = client
-            .send(tonic::Request::new(crate::SendRequestLightweight {
-                datagram: Some(crate::DatagramTuple {
-                    first: Some(self.to_msg(None)?),
-                    second: None,
-                }),
-                sender_option,
-            }))
-            .await?
-            .into_inner();
-        if res.err {
-            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
+    fn into_lightweight(self) -> crate::DatagramTuple {
+        crate::DatagramTuple {
+            first: Some(self.to_msg(None).unwrap()),
+            second: None,
         }
-        Ok(())
     }
 }
 
@@ -62,26 +44,11 @@ where
     T1: ToMessage<Message = crate::pb::Datagram>,
     T2: ToMessage<Message = crate::pb::Datagram>,
 {
-    async fn send(
-        self,
-        client: &mut Client,
-        sender_option: Option<crate::SenderOption>,
-    ) -> Result<(), crate::error::AUTDProtoBufError> {
-        let (d1, d2) = self;
-        let res = client
-            .send(tonic::Request::new(crate::SendRequestLightweight {
-                datagram: Some(crate::DatagramTuple {
-                    first: Some(d1.to_msg(None)?),
-                    second: Some(d2.to_msg(None)?),
-                }),
-                sender_option,
-            }))
-            .await?
-            .into_inner();
-        if res.err {
-            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
+    fn into_lightweight(self) -> crate::DatagramTuple {
+        crate::DatagramTuple {
+            first: Some(self.0.to_msg(None).unwrap()),
+            second: Some(self.1.to_msg(None).unwrap()),
         }
-        Ok(())
     }
 }
 
@@ -176,7 +143,61 @@ impl Controller {
         &mut self,
         datagram: impl Datagram,
     ) -> Result<(), crate::error::AUTDProtoBufError> {
-        datagram.send(&mut self.client, None).await
+        let res = self
+            .client
+            .send(tonic::Request::new(crate::SendRequestLightweight {
+                datagram: Some(datagram.into_lightweight()),
+                sender_option: None,
+            }))
+            .await?
+            .into_inner();
+        if res.err {
+            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
+        }
+        Ok(())
+    }
+
+    pub async fn group_send<K, F>(
+        &mut self,
+        key_map: F,
+        datagram_map: HashMap<K, crate::DatagramTuple>,
+    ) -> Result<(), crate::error::AUTDProtoBufError>
+    where
+        K: Hash + Eq + Debug,
+        F: Fn(&Device) -> Option<K>,
+    {
+        let (datagram_key, datagrams): (Vec<_>, Vec<_>) = datagram_map.into_iter().collect();
+        let keys = self
+            .geometry
+            .iter()
+            .map(|dev| {
+                if !dev.enable {
+                    return -1;
+                }
+                if let Some(key) = key_map(dev) {
+                    datagram_key
+                        .iter()
+                        .position(|k| k == &key)
+                        .map(|i| i as i32)
+                        .unwrap_or(-1)
+                } else {
+                    -1
+                }
+            })
+            .collect();
+        let res = self
+            .client
+            .group_send(tonic::Request::new(crate::GroupSendRequestLightweight {
+                keys,
+                datagrams,
+                sender_option: None,
+            }))
+            .await?
+            .into_inner();
+        if res.err {
+            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
+        }
+        Ok(())
     }
 
     pub async fn close(mut self) -> Result<(), crate::error::AUTDProtoBufError> {
@@ -213,8 +234,63 @@ where
         &mut self,
         datagram: impl Datagram,
     ) -> Result<(), crate::error::AUTDProtoBufError> {
-        datagram
-            .send(&mut self.controller.client, Some(self.option.to_msg(None)?))
-            .await
+        let res = self
+            .controller
+            .client
+            .send(tonic::Request::new(crate::SendRequestLightweight {
+                datagram: Some(datagram.into_lightweight()),
+                sender_option: Some(self.option.to_msg(None)?),
+            }))
+            .await?
+            .into_inner();
+        if res.err {
+            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
+        }
+        Ok(())
+    }
+
+    pub async fn group_send<K, D, F>(
+        &mut self,
+        key_map: F,
+        datagram_map: HashMap<K, crate::DatagramTuple>,
+    ) -> Result<(), crate::error::AUTDProtoBufError>
+    where
+        K: Hash + Eq + Debug,
+        F: Fn(&Device) -> Option<K>,
+    {
+        let (datagram_key, datagrams): (Vec<_>, Vec<_>) = datagram_map.into_iter().collect();
+        let keys = self
+            .controller
+            .geometry
+            .iter()
+            .map(|dev| {
+                if !dev.enable {
+                    return -1;
+                }
+                if let Some(key) = key_map(dev) {
+                    datagram_key
+                        .iter()
+                        .position(|k| k == &key)
+                        .map(|i| i as i32)
+                        .unwrap_or(-1)
+                } else {
+                    -1
+                }
+            })
+            .collect();
+        let res = self
+            .controller
+            .client
+            .group_send(tonic::Request::new(crate::GroupSendRequestLightweight {
+                keys,
+                datagrams,
+                sender_option: Some(self.option.to_msg(None)?),
+            }))
+            .await?
+            .into_inner();
+        if res.err {
+            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
+        }
+        Ok(())
     }
 }

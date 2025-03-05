@@ -296,6 +296,19 @@ fn into_boxed_datagram(datagram: datagram::Datagram) -> Result<BoxedDatagram, AU
     }
 }
 
+fn into_datagram_tuple(
+    tuple: DatagramTuple,
+) -> Result<tuple::BoxedDatagramTuple, AUTDProtoBufError> {
+    let d1 = tuple.first.ok_or(AUTDProtoBufError::DataParseError)?;
+    let d1 = into_boxed_datagram(d1.datagram.ok_or(AUTDProtoBufError::DataParseError)?)?;
+    let d2 = if let Some(d2) = tuple.second {
+        into_boxed_datagram(d2.datagram.ok_or(AUTDProtoBufError::DataParseError)?)?
+    } else {
+        NullDatagram.into_boxed()
+    };
+    Ok(tuple::BoxedDatagramTuple { d1, d2 })
+}
+
 #[tonic::async_trait]
 impl<
     L: autd3_core::link::AsyncLink + 'static,
@@ -440,13 +453,7 @@ where
             let req = req.into_inner();
             let option = req.sender_option;
             let datagram = req.datagram.ok_or(AUTDProtoBufError::DataParseError)?;
-            let d1 = datagram.first.ok_or(AUTDProtoBufError::DataParseError)?;
-            let d1 = into_boxed_datagram(d1.datagram.ok_or(AUTDProtoBufError::DataParseError)?)?;
-            let d2 = if let Some(d2) = datagram.second {
-                into_boxed_datagram(d2.datagram.ok_or(AUTDProtoBufError::DataParseError)?)?
-            } else {
-                NullDatagram.into_boxed()
-            };
+            let d = into_datagram_tuple(datagram)?;
             let res =
                 match option {
                     Some(option) => {
@@ -469,7 +476,7 @@ where
                                             .and_then(NonZeroU32::new),
                                     },
                                 })
-                                .send(tuple::BoxedDatagramTuple { d1, d2 })
+                                .send(d)
                                 .await
                             }
                             sender_option::Sleeper::Spin(spin_sleeper) => {
@@ -487,7 +494,7 @@ where
                                         spin_sleeper.spin_strategy,
                                     )?),
                                 })
-                                .send(tuple::BoxedDatagramTuple { d1, d2 })
+                                .send(d)
                                 .await
                             }
                             #[cfg(target_os = "windows")]
@@ -507,7 +514,7 @@ where
                                         },
                                     )?,
                                 })
-                                .send(tuple::BoxedDatagramTuple { d1, d2 })
+                                .send(d)
                                 .await
                             }
                             #[cfg(not(target_os = "windows"))]
@@ -528,12 +535,178 @@ where
                                             .and_then(NonZeroU32::new),
                                     },
                                 })
-                                .send(tuple::BoxedDatagramTuple { d1, d2 })
+                                .send(d)
                                 .await
                             }
                         }
                     }
-                    None => autd.send(tuple::BoxedDatagramTuple { d1, d2 }).await,
+                    None => autd.send(d).await,
+                };
+            match res {
+                Ok(_) => Ok(Response::new(SendResponseLightweight {
+                    err: false,
+                    msg: String::new(),
+                })),
+                Err(e) => Ok(Response::new(SendResponseLightweight {
+                    err: true,
+                    msg: format!("{}", e),
+                })),
+            }
+        } else {
+            Ok(Response::new(SendResponseLightweight {
+                err: true,
+                msg: "Controller is not opened".to_string(),
+            }))
+        }
+    }
+
+    async fn group_send(
+        &self,
+        req: Request<GroupSendRequestLightweight>,
+    ) -> Result<Response<SendResponseLightweight>, Status> {
+        if let Some(autd) = self.autd.write().await.as_mut() {
+            let req = req.into_inner();
+            let option = req.sender_option;
+            let keys = req.keys;
+            let datagrams = req
+                .datagrams
+                .into_iter()
+                .map(into_datagram_tuple)
+                .collect::<Result<Vec<_>, _>>()?;
+            if keys.len() != autd.num_devices() {
+                return Ok(Response::new(SendResponseLightweight {
+                    err: true,
+                    msg: "Length of keys must be the same as the number of devices".to_string(),
+                }));
+            }
+            let res =
+                match option {
+                    Some(option) => {
+                        let send_interval = Duration::from_nanos(option.send_interval_ns);
+                        let receive_interval = Duration::from_nanos(option.receive_interval_ns);
+                        let timeout = option.timeout_ns.map(Duration::from_nanos);
+                        let parallel = autd3::controller::ParallelMode::from_msg(option.parallel)?;
+                        match option.sleeper.ok_or(AUTDProtoBufError::DataParseError)? {
+                            sender_option::Sleeper::Std(std_sleeper) => {
+                                autd.sender(autd3::controller::SenderOption::<
+                                    autd3::controller::StdSleeper,
+                                > {
+                                    send_interval,
+                                    receive_interval,
+                                    timeout,
+                                    parallel,
+                                    sleeper: autd3::controller::StdSleeper {
+                                        timer_resolution: std_sleeper
+                                            .timer_resolution
+                                            .and_then(NonZeroU32::new),
+                                    },
+                                })
+                                .group_send(
+                                    |dev| {
+                                        let key = keys[dev.idx()];
+                                        if key < 0 { None } else { Some(key as usize) }
+                                    },
+                                    std::collections::HashMap::from_iter(
+                                        datagrams.into_iter().enumerate(),
+                                    ),
+                                )
+                                .await
+                            }
+                            sender_option::Sleeper::Spin(spin_sleeper) => {
+                                autd.sender(autd3::controller::SenderOption::<
+                                    autd3::controller::SpinSleeper,
+                                > {
+                                    send_interval,
+                                    receive_interval,
+                                    timeout,
+                                    parallel,
+                                    sleeper: autd3::controller::SpinSleeper::new(
+                                        spin_sleeper.native_accuracy_ns,
+                                    )
+                                    .with_spin_strategy(autd3::controller::SpinStrategy::from_msg(
+                                        spin_sleeper.spin_strategy,
+                                    )?),
+                                })
+                                .group_send(
+                                    |dev| {
+                                        let key = keys[dev.idx()];
+                                        if key < 0 { None } else { Some(key as usize) }
+                                    },
+                                    std::collections::HashMap::from_iter(
+                                        datagrams.into_iter().enumerate(),
+                                    ),
+                                )
+                                .await
+                            }
+                            #[cfg(target_os = "windows")]
+                            sender_option::Sleeper::Waitable(_) => {
+                                autd.sender(autd3::controller::SenderOption::<
+                                    autd3::controller::WaitableSleeper,
+                                > {
+                                    send_interval,
+                                    receive_interval,
+                                    timeout,
+                                    parallel,
+                                    sleeper: autd3::controller::WaitableSleeper::new().map_err(
+                                        |_| {
+                                            AUTDProtoBufError::Status(tonic::Status::unknown(
+                                                "WaitableSleeper",
+                                            ))
+                                        },
+                                    )?,
+                                })
+                                .group_send(
+                                    |dev| {
+                                        let key = keys[dev.idx()];
+                                        if key < 0 { None } else { Some(key as usize) }
+                                    },
+                                    std::collections::HashMap::from_iter(
+                                        datagrams.into_iter().enumerate(),
+                                    ),
+                                )
+                                .await
+                            }
+                            #[cfg(not(target_os = "windows"))]
+                            sender_option::Sleeper::Waitable(_) => Err(AUTDProtoBufError::Status(
+                                tonic::Status::unimplemented("WaitableSleeper"),
+                            )),
+                            sender_option::Sleeper::Async(async_sleeper) => {
+                                autd.sender(autd3::controller::SenderOption::<
+                                    autd3::r#async::controller::AsyncSleeper,
+                                > {
+                                    send_interval,
+                                    receive_interval,
+                                    timeout,
+                                    parallel,
+                                    sleeper: autd3::r#async::controller::AsyncSleeper {
+                                        timer_resolution: async_sleeper
+                                            .timer_resolution
+                                            .and_then(NonZeroU32::new),
+                                    },
+                                })
+                                .group_send(
+                                    |dev| {
+                                        let key = keys[dev.idx()];
+                                        if key < 0 { None } else { Some(key as usize) }
+                                    },
+                                    std::collections::HashMap::from_iter(
+                                        datagrams.into_iter().enumerate(),
+                                    ),
+                                )
+                                .await
+                            }
+                        }
+                    }
+                    None => {
+                        autd.group_send(
+                            |dev| {
+                                let key = keys[dev.idx()];
+                                if key < 0 { None } else { Some(key as usize) }
+                            },
+                            std::collections::HashMap::from_iter(datagrams.into_iter().enumerate()),
+                        )
+                        .await
+                    }
                 };
             match res {
                 Ok(_) => Ok(Response::new(SendResponseLightweight {
