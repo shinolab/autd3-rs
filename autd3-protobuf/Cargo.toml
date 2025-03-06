@@ -18,7 +18,6 @@ autd3 = { workspace = true, optional = true }
 autd3-gain-holo = { workspace = true, optional = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
-seq-macro = { workspace = true, optional = true }
 zerocopy = { workspace = true }
 derive_more = { workspace = true, optional = true, features = ["deref"] }
 
@@ -28,7 +27,7 @@ tonic-build = { workspace = true, optional = true, features = ["prost"] }
 [features]
 default = []
 tonic-build = ["dep:tonic-build"]
-lightweight = ["tokio", "seq-macro", "derive_more", "autd3", "autd3-gain-holo", "autd3-driver/lightweight", "async-trait"]
+lightweight = ["tokio", "derive_more", "autd3", "autd3-gain-holo", "autd3-driver/lightweight", "async-trait"]
 async-trait = ["autd3-core/async-trait", "autd3/async-trait"]
 
 [dev-dependencies]
