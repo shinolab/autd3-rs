@@ -1,23 +1,18 @@
-use crate::{AUTDProtoBufError, FromMessage, SineOption, ToMessage};
+use crate::{AUTDProtoBufError, FromMessage, SineOption};
 
 mod exact;
 mod exact_float;
 mod nearest;
 
-impl ToMessage for autd3::modulation::SineOption {
-    type Message = SineOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            config: Some(self.sampling_config.to_msg(None)?),
-            intensity: Some(self.intensity as _),
-            offset: Some(self.offset as _),
-            phase: Some(self.phase.to_msg(None)?),
-            clamp: Some(self.clamp),
-        })
+impl From<autd3::modulation::SineOption> for SineOption {
+    fn from(value: autd3::modulation::SineOption) -> Self {
+        Self {
+            intensity: Some(value.intensity.into()),
+            offset: Some(value.offset.into()),
+            phase: Some(value.phase.into()),
+            clamp: Some(value.clamp),
+            config: Some(value.sampling_config.into()),
+        }
     }
 }
 

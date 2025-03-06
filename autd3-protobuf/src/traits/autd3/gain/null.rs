@@ -5,7 +5,7 @@ use crate::{
 };
 
 impl IntoLightweightGain for autd3::gain::Null {
-    fn into_lightweight(&self) -> Gain {
+    fn into_lightweight(self) -> Gain {
         Gain {
             gain: Some(gain::Gain::Null(Null {})),
         }
@@ -20,14 +20,14 @@ impl FromMessage<Null> for autd3::gain::Null {
 
 #[cfg(test)]
 mod tests {
-    use crate::ToMessage;
+    use crate::DatagramLightweight;
 
     use super::*;
 
     #[test]
     fn null() {
         let g = autd3::gain::Null {};
-        let msg = g.to_msg(None).unwrap();
+        let msg = g.into_datagram_lightweight(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(gain)),

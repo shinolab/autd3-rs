@@ -3,36 +3,20 @@ use autd3_driver::{datagram::STMConfig, firmware::fpga::SamplingConfig};
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{DatagramLightweight, FromMessage},
 };
-
-impl ToMessage for autd3_driver::datagram::GainSTMOption {
-    type Message = GainStmOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            mode: Some(self.mode as u8 as _),
-        })
-    }
-}
-
-impl ToMessage for autd3_driver::firmware::cpu::GainSTMMode {
-    type Message = i32;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(GainStmMode::from(*self) as _)
-    }
-}
 
 impl FromMessage<i32> for autd3_driver::firmware::cpu::GainSTMMode {
     fn from_msg(msg: i32) -> Result<Self, AUTDProtoBufError> {
         Ok(GainStmMode::try_from(msg)?.into())
+    }
+}
+
+impl From<autd3_driver::datagram::GainSTMOption> for GainStmOption {
+    fn from(value: autd3_driver::datagram::GainSTMOption) -> Self {
+        Self {
+            mode: Some(GainStmMode::from(value.mode) as _),
+        }
     }
 }
 
@@ -48,18 +32,20 @@ impl FromMessage<GainStmOption> for autd3_driver::datagram::GainSTMOption {
     }
 }
 
-impl<C: Into<STMConfig> + Copy> ToMessage for autd3_driver::datagram::GainSTM<Vec<Gain>, C> {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl<C: Into<STMConfig> + Copy> DatagramLightweight
+    for autd3_driver::datagram::GainSTM<Vec<Gain>, C>
+{
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        let sampling_config = self.sampling_config()?.into();
+        let autd3_driver::datagram::GainSTM { gains, option, .. } = self;
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::GainStm(GainStm {
-                gains: self.iter().cloned().collect(),
-                sampling_config: Some(self.sampling_config()?.to_msg(None)?),
-                option: Some(self.option.to_msg(None)?),
+                gains: gains.into_iter().collect(),
+                option: Some(GainStmOption::from(option) as _),
+                sampling_config: Some(sampling_config),
             })),
         })
     }

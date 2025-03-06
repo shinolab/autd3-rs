@@ -1,21 +1,12 @@
-use crate::{
-    AUTDProtoBufError,
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
 use zerocopy::{FromBytes, IntoBytes};
 
-impl ToMessage for Vec<autd3_driver::firmware::cpu::RxMessage> {
-    type Message = RxMessage;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            data: self.as_bytes().to_vec(),
-        })
+impl From<Vec<autd3_driver::firmware::cpu::RxMessage>> for RxMessage {
+    fn from(value: Vec<autd3_driver::firmware::cpu::RxMessage>) -> Self {
+        Self {
+            data: value.as_bytes().to_vec(),
+        }
     }
 }
 
@@ -38,7 +29,7 @@ mod tests {
         let rx = (0..10)
             .map(|i| autd3_driver::firmware::cpu::RxMessage::new(i, i))
             .collect::<Vec<_>>();
-        let msg = rx.to_msg(None).unwrap();
+        let msg: RxMessage = rx.clone().into();
         assert_eq!(
             10 * std::mem::size_of::<autd3_driver::firmware::cpu::RxMessage>(),
             msg.data.len()

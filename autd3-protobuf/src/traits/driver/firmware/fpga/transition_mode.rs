@@ -1,20 +1,11 @@
 use autd3_driver::ethercat::DcSysTime;
 
-use crate::{
-    AUTDProtoBufError,
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
-impl ToMessage for autd3_driver::firmware::fpga::TransitionMode {
-    type Message = TransitionMode;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            mode: Some(match *self {
+impl From<autd3_driver::firmware::fpga::TransitionMode> for TransitionMode {
+    fn from(value: autd3_driver::firmware::fpga::TransitionMode) -> Self {
+        Self {
+            mode: Some(match value {
                 autd3_driver::firmware::fpga::TransitionMode::SyncIdx => {
                     transition_mode::Mode::SyncIdx(transition_mode::SyncIdx {})
                 }
@@ -33,7 +24,7 @@ impl ToMessage for autd3_driver::firmware::fpga::TransitionMode {
                     transition_mode::Mode::Immediate(transition_mode::Immediate {})
                 }
             }),
-        })
+        }
     }
 }
 
@@ -81,7 +72,7 @@ mod tests {
     ))]
     #[case(autd3_driver::firmware::fpga::TransitionMode::Ext)]
     fn test_transition_mode(#[case] expect: autd3_driver::firmware::fpga::TransitionMode) {
-        let msg = expect.to_msg(None).unwrap();
+        let msg = expect.into();
         assert_eq!(
             expect,
             autd3_driver::firmware::fpga::TransitionMode::from_msg(msg).unwrap()

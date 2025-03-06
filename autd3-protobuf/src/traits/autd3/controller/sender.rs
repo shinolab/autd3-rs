@@ -1,6 +1,6 @@
 use crate::{
     AUTDProtoBufError, AsyncSleeper, FromMessage, ParallelMode, SenderOption, SpinSleeper,
-    SpinStrategy, StdSleeper, ToMessage, WaitableSleeper,
+    SpinStrategy, StdSleeper, WaitableSleeper,
 };
 
 impl From<ParallelMode> for autd3::controller::ParallelMode {
@@ -20,17 +20,6 @@ impl From<autd3::controller::ParallelMode> for ParallelMode {
             autd3::prelude::ParallelMode::On => ParallelMode::On,
             autd3::prelude::ParallelMode::Off => ParallelMode::Off,
         }
-    }
-}
-
-impl ToMessage for autd3::controller::ParallelMode {
-    type Message = i32;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(ParallelMode::from(*self) as _)
     }
 }
 
@@ -59,95 +48,68 @@ impl From<autd3::controller::SpinStrategy> for SpinStrategy {
     }
 }
 
-impl ToMessage for autd3::controller::SpinStrategy {
-    type Message = i32;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(SpinStrategy::from(*self) as _)
-    }
-}
-
 impl FromMessage<i32> for autd3::controller::SpinStrategy {
     fn from_msg(msg: i32) -> Result<Self, AUTDProtoBufError> {
         Ok(SpinStrategy::try_from(msg)?.into())
     }
 }
 
-impl ToMessage for autd3::controller::SenderOption<autd3::controller::StdSleeper> {
-    type Message = SenderOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(SenderOption {
-            send_interval_ns: self.send_interval.as_nanos() as _,
-            receive_interval_ns: self.receive_interval.as_nanos() as _,
-            timeout_ns: self.timeout.map(|t| t.as_nanos() as _),
-            parallel: self.parallel.to_msg(None)?,
+impl From<&autd3::controller::SenderOption<autd3::controller::StdSleeper>> for SenderOption {
+    fn from(value: &autd3::controller::SenderOption<autd3::controller::StdSleeper>) -> Self {
+        SenderOption {
+            send_interval_ns: value.send_interval.as_nanos() as _,
+            receive_interval_ns: value.receive_interval.as_nanos() as _,
+            timeout_ns: value.timeout.map(|t| t.as_nanos() as _),
+            parallel: ParallelMode::from(value.parallel) as _,
             sleeper: Some(crate::sender_option::Sleeper::Std(StdSleeper {
-                timer_resolution: self.sleeper.timer_resolution.map(|t| t.get()),
+                timer_resolution: value.sleeper.timer_resolution.map(|t| t.get()),
             })),
-        })
+        }
     }
 }
 
-impl ToMessage for autd3::controller::SenderOption<autd3::controller::SpinSleeper> {
-    type Message = SenderOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(SenderOption {
-            send_interval_ns: self.send_interval.as_nanos() as _,
-            receive_interval_ns: self.receive_interval.as_nanos() as _,
-            timeout_ns: self.timeout.map(|t| t.as_nanos() as _),
-            parallel: self.parallel.to_msg(None)?,
+impl From<&autd3::controller::SenderOption<autd3::controller::SpinSleeper>> for SenderOption {
+    fn from(value: &autd3::controller::SenderOption<autd3::controller::SpinSleeper>) -> Self {
+        SenderOption {
+            send_interval_ns: value.send_interval.as_nanos() as _,
+            receive_interval_ns: value.receive_interval.as_nanos() as _,
+            timeout_ns: value.timeout.map(|t| t.as_nanos() as _),
+            parallel: ParallelMode::from(value.parallel) as _,
             sleeper: Some(crate::sender_option::Sleeper::Spin(SpinSleeper {
-                native_accuracy_ns: self.sleeper.native_accuracy_ns(),
-                spin_strategy: self.sleeper.spin_strategy().to_msg(None)?,
+                native_accuracy_ns: value.sleeper.native_accuracy_ns(),
+                spin_strategy: SpinStrategy::from(value.sleeper.spin_strategy()) as _,
             })),
-        })
+        }
     }
 }
 
 #[cfg(target_os = "windows")]
-impl ToMessage for autd3::controller::SenderOption<autd3::controller::WaitableSleeper> {
-    type Message = SenderOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(SenderOption {
-            send_interval_ns: self.send_interval.as_nanos() as _,
-            receive_interval_ns: self.receive_interval.as_nanos() as _,
-            timeout_ns: self.timeout.map(|t| t.as_nanos() as _),
-            parallel: self.parallel.to_msg(None)?,
+impl From<&autd3::controller::SenderOption<autd3::controller::WaitableSleeper>> for SenderOption {
+    fn from(value: &autd3::controller::SenderOption<autd3::controller::WaitableSleeper>) -> Self {
+        SenderOption {
+            send_interval_ns: value.send_interval.as_nanos() as _,
+            receive_interval_ns: value.receive_interval.as_nanos() as _,
+            timeout_ns: value.timeout.map(|t| t.as_nanos() as _),
+            parallel: ParallelMode::from(value.parallel) as _,
             sleeper: Some(crate::sender_option::Sleeper::Waitable(WaitableSleeper {})),
-        })
+        }
     }
 }
 
-impl ToMessage for autd3::controller::SenderOption<autd3::r#async::controller::AsyncSleeper> {
-    type Message = SenderOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(SenderOption {
-            send_interval_ns: self.send_interval.as_nanos() as _,
-            receive_interval_ns: self.receive_interval.as_nanos() as _,
-            timeout_ns: self.timeout.map(|t| t.as_nanos() as _),
-            parallel: self.parallel.to_msg(None)?,
+impl From<&autd3::controller::SenderOption<autd3::r#async::controller::AsyncSleeper>>
+    for SenderOption
+{
+    fn from(
+        value: &autd3::controller::SenderOption<autd3::r#async::controller::AsyncSleeper>,
+    ) -> Self {
+        SenderOption {
+            send_interval_ns: value.send_interval.as_nanos() as _,
+            receive_interval_ns: value.receive_interval.as_nanos() as _,
+            timeout_ns: value.timeout.map(|t| t.as_nanos() as _),
+            parallel: ParallelMode::from(value.parallel) as _,
             sleeper: Some(crate::sender_option::Sleeper::Async(AsyncSleeper {
-                timer_resolution: self.sleeper.timer_resolution.map(|t| t.get()),
+                timer_resolution: value.sleeper.timer_resolution.map(|t| t.get()),
             })),
-        })
+        }
     }
 }

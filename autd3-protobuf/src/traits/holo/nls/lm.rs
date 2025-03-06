@@ -6,25 +6,20 @@ use crate::{
     AUTDProtoBufError,
     pb::*,
     to_holo,
-    traits::{FromMessage, ToMessage, driver::datagram::gain::IntoLightweightGain},
+    traits::{FromMessage, driver::datagram::gain::IntoLightweightGain},
 };
 use autd3_core::acoustics::directivity::Sphere;
 
-impl ToMessage for autd3_gain_holo::LMOption<Sphere> {
-    type Message = LmOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            eps_1: Some(self.eps_1 as _),
-            eps_2: Some(self.eps_2 as _),
-            tau: Some(self.tau as _),
-            k_max: Some(self.k_max.get() as _),
-            initial: self.initial.to_vec(),
-            constraint: Some(self.constraint.to_msg(None)?),
-        })
+impl From<autd3_gain_holo::LMOption<Sphere>> for LmOption {
+    fn from(value: autd3_gain_holo::LMOption<Sphere>) -> Self {
+        Self {
+            eps_1: Some(value.eps_1),
+            eps_2: Some(value.eps_2),
+            tau: Some(value.tau),
+            k_max: Some(value.k_max.get() as _),
+            initial: value.initial,
+            constraint: Some(value.constraint.into()),
+        }
     }
 }
 
@@ -59,11 +54,11 @@ impl IntoLightweightGain
         NalgebraBackend<autd3_core::acoustics::directivity::Sphere>,
     >
 {
-    fn into_lightweight(&self) -> Gain {
+    fn into_lightweight(self) -> Gain {
         Gain {
             gain: Some(gain::Gain::Lm(Lm {
                 holo: to_holo!(self),
-                option: Some(self.option.to_msg(None).unwrap()),
+                option: Some(self.option.into()),
             })),
         }
     }
@@ -101,6 +96,8 @@ impl FromMessage<Lm>
 
 #[cfg(test)]
 mod tests {
+    use crate::DatagramLightweight;
+
     use super::*;
     use autd3_core::geometry::Point3;
     use rand::Rng;
@@ -109,49 +106,40 @@ mod tests {
     fn test_holo_lm() {
         let mut rng = rand::rng();
 
+        let foci = vec![
+            (
+                Point3::new(rng.random(), rng.random(), rng.random()),
+                rng.random::<f32>() * autd3_gain_holo::Pa,
+            ),
+            (
+                Point3::new(rng.random(), rng.random(), rng.random()),
+                rng.random::<f32>() * autd3_gain_holo::Pa,
+            ),
+        ];
+        let option = autd3_gain_holo::LMOption {
+            eps_1: rng.random::<f32>(),
+            eps_2: rng.random::<f32>(),
+            tau: rng.random::<f32>(),
+            k_max: NonZeroUsize::new(rng.random_range(1..10)).unwrap(),
+            initial: vec![rng.random::<f32>(), rng.random::<f32>()],
+            ..Default::default()
+        };
         let holo = autd3_gain_holo::LM {
-            foci: vec![
-                (
-                    Point3::new(rng.random(), rng.random(), rng.random()),
-                    rng.random::<f32>() * autd3_gain_holo::Pa,
-                ),
-                (
-                    Point3::new(rng.random(), rng.random(), rng.random()),
-                    rng.random::<f32>() * autd3_gain_holo::Pa,
-                ),
-            ],
-            option: autd3_gain_holo::LMOption {
-                eps_1: rng.random::<f32>(),
-                eps_2: rng.random::<f32>(),
-                tau: rng.random::<f32>(),
-                k_max: NonZeroUsize::new(rng.random_range(1..10)).unwrap(),
-                initial: vec![rng.random::<f32>(), rng.random::<f32>()],
-                ..Default::default()
-            },
+            foci: foci.clone(),
+            option: option.clone(),
             backend: std::sync::Arc::new(NalgebraBackend::default()),
         };
-        let msg = holo.to_msg(None).unwrap();
+        let msg = holo.into_datagram_lightweight(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Lm(g)),
                 ..
             })) => {
                 let holo2 = autd3_gain_holo::LM::from_msg(g).unwrap();
-                assert_eq!(holo.option.eps_1, holo2.option.eps_1);
-                assert_eq!(holo.option.eps_2, holo2.option.eps_2);
-                assert_eq!(holo.option.tau, holo2.option.tau);
-                assert_eq!(holo.option.k_max, holo2.option.k_max);
-                assert_eq!(holo.option.initial, holo2.option.initial);
-                assert_eq!(holo.option.constraint, holo2.option.constraint);
-                holo.foci
-                    .iter()
-                    .zip(holo2.foci.iter())
-                    .for_each(|(f1, f2)| {
-                        approx::assert_abs_diff_eq!(f1.1.pascal(), f2.1.pascal());
-                        approx::assert_abs_diff_eq!(f1.0.x, f2.0.x);
-                        approx::assert_abs_diff_eq!(f1.0.y, f2.0.y);
-                        approx::assert_abs_diff_eq!(f1.0.z, f2.0.z);
-                    });
+                assert_eq!(option, holo2.option);
+                foci.iter().zip(holo2.foci.iter()).for_each(|(f1, f2)| {
+                    assert_eq!(f1, f2);
+                });
             }
             _ => panic!("unexpected datagram type"),
         }

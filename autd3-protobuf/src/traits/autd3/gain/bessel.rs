@@ -1,20 +1,15 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage, driver::datagram::gain::IntoLightweightGain},
+    traits::{FromMessage, driver::datagram::gain::IntoLightweightGain},
 };
 
-impl ToMessage for autd3::gain::BesselOption {
-    type Message = BesselOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            intensity: Some(self.intensity.to_msg(None)?),
-            phase_offset: Some(self.phase_offset.to_msg(None)?),
-        })
+impl From<autd3::gain::BesselOption> for BesselOption {
+    fn from(value: autd3::gain::BesselOption) -> Self {
+        Self {
+            intensity: Some(value.intensity.into()),
+            phase_offset: Some(value.phase_offset.into()),
+        }
     }
 }
 
@@ -37,13 +32,13 @@ impl FromMessage<BesselOption> for autd3::gain::BesselOption {
 }
 
 impl IntoLightweightGain for autd3::gain::Bessel {
-    fn into_lightweight(&self) -> Gain {
+    fn into_lightweight(self) -> Gain {
         Gain {
             gain: Some(gain::Gain::Bessel(Bessel {
-                pos: Some(self.pos.to_msg(None).unwrap()),
-                dir: Some(self.dir.to_msg(None).unwrap()),
-                theta: Some(self.theta.to_msg(None).unwrap()),
-                option: Some(self.option.to_msg(None).unwrap()),
+                pos: Some(self.pos.into()),
+                dir: Some(self.dir.into()),
+                theta: Some(self.theta.into()),
+                option: Some(self.option.into()),
             })),
         }
     }
@@ -70,6 +65,8 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
 
 #[cfg(test)]
 mod tests {
+    use crate::DatagramLightweight;
+
     use super::*;
     use autd3::prelude::Phase;
     use autd3_driver::{
@@ -96,7 +93,7 @@ mod tests {
                 phase_offset: Phase(rng.random()),
             },
         };
-        let msg = g.to_msg(None).unwrap();
+        let msg = g.clone().into_datagram_lightweight(None).unwrap();
 
         match msg.datagram {
             Some(datagram::Datagram::Gain(Gain {
@@ -111,8 +108,7 @@ mod tests {
                 approx::assert_abs_diff_eq!(g.dir.y, g2.dir.y);
                 approx::assert_abs_diff_eq!(g.dir.z, g2.dir.z);
                 assert_eq!(g.theta, g2.theta);
-                assert_eq!(g.option.intensity, g2.option.intensity);
-                assert_eq!(g.option.phase_offset, g2.option.phase_offset);
+                assert_eq!(g.option, g2.option);
             }
             _ => panic!("unexpected datagram type"),
         }
