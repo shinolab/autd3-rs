@@ -91,7 +91,9 @@ impl From<&autd3::controller::SenderOption<autd3::controller::WaitableSleeper>> 
             receive_interval_ns: value.receive_interval.as_nanos() as _,
             timeout_ns: value.timeout.map(|t| t.as_nanos() as _),
             parallel: ParallelMode::from(value.parallel) as _,
-            sleeper: Some(crate::sender_option::Sleeper::Waitable(WaitableSleeper {})),
+            sleeper: Some(crate::sender_option::Sleeper::Waitable(
+                crate::WaitableSleeper {},
+            )),
         }
     }
 }
