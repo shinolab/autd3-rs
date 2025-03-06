@@ -1,6 +1,6 @@
 use crate::{
     AUTDProtoBufError, AsyncSleeper, FromMessage, ParallelMode, SenderOption, SpinSleeper,
-    SpinStrategy, StdSleeper, WaitableSleeper,
+    SpinStrategy, StdSleeper,
 };
 
 impl From<ParallelMode> for autd3::controller::ParallelMode {
