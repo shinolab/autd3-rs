@@ -17,7 +17,7 @@ pub struct Controller {
 
 pub struct Sender<'a, S: autd3::r#async::controller::AsyncSleep>
 where
-    autd3::controller::SenderOption<S>: ToMessage<Message = SenderOption>,
+    SenderOption: for<'b> From<&'b autd3::controller::SenderOption<S>>,
 {
     pub(crate) controller: &'a mut Controller,
     pub(crate) option: autd3::controller::SenderOption<S>,
@@ -29,11 +29,11 @@ pub trait Datagram {
 
 impl<T> Datagram for T
 where
-    T: ToMessage<Message = crate::pb::Datagram>,
+    T: DatagramLightweight,
 {
     fn into_lightweight(self) -> crate::DatagramTuple {
         crate::DatagramTuple {
-            first: Some(self.to_msg(None).unwrap()),
+            first: Some(self.into_datagram_lightweight(None).unwrap()),
             second: None,
         }
     }
@@ -41,13 +41,13 @@ where
 
 impl<T1, T2> Datagram for (T1, T2)
 where
-    T1: ToMessage<Message = crate::pb::Datagram>,
-    T2: ToMessage<Message = crate::pb::Datagram>,
+    T1: DatagramLightweight,
+    T2: DatagramLightweight,
 {
     fn into_lightweight(self) -> crate::DatagramTuple {
         crate::DatagramTuple {
-            first: Some(self.0.to_msg(None).unwrap()),
-            second: Some(self.1.to_msg(None).unwrap()),
+            first: Some(self.0.into_datagram_lightweight(None).unwrap()),
+            second: Some(self.1.into_datagram_lightweight(None).unwrap()),
         }
     }
 }
@@ -70,12 +70,12 @@ impl Controller {
         sender_option: autd3::controller::SenderOption<S>,
     ) -> Result<Self, crate::error::AUTDProtoBufError>
     where
-        autd3::controller::SenderOption<S>: ToMessage<Message = SenderOption>,
+        SenderOption: From<autd3::controller::SenderOption<S>>,
     {
         Controller::open_impl(
             devices.into_iter().map(|d| d.into()).collect(),
             addr,
-            Some(sender_option.to_msg(None)?),
+            Some(sender_option.into()),
         )
         .await
     }
@@ -92,7 +92,7 @@ impl Controller {
         let geometry = Geometry::new(devices);
         let res = client
             .open(OpenRequestLightweight {
-                geometry: Some(geometry.to_msg(None)?),
+                geometry: Some((&geometry).into()),
                 sender_option,
             })
             .await?
@@ -217,7 +217,7 @@ impl Controller {
         option: autd3::controller::SenderOption<S>,
     ) -> Sender<S>
     where
-        autd3::controller::SenderOption<S>: ToMessage<Message = SenderOption>,
+        SenderOption: for<'a> From<&'a autd3::controller::SenderOption<S>>,
     {
         Sender {
             controller: self,
@@ -228,7 +228,7 @@ impl Controller {
 
 impl<S: autd3::r#async::controller::AsyncSleep> Sender<'_, S>
 where
-    autd3::controller::SenderOption<S>: ToMessage<Message = SenderOption>,
+    SenderOption: for<'a> From<&'a autd3::controller::SenderOption<S>>,
 {
     pub async fn send(
         &mut self,
@@ -239,7 +239,7 @@ where
             .client
             .send(tonic::Request::new(crate::SendRequestLightweight {
                 datagram: Some(datagram.into_lightweight()),
-                sender_option: Some(self.option.to_msg(None)?),
+                sender_option: Some((&self.option).into()),
             }))
             .await?
             .into_inner();
@@ -284,7 +284,7 @@ where
             .group_send(tonic::Request::new(crate::GroupSendRequestLightweight {
                 keys,
                 datagrams,
-                sender_option: Some(self.option.to_msg(None)?),
+                sender_option: Some((&self.option).into()),
             }))
             .await?
             .into_inner();

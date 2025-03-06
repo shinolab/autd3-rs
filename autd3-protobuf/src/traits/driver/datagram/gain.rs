@@ -1,20 +1,18 @@
 use autd3_core::gain::{GainCalculator, GainCalculatorGenerator};
 
-use crate::{Datagram, Gain, ToMessage, datagram};
+use crate::{Datagram, DatagramLightweight, Gain, datagram};
 
 #[allow(clippy::wrong_self_convention)]
 pub trait IntoLightweightGain {
-    fn into_lightweight(&self) -> Gain;
+    fn into_lightweight(self) -> Gain;
 }
 
-impl<T: IntoLightweightGain> ToMessage for T {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl<T: IntoLightweightGain> DatagramLightweight for T {
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, crate::AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, crate::AUTDProtoBufError> {
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::Gain(self.into_lightweight())),
         })
     }

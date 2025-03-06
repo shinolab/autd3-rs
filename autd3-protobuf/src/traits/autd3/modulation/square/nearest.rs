@@ -1,21 +1,19 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{DatagramLightweight, FromMessage},
 };
 
-impl ToMessage for autd3::modulation::Square<autd3::modulation::sampling_mode::Nearest> {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl DatagramLightweight for autd3::modulation::Square<autd3::modulation::sampling_mode::Nearest> {
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareNearest(SquareNearest {
                     freq: self.freq.0.hz() as _,
-                    option: Some(self.option.to_msg(None)?),
+                    option: Some(self.option.into()),
                 })),
             })),
         })
@@ -48,7 +46,7 @@ mod tests {
             option: Default::default(),
         }
         .into_nearest();
-        let msg = m.to_msg(None).unwrap();
+        let msg = m.clone().into_datagram_lightweight(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareNearest(modulation)),
@@ -59,7 +57,7 @@ mod tests {
                         modulation,
                     )
                     .unwrap();
-                assert_eq!(m.freq, m2.freq);
+                assert_eq!(m, m2);
             }
             _ => panic!("unexpected datagram type"),
         }

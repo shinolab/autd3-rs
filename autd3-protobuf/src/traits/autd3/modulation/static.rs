@@ -1,17 +1,15 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{DatagramLightweight, FromMessage},
 };
 
-impl ToMessage for autd3::modulation::Static {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl DatagramLightweight for autd3::modulation::Static {
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(Static {
                     intensity: Some(self.intensity as _),
@@ -45,7 +43,7 @@ mod tests {
         let m = autd3::modulation::Static {
             intensity: rng.random::<u8>(),
         };
-        let msg = m.to_msg(None).unwrap();
+        let msg = m.into_datagram_lightweight(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(modulation)),

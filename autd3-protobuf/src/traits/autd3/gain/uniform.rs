@@ -1,15 +1,15 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage, driver::datagram::gain::IntoLightweightGain},
+    traits::{FromMessage, driver::datagram::gain::IntoLightweightGain},
 };
 
 impl IntoLightweightGain for autd3::gain::Uniform {
-    fn into_lightweight(&self) -> Gain {
+    fn into_lightweight(self) -> Gain {
         Gain {
             gain: Some(gain::Gain::Uniform(Uniform {
-                intensity: Some(self.intensity.to_msg(None).unwrap()),
-                phase: Some(self.phase.to_msg(None).unwrap()),
+                intensity: Some(self.intensity.into()),
+                phase: Some(self.phase.into()),
             })),
         }
     }
@@ -30,6 +30,8 @@ impl FromMessage<Uniform> for autd3::gain::Uniform {
 
 #[cfg(test)]
 mod tests {
+    use crate::DatagramLightweight;
+
     use super::*;
     use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
@@ -42,15 +44,14 @@ mod tests {
             intensity: EmitIntensity(rng.random()),
             phase: Phase(rng.random()),
         };
-        let msg = g.to_msg(None).unwrap();
+        let msg = g.clone().into_datagram_lightweight(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Uniform(gain)),
                 ..
             })) => {
                 let g2 = autd3::gain::Uniform::from_msg(gain).unwrap();
-                assert_eq!(g.intensity, g2.intensity);
-                assert_eq!(g.phase, g2.phase);
+                assert_eq!(g, g2);
             }
             _ => panic!("unexpected datagram type"),
         }

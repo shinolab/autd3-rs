@@ -2,22 +2,19 @@ use autd3_driver::{datagram::STMConfig, firmware::fpga::SamplingConfig};
 
 use crate::{pb::*, traits::*};
 
-impl<const N: usize, C: Into<STMConfig> + Copy> ToMessage
+impl<const N: usize, C: Into<STMConfig> + Copy> DatagramLightweight
     for autd3_driver::datagram::FociSTM<N, Vec<autd3_driver::datagram::ControlPoints<N>>, C>
 {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        let sampling_config = self.sampling_config()?.into();
+        let autd3_driver::datagram::FociSTM { foci, .. } = self;
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::FociStm(FociStm {
-                foci: self
-                    .iter()
-                    .map(|p| p.to_msg(None))
-                    .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
-                sampling_config: Some(self.sampling_config()?.to_msg(None)?),
+                foci: foci.into_iter().map(|p| p.into()).collect(),
+                sampling_config: Some(sampling_config),
             })),
         })
     }

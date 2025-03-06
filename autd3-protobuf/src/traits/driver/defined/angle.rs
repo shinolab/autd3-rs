@@ -1,19 +1,10 @@
-use crate::{
-    AUTDProtoBufError,
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
-impl ToMessage for autd3_core::defined::Angle {
-    type Message = Angle;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            rad: self.radian() as _,
-        })
+impl From<autd3_core::defined::Angle> for Angle {
+    fn from(value: autd3_core::defined::Angle) -> Self {
+        Self {
+            rad: value.radian(),
+        }
     }
 }
 
@@ -33,7 +24,7 @@ mod tests {
     fn angle() {
         let mut rng = rand::rng();
         let v = rng.random::<f32>() * rad;
-        let msg = v.to_msg(None).unwrap();
+        let msg = v.into();
         let v2 = Angle::from_msg(msg).unwrap();
         approx::assert_abs_diff_eq!(v.radian(), v2.radian());
     }

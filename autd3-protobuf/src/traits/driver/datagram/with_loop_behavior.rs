@@ -1,50 +1,43 @@
-use std::ops::Deref;
+use crate::{AUTDProtoBufError, pb::*, traits::DatagramLightweight};
 
-use crate::{AUTDProtoBufError, pb::*, traits::ToMessage};
-
-impl<T> ToMessage for autd3_driver::datagram::WithLoopBehavior<T>
+impl<T> DatagramLightweight for autd3_driver::datagram::WithLoopBehavior<T>
 where
-    T: autd3_core::datagram::DatagramL + ToMessage<Message = Datagram>,
+    T: autd3_core::datagram::DatagramL + DatagramLightweight,
 {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+    fn into_datagram_lightweight(
+        self,
         geometry: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        let datagram = <T as ToMessage>::to_msg(self.deref(), geometry)?;
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        let autd3_driver::datagram::WithLoopBehavior {
+            inner,
+            segment,
+            transition_mode,
+            loop_behavior,
+        } = self;
+        let datagram = <T as DatagramLightweight>::into_datagram_lightweight(inner, geometry)?;
         Ok(match datagram.datagram {
-            Some(datagram::Datagram::Modulation(m)) => Self::Message {
+            Some(datagram::Datagram::Modulation(m)) => Datagram {
                 datagram: Some(datagram::Datagram::WithLoopBehavior(WithLoopBehavior {
                     inner: Some(with_loop_behavior::Inner::Modulation(m)),
-                    segment: self.segment as u8 as _,
-                    transition_mode: self
-                        .transition_mode
-                        .map(|mode| mode.to_msg(geometry))
-                        .transpose()?,
-                    loop_behavior: Some(self.loop_behavior.to_msg(geometry)?),
+                    segment: segment as u8 as _,
+                    transition_mode: transition_mode.map(|mode| mode.into()),
+                    loop_behavior: Some(loop_behavior.into()),
                 })),
             },
-            Some(datagram::Datagram::FociStm(stm)) => Self::Message {
+            Some(datagram::Datagram::FociStm(stm)) => Datagram {
                 datagram: Some(datagram::Datagram::WithLoopBehavior(WithLoopBehavior {
                     inner: Some(with_loop_behavior::Inner::FociStm(stm)),
-                    segment: self.segment as u8 as _,
-                    transition_mode: self
-                        .transition_mode
-                        .map(|mode| mode.to_msg(geometry))
-                        .transpose()?,
-                    loop_behavior: Some(self.loop_behavior.to_msg(geometry)?),
+                    segment: segment as u8 as _,
+                    transition_mode: transition_mode.map(|mode| mode.into()),
+                    loop_behavior: Some(loop_behavior.into()),
                 })),
             },
-            Some(datagram::Datagram::GainStm(stm)) => Self::Message {
+            Some(datagram::Datagram::GainStm(stm)) => Datagram {
                 datagram: Some(datagram::Datagram::WithLoopBehavior(WithLoopBehavior {
                     inner: Some(with_loop_behavior::Inner::GainStm(stm)),
-                    segment: self.segment as u8 as _,
-                    transition_mode: self
-                        .transition_mode
-                        .map(|mode| mode.to_msg(geometry))
-                        .transpose()?,
-                    loop_behavior: Some(self.loop_behavior.to_msg(geometry)?),
+                    segment: segment as u8 as _,
+                    transition_mode: transition_mode.map(|mode| mode.into()),
+                    loop_behavior: Some(loop_behavior.into()),
                 })),
             },
             _ => unreachable!(),

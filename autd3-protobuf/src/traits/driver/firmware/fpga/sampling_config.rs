@@ -1,20 +1,11 @@
 use autd3::driver::defined::Hz;
 
-use crate::{
-    AUTDProtoBufError,
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 use std::{num::NonZeroU16, time::Duration};
 
-impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
-    type Message = SamplingConfig;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(match self {
+impl From<autd3_driver::firmware::fpga::SamplingConfig> for SamplingConfig {
+    fn from(value: autd3_driver::firmware::fpga::SamplingConfig) -> Self {
+        match value {
             autd3_driver::firmware::fpga::SamplingConfig::Division(div) => SamplingConfig {
                 variant: Some(sampling_config::Variant::Division(
                     sampling_config::Division {
@@ -44,7 +35,7 @@ impl ToMessage for autd3_driver::firmware::fpga::SamplingConfig {
                     },
                 )),
             },
-        })
+        }
     }
 }
 
@@ -90,7 +81,7 @@ mod tests {
     fn test_sampling_config() {
         let mut rng = rand::rng();
         let v = SamplingConfig::new(NonZeroU16::new(rng.random_range(0x0001..=0xFFFF)).unwrap());
-        let msg = v.to_msg(None).unwrap();
+        let msg = v.into();
         let v2 = SamplingConfig::from_msg(msg).unwrap();
         assert_eq!(v, v2);
     }

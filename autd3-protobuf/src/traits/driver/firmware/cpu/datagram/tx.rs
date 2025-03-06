@@ -1,22 +1,13 @@
-use crate::{
-    AUTDProtoBufError,
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
 use zerocopy::{FromZeros, IntoBytes};
 
-impl ToMessage for &[autd3_driver::firmware::cpu::TxMessage] {
-    type Message = TxRawData;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            data: self.as_bytes().to_vec(),
-            n: self.len() as _,
-        })
+impl From<&[autd3_driver::firmware::cpu::TxMessage]> for TxRawData {
+    fn from(value: &[autd3_driver::firmware::cpu::TxMessage]) -> Self {
+        Self {
+            data: value.as_bytes().to_vec(),
+            n: value.len() as _,
+        }
     }
 }
 
@@ -43,7 +34,7 @@ mod tests {
             tx[i].header.msg_id = rng.random();
             tx[i].header.slot_2_offset = rng.random();
         });
-        let msg = tx.as_slice().to_msg(None).unwrap();
+        let msg: TxRawData = tx.as_slice().into();
         let tx2 = Vec::<autd3_driver::firmware::cpu::TxMessage>::from_msg(msg).unwrap();
         assert_eq!(&tx, &tx2);
     }

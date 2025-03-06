@@ -3,21 +3,19 @@ use autd3_core::defined::Freq;
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{DatagramLightweight, FromMessage},
 };
 
-impl ToMessage for autd3::modulation::Sine<Freq<f32>> {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl DatagramLightweight for autd3::modulation::Sine<Freq<f32>> {
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineExactFloat(SineExactFloat {
                     freq: self.freq.hz() as _,
-                    option: Some(self.option.to_msg(None)?),
+                    option: Some(self.option.into()),
                 })),
             })),
         })
@@ -46,14 +44,14 @@ mod tests {
             freq: 1.0 * Hz,
             option: Default::default(),
         };
-        let msg = m.to_msg(None).unwrap();
+        let msg = m.clone().into_datagram_lightweight(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineExactFloat(modulation)),
                 ..
             })) => {
                 let m2 = autd3::modulation::Sine::<Freq<f32>>::from_msg(modulation).unwrap();
-                assert_eq!(m.freq, m2.freq);
+                assert_eq!(m, m2);
             }
             _ => panic!("unexpected datagram type"),
         }
