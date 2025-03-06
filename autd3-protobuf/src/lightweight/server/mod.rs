@@ -518,9 +518,13 @@ where
                                 .await
                             }
                             #[cfg(not(target_os = "windows"))]
-                            sender_option::Sleeper::Waitable(_) => Err(AUTDProtoBufError::Status(
-                                tonic::Status::unimplemented("WaitableSleeper"),
-                            )),
+                            sender_option::Sleeper::Waitable(_) => {
+                                Err(autd3_driver::error::AUTDDriverError::Link(
+                                    autd3_core::link::LinkError::new(
+                                        "WaitableSleeper is not supported",
+                                    ),
+                                ))
+                            }
                             sender_option::Sleeper::Async(async_sleeper) => {
                                 autd.sender(autd3::controller::SenderOption::<
                                     autd3::r#async::controller::AsyncSleeper,
@@ -667,9 +671,15 @@ where
                                 .await
                             }
                             #[cfg(not(target_os = "windows"))]
-                            sender_option::Sleeper::Waitable(_) => Err(AUTDProtoBufError::Status(
-                                tonic::Status::unimplemented("WaitableSleeper"),
-                            )),
+                            sender_option::Sleeper::Waitable(_) => {
+                                Err(autd3::error::AUTDError::Driver(
+                                    autd3_driver::error::AUTDDriverError::Link(
+                                        autd3_core::link::LinkError::new(
+                                            "WaitableSleeper is not supported",
+                                        ),
+                                    ),
+                                ))
+                            }
                             sender_option::Sleeper::Async(async_sleeper) => {
                                 autd.sender(autd3::controller::SenderOption::<
                                     autd3::r#async::controller::AsyncSleeper,
