@@ -3,17 +3,17 @@ use std::{num::NonZeroU16, time::Duration};
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{DatagramLightweight, FromMessage},
 };
 
-impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedUpdateRate> {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl DatagramLightweight
+    for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedUpdateRate>
+{
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedUpdateRate(
                     silencer::FixedUpdateRate {
@@ -27,14 +27,14 @@ impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::Fixe
     }
 }
 
-impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedCompletionSteps> {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl DatagramLightweight
+    for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedCompletionSteps>
+{
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedCompletionSteps(
                     silencer::FixedCompletionSteps {
@@ -49,14 +49,14 @@ impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::Fixe
     }
 }
 
-impl ToMessage for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedCompletionTime> {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl DatagramLightweight
+    for autd3_driver::datagram::Silencer<autd3_driver::datagram::FixedCompletionTime>
+{
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedCompletionTime(
                     silencer::FixedCompletionTime {

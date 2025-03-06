@@ -1,20 +1,15 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage, driver::datagram::gain::IntoLightweightGain},
+    traits::{FromMessage, driver::datagram::gain::IntoLightweightGain},
 };
 
-impl ToMessage for autd3::gain::FocusOption {
-    type Message = FocusOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            intensity: Some(self.intensity.to_msg(None)?),
-            phase_offset: Some(self.phase_offset.to_msg(None)?),
-        })
+impl From<autd3::gain::FocusOption> for FocusOption {
+    fn from(value: autd3::gain::FocusOption) -> Self {
+        Self {
+            intensity: Some(value.intensity.into()),
+            phase_offset: Some(value.phase_offset.into()),
+        }
     }
 }
 
@@ -37,11 +32,11 @@ impl FromMessage<FocusOption> for autd3::gain::FocusOption {
 }
 
 impl IntoLightweightGain for autd3::gain::Focus {
-    fn into_lightweight(&self) -> Gain {
+    fn into_lightweight(self) -> Gain {
         Gain {
             gain: Some(gain::Gain::Focus(Focus {
-                pos: Some(self.pos.to_msg(None).unwrap()),
-                option: Some(self.option.to_msg(None).unwrap()),
+                pos: Some(self.pos.into()),
+                option: Some(self.option.into()),
             })),
         }
     }
@@ -62,6 +57,8 @@ impl FromMessage<Focus> for autd3::gain::Focus {
 
 #[cfg(test)]
 mod tests {
+    use crate::DatagramLightweight;
+
     use super::*;
     use autd3::prelude::Phase;
     use autd3_driver::{firmware::fpga::EmitIntensity, geometry::Point3};
@@ -78,7 +75,7 @@ mod tests {
                 phase_offset: Phase(rng.random()),
             },
         };
-        let msg = g.to_msg(None).unwrap();
+        let msg = g.clone().into_datagram_lightweight(None).unwrap();
 
         match msg.datagram {
             Some(datagram::Datagram::Gain(Gain {
@@ -86,11 +83,7 @@ mod tests {
                 ..
             })) => {
                 let g2 = autd3::gain::Focus::from_msg(gain).unwrap();
-                assert_eq!(g.pos.x, g2.pos.x);
-                assert_eq!(g.pos.y, g2.pos.y);
-                assert_eq!(g.pos.z, g2.pos.z);
-                assert_eq!(g.option.intensity, g2.option.intensity);
-                assert_eq!(g.option.phase_offset, g2.option.phase_offset);
+                assert_eq!(g, g2);
             }
             _ => panic!("unexpected datagram type"),
         }

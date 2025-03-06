@@ -1,28 +1,19 @@
 use std::num::NonZeroU16;
 
-use crate::{
-    AUTDProtoBufError,
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
-impl ToMessage for autd3_driver::firmware::fpga::LoopBehavior {
-    type Message = LoopBehavior;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(match self {
-            autd3::prelude::LoopBehavior::Infinite => Self::Message {
+impl From<autd3_driver::firmware::fpga::LoopBehavior> for LoopBehavior {
+    fn from(value: autd3_driver::firmware::fpga::LoopBehavior) -> Self {
+        match value {
+            autd3::prelude::LoopBehavior::Infinite => LoopBehavior {
                 variant: Some(loop_behavior::Variant::Infinite(loop_behavior::Infinite {})),
             },
-            autd3::prelude::LoopBehavior::Finite(rep) => Self::Message {
+            autd3::prelude::LoopBehavior::Finite(rep) => LoopBehavior {
                 variant: Some(loop_behavior::Variant::Finite(loop_behavior::Finite {
                     rep: rep.get() as _,
                 })),
             },
-        })
+        }
     }
 }
 
@@ -54,14 +45,14 @@ mod tests {
         {
             let mut rng = rand::rng();
             let v = LoopBehavior::Finite(NonZeroU16::new(rng.random_range(1..=0xFFFF)).unwrap());
-            let msg = v.to_msg(None).unwrap();
+            let msg = v.into();
             let v2 = LoopBehavior::from_msg(msg).unwrap();
             assert_eq!(v, v2);
         }
 
         {
             let v = LoopBehavior::Infinite;
-            let msg = v.to_msg(None).unwrap();
+            let msg = v.into();
             let v2 = LoopBehavior::from_msg(msg).unwrap();
             assert_eq!(v, v2);
         }

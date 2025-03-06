@@ -1,19 +1,10 @@
-use crate::{
-    AUTDProtoBufError,
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
-impl ToMessage for autd3_gain_holo::Amplitude {
-    type Message = Amplitude;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            value: self.pascal() as _,
-        })
+impl From<autd3_gain_holo::Amplitude> for Amplitude {
+    fn from(value: autd3_gain_holo::Amplitude) -> Self {
+        Self {
+            value: value.pascal(),
+        }
     }
 }
 
@@ -33,7 +24,7 @@ mod tests {
     fn test_amp() {
         let mut rng = rand::rng();
         let v = rng.random::<f32>() * Pa;
-        let msg = v.to_msg(None).unwrap();
+        let msg = v.into();
         let v2 = autd3_gain_holo::Amplitude::from_msg(msg).unwrap();
         approx::assert_abs_diff_eq!(v.pascal(), v2.pascal());
     }

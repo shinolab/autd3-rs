@@ -1,22 +1,17 @@
-use crate::{AUTDProtoBufError, FromMessage, SquareOption, ToMessage};
+use crate::{AUTDProtoBufError, FromMessage, SquareOption};
 
 mod exact;
 mod exact_float;
 mod nearest;
 
-impl ToMessage for autd3::modulation::SquareOption {
-    type Message = SquareOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            config: Some(self.sampling_config.to_msg(None)?),
-            low: Some(self.low as _),
-            high: Some(self.high as _),
-            duty: Some(self.duty as _),
-        })
+impl From<autd3::modulation::SquareOption> for SquareOption {
+    fn from(value: autd3::modulation::SquareOption) -> Self {
+        Self {
+            low: Some(value.low.into()),
+            high: Some(value.high.into()),
+            duty: Some(value.duty),
+            config: Some(value.sampling_config.into()),
+        }
     }
 }
 

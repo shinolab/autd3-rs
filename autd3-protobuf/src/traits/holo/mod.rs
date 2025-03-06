@@ -9,10 +9,10 @@ macro_rules! to_holo {
     ($self:expr) => {
         $self
             .foci
-            .iter()
+            .into_iter()
             .map(|(p, a)| Holo {
-                pos: Some(p.to_msg(None).unwrap()),
-                amp: Some(a.to_msg(None).unwrap()),
+                pos: Some(p.into()),
+                amp: Some(a.into()),
             })
             .collect()
     };

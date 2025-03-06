@@ -1,20 +1,15 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage, driver::datagram::gain::IntoLightweightGain},
+    traits::{FromMessage, driver::datagram::gain::IntoLightweightGain},
 };
 
-impl ToMessage for autd3::gain::PlaneOption {
-    type Message = PlaneOption;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            intensity: Some(self.intensity.to_msg(None)?),
-            phase_offset: Some(self.phase_offset.to_msg(None)?),
-        })
+impl From<autd3::gain::PlaneOption> for PlaneOption {
+    fn from(value: autd3::gain::PlaneOption) -> Self {
+        Self {
+            intensity: Some(value.intensity.into()),
+            phase_offset: Some(value.phase_offset.into()),
+        }
     }
 }
 
@@ -37,11 +32,11 @@ impl FromMessage<PlaneOption> for autd3::gain::PlaneOption {
 }
 
 impl IntoLightweightGain for autd3::gain::Plane {
-    fn into_lightweight(&self) -> Gain {
+    fn into_lightweight(self) -> Gain {
         Gain {
             gain: Some(gain::Gain::Plane(Plane {
-                dir: Some(self.dir.to_msg(None).unwrap()),
-                option: Some(self.option.to_msg(None).unwrap()),
+                dir: Some(self.dir.into()),
+                option: Some(self.option.into()),
             })),
         }
     }
@@ -62,6 +57,8 @@ impl FromMessage<Plane> for autd3::gain::Plane {
 
 #[cfg(test)]
 mod tests {
+    use crate::DatagramLightweight;
+
     use super::*;
     use autd3_driver::{
         firmware::fpga::{EmitIntensity, Phase},
@@ -80,7 +77,7 @@ mod tests {
                 phase_offset: Phase(rng.random()),
             },
         };
-        let msg = g.to_msg(None).unwrap();
+        let msg = g.clone().into_datagram_lightweight(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Plane(gain)),
@@ -90,8 +87,7 @@ mod tests {
                 approx::assert_abs_diff_eq!(g.dir.x, g2.dir.x);
                 approx::assert_abs_diff_eq!(g.dir.y, g2.dir.y);
                 approx::assert_abs_diff_eq!(g.dir.z, g2.dir.z);
-                assert_eq!(g.option.intensity, g2.option.intensity);
-                assert_eq!(g.option.phase_offset, g2.option.phase_offset);
+                assert_eq!(g.option, g2.option);
             }
             _ => panic!("unexpected datagram type"),
         }

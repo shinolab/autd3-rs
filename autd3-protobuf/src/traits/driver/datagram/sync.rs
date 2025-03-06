@@ -1,17 +1,15 @@
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{DatagramLightweight, FromMessage},
 };
 
-impl ToMessage for autd3_driver::datagram::Synchronize {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl DatagramLightweight for autd3_driver::datagram::Synchronize {
+    fn into_datagram_lightweight(
+        self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::Synchronize(Synchronize {})),
         })
     }

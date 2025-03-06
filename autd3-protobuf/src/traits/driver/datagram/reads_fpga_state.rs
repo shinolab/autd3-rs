@@ -3,17 +3,15 @@ use autd3_core::geometry::Device;
 use crate::{
     AUTDProtoBufError,
     pb::*,
-    traits::{FromMessage, ToMessage},
+    traits::{DatagramLightweight, FromMessage},
 };
 
-impl<F: Fn(&Device) -> bool> ToMessage for autd3_driver::datagram::ReadsFPGAState<F> {
-    type Message = Datagram;
-
-    fn to_msg(
-        &self,
+impl<F: Fn(&Device) -> bool> DatagramLightweight for autd3_driver::datagram::ReadsFPGAState<F> {
+    fn into_datagram_lightweight(
+        self,
         geometry: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
+    ) -> Result<Datagram, AUTDProtoBufError> {
+        Ok(Datagram {
             datagram: Some(datagram::Datagram::ReadsFpgaState(ReadsFpgaState {
                 value: geometry
                     .unwrap()

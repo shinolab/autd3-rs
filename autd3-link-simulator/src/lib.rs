@@ -32,7 +32,7 @@ impl SimulatorInner {
         let mut client = simulator_client::SimulatorClient::new(conn);
 
         client
-            .config_geomety(geometry.to_msg(None)?)
+            .config_geomety(Geometry::from(geometry))
             .await
             .map_err(|e| {
                 tracing::error!("Failed to configure simulator geometry: {}", e);
@@ -60,7 +60,7 @@ impl SimulatorInner {
         }
         self.last_geometry_version = geometry.version();
         self.client
-            .update_geomety(geometry.to_msg(None)?)
+            .update_geomety(Geometry::from(geometry))
             .await
             .map_err(|e| {
                 tracing::error!("Failed to update geometry: {}", e);
@@ -71,7 +71,7 @@ impl SimulatorInner {
 
     async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
         self.client
-            .send_data(tx.to_msg(None)?)
+            .send_data(TxRawData::from(tx))
             .await
             .map_err(AUTDProtoBufError::from)?;
         Ok(())

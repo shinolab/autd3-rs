@@ -1,44 +1,35 @@
-use crate::{
-    AUTDProtoBufError,
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 use autd3_driver::firmware::fpga::EmitIntensity;
 
-impl ToMessage for autd3_gain_holo::EmissionConstraint {
-    type Message = EmissionConstraint;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(match self {
-            autd3_gain_holo::EmissionConstraint::Normalize => Self::Message {
+impl From<autd3_gain_holo::EmissionConstraint> for EmissionConstraint {
+    fn from(value: autd3_gain_holo::EmissionConstraint) -> Self {
+        match value {
+            autd3_gain_holo::EmissionConstraint::Normalize => Self {
                 variant: Some(emission_constraint::Variant::Normalize(
                     emission_constraint::Normalize {},
                 )),
             },
-            autd3_gain_holo::EmissionConstraint::Multiply(value) => Self::Message {
+            autd3_gain_holo::EmissionConstraint::Multiply(value) => Self {
                 variant: Some(emission_constraint::Variant::Multiply(
-                    emission_constraint::Multiply { value: *value as _ },
+                    emission_constraint::Multiply { value: value as _ },
                 )),
             },
-            autd3_gain_holo::EmissionConstraint::Uniform(value) => Self::Message {
+            autd3_gain_holo::EmissionConstraint::Uniform(value) => Self {
                 variant: Some(emission_constraint::Variant::Uniform(
                     emission_constraint::Uniform {
-                        value: Some(value.to_msg(None)?),
+                        value: Some(value.into()),
                     },
                 )),
             },
-            autd3_gain_holo::EmissionConstraint::Clamp(min, max) => Self::Message {
+            autd3_gain_holo::EmissionConstraint::Clamp(min, max) => Self {
                 variant: Some(emission_constraint::Variant::Clamp(
                     emission_constraint::Clamp {
-                        min: Some(min.to_msg(None)?),
-                        max: Some(max.to_msg(None)?),
+                        min: Some(min.into()),
+                        max: Some(max.into()),
                     },
                 )),
             },
-        })
+        }
     }
 }
 
@@ -75,7 +66,7 @@ mod tests {
     #[test]
     fn test_emission_constraint_normalize() {
         let v = autd3_gain_holo::EmissionConstraint::Normalize;
-        let msg = v.to_msg(None).unwrap();
+        let msg = v.into();
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(msg).unwrap();
         assert_eq!(v, v2);
     }
@@ -84,7 +75,7 @@ mod tests {
     fn test_emission_constraint_uniform() {
         let mut rng = rand::rng();
         let v = autd3_gain_holo::EmissionConstraint::Uniform(EmitIntensity(rng.random()));
-        let msg = v.to_msg(None).unwrap();
+        let msg = v.into();
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(msg).unwrap();
         assert_eq!(v, v2);
     }
@@ -96,7 +87,7 @@ mod tests {
             EmitIntensity(rng.random()),
             EmitIntensity(rng.random()),
         );
-        let msg = v.to_msg(None).unwrap();
+        let msg = v.into();
         let v2 = autd3_gain_holo::EmissionConstraint::from_msg(msg).unwrap();
         assert_eq!(v, v2);
     }

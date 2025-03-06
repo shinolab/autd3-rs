@@ -1,20 +1,11 @@
-use crate::{
-    AUTDProtoBufError,
-    pb::*,
-    traits::{FromMessage, ToMessage},
-};
+use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
-impl ToMessage for autd3_driver::datagram::ControlPoint {
-    type Message = ControlPoint;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            pos: Some(self.point.to_msg(None)?),
-            offset: Some(self.phase_offset.to_msg(None)?),
-        })
+impl From<autd3_driver::datagram::ControlPoint> for ControlPoint {
+    fn from(value: autd3_driver::datagram::ControlPoint) -> Self {
+        Self {
+            pos: Some(value.point.into()),
+            offset: Some(value.phase_offset.into()),
+        }
     }
 }
 
@@ -33,20 +24,12 @@ impl FromMessage<ControlPoint> for autd3_driver::datagram::ControlPoint {
     }
 }
 
-impl<const N: usize> ToMessage for autd3_driver::datagram::ControlPoints<N> {
-    type Message = ControlPoints;
-
-    fn to_msg(
-        &self,
-        _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Self::Message, AUTDProtoBufError> {
-        Ok(Self::Message {
-            points: self
-                .iter()
-                .map(|p| p.to_msg(None))
-                .collect::<Result<_, _>>()?,
-            intensity: Some(self.intensity.to_msg(None)?),
-        })
+impl<const N: usize> From<autd3_driver::datagram::ControlPoints<N>> for ControlPoints {
+    fn from(value: autd3_driver::datagram::ControlPoints<N>) -> Self {
+        Self {
+            points: value.into_iter().map(|p| p.into()).collect(),
+            intensity: Some(value.intensity.into()),
+        }
     }
 }
 
