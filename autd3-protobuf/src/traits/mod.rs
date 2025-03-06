@@ -1,4 +1,4 @@
-use crate::{AUTDProtoBufError, Datagram};
+use crate::AUTDProtoBufError;
 
 #[cfg(feature = "lightweight")]
 mod autd3;
@@ -6,11 +6,12 @@ pub(crate) mod driver;
 #[cfg(feature = "lightweight")]
 mod holo;
 
+#[cfg(feature = "lightweight")]
 pub trait DatagramLightweight {
     fn into_datagram_lightweight(
         self,
         geometry: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError>;
+    ) -> Result<crate::Datagram, AUTDProtoBufError>;
 }
 
 pub trait FromMessage<T>
