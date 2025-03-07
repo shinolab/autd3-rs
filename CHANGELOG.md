@@ -1,5 +1,6 @@
 # 32.0.0
 
+- Rename from `DebugType` to `GPIOOutputType`
 - Prereserve `enable` and `sound_speed` in `Geometry::reconfigure`
 
 # 31.0.0

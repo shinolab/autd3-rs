@@ -3,8 +3,8 @@ mod clear;
 #[cfg(feature = "dynamic_freq")]
 mod clock;
 mod cpu_gpio_out;
-mod debug;
 mod force_fan;
+mod fpga_gpio_out;
 mod gain;
 mod gpio_in;
 mod info;
@@ -30,8 +30,8 @@ pub use clear::Clear;
 pub use clock::ConfigureFPGAClock;
 #[doc(hidden)]
 pub use cpu_gpio_out::{CpuGPIOOutputs, CpuGPIOPort};
-pub use debug::GPIOOutputs;
 pub use force_fan::ForceFan;
+pub use fpga_gpio_out::GPIOOutputs;
 pub use gain::{BoxedGain, IntoBoxedGain};
 #[doc(hidden)]
 pub use gpio_in::EmulateGPIOIn;
