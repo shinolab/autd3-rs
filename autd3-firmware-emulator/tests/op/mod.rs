@@ -1,7 +1,7 @@
 mod clear;
 mod cpu_gpio_out;
-mod debug;
 mod force_fan;
+mod fpga_gpio_out;
 mod gain;
 mod gpio_in;
 mod info;
