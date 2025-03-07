@@ -119,7 +119,13 @@ impl Geometry {
 
     /// Reconfigure the geometry.
     pub fn reconfigure<D: Into<Device>, F: Fn(&Device) -> D>(&mut self, f: F) {
-        self.devices = self.devices.iter().map(f).map(|dev| dev.into()).collect();
+        self.devices.iter_mut().for_each(|dev| {
+            let enable = dev.enable;
+            let sound_speed = dev.sound_speed;
+            *dev = f(dev).into();
+            dev.enable = enable;
+            dev.sound_speed = sound_speed;
+        });
         self.assign_idx();
         self.version += 1;
     }

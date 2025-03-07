@@ -1,5 +1,5 @@
-mod debug_type;
 mod fpga_state;
+mod gpio_out;
 mod silencer_target;
 mod stm_focus;
 
@@ -9,9 +9,9 @@ pub use autd3_core::{
     sampling_config::SamplingConfig,
 };
 
-pub use debug_type::DebugType;
-pub(crate) use debug_type::DebugValue;
 pub use fpga_state::FPGAState;
+pub(crate) use gpio_out::DebugValue;
+pub use gpio_out::GPIOOutputType;
 pub use silencer_target::SilencerTarget;
 pub(crate) use stm_focus::STMFocus;
 

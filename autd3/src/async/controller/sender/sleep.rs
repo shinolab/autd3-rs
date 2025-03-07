@@ -6,10 +6,19 @@ pub use spin_sleep::SpinSleeper;
 use crate::controller::StdSleeper;
 
 #[doc(hidden)]
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 pub trait AsyncSleep: std::fmt::Debug {
-    fn sleep_until(&self, deadline: Instant) -> impl std::future::Future<Output = ()>;
+    async fn sleep_until(&self, deadline: Instant);
 }
 
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
+impl AsyncSleep for Box<dyn AsyncSleep + Send + Sync> {
+    async fn sleep_until(&self, deadline: Instant) {
+        self.as_ref().sleep_until(deadline).await;
+    }
+}
+
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncSleep for StdSleeper {
     async fn sleep_until(&self, deadline: Instant) {
         let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
@@ -17,6 +26,7 @@ impl AsyncSleep for StdSleeper {
     }
 }
 
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncSleep for SpinSleeper {
     async fn sleep_until(&self, deadline: Instant) {
         self.sleep(deadline - Instant::now());
@@ -38,6 +48,7 @@ impl Default for AsyncSleeper {
     }
 }
 
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncSleep for AsyncSleeper {
     async fn sleep_until(&self, deadline: Instant) {
         let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
@@ -51,6 +62,7 @@ mod win {
 
     use super::*;
 
+    #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
     impl AsyncSleep for WaitableSleeper {
         // GRCOV_EXCL_START
         async fn sleep_until(&self, deadline: Instant) {

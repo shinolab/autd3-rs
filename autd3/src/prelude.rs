@@ -30,8 +30,8 @@ pub use autd3_driver::{
     firmware::{
         cpu::GainSTMMode,
         fpga::{
-            DebugType, Drive, EmitIntensity, GPIOIn, GPIOOut, LoopBehavior, Phase, SamplingConfig,
-            Segment, SilencerTarget, TransitionMode,
+            Drive, EmitIntensity, GPIOIn, GPIOOut, GPIOOutputType, LoopBehavior, Phase,
+            SamplingConfig, Segment, SilencerTarget, TransitionMode,
         },
     },
     geometry::{EulerAngle, Geometry, Point3, Quaternion, UnitQuaternion, UnitVector3, Vector3},
