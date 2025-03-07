@@ -1,3 +1,7 @@
+# 32.0.0
+
+- Prereserve `enable` and `sound_speed` in `Geometry::reconfigure`
+
 # 31.0.0
 
 - Remove `Device::translate`, `Device::translate_to`, `Device::rotate`, `Device::rotate_to`, and `Device::affine`
