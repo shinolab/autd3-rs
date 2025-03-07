@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     AUTDProtoBufError, AsyncSleeper, FromMessage, ParallelMode, SenderOption, SpinSleeper,
     SpinStrategy, StdSleeper,
@@ -26,31 +28,6 @@ impl From<autd3::controller::ParallelMode> for ParallelMode {
 impl FromMessage<i32> for autd3::controller::ParallelMode {
     fn from_msg(msg: i32) -> Result<Self, AUTDProtoBufError> {
         Ok(ParallelMode::try_from(msg)?.into())
-    }
-}
-
-impl From<SpinStrategy> for autd3::controller::SpinStrategy {
-    fn from(value: SpinStrategy) -> Self {
-        match value {
-            SpinStrategy::SpinLoopHint => Self::SpinLoopHint,
-            SpinStrategy::YieldThread => Self::YieldThread,
-        }
-    }
-}
-
-impl From<autd3::controller::SpinStrategy> for SpinStrategy {
-    fn from(value: autd3::controller::SpinStrategy) -> Self {
-        match value {
-            autd3::controller::SpinStrategy::SpinLoopHint => SpinStrategy::SpinLoopHint,
-            autd3::controller::SpinStrategy::YieldThread => SpinStrategy::YieldThread,
-            _ => unimplemented!(),
-        }
-    }
-}
-
-impl FromMessage<i32> for autd3::controller::SpinStrategy {
-    fn from_msg(msg: i32) -> Result<Self, AUTDProtoBufError> {
-        Ok(SpinStrategy::try_from(msg)?.into())
     }
 }
 
@@ -113,5 +90,28 @@ impl From<&autd3::controller::SenderOption<autd3::r#async::controller::AsyncSlee
                 timer_resolution: value.sleeper.timer_resolution.map(|t| t.get()),
             })),
         }
+    }
+}
+
+impl FromMessage<SenderOption>
+    for autd3::controller::SenderOption<
+        Box<dyn autd3::r#async::controller::AsyncSleep + Send + Sync>,
+    >
+{
+    fn from_msg(msg: SenderOption) -> Result<Self, AUTDProtoBufError> {
+        let send_interval = Duration::from_nanos(msg.send_interval_ns);
+        let receive_interval = Duration::from_nanos(msg.receive_interval_ns);
+        let timeout = msg.timeout_ns.map(Duration::from_nanos);
+        let parallel = autd3::controller::ParallelMode::from_msg(msg.parallel)?;
+        let sleeper = Box::<dyn autd3::r#async::controller::AsyncSleep + Send + Sync>::from_msg(
+            msg.sleeper.ok_or(AUTDProtoBufError::DataParseError)?,
+        )?;
+        Ok(autd3::controller::SenderOption {
+            send_interval,
+            receive_interval,
+            timeout,
+            parallel,
+            sleeper,
+        })
     }
 }
