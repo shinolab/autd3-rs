@@ -32,8 +32,29 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         }
     };
 
+    let lifetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let ext = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)* > #name #ty_generics #where_clause {
+            /// Returns the expected radiation pressure. The value are normalized to 0-1.
+            pub fn expected_radiation_pressure(self) -> Result<f32, ModulationError> {
+                <Self as Modulation>::calc(self).map(|buf| {
+                    1. / buf.len() as f32
+                        * buf
+                            .into_iter()
+                            .map(|p| p as f32 / u8::MAX as f32)
+                            .map(|p| p * p)
+                            .sum::<f32>()
+                })
+            }
+        }
+    };
+
     let generator = quote! {
         #datagram
+
+        #ext
     };
     generator.into()
 }
