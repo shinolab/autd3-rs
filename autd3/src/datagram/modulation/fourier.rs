@@ -24,7 +24,7 @@ pub struct FourierOption {
 ///
 /// The modulation value is calculated as `⌊offset + scale_factor * (sum of components)⌋`, where `offset` and `scale_factor` can be set by the [`FourierOption`].
 #[derive(Modulation, Clone, PartialEq, Debug, Deref)]
-pub struct Fourier<S: Into<SamplingMode> + Clone + Debug> {
+pub struct Fourier<S: Into<SamplingMode> + Clone + Copy + Debug> {
     #[deref]
     /// The [`Sine`] components of the Fourier modulation.
     pub components: Vec<Sine<S>>,
@@ -32,7 +32,7 @@ pub struct Fourier<S: Into<SamplingMode> + Clone + Debug> {
     pub option: FourierOption,
 }
 
-impl<S: Into<SamplingMode> + Clone + Debug> Fourier<S> {
+impl<S: Into<SamplingMode> + Clone + Copy + Debug> Fourier<S> {
     /// Create a new [`Fourier`].
     #[must_use]
     pub fn new(components: impl IntoIterator<Item = Sine<S>>, option: FourierOption) -> Self {
@@ -43,7 +43,7 @@ impl<S: Into<SamplingMode> + Clone + Debug> Fourier<S> {
     }
 }
 
-impl<S: Into<SamplingMode> + Clone + Debug> Modulation for Fourier<S> {
+impl<S: Into<SamplingMode> + Clone + Copy + Debug> Modulation for Fourier<S> {
     fn sampling_config(&self) -> SamplingConfig {
         self.components
             .first()

@@ -39,15 +39,15 @@ impl Default for SineOption {
 /// Sine wave modulation
 ///
 /// The modulation value is calculated as `⌊intensity / 2 * sin(2 * PI * freq * t + phase) + offset⌋`, where `t` is time, and `intensity`, `offset`, and `phase` can be set by the [`SineOption`].
-#[derive(Modulation, Clone, PartialEq, Debug)]
-pub struct Sine<S: Into<SamplingMode> + Clone + std::fmt::Debug> {
+#[derive(Modulation, Clone, Copy, PartialEq, Debug)]
+pub struct Sine<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> {
     /// The frequency of the sine wave.
     pub freq: S,
     /// The option of the modulation.
     pub option: SineOption,
 }
 
-impl<S: Into<SamplingMode> + Clone + std::fmt::Debug> Sine<S> {
+impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Sine<S> {
     /// Create a new [`Sine`].
     #[must_use]
     pub const fn new(freq: S, option: SineOption) -> Self {
@@ -76,7 +76,7 @@ impl Sine<Freq<f32>> {
     }
 }
 
-impl<S: Into<SamplingMode> + Clone + std::fmt::Debug> Sine<S> {
+impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Sine<S> {
     pub(super) fn calc_raw(&self) -> Result<impl Iterator<Item = f32>, ModulationError> {
         let sampling_mode: SamplingMode = self.freq.clone().into();
         let (n, rep) = sampling_mode.validate(self.option.sampling_config)?;
@@ -90,7 +90,7 @@ impl<S: Into<SamplingMode> + Clone + std::fmt::Debug> Sine<S> {
     }
 }
 
-impl<S: Into<SamplingMode> + Clone + std::fmt::Debug> Modulation for Sine<S> {
+impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Modulation for Sine<S> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         self.calc_raw()?
             .map(|v| v.floor() as i16)
@@ -184,7 +184,7 @@ mod tests {
     )]
     fn new(
         #[case] expect: Result<Vec<u8>, ModulationError>,
-        #[case] freq: impl Into<SamplingMode> + Clone + std::fmt::Debug,
+        #[case] freq: impl Into<SamplingMode> + Clone + Copy + std::fmt::Debug,
     ) {
         let m = Sine::new(freq, SineOption::default());
         assert_eq!(u8::MAX, m.option.intensity);

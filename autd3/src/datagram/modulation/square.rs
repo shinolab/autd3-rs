@@ -29,15 +29,15 @@ impl Default for SquareOption {
 }
 
 /// Square wave modulation
-#[derive(Modulation, Clone, PartialEq, Debug)]
-pub struct Square<S: Into<SamplingMode> + std::fmt::Debug> {
+#[derive(Modulation, Clone, Copy, PartialEq, Debug)]
+pub struct Square<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> {
     /// The frequency of the square wave.
     pub freq: S,
     /// The option of the modulation.
     pub option: SquareOption,
 }
 
-impl<S: Into<SamplingMode> + std::fmt::Debug> Square<S> {
+impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Square<S> {
     /// Create a new [`Square`].
     #[must_use]
     pub const fn new(freq: S, option: SquareOption) -> Self {
@@ -66,7 +66,7 @@ impl Square<Freq<f32>> {
     }
 }
 
-impl<S: Into<SamplingMode> + std::fmt::Debug> Modulation for Square<S> {
+impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Modulation for Square<S> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         if !(0.0..=1.0).contains(&self.option.duty) {
             return Err(ModulationError::new("duty must be in range from 0 to 1"));
@@ -168,7 +168,7 @@ mod tests {
     )]
     fn with_freq_float_exact(
         #[case] expect: Result<Vec<u8>, ModulationError>,
-        #[case] freq: impl Into<SamplingMode> + std::fmt::Debug,
+        #[case] freq: impl Into<SamplingMode> + Clone + Copy + std::fmt::Debug,
     ) {
         let m = Square::new(freq, SquareOption::default());
         assert_eq!(u8::MIN, m.option.low);
