@@ -44,7 +44,7 @@ mod tests {
             freq: 1.0 * Hz,
             option: Default::default(),
         };
-        let msg = m.clone().into_datagram_lightweight(None).unwrap();
+        let msg = m.into_datagram_lightweight(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SquareExactFloat(modulation)),
