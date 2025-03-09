@@ -5,18 +5,35 @@ pub use spin_sleep::SpinSleeper;
 
 use crate::controller::StdSleeper;
 
-#[doc(hidden)]
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
-pub trait AsyncSleep: std::fmt::Debug {
-    async fn sleep_until(&self, deadline: Instant);
-}
+#[cfg(feature = "async-trait")]
+mod internal {
+    use super::*;
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
-impl AsyncSleep for Box<dyn AsyncSleep + Send + Sync> {
-    async fn sleep_until(&self, deadline: Instant) {
-        self.as_ref().sleep_until(deadline).await;
+    #[doc(hidden)]
+    #[autd3_core::async_trait]
+    pub trait AsyncSleep: std::fmt::Debug {
+        async fn sleep_until(&self, deadline: Instant);
+    }
+
+    #[autd3_core::async_trait]
+    impl AsyncSleep for Box<dyn AsyncSleep + Send + Sync> {
+        async fn sleep_until(&self, deadline: Instant) {
+            self.as_ref().sleep_until(deadline).await;
+        }
     }
 }
+
+#[cfg(not(feature = "async-trait"))]
+mod internal {
+    use super::*;
+
+    #[doc(hidden)]
+    pub trait AsyncSleep: std::fmt::Debug {
+        fn sleep_until(&self, deadline: Instant) -> impl std::future::Future<Output = ()> + Send;
+    }
+}
+
+pub use internal::*;
 
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncSleep for StdSleeper {
