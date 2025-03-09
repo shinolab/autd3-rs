@@ -46,9 +46,9 @@ impl FromMessage<Sleeper> for Box<dyn autd3::r#async::controller::AsyncSleep + S
                 })?,
             )),
             #[cfg(not(target_os = "windows"))]
-            sender_option::Sleeper::Waitable(_) => Err(AUTDProtoBufError::Status(
-                tonic::Status::unimplemented("WaitableSleeper is not supported"),
-            )),
+            Sleeper::Waitable(_) => Err(AUTDProtoBufError::Status(tonic::Status::unimplemented(
+                "WaitableSleeper is not supported",
+            ))),
             Sleeper::Async(async_sleeper) => {
                 Ok(Box::new(autd3::r#async::controller::AsyncSleeper {
                     timer_resolution: async_sleeper.timer_resolution.and_then(NonZeroU32::new),
