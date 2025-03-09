@@ -7,7 +7,7 @@ use std::{fmt::Debug, path::Path};
 use crate::error::AudioFileError;
 
 /// [`Modulation`] from Wav data.
-#[derive(Modulation, Debug)]
+#[derive(Modulation, Debug, Clone)]
 pub struct Wav {
     spec: hound::WavSpec,
     buffer: Vec<u8>,

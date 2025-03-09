@@ -10,7 +10,7 @@ use num::integer::gcd;
 use std::fmt::Debug;
 
 /// Nearest frequency type.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Nearest(pub Freq<f32>);
 
 /// A enum for sampling mode.

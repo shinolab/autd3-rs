@@ -18,10 +18,10 @@ impl Default for CsvOption {
 }
 
 /// [`Modulation`] from CSV data.
-#[derive(Modulation, Debug)]
+#[derive(Modulation, Debug, Clone)]
 pub struct Csv<P, Config>
 where
-    P: AsRef<Path> + Debug,
+    P: AsRef<Path> + Clone + Debug,
     Config: Into<SamplingConfig> + Debug + Copy,
 {
     /// The path to the CSV file.
@@ -34,7 +34,7 @@ where
 
 impl<P, Config> Csv<P, Config>
 where
-    P: AsRef<Path> + Debug,
+    P: AsRef<Path> + Clone + Debug,
     Config: Into<SamplingConfig> + Debug + Copy,
 {
     /// Create a new [`Csv`].
@@ -75,7 +75,7 @@ where
 
 impl<P, Config> Modulation for Csv<P, Config>
 where
-    P: AsRef<Path> + Debug,
+    P: AsRef<Path> + Clone + Debug,
     Config: Into<SamplingConfig> + Debug + Copy,
 {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
