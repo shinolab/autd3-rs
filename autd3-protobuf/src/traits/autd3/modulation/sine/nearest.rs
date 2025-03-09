@@ -46,7 +46,7 @@ mod tests {
             option: Default::default(),
         }
         .into_nearest();
-        let msg = m.clone().into_datagram_lightweight(None).unwrap();
+        let msg = m.into_datagram_lightweight(None).unwrap();
         match msg.datagram {
             Some(datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::SineNearest(modulation)),

@@ -78,7 +78,7 @@ impl Sine<Freq<f32>> {
 
 impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Sine<S> {
     pub(super) fn calc_raw(&self) -> Result<impl Iterator<Item = f32>, ModulationError> {
-        let sampling_mode: SamplingMode = self.freq.clone().into();
+        let sampling_mode: SamplingMode = self.freq.into();
         let (n, rep) = sampling_mode.validate(self.option.sampling_config)?;
         let intensity = self.option.intensity;
         let offset = self.option.offset;
@@ -184,7 +184,7 @@ mod tests {
     )]
     fn new(
         #[case] expect: Result<Vec<u8>, ModulationError>,
-        #[case] freq: impl Into<SamplingMode> + Clone + Copy + std::fmt::Debug,
+        #[case] freq: impl Into<SamplingMode> + Copy + std::fmt::Debug,
     ) {
         let m = Sine::new(freq, SineOption::default());
         assert_eq!(u8::MAX, m.option.intensity);

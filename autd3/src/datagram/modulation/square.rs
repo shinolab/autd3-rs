@@ -168,7 +168,7 @@ mod tests {
     )]
     fn with_freq_float_exact(
         #[case] expect: Result<Vec<u8>, ModulationError>,
-        #[case] freq: impl Into<SamplingMode> + Clone + Copy + std::fmt::Debug,
+        #[case] freq: impl Into<SamplingMode> + Copy + std::fmt::Debug,
     ) {
         let m = Square::new(freq, SquareOption::default());
         assert_eq!(u8::MIN, m.option.low);
