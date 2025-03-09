@@ -2,6 +2,7 @@
 
 - Rename from `DebugType` to `GPIOOutputType`
 - Prereserve `enable` and `sound_speed` in `Geometry::reconfigure`
+- Impl `expected_radiation_pressure` for modulations
 
 # 31.0.0
 
