@@ -1,6 +1,8 @@
 mod angle;
 mod freq;
 
+use std::time::Duration;
+
 pub use std::f32::consts::PI;
 
 #[cfg(feature = "use_meter")]
@@ -31,70 +33,21 @@ pub const T4010A1_AMPLITUDE: f32 = 275.574_25 * 200.0 * MILLIMETER; // [㎩*mm]
 pub const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(200);
 
 /// The period of ultrasound in discrete time units
-pub const ULTRASOUND_PERIOD_COUNT: usize = 256;
+pub const ULTRASOUND_PERIOD_COUNT: usize = 512;
 
-#[cfg(not(feature = "dynamic_freq"))]
-mod inner {
-    use super::Freq;
-    use std::time::Duration;
-
-    #[inline(always)]
-    #[must_use]
-    /// The frequency of ultrasound
-    pub const fn ultrasound_freq() -> Freq<u32> {
-        Freq { freq: 40000 }
-    }
-
-    #[inline(always)]
-    #[must_use]
-    /// The period of ultrasound
-    pub const fn ultrasound_period() -> Duration {
-        Duration::from_micros(25)
-    }
+#[inline(always)]
+#[must_use]
+/// The frequency of ultrasound
+pub const fn ultrasound_freq() -> Freq<u32> {
+    Freq { freq: 40000 }
 }
 
-#[cfg(feature = "dynamic_freq")]
-mod inner {
-    use std::sync::LazyLock;
-
-    use super::Freq;
-    use crate::defined::Hz;
-
-    static LAZY_FREQ: LazyLock<Freq<u32>> =
-        LazyLock::new(|| match std::env::var("AUTD3_ULTRASOUND_FREQ") {
-            Ok(freq) => match freq.parse::<u32>() {
-                Ok(freq) => {
-                    tracing::info!("Set ultrasound frequency to {} Hz.", freq);
-                    freq * Hz
-                }
-                Err(_) => {
-                    tracing::error!(
-                        "Invalid ultrasound frequency ({} Hz), fallback to 40 kHz.",
-                        freq
-                    );
-                    Freq { freq: 40000 }
-                }
-            },
-            Err(_) => {
-                tracing::warn!(
-                    "Environment variable AUTD3_ULTRASOUND_FREQ is not set, fallback to 40 kHz."
-                );
-                Freq { freq: 40000 }
-            }
-        });
-
-    #[inline]
-    #[must_use]
-    /// The frequency of ultrasound
-    pub fn ultrasound_freq() -> Freq<u32> {
-        *LAZY_FREQ
-    }
-
-    #[doc(hidden)]
-    pub const DRP_ROM_SIZE: usize = 32;
+#[inline(always)]
+#[must_use]
+/// The period of ultrasound
+pub const fn ultrasound_period() -> Duration {
+    Duration::from_micros(25)
 }
-
-pub use inner::*;
 
 /// \[㎜\]
 #[allow(non_upper_case_globals)]

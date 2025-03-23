@@ -1,5 +1,9 @@
 use crate::{CPUEmulator, cpu::params::*};
 
+pub const MOD_BUF_PAGE_SIZE_WIDTH: u16 = 15;
+pub const MOD_BUF_PAGE_SIZE: u16 = 1 << MOD_BUF_PAGE_SIZE_WIDTH;
+pub const MOD_BUF_PAGE_SIZE_MASK: u16 = MOD_BUF_PAGE_SIZE - 1;
+
 #[repr(C, align(2))]
 #[derive(Clone, Copy)]
 struct ModulationHead {
@@ -65,6 +69,10 @@ impl CPUEmulator {
         self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_MEM_WR_SEGMENT, segment);
     }
 
+    pub(crate) unsafe fn change_mod_wr_page(&mut self, page: u16) {
+        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_MEM_WR_PAGE, page as _);
+    }
+
     #[must_use]
     pub(crate) unsafe fn write_mod(&mut self, data: &[u8]) -> u8 {
         unsafe {
@@ -106,25 +114,16 @@ impl CPUEmulator {
                 self.mod_transition_mode = d.head.transition_mode;
                 self.mod_transition_value = d.head.transition_value;
 
-                match segment {
-                    0 => {
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_MOD_FREQ_DIV0,
-                            d.head.freq_div,
-                        );
-                        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP0, d.head.rep);
-                    }
-                    1 => {
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_MOD_FREQ_DIV1,
-                            d.head.freq_div,
-                        );
-                        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_MOD_REP1, d.head.rep);
-                    }
-                    _ => unreachable!(),
-                }
+                self.bram_write(
+                    BRAM_SELECT_CONTROLLER,
+                    ADDR_MOD_FREQ_DIV0 + segment as u16,
+                    d.head.freq_div,
+                );
+                self.bram_write(
+                    BRAM_SELECT_CONTROLLER,
+                    ADDR_MOD_REP0 + segment as u16,
+                    d.head.rep,
+                );
 
                 self.change_mod_wr_segment(segment as _);
 
@@ -135,32 +134,45 @@ impl CPUEmulator {
                 data[std::mem::size_of::<ModulationSubseq>()..].as_ptr() as *const u16
             };
 
-            self.bram_cpy(
-                BRAM_SELECT_MOD,
-                self.mod_cycle >> 1,
-                data,
-                ((write + 1) >> 1) as usize,
-            );
-            self.mod_cycle += write;
+            let page_capacity =
+                MOD_BUF_PAGE_SIZE - ((self.mod_cycle as u16) & MOD_BUF_PAGE_SIZE_MASK);
+            if write < page_capacity {
+                self.bram_cpy(
+                    BRAM_SELECT_MOD,
+                    (self.mod_cycle as u16 & MOD_BUF_PAGE_SIZE_MASK) >> 1,
+                    data,
+                    ((write + 1) >> 1) as usize,
+                );
+                self.mod_cycle += write as u32;
+            } else {
+                self.bram_cpy(
+                    BRAM_SELECT_MOD,
+                    (self.mod_cycle as u16 & MOD_BUF_PAGE_SIZE_MASK) >> 1,
+                    data,
+                    (page_capacity >> 1) as usize,
+                );
+                self.mod_cycle += page_capacity as u32;
+
+                self.change_mod_wr_page(
+                    (((self.mod_cycle as u16) & !MOD_BUF_PAGE_SIZE_MASK) >> MOD_BUF_PAGE_SIZE_WIDTH)
+                        as _,
+                );
+
+                self.bram_cpy(
+                    BRAM_SELECT_MOD,
+                    0,
+                    data.add((page_capacity >> 1) as _),
+                    ((write - page_capacity) >> 1) as _,
+                );
+                self.mod_cycle += (write - page_capacity) as u32;
+            }
 
             if (d.subseq.flag & MODULATION_FLAG_END) == MODULATION_FLAG_END {
-                match segment {
-                    0 => {
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_MOD_CYCLE0,
-                            (self.mod_cycle.max(1) - 1) as _,
-                        );
-                    }
-                    1 => {
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_MOD_CYCLE1,
-                            (self.mod_cycle.max(1) - 1) as _,
-                        );
-                    }
-                    _ => unreachable!(),
-                }
+                self.bram_write(
+                    BRAM_SELECT_CONTROLLER,
+                    ADDR_MOD_CYCLE0 + segment as u16,
+                    (self.mod_cycle.max(1) - 1) as _,
+                );
 
                 if (d.subseq.flag & MODULATION_FLAG_UPDATE) == MODULATION_FLAG_UPDATE {
                     return self.mod_segment_update(

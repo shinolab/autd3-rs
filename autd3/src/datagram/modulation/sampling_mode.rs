@@ -159,8 +159,8 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(1.2207031 * Hz, 1. * Hz, SamplingConfig::FREQ_40K)]
-    #[case(1.2207031 * Hz, 1.2207031 * Hz, SamplingConfig::FREQ_40K)]
+    #[case(0.61035156 * Hz, 0.5 * Hz, SamplingConfig::FREQ_40K)]
+    #[case(0.61035156 * Hz, 0.61035156 * Hz, SamplingConfig::FREQ_40K)]
     #[case(20000. * Hz, 20000. * Hz, SamplingConfig::FREQ_40K)]
     #[case(20000. * Hz, 40000. * Hz, SamplingConfig::FREQ_40K)]
     fn nearest_freq_clamp(

@@ -1,6 +1,5 @@
 mod fpga_state;
 mod gpio_out;
-mod silencer_target;
 mod stm_focus;
 
 pub use autd3_core::{
@@ -12,7 +11,6 @@ pub use autd3_core::{
 pub use fpga_state::FPGAState;
 pub(crate) use gpio_out::DebugValue;
 pub use gpio_out::GPIOOutputType;
-pub use silencer_target::SilencerTarget;
 pub(crate) use stm_focus::STMFocus;
 
 use crate::{defined::mm, ethercat::DcSysTime};
@@ -45,7 +43,7 @@ pub const MOD_BUF_SIZE_MIN: usize = 2;
 /// The maximum buffer size of [`Modulation`].
 ///
 /// [`Modulation`]: autd3_core::modulation::Modulation
-pub const MOD_BUF_SIZE_MAX: usize = 32768;
+pub const MOD_BUF_SIZE_MAX: usize = 65536;
 
 /// The minimum buffer size of [`FociSTM`] and [`GainSTM`].
 ///
@@ -57,7 +55,7 @@ pub const FOCI_STM_FOCI_NUM_MAX: usize = 8;
 /// The maximum buffer size of [`FociSTM`].
 ///
 /// [`FociSTM`]: crate::datagram::FociSTM
-pub const FOCI_STM_BUF_SIZE_MAX: usize = 8192;
+pub const FOCI_STM_BUF_SIZE_MAX: usize = 65536;
 /// The maximum buffer size of [`GainSTM`].
 ///
 /// [`GainSTM`]: crate::datagram::GainSTM
@@ -68,5 +66,5 @@ pub const PWE_BUF_SIZE: usize = 256;
 
 #[must_use]
 pub(crate) const fn ec_time_to_sys_time(time: &DcSysTime) -> u64 {
-    (time.sys_time() / 3125) << 5
+    (time.sys_time() / 3125) << 6
 }

@@ -58,21 +58,17 @@ fn into_boxed_datagram(datagram: datagram::Datagram) -> Result<BoxedDatagram, AU
             use autd3::driver::datagram::*;
             use silencer::Config;
             let config = msg.config.ok_or(AUTDProtoBufError::DataParseError)?;
-            let target = autd3::driver::firmware::fpga::SilencerTarget::from_msg(msg.target)?;
             Ok(match config {
                 Config::FixedUpdateRate(msg) => Silencer {
                     config: FixedUpdateRate::from_msg(msg)?,
-                    target,
                 }
                 .into_boxed(),
                 Config::FixedCompletionTime(msg) => Silencer {
                     config: FixedCompletionTime::from_msg(msg)?,
-                    target,
                 }
                 .into_boxed(),
                 Config::FixedCompletionSteps(msg) => Silencer {
                     config: FixedCompletionSteps::from_msg(msg)?,
-                    target,
                 }
                 .into_boxed(),
             })

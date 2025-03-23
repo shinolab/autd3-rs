@@ -12,30 +12,20 @@ impl FPGAEmulator {
     pub fn modulation_freq_division(&self, segment: Segment) -> u16 {
         Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
-            match segment {
-                Segment::S0 => ADDR_MOD_FREQ_DIV0,
-                Segment::S1 => ADDR_MOD_FREQ_DIV1,
-            },
+            ADDR_MOD_FREQ_DIV0 + segment as usize,
         )
     }
 
     #[must_use]
     pub fn modulation_cycle(&self, segment: Segment) -> usize {
-        self.mem.controller_bram.borrow()[match segment {
-            Segment::S0 => ADDR_MOD_CYCLE0,
-            Segment::S1 => ADDR_MOD_CYCLE1,
-        }] as usize
-            + 1
+        self.mem.controller_bram.borrow()[ADDR_MOD_CYCLE0 + segment as usize] as usize + 1
     }
 
     #[must_use]
     pub fn modulation_loop_behavior(&self, segment: Segment) -> LoopBehavior {
         match Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
-            match segment {
-                Segment::S0 => ADDR_MOD_REP0,
-                Segment::S1 => ADDR_MOD_REP1,
-            },
+            ADDR_MOD_REP0 + segment as usize,
         ) {
             0xFFFF => LoopBehavior::Infinite,
             v => LoopBehavior::Finite(NonZeroU16::new(v + 1).unwrap()),

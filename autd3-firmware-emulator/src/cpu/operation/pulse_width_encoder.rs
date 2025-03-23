@@ -17,7 +17,7 @@ impl CPUEmulator {
             BRAM_SELECT_PWE_TABLE,
             0,
             data[size_of::<Pwe>()..].as_ptr() as _,
-            (256 >> 1) as usize,
+            256,
         );
 
         NO_ERR

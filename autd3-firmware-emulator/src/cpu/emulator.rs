@@ -19,8 +19,9 @@ pub struct CPUEmulator {
     #[getset(get_copy = "pub")]
     pub(crate) reads_fpga_state: bool,
     pub(crate) reads_fpga_state_store: bool,
-    pub(crate) mod_cycle: u16,
-    pub(crate) stm_cycle: [u16; 2],
+    pub(crate) mod_cycle: u32,
+    pub(crate) stm_write: u32,
+    pub(crate) stm_cycle: [u32; 2],
     pub(crate) stm_mode: [u16; 2],
     pub(crate) stm_rep: [u16; 2],
     pub(crate) stm_freq_div: [u16; 2],
@@ -45,8 +46,6 @@ pub struct CPUEmulator {
     pub(crate) silencer_strict_mode: bool,
     pub(crate) min_freq_div_intensity: u16,
     pub(crate) min_freq_div_phase: u16,
-    #[cfg(feature = "dynamic_freq")]
-    pub(crate) clk_write: u16,
     pub(crate) is_rx_data_used: bool,
     #[getset(get_copy = "pub")]
     pub(crate) dc_sys_time: DcSysTime,
@@ -81,11 +80,10 @@ impl CPUEmulator {
             mod_segment: 0,
             stm_freq_div: [0xFFFF, 0xFFFF],
             stm_segment: 0,
+            stm_write: 0,
             silencer_strict_mode: true,
             min_freq_div_intensity: 10,
             min_freq_div_phase: 40,
-            #[cfg(feature = "dynamic_freq")]
-            clk_write: 0,
             is_rx_data_used: false,
             dc_sys_time: DcSysTime::now(),
             stm_rep: [0xFFFF, 0xFFFF],
@@ -192,8 +190,6 @@ impl CPUEmulator {
                 TAG_CLEAR => self.clear(data),
                 TAG_SYNC => self.synchronize(data),
                 TAG_FIRM_INFO => self.firm_info(data),
-                #[cfg(feature = "dynamic_freq")]
-                TAG_CONFIG_FPGA_CLK => self.configure_clk(data),
                 TAG_MODULATION => self.write_mod(data),
                 TAG_MODULATION_CHANGE_SEGMENT => self.change_mod_segment(data),
                 TAG_SILENCER => self.config_silencer(data),

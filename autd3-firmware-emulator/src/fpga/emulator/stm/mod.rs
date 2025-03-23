@@ -13,40 +13,27 @@ mod gain;
 impl FPGAEmulator {
     #[must_use]
     pub fn is_stm_gain_mode(&self, segment: Segment) -> bool {
-        match segment {
-            Segment::S0 => self.mem.controller_bram.borrow()[ADDR_STM_MODE0] == STM_MODE_GAIN,
-            Segment::S1 => self.mem.controller_bram.borrow()[ADDR_STM_MODE1] == STM_MODE_GAIN,
-        }
+        self.mem.controller_bram.borrow()[ADDR_STM_MODE0 + segment as usize] == STM_MODE_GAIN
     }
 
     #[must_use]
     pub fn stm_freq_division(&self, segment: Segment) -> u16 {
         Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
-            match segment {
-                Segment::S0 => ADDR_STM_FREQ_DIV0,
-                Segment::S1 => ADDR_STM_FREQ_DIV1,
-            },
+            ADDR_STM_FREQ_DIV0 + segment as usize,
         )
     }
 
     #[must_use]
     pub fn stm_cycle(&self, segment: Segment) -> usize {
-        self.mem.controller_bram.borrow()[match segment {
-            Segment::S0 => ADDR_STM_CYCLE0,
-            Segment::S1 => ADDR_STM_CYCLE1,
-        }] as usize
-            + 1
+        self.mem.controller_bram.borrow()[ADDR_STM_CYCLE0 + segment as usize] as usize + 1
     }
 
     #[must_use]
     pub fn stm_loop_behavior(&self, segment: Segment) -> LoopBehavior {
         match Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
-            match segment {
-                Segment::S0 => ADDR_STM_REP0,
-                Segment::S1 => ADDR_STM_REP1,
-            },
+            ADDR_STM_REP0 + segment as usize,
         ) {
             0xFFFF => LoopBehavior::Infinite,
             v => LoopBehavior::Finite(NonZeroU16::new(v + 1).unwrap()),

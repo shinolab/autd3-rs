@@ -16,7 +16,7 @@ use zerocopy::FromZeros;
 #[test]
 #[case([DBG_NONE, DBG_BASE_SIG, DBG_THERMO, DBG_FORCE_FAN], [0, 0, 0, 0], [GPIOOutputType::None, GPIOOutputType::BaseSignal, GPIOOutputType::Thermo, GPIOOutputType::ForceFan])]
 #[case([DBG_SYNC, DBG_MOD_SEGMENT, DBG_MOD_IDX, DBG_STM_SEGMENT], [0, 0, 0x01, 0], [GPIOOutputType::Sync, GPIOOutputType::ModSegment, GPIOOutputType::ModIdx(0x01), GPIOOutputType::StmSegment])]
-#[case([DBG_STM_IDX, DBG_IS_STM_MODE, DBG_SYS_TIME_EQ, DBG_DIRECT], [0x02, 0, 1<<9, 1], [GPIOOutputType::StmIdx(0x02), GPIOOutputType::IsStmMode, GPIOOutputType::SysTimeEq(DcSysTime::ZERO + std::time::Duration::from_nanos(50000)), GPIOOutputType::Direct(true)])]
+#[case([DBG_STM_IDX, DBG_IS_STM_MODE, DBG_SYS_TIME_EQ, DBG_DIRECT], [0x02, 0, 2, 1], [GPIOOutputType::StmIdx(0x02), GPIOOutputType::IsStmMode, GPIOOutputType::SysTimeEq(DcSysTime::ZERO + 2 * std::time::Duration::from_micros(25)), GPIOOutputType::Direct(true)])]
 fn send_debug_output_idx(
     #[case] expect_types: [u8; 4],
     #[case] expect_values: [u64; 4],

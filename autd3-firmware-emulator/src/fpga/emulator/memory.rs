@@ -16,8 +16,6 @@ pub struct Memory {
     pub(crate) controller_bram: LazyCell<RefCell<Vec<u16>>>,
     #[getset(get = "pub", get_mut = "pub")]
     pub(crate) phase_corr_bram: LazyCell<RefCell<Vec<u16>>>,
-    #[cfg(feature = "dynamic_freq")]
-    pub(crate) drp_bram: LazyCell<RefCell<Vec<u16>>>,
     pub(crate) modulation_bram: LazyCell<RefCell<HashMap<Segment, Vec<u16>>>>,
     pub(crate) stm_bram: LazyCell<RefCell<HashMap<Segment, Vec<u16>>>>,
     pub(crate) duty_table_bram: LazyCell<RefCell<Vec<u16>>>,
@@ -41,18 +39,16 @@ impl Memory {
             phase_corr_bram: LazyCell::new(|| {
                 RefCell::new(vec![0x0000; 256 / std::mem::size_of::<u16>()])
             }),
-            #[cfg(feature = "dynamic_freq")]
-            drp_bram: LazyCell::new(|| RefCell::new(vec![0x0000; 32 * std::mem::size_of::<u64>()])),
             modulation_bram: LazyCell::new(|| {
                 RefCell::new(
                     [
                         (
                             Segment::S0,
-                            vec![0x0000; 32768 / std::mem::size_of::<u16>()],
+                            vec![0x0000; 65536 / std::mem::size_of::<u16>()],
                         ),
                         (
                             Segment::S1,
-                            vec![0x0000; 32768 / std::mem::size_of::<u16>()],
+                            vec![0x0000; 65536 / std::mem::size_of::<u16>()],
                         ),
                     ]
                     .into_iter()
@@ -60,7 +56,7 @@ impl Memory {
                 )
             }),
             duty_table_bram: LazyCell::new(|| {
-                let mut v = vec![0x0000; 256 / std::mem::size_of::<u16>()];
+                let mut v = vec![0x0000; 256];
                 let pwe_init_data = include_bytes!("asin.dat");
                 unsafe {
                     std::ptr::copy_nonoverlapping(
@@ -145,8 +141,6 @@ impl Memory {
             BRAM_SELECT_CONTROLLER => match addr >> 8 {
                 BRAM_CNT_SEL_MAIN => self.controller_bram.borrow_mut()[addr] = data,
                 BRAM_CNT_SEL_PHASE_CORR => self.phase_corr_bram.borrow_mut()[addr & 0xFF] = data,
-                #[cfg(feature = "dynamic_freq")]
-                BRAM_CNT_SEL_CLOCK => self.drp_bram.borrow_mut()[addr & 0xFF] = data,
                 _ => unreachable!(),
             },
             BRAM_SELECT_MOD => {
@@ -155,7 +149,12 @@ impl Memory {
                     1 => Segment::S1,
                     _ => unreachable!(),
                 };
-                self.modulation_bram.borrow_mut().get_mut(&segment).unwrap()[addr] = data;
+                self.modulation_bram.borrow_mut().get_mut(&segment).unwrap()[((self
+                    .controller_bram
+                    .borrow()[ADDR_MOD_MEM_WR_PAGE]
+                    as usize)
+                    << 14)
+                    | addr] = data;
             }
             BRAM_SELECT_PWE_TABLE => {
                 self.duty_table_bram.borrow_mut()[addr] = data;

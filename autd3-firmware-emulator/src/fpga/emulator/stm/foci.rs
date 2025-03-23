@@ -19,23 +19,18 @@ struct STMFocus {
 impl FPGAEmulator {
     #[must_use]
     pub fn sound_speed(&self, segment: Segment) -> u16 {
-        self.mem.controller_bram.borrow()[match segment {
-            Segment::S0 => ADDR_STM_SOUND_SPEED0,
-            Segment::S1 => ADDR_STM_SOUND_SPEED1,
-        }]
+        self.mem.controller_bram.borrow()[ADDR_STM_SOUND_SPEED0 + segment as usize]
     }
 
     #[must_use]
     pub fn num_foci(&self, segment: Segment) -> u8 {
-        self.mem.controller_bram.borrow()[match segment {
-            Segment::S0 => ADDR_STM_NUM_FOCI0,
-            Segment::S1 => ADDR_STM_NUM_FOCI1,
-        }] as u8
+        self.mem.controller_bram.borrow()[ADDR_STM_NUM_FOCI0 + segment as usize] as u8
     }
 
     pub(crate) fn foci_stm_drives_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
         let bram = &self.mem.stm_bram.borrow()[&segment];
         let sound_speed = self.sound_speed(segment);
+        let num_foci = self.num_foci(segment) as usize;
 
         self.mem
             .tr_pos
@@ -48,9 +43,11 @@ impl FPGAEmulator {
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
                 let tr_y = (tr & 0xFFFF) as i16 as i32;
                 let mut intensity = 0x00;
-                let (sin, cos) = (0..self.num_foci(segment) as usize).fold((0, 0), |acc, i| {
+                let (sin, cos) = (0..num_foci).fold((0, 0), |acc, i| {
                     let f = unsafe {
-                        (bram[32 * idx + 4 * i..].as_ptr() as *const STMFocus).read_unaligned()
+                        (bram[size_of::<STMFocus>() / size_of::<u16>() * (idx * num_foci + i)..]
+                            .as_ptr() as *const STMFocus)
+                            .read_unaligned()
                     };
                     let x = f.x();
                     let y = f.y();
@@ -73,8 +70,8 @@ impl FPGAEmulator {
                         acc.1 + self.mem.sin_table[(q + 64) % 256] as u16,
                     )
                 });
-                let sin = ((sin / self.num_foci(segment) as u16) >> 1) as usize;
-                let cos = ((cos / self.num_foci(segment) as u16) >> 1) as usize;
+                let sin = ((sin / num_foci as u16) >> 1) as usize;
+                let cos = ((cos / num_foci as u16) >> 1) as usize;
                 let phase = self.mem.atan_table[(sin << 7) | cos];
                 dst[i] = Drive {
                     phase: Phase(phase) + p,

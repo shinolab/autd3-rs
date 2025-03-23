@@ -1,5 +1,5 @@
 mod completion_steps;
-#[cfg(not(feature = "dynamic_freq"))]
+
 mod completion_time;
 mod update_rate;
 
@@ -19,6 +19,6 @@ bitflags::bitflags! {
 }
 
 pub use completion_steps::SilencerFixedCompletionStepsOp;
-#[cfg(not(feature = "dynamic_freq"))]
+
 pub use completion_time::SilencerFixedCompletionTimeOp;
 pub use update_rate::SilencerFixedUpdateRateOp;

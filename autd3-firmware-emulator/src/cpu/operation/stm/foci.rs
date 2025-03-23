@@ -1,6 +1,6 @@
 use crate::{CPUEmulator, cpu::params::*};
 
-pub const FOCI_STM_BUF_PAGE_SIZE_WIDTH: u16 = 9;
+pub const FOCI_STM_BUF_PAGE_SIZE_WIDTH: u16 = 12;
 pub const FOCI_STM_BUF_PAGE_SIZE: u16 = 1 << FOCI_STM_BUF_PAGE_SIZE_WIDTH;
 pub const FOCI_STM_BUF_PAGE_SIZE_MASK: u16 = FOCI_STM_BUF_PAGE_SIZE - 1;
 
@@ -52,7 +52,6 @@ impl CPUEmulator {
             let d = Self::cast::<FociSTM>(data);
 
             let segment = d.subseq.segment;
-            let size = d.subseq.send_num as u16;
 
             let mut src = if (d.subseq.flag & FOCI_STM_FLAG_BEGIN) == FOCI_STM_FLAG_BEGIN {
                 if Self::validate_transition_mode(
@@ -74,54 +73,38 @@ impl CPUEmulator {
                 if d.head.transition_mode != TRANSITION_MODE_NONE {
                     self.stm_segment = segment;
                 }
-                self.stm_cycle[segment as usize] = 0;
+                self.stm_write = 0;
                 self.stm_rep[segment as usize] = d.head.rep;
                 self.stm_transition_mode = d.head.transition_mode;
                 self.stm_transition_value = d.head.transition_value;
                 self.stm_freq_div[segment as usize] = d.head.freq_div;
                 self.num_foci = d.head.num_foci;
 
-                match segment {
-                    0 => {
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_STM_FREQ_DIV0,
-                            d.head.freq_div,
-                        );
-                        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE0, STM_MODE_FOCUS);
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_STM_SOUND_SPEED0,
-                            d.head.sound_speed,
-                        );
-                        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP0, d.head.rep);
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_STM_NUM_FOCI0,
-                            d.head.num_foci as _,
-                        );
-                    }
-                    1 => {
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_STM_FREQ_DIV1,
-                            d.head.freq_div,
-                        );
-                        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE1, STM_MODE_FOCUS);
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_STM_SOUND_SPEED1,
-                            d.head.sound_speed,
-                        );
-                        self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP1, d.head.rep);
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_STM_NUM_FOCI1,
-                            d.head.num_foci as _,
-                        );
-                    }
-                    _ => unreachable!(),
-                }
+                self.bram_write(
+                    BRAM_SELECT_CONTROLLER,
+                    ADDR_STM_FREQ_DIV0 + segment as u16,
+                    d.head.freq_div,
+                );
+                self.bram_write(
+                    BRAM_SELECT_CONTROLLER,
+                    ADDR_STM_MODE0 + segment as u16,
+                    STM_MODE_FOCUS,
+                );
+                self.bram_write(
+                    BRAM_SELECT_CONTROLLER,
+                    ADDR_STM_SOUND_SPEED0 + segment as u16,
+                    d.head.sound_speed,
+                );
+                self.bram_write(
+                    BRAM_SELECT_CONTROLLER,
+                    ADDR_STM_REP0 + segment as u16,
+                    d.head.rep,
+                );
+                self.bram_write(
+                    BRAM_SELECT_CONTROLLER,
+                    ADDR_STM_NUM_FOCI0 + segment as u16,
+                    d.head.num_foci as _,
+                );
 
                 self.change_stm_wr_segment(segment as _);
                 self.change_stm_wr_page(0);
@@ -131,96 +114,78 @@ impl CPUEmulator {
                 data.as_ptr().add(std::mem::size_of::<FociSTMSubseq>()) as *const u16
             };
 
-            let page_capacity = (self.stm_cycle[segment as usize] & !FOCI_STM_BUF_PAGE_SIZE_MASK)
-                + FOCI_STM_BUF_PAGE_SIZE
-                - self.stm_cycle[segment as usize];
+            let page_capacity =
+                FOCI_STM_BUF_PAGE_SIZE - ((self.stm_write as u16) & FOCI_STM_BUF_PAGE_SIZE_MASK);
+            let size = d.subseq.send_num as u16 * self.num_foci as u16;
             if size < page_capacity {
-                let mut dst = (self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5;
+                let mut dst = ((self.stm_write as u16) & FOCI_STM_BUF_PAGE_SIZE_MASK) << 2;
                 (0..size as usize).for_each(|_| {
-                    (0..self.num_foci).for_each(|_| {
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                    });
-                    dst += 4 * (8 - self.num_foci as u16);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
                 });
-                self.stm_cycle[segment as usize] += size;
+                self.stm_write += size as u32;
             } else {
-                let mut dst = (self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5;
+                let mut dst = ((self.stm_write as u16) & FOCI_STM_BUF_PAGE_SIZE_MASK) << 2;
                 (0..page_capacity as usize).for_each(|_| {
-                    (0..self.num_foci).for_each(|_| {
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                    });
-                    dst += 4 * (8 - self.num_foci as u16);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
                 });
-                self.stm_cycle[segment as usize] += page_capacity;
+                self.stm_write += page_capacity as u32;
 
                 self.change_stm_wr_page(
-                    ((self.stm_cycle[segment as usize] & !FOCI_STM_BUF_PAGE_SIZE_MASK)
+                    (((self.stm_write as u16) & !FOCI_STM_BUF_PAGE_SIZE_MASK)
                         >> FOCI_STM_BUF_PAGE_SIZE_WIDTH) as _,
                 );
 
-                let mut dst = (self.stm_cycle[segment as usize] & FOCI_STM_BUF_PAGE_SIZE_MASK) << 5;
+                let mut dst = 0;
                 let cnt = size - page_capacity;
                 (0..cnt as usize).for_each(|_| {
-                    (0..self.num_foci).for_each(|_| {
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                        self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                        dst += 1;
-                        src = src.add(1);
-                    });
-                    dst += 4 * (8 - self.num_foci as u16);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
+                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
+                    dst += 1;
+                    src = src.add(1);
                 });
-                self.stm_cycle[segment as usize] += size - page_capacity;
+                self.stm_write += cnt as u32;
             }
 
             if (d.subseq.flag & FOCI_STM_FLAG_END) == FOCI_STM_FLAG_END {
                 self.stm_mode[segment as usize] = STM_MODE_FOCUS;
-                match segment {
-                    0 => {
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_STM_CYCLE0,
-                            (self.stm_cycle[segment as usize].max(1) - 1) as _,
-                        );
-                    }
-                    1 => {
-                        self.bram_write(
-                            BRAM_SELECT_CONTROLLER,
-                            ADDR_STM_CYCLE1,
-                            (self.stm_cycle[segment as usize].max(1) - 1) as _,
-                        );
-                    }
-                    _ => unreachable!(),
-                }
+
+                self.stm_cycle[segment as usize] = self.stm_write / self.num_foci as u32;
+
+                self.bram_write(
+                    BRAM_SELECT_CONTROLLER,
+                    ADDR_STM_CYCLE0 + segment as u16,
+                    (self.stm_cycle[segment as usize].max(1) - 1) as _,
+                );
 
                 if (d.subseq.flag & FOCI_STM_FLAG_UPDATE) == FOCI_STM_FLAG_UPDATE {
                     return self.stm_segment_update(

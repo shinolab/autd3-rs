@@ -9,7 +9,7 @@ use autd3_driver::{
         cpu::TxMessage,
         fpga::{
             GPIOIn, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT, SilencerTarget, TransitionMode,
+            SILENCER_STEPS_PHASE_DEFAULT, TransitionMode,
         },
     },
 };
@@ -199,7 +199,6 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
                 phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
                 strict_mode: true,
             },
-            target: SilencerTarget::Intensity,
         };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

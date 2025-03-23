@@ -21,7 +21,6 @@ impl DatagramLightweight
                         value_phase: self.config.phase.get() as _,
                     },
                 )),
-                target: self.target as u8 as _,
             })),
         })
     }
@@ -43,7 +42,6 @@ impl DatagramLightweight
                         strict_mode: Some(self.config.strict_mode),
                     },
                 )),
-                target: self.target as u8 as _,
             })),
         })
     }
@@ -65,33 +63,8 @@ impl DatagramLightweight
                         strict_mode: Some(self.config.strict_mode),
                     },
                 )),
-                target: self.target as u8 as _,
             })),
         })
-    }
-}
-
-impl From<SilencerTarget> for autd3::driver::firmware::fpga::SilencerTarget {
-    fn from(value: SilencerTarget) -> Self {
-        match value {
-            SilencerTarget::Intensity => autd3::driver::firmware::fpga::SilencerTarget::Intensity,
-            SilencerTarget::PulseWidth => autd3::driver::firmware::fpga::SilencerTarget::PulseWidth,
-        }
-    }
-}
-
-impl From<autd3::driver::firmware::fpga::SilencerTarget> for SilencerTarget {
-    fn from(value: autd3::driver::firmware::fpga::SilencerTarget) -> Self {
-        match value {
-            autd3::driver::firmware::fpga::SilencerTarget::Intensity => SilencerTarget::Intensity,
-            autd3::driver::firmware::fpga::SilencerTarget::PulseWidth => SilencerTarget::PulseWidth,
-        }
-    }
-}
-
-impl FromMessage<i32> for autd3::driver::firmware::fpga::SilencerTarget {
-    fn from_msg(msg: i32) -> Result<Self, AUTDProtoBufError> {
-        Ok(SilencerTarget::try_from(msg)?.into())
     }
 }
 
