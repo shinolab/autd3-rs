@@ -1,5 +1,6 @@
 mod fpga_state;
 mod gpio_out;
+mod pulse_width;
 mod stm_focus;
 
 pub use autd3_core::{
@@ -11,6 +12,7 @@ pub use autd3_core::{
 pub use fpga_state::FPGAState;
 pub(crate) use gpio_out::DebugValue;
 pub use gpio_out::GPIOOutputType;
+pub use pulse_width::PulseWidth;
 pub(crate) use stm_focus::STMFocus;
 
 use crate::{defined::mm, ethercat::DcSysTime};

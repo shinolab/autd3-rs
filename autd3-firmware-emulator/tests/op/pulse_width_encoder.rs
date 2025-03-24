@@ -1,4 +1,7 @@
-use autd3_driver::{datagram::PulseWidthEncoder, firmware::cpu::TxMessage};
+use autd3_driver::{
+    datagram::PulseWidthEncoder,
+    firmware::{cpu::TxMessage, fpga::PulseWidth},
+};
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;
@@ -16,7 +19,7 @@ fn config_pwe_unsafe() -> anyhow::Result<()> {
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
     {
-        let buf: Vec<_> = (0..256).map(|_| rng.random()).collect();
+        let buf: Vec<_> = (0..256).map(|_| PulseWidth(rng.random())).collect();
 
         let d = PulseWidthEncoder::new(|_| |i| buf[i.0 as usize]);
 
@@ -27,7 +30,9 @@ fn config_pwe_unsafe() -> anyhow::Result<()> {
 
     {
         let default_table: Vec<_> = (0..256)
-            .map(|i| ((i as f64 / 255.).asin() / std::f64::consts::PI * 512.0).round() as u16)
+            .map(|i| {
+                PulseWidth(((i as f64 / 255.).asin() / std::f64::consts::PI * 512.0).round() as u16)
+            })
             .collect();
 
         let d = PulseWidthEncoder::default();

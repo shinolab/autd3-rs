@@ -12,7 +12,7 @@ use autd3_driver::{
     firmware::{
         cpu::TxMessage,
         fpga::{
-            Drive, EmitIntensity, Phase, SILENCER_STEPS_INTENSITY_DEFAULT,
+            Drive, EmitIntensity, Phase, PulseWidth, SILENCER_STEPS_INTENSITY_DEFAULT,
             SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
@@ -85,7 +85,7 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
         let d = PhaseCorrection::new(|_| |_| Phase::PI);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = PulseWidthEncoder::new(|_| |_| 0xFF);
+        let d = PulseWidthEncoder::new(|_| |_| PulseWidth(0xFF));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
@@ -153,7 +153,7 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
     assert_eq!(
         include_bytes!("asin.dat")
             .chunks(2)
-            .map(|v| u16::from_le_bytes([v[1], v[0]]))
+            .map(|v| PulseWidth(u16::from_le_bytes([v[1], v[0]])))
             .collect::<Vec<_>>(),
         cpu.fpga().pulse_width_encoder_table()
     );

@@ -1,26 +1,28 @@
-use autd3_driver::firmware::fpga::EmitIntensity;
+use autd3_driver::firmware::fpga::{EmitIntensity, PulseWidth};
 
 use super::FPGAEmulator;
 
 impl FPGAEmulator {
     #[must_use]
-    pub fn pulse_width_encoder_table_at(&self, idx: usize) -> u16 {
-        self.mem.duty_table_bram.borrow()[idx]
+    pub fn pulse_width_encoder_table_at(&self, idx: usize) -> PulseWidth<512> {
+        PulseWidth(self.mem.duty_table_bram.borrow()[idx])
     }
 
     #[must_use]
-    pub fn pulse_width_encoder_table(&self) -> Vec<u16> {
-        let mut dst = vec![0; 256];
+    pub fn pulse_width_encoder_table(&self) -> Vec<PulseWidth<512>> {
+        let mut dst = vec![PulseWidth(0); 256];
         self.pulse_width_encoder_table_inplace(&mut dst);
         dst
     }
 
-    pub fn pulse_width_encoder_table_inplace(&self, dst: &mut [u16]) {
-        dst.copy_from_slice(self.mem.duty_table_bram.borrow().as_slice());
+    pub fn pulse_width_encoder_table_inplace(&self, dst: &mut [PulseWidth<512>]) {
+        dst.iter_mut().enumerate().for_each(|(i, d)| {
+            *d = self.pulse_width_encoder_table_at(i);
+        });
     }
 
     #[must_use]
-    pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> u16 {
+    pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> PulseWidth<512> {
         let key = (a.0 as usize * b as usize) / 255;
         self.pulse_width_encoder_table_at(key)
     }
@@ -32,9 +34,12 @@ mod tests {
 
     static ASIN_TABLE: &[u8; 512] = include_bytes!("asin.dat");
 
-    fn to_pulse_width_actual(a: u8, b: u8) -> u16 {
+    fn to_pulse_width_actual(a: u8, b: u8) -> PulseWidth<512> {
         let idx = (a as usize * b as usize) / 255;
-        u16::from_le_bytes([ASIN_TABLE[idx << 1], ASIN_TABLE[(idx << 1) + 1]])
+        PulseWidth(u16::from_le_bytes([
+            ASIN_TABLE[idx << 1],
+            ASIN_TABLE[(idx << 1) + 1],
+        ]))
     }
 
     #[test]
