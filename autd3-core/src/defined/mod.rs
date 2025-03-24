@@ -39,7 +39,10 @@ pub const ULTRASOUND_FREQ: Freq<u32> = Freq { freq: 40000 };
 pub const ULTRASOUND_PERIOD: Duration = Duration::from_micros(25);
 
 /// The period of ultrasound in discrete time units
-pub const ULTRASOUND_PERIOD_COUNT: usize = 512;
+pub const ULTRASOUND_PERIOD_COUNT_BITS: usize = 9;
+
+/// The period of ultrasound in discrete time units
+pub const ULTRASOUND_PERIOD_COUNT: usize = 1 << ULTRASOUND_PERIOD_COUNT_BITS;
 
 /// \[㎜\]
 #[allow(non_upper_case_globals)]
