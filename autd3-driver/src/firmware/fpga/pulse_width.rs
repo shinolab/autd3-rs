@@ -7,10 +7,12 @@ impl<const PERIOD: usize> PulseWidth<PERIOD> {
     #[must_use]
     pub fn from_duty(duty: f32) -> Self {
         let duty = if !(0.0..=1.0).contains(&duty) {
+            // GRCOV_EXCL_START
             tracing::warn!(
                 "Duty ratio must be between 0 and 1, but got {}. Clamping to 0-1.",
                 duty
             );
+            // GRCOV_EXCL_STOP
             duty.clamp(0.0, 1.0)
         } else {
             duty
