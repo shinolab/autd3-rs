@@ -41,8 +41,8 @@ impl Default for FixedCompletionTime {
     fn default() -> Self {
         FixedCompletionTime {
             intensity: SILENCER_STEPS_INTENSITY_DEFAULT as u32
-                * autd3_core::defined::ultrasound_period(),
-            phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * autd3_core::defined::ultrasound_period(),
+                * autd3_core::defined::ULTRASOUND_PERIOD,
+            phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * autd3_core::defined::ULTRASOUND_PERIOD,
             strict_mode: true,
         }
     }

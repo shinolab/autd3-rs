@@ -53,7 +53,7 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
 
 #[test]
 fn send_silencer_fixed_completion_time_unsafe() {
-    use autd3_driver::defined::ultrasound_period;
+    use autd3_driver::defined::ULTRASOUND_PERIOD;
 
     let mut rng = rand::rng();
 
@@ -63,8 +63,8 @@ fn send_silencer_fixed_completion_time_unsafe() {
 
     {
         let config = FixedCompletionTime {
-            intensity: ultrasound_period() * rng.random_range(1..=10),
-            phase: ultrasound_period() * rng.random_range(1..=u8::MAX) as u32,
+            intensity: ULTRASOUND_PERIOD * rng.random_range(1..=10),
+            phase: ULTRASOUND_PERIOD * rng.random_range(1..=u8::MAX) as u32,
             strict_mode: true,
         };
         let d = Silencer { config };
@@ -72,11 +72,11 @@ fn send_silencer_fixed_completion_time_unsafe() {
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(
-            (config.intensity.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            (config.intensity.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
             cpu.fpga().silencer_completion_steps().intensity.get()
         );
         assert_eq!(
-            (config.phase.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            (config.phase.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
             cpu.fpga().silencer_completion_steps().phase.get()
         );
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
@@ -85,19 +85,19 @@ fn send_silencer_fixed_completion_time_unsafe() {
 
     {
         let config = FixedCompletionTime {
-            intensity: ultrasound_period() * rng.random_range(1..=10),
-            phase: ultrasound_period() * rng.random_range(1..=u8::MAX) as u32,
+            intensity: ULTRASOUND_PERIOD * rng.random_range(1..=10),
+            phase: ULTRASOUND_PERIOD * rng.random_range(1..=u8::MAX) as u32,
             strict_mode: true,
         };
         let d = Silencer { config };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(
-            (config.intensity.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            (config.intensity.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
             cpu.fpga().silencer_completion_steps().intensity.get()
         );
         assert_eq!(
-            (config.phase.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            (config.phase.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
             cpu.fpga().silencer_completion_steps().phase.get()
         );
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());

@@ -3,7 +3,7 @@ use autd3_core::{
     utils::float::is_integer,
 };
 use autd3_driver::{
-    defined::{Freq, Hz, ultrasound_freq},
+    defined::{Freq, Hz, ULTRASOUND_FREQ},
     firmware::fpga::MOD_BUF_SIZE_MAX,
 };
 use num::integer::gcd;
@@ -56,7 +56,7 @@ impl SamplingMode {
         }
 
         let fd = freq.hz() as u64 * sampling_config.division()? as u64;
-        let fs = ultrasound_freq().hz() as u64;
+        let fs = ULTRASOUND_FREQ.hz() as u64;
 
         let k = gcd(fs, fd);
         Ok((fs / k, fd / k))
@@ -88,12 +88,12 @@ impl SamplingMode {
         }
         let fd = freq.hz() as f64 * sampling_config.division()? as f64;
 
-        for n in (ultrasound_freq().hz() as f64 / fd).floor() as u32..=MOD_BUF_SIZE_MAX as u32 {
+        for n in (ULTRASOUND_FREQ.hz() as f64 / fd).floor() as u32..=MOD_BUF_SIZE_MAX as u32 {
             if !is_integer(fd * n as f64) {
                 continue;
             }
             let fnd = (fd * n as f64) as u64;
-            let fs = ultrasound_freq().hz() as u64;
+            let fs = ULTRASOUND_FREQ.hz() as u64;
             if fnd % fs != 0 {
                 continue;
             }

@@ -32,22 +32,14 @@ pub const T4010A1_AMPLITUDE: f32 = 275.574_25 * 200.0 * MILLIMETER; // [㎩*mm]
 /// The default timeout duration
 pub const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(200);
 
+/// The frequency of ultrasound
+pub const ULTRASOUND_FREQ: Freq<u32> = Freq { freq: 40000 };
+
+/// The period of ultrasound
+pub const ULTRASOUND_PERIOD: Duration = Duration::from_micros(25);
+
 /// The period of ultrasound in discrete time units
 pub const ULTRASOUND_PERIOD_COUNT: usize = 512;
-
-#[inline(always)]
-#[must_use]
-/// The frequency of ultrasound
-pub const fn ultrasound_freq() -> Freq<u32> {
-    Freq { freq: 40000 }
-}
-
-#[inline(always)]
-#[must_use]
-/// The period of ultrasound
-pub const fn ultrasound_period() -> Duration {
-    Duration::from_micros(25)
-}
 
 /// \[㎜\]
 #[allow(non_upper_case_globals)]
