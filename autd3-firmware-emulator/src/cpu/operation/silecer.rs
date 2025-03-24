@@ -29,9 +29,7 @@ impl CPUEmulator {
     pub(crate) fn config_silencer(&mut self, data: &[u8]) -> u8 {
         let d = Self::cast::<ConfigSilencer>(data);
 
-        if (d.flag & SILENCER_FLAG_FIXED_UPDATE_RATE_MODE)
-            == SILENCER_FLAG_FIXED_UPDATE_RATE_MODE as _
-        {
+        if (d.flag & SILENCER_FLAG_FIXED_UPDATE_RATE_MODE) == SILENCER_FLAG_FIXED_UPDATE_RATE_MODE {
             self.bram_write(
                 BRAM_SELECT_CONTROLLER,
                 ADDR_SILENCER_UPDATE_RATE_INTENSITY,

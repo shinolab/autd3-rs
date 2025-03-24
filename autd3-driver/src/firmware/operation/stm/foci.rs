@@ -101,8 +101,9 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> Operation for FociSTMOp<N, It
         if N == 0 || N > FOCI_STM_FOCI_NUM_MAX {
             return Err(AUTDDriverError::FociSTMNumFociOutOfRange(N));
         }
-        if !(STM_BUF_SIZE_MIN..=FOCI_STM_BUF_SIZE_MAX).contains(&self.size) {
-            return Err(AUTDDriverError::FociSTMPointSizeOutOfRange(self.size));
+        let total_foci = self.size * N;
+        if !(STM_BUF_SIZE_MIN..=FOCI_STM_BUF_SIZE_MAX).contains(&total_foci) {
+            return Err(AUTDDriverError::FociSTMTotalSizeOutOfRange(total_foci));
         }
 
         let is_first = self.sent == 0;
@@ -651,11 +652,11 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    #[case(Err(AUTDDriverError::FociSTMPointSizeOutOfRange(0)), 0)]
-    #[case(Err(AUTDDriverError::FociSTMPointSizeOutOfRange(1)), 1)]
+    #[case(Err(AUTDDriverError::FociSTMTotalSizeOutOfRange(0)), 0)]
+    #[case(Err(AUTDDriverError::FociSTMTotalSizeOutOfRange(1)), 1)]
     #[case(Ok(()), 2)]
     #[case(Ok(()), FOCI_STM_BUF_SIZE_MAX)]
-    #[case(Err(AUTDDriverError::FociSTMPointSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX+1)), FOCI_STM_BUF_SIZE_MAX+1)]
+    #[case(Err(AUTDDriverError::FociSTMTotalSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX+1)), FOCI_STM_BUF_SIZE_MAX+1)]
     fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDDriverError>, #[case] n: usize) {
         let device = create_device(NUM_TRANS_IN_UNIT);
 

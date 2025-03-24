@@ -14,7 +14,7 @@ use autd3_driver::{
         fpga::{
             Drive, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, LoopBehavior, Phase,
             SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SamplingConfig,
-            Segment, SilencerTarget, TransitionMode,
+            Segment, TransitionMode,
         },
     },
     geometry::Point3,
@@ -220,7 +220,6 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
                 phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
                 strict_mode: true,
             },
-            target: SilencerTarget::Intensity,
         };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 

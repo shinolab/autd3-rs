@@ -1,5 +1,11 @@
 # 32.0.0
 
+- Update firmware to v11.0.0
+  - Optimize STM memory usage: supports 65536 foci in total, regardless of the number of foci per pattern
+  - Modulation buffer size increased from 32768 to 65536
+  - The period of ultrasound is changed from 256 to 512
+      - The maximum value of pulse width in `PulseWidthEncoder` is changed from 255 to 511
+  - Remove `SilencerTarget`
 - Rename from `DebugType` to `GPIOOutputType`
 - Prereserve `enable` and `sound_speed` in `Geometry::reconfigure`
 - Impl `expected_radiation_pressure` for modulations

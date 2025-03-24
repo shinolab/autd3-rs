@@ -2,7 +2,7 @@ use std::{convert::Infallible, num::NonZeroU16};
 
 use crate::{
     firmware::{
-        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SilencerTarget},
+        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
         operation::{
             NullOp, OperationGenerator, SilencerFixedCompletionStepsOp, SilencerFixedUpdateRateOp,
         },
@@ -15,7 +15,6 @@ use super::Datagram;
 pub trait SilencerConfig: std::fmt::Debug + Clone + Copy {}
 impl SilencerConfig for () {}
 
-#[cfg(not(feature = "dynamic_freq"))]
 /// To configure the silencer by the completion time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FixedCompletionTime {
@@ -36,16 +35,14 @@ pub struct FixedCompletionTime {
     /// [`GainSTM`]: crate::datagram::GainSTM
     pub strict_mode: bool,
 }
-#[cfg(not(feature = "dynamic_freq"))]
 impl SilencerConfig for FixedCompletionTime {}
 
-#[cfg(not(feature = "dynamic_freq"))]
 impl Default for FixedCompletionTime {
     fn default() -> Self {
         FixedCompletionTime {
             intensity: SILENCER_STEPS_INTENSITY_DEFAULT as u32
-                * autd3_core::defined::ultrasound_period(),
-            phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * autd3_core::defined::ultrasound_period(),
+                * autd3_core::defined::ULTRASOUND_PERIOD,
+            phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * autd3_core::defined::ULTRASOUND_PERIOD,
             strict_mode: true,
         }
     }
@@ -104,15 +101,13 @@ impl SilencerConfig for FixedUpdateRate {}
 pub struct Silencer<T: SilencerConfig> {
     /// Configuration of the silencer.
     pub config: T,
-    /// The target of the silencer.
-    pub target: SilencerTarget,
 }
 
 impl<T: SilencerConfig> Silencer<T> {
     /// Creates a new [`Silencer`].
     #[must_use]
-    pub const fn new(config: T, target: SilencerTarget) -> Self {
-        Self { config, target }
+    pub const fn new(config: T) -> Self {
+        Self { config }
     }
 }
 
@@ -126,7 +121,6 @@ impl Silencer<()> {
                 phase: NonZeroU16::MIN,
                 strict_mode: true,
             },
-            target: SilencerTarget::Intensity,
         }
     }
 }
@@ -135,14 +129,12 @@ impl Default for Silencer<FixedCompletionSteps> {
     fn default() -> Self {
         Silencer {
             config: Default::default(),
-            target: Default::default(),
         }
     }
 }
 
 pub struct SilencerOpGenerator<T: SilencerConfig> {
     config: T,
-    target: SilencerTarget,
 }
 
 impl OperationGenerator for SilencerOpGenerator<FixedUpdateRate> {
@@ -151,13 +143,12 @@ impl OperationGenerator for SilencerOpGenerator<FixedUpdateRate> {
 
     fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
         (
-            Self::O1::new(self.config.intensity, self.config.phase, self.target),
+            Self::O1::new(self.config.intensity, self.config.phase),
             Self::O2 {},
         )
     }
 }
 
-#[cfg(not(feature = "dynamic_freq"))]
 impl OperationGenerator for SilencerOpGenerator<FixedCompletionTime> {
     type O1 = crate::firmware::operation::SilencerFixedCompletionTimeOp;
     type O2 = NullOp;
@@ -168,7 +159,6 @@ impl OperationGenerator for SilencerOpGenerator<FixedCompletionTime> {
                 self.config.intensity,
                 self.config.phase,
                 self.config.strict_mode,
-                self.target,
             ),
             Self::O2 {},
         )
@@ -185,7 +175,6 @@ impl OperationGenerator for SilencerOpGenerator<FixedCompletionSteps> {
                 self.config.intensity,
                 self.config.phase,
                 self.config.strict_mode,
-                self.target,
             ),
             Self::O2 {},
         )
@@ -202,7 +191,6 @@ where
     fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
         Ok(Self::G {
             config: self.config,
-            target: self.target,
         })
     }
 }
@@ -217,7 +205,6 @@ mod tests {
         assert_eq!(1, s.config.intensity.get());
         assert_eq!(1, s.config.phase.get());
         assert!(s.config.strict_mode);
-        assert_eq!(SilencerTarget::Intensity, s.target);
     }
 
     #[test]
@@ -226,17 +213,13 @@ mod tests {
         assert_eq!(10, s.config.intensity.get());
         assert_eq!(40, s.config.phase.get());
         assert!(s.config.strict_mode);
-        assert_eq!(SilencerTarget::Intensity, s.target);
     }
 
     #[test]
-    #[cfg(not(feature = "dynamic_freq"))]
     fn fixed_completion_time_default() {
-        let s: Silencer<FixedCompletionTime> =
-            Silencer::new(Default::default(), Default::default());
+        let s: Silencer<FixedCompletionTime> = Silencer::new(Default::default());
         assert_eq!(std::time::Duration::from_micros(250), s.config.intensity);
         assert_eq!(std::time::Duration::from_micros(1000), s.config.phase);
         assert!(s.config.strict_mode);
-        assert_eq!(SilencerTarget::Intensity, s.target);
     }
 }

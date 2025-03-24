@@ -1,10 +1,7 @@
 use std::{convert::Infallible, num::NonZeroU16};
 
 use crate::{
-    firmware::{
-        fpga::SilencerTarget,
-        operation::{Operation, TypeTag},
-    },
+    firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
 
@@ -25,20 +22,14 @@ pub struct SilencerFixedUpdateRateOp {
     is_done: bool,
     intensity: NonZeroU16,
     phase: NonZeroU16,
-    target: SilencerTarget,
 }
 
 impl SilencerFixedUpdateRateOp {
-    pub(crate) const fn new(
-        intensity: NonZeroU16,
-        phase: NonZeroU16,
-        target: SilencerTarget,
-    ) -> Self {
+    pub(crate) const fn new(intensity: NonZeroU16, phase: NonZeroU16) -> Self {
         Self {
             is_done: false,
             intensity,
             phase,
-            target,
         }
     }
 }
@@ -51,11 +42,7 @@ impl Operation for SilencerFixedUpdateRateOp {
             tx,
             SilencerFixedUpdateRate {
                 tag: TypeTag::Silencer,
-                flag: SilencerControlFlags::FIXED_UPDATE_RATE
-                    | match self.target {
-                        SilencerTarget::Intensity => SilencerControlFlags::NONE,
-                        SilencerTarget::PulseWidth => SilencerControlFlags::PULSE_WIDTH,
-                    },
+                flag: SilencerControlFlags::FIXED_UPDATE_RATE,
                 value_intensity: self.intensity.get(),
                 value_phase: self.phase.get(),
             },
@@ -92,7 +79,6 @@ mod tests {
         let mut op = SilencerFixedUpdateRateOp::new(
             NonZeroU16::new(0x1234).unwrap(),
             NonZeroU16::new(0x5678).unwrap(),
-            SilencerTarget::Intensity,
         );
 
         assert_eq!(

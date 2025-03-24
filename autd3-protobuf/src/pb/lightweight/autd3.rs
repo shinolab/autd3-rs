@@ -1426,8 +1426,6 @@ pub mod modulation {
 pub struct Clear {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Silencer {
-    #[prost(enumeration = "SilencerTarget", tag = "4")]
-    pub target: i32,
     #[prost(oneof = "silencer::Config", tags = "1, 2, 3")]
     pub config: ::core::option::Option<silencer::Config>,
 }
@@ -1596,33 +1594,6 @@ pub mod swap_segment {
         FociStm(FociStm),
         #[prost(message, tag = "4")]
         GainStm(GainStm),
-    }
-}
-#[non_exhaustive]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum SilencerTarget {
-    Intensity = 0,
-    PulseWidth = 1,
-}
-impl SilencerTarget {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            Self::Intensity => "Intensity",
-            Self::PulseWidth => "PulseWidth",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-        match value {
-            "Intensity" => Some(Self::Intensity),
-            "PulseWidth" => Some(Self::PulseWidth),
-            _ => None,
-        }
     }
 }
 #[non_exhaustive]

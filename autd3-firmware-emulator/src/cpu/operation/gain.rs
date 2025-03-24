@@ -28,21 +28,23 @@ impl CPUEmulator {
                 self.num_transducers,
             );
 
-            match segment {
-                0 => {
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV0, 0xFFFF);
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP0, 0xFFFF);
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_CYCLE0, 0);
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE0, STM_MODE_GAIN);
-                }
-                1 => {
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_FREQ_DIV1, 0xFFFF);
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_REP1, 0xFFFF);
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_CYCLE1, 0);
-                    self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_MODE1, STM_MODE_GAIN);
-                }
-                _ => unreachable!(),
-            }
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                ADDR_STM_FREQ_DIV0 + segment as u16,
+                0xFFFF,
+            );
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                ADDR_STM_REP0 + segment as u16,
+                0xFFFF,
+            );
+            self.bram_write(BRAM_SELECT_CONTROLLER, ADDR_STM_CYCLE0 + segment as u16, 0);
+            self.bram_write(
+                BRAM_SELECT_CONTROLLER,
+                ADDR_STM_MODE0 + segment as u16,
+                STM_MODE_GAIN,
+            );
+
             self.stm_cycle[segment as usize] = 1;
             self.stm_rep[segment as usize] = 0xFFFF;
             self.stm_freq_div[segment as usize] = 0xFFFF;

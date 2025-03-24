@@ -67,7 +67,7 @@ impl From<GPIOOutputType<'_>> for DebugValue {
                 GPIOOutputType::PwmOut(tr) => tr.idx() as _,
                 GPIOOutputType::ModIdx(idx) => *idx as _,
                 GPIOOutputType::StmIdx(idx) => *idx as _,
-                GPIOOutputType::SysTimeEq(time) => ec_time_to_sys_time(time),
+                GPIOOutputType::SysTimeEq(time) => ec_time_to_sys_time(time) >> 9,
                 GPIOOutputType::Direct(v) => *v as _,
             })
             .with_tag(match &ty {

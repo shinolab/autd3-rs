@@ -1,10 +1,7 @@
 use std::{convert::Infallible, num::NonZeroU16};
 
 use crate::{
-    firmware::{
-        fpga::SilencerTarget,
-        operation::{Operation, TypeTag},
-    },
+    firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
 
@@ -26,22 +23,15 @@ pub struct SilencerFixedCompletionStepsOp {
     intensity: NonZeroU16,
     phase: NonZeroU16,
     strict_mode: bool,
-    target: SilencerTarget,
 }
 
 impl SilencerFixedCompletionStepsOp {
-    pub(crate) const fn new(
-        intensity: NonZeroU16,
-        phase: NonZeroU16,
-        strict_mode: bool,
-        target: SilencerTarget,
-    ) -> Self {
+    pub(crate) const fn new(intensity: NonZeroU16, phase: NonZeroU16, strict_mode: bool) -> Self {
         Self {
             is_done: false,
             intensity,
             phase,
             strict_mode,
-            target,
         }
     }
 }
@@ -58,9 +48,6 @@ impl Operation for SilencerFixedCompletionStepsOp {
                     SilencerControlFlags::STRICT_MODE
                 } else {
                     SilencerControlFlags::NONE
-                } | match self.target {
-                    SilencerTarget::Intensity => SilencerControlFlags::NONE,
-                    SilencerTarget::PulseWidth => SilencerControlFlags::PULSE_WIDTH,
                 },
                 value_intensity: self.intensity.get(),
                 value_phase: self.phase.get(),
@@ -85,7 +72,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::{firmware::fpga::SilencerTarget, firmware::operation::tests::create_device};
+    use crate::firmware::operation::tests::create_device;
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 
@@ -102,7 +89,6 @@ mod tests {
             NonZeroU16::new(0x12).unwrap(),
             NonZeroU16::new(0x34).unwrap(),
             strict_mode,
-            SilencerTarget::Intensity,
         );
 
         assert_eq!(

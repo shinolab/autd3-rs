@@ -4,7 +4,7 @@ use bvh::aabb::Aabb;
 use derive_more::{Deref, IntoIterator};
 use getset::Getters;
 
-use crate::defined::{METER, ultrasound_freq};
+use crate::defined::{METER, ULTRASOUND_FREQ};
 
 use super::{Isometry, Point3, Quaternion, Transducer, UnitQuaternion, UnitVector3, Vector3};
 
@@ -117,16 +117,14 @@ impl Device {
 
     /// Gets the wavelength of the ultrasound.
     #[must_use]
-    #[cfg_attr(not(feature = "dynamic_freq"), const_fn::const_fn)]
-    pub fn wavelength(&self) -> f32 {
-        self.sound_speed / ultrasound_freq().hz() as f32
+    pub const fn wavelength(&self) -> f32 {
+        self.sound_speed / ULTRASOUND_FREQ.hz() as f32
     }
 
     /// Gets the wavenumber of the ultrasound.
     #[must_use]
-    #[cfg_attr(not(feature = "dynamic_freq"), const_fn::const_fn)]
-    pub fn wavenumber(&self) -> f32 {
-        2.0 * PI * ultrasound_freq().hz() as f32 / self.sound_speed
+    pub const fn wavenumber(&self) -> f32 {
+        2.0 * PI * ULTRASOUND_FREQ.hz() as f32 / self.sound_speed
     }
 
     #[must_use]

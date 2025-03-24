@@ -20,22 +20,19 @@ pub use autd3_core::modulation::Modulation;
 pub use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{
-        Clear, ControlPoint, ControlPoints, FixedUpdateRate, FociSTM, ForceFan, GPIOOutputs,
-        GainSTM, GainSTMOption, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer,
-        SwapSegment, WithLoopBehavior, WithSegment,
+        Clear, ControlPoint, ControlPoints, FixedCompletionTime, FixedUpdateRate, FociSTM,
+        ForceFan, GPIOOutputs, GainSTM, GainSTMOption, PhaseCorrection, PulseWidthEncoder,
+        ReadsFPGAState, Silencer, SwapSegment, WithLoopBehavior, WithSegment,
     },
-    defined::{Hz, PI, deg, kHz, mm, rad, ultrasound_freq},
+    defined::{Hz, PI, ULTRASOUND_FREQ, deg, kHz, mm, rad},
     error::AUTDDriverError,
     ethercat::DcSysTime,
     firmware::{
         cpu::GainSTMMode,
         fpga::{
-            Drive, EmitIntensity, GPIOIn, GPIOOut, GPIOOutputType, LoopBehavior, Phase,
-            SamplingConfig, Segment, SilencerTarget, TransitionMode,
+            Drive, EmitIntensity, GPIOIn, GPIOOut, GPIOOutputType, LoopBehavior, Phase, PulseWidth,
+            SamplingConfig, Segment, TransitionMode,
         },
     },
     geometry::{EulerAngle, Geometry, Point3, Quaternion, UnitQuaternion, UnitVector3, Vector3},
 };
-
-#[cfg(not(feature = "dynamic_freq"))]
-pub use autd3_driver::datagram::FixedCompletionTime;
