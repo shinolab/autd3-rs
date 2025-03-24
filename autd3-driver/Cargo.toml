@@ -35,7 +35,6 @@ criterion = { workspace = true }
 [features]
 default = []
 lightweight = []
-dynamic_freq = ["autd3-core/dynamic_freq"]
 
 [lib]
 bench = false

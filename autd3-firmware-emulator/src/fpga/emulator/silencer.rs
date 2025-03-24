@@ -2,7 +2,7 @@ use std::num::NonZeroU16;
 
 use autd3_driver::{
     datagram::{FixedCompletionSteps, FixedUpdateRate},
-    firmware::fpga::{EmitIntensity, Phase, SilencerTarget},
+    firmware::fpga::{EmitIntensity, Phase},
 };
 
 use super::{super::params::*, FPGAEmulator};
@@ -182,17 +182,6 @@ impl FPGAEmulator {
     #[must_use]
     pub fn silencer_fixed_completion_steps_mode(&self) -> bool {
         !self.silencer_fixed_update_rate_mode()
-    }
-
-    #[must_use]
-    pub fn silencer_target(&self) -> SilencerTarget {
-        if (self.mem.controller_bram.borrow()[ADDR_SILENCER_FLAG] & SILENCER_FLAG_PULSE_WIDTH)
-            == SILENCER_FLAG_PULSE_WIDTH
-        {
-            SilencerTarget::PulseWidth
-        } else {
-            SilencerTarget::Intensity
-        }
     }
 
     #[must_use]

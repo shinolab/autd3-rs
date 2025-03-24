@@ -12,8 +12,8 @@ use autd3_driver::{
     firmware::{
         cpu::TxMessage,
         fpga::{
-            Drive, EmitIntensity, Phase, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT, SilencerTarget,
+            Drive, EmitIntensity, Phase, PulseWidth, SILENCER_STEPS_INTENSITY_DEFAULT,
+            SILENCER_STEPS_PHASE_DEFAULT,
         },
     },
 };
@@ -34,7 +34,6 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
                 phase: NonZeroU16::MIN,
                 strict_mode: true,
             },
-            target: SilencerTarget::Intensity,
         };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -43,7 +42,6 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
                 intensity: NonZeroU16::new(1).unwrap(),
                 phase: NonZeroU16::new(1).unwrap(),
             },
-            target: SilencerTarget::Intensity,
         };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -87,7 +85,7 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
         let d = PhaseCorrection::new(|_| |_| Phase::PI);
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
-        let d = PulseWidthEncoder::new(|_| |_| 0xFF);
+        let d = PulseWidthEncoder::new(|_| |_| PulseWidth(0xFF));
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
     }
 
@@ -153,7 +151,10 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
     );
 
     assert_eq!(
-        include_bytes!("asin.dat").to_vec(),
+        include_bytes!("asin.dat")
+            .chunks(2)
+            .map(|v| PulseWidth(u16::from_le_bytes([v[1], v[0]])))
+            .collect::<Vec<_>>(),
         cpu.fpga().pulse_width_encoder_table()
     );
 

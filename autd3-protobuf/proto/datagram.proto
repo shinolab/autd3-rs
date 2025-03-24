@@ -9,11 +9,6 @@ import "utils-lightweight.proto";
 
 message Clear {}
 
-enum SilencerTarget {
-  Intensity = 0;
-  PulseWidth = 1;
-}
-
 message Silencer {
   message FixedUpdateRate {
     uint32 value_intensity = 1;
@@ -37,7 +32,6 @@ message Silencer {
     FixedCompletionTime fixed_completion_time = 2;
     FixedCompletionSteps fixed_completion_steps = 3;
   }
-  SilencerTarget target = 4;
 }
 
 message Synchronize {}

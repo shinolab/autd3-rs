@@ -98,7 +98,7 @@ impl<S: Into<SamplingMode> + Clone + Copy + Debug> Modulation for Fourier<S> {
             .into_iter()
             .map(|x| (x * scale + self.option.offset as f32).floor() as isize)
             .map(|v| {
-                if (u8::MIN as _..=u8::MAX as _).contains(&v) {
+                if (u8::MIN as isize..=u8::MAX as _).contains(&v) {
                     Ok(v as _)
                 } else if self.option.clamp {
                     Ok(v.clamp(u8::MIN as _, u8::MAX as _) as _)

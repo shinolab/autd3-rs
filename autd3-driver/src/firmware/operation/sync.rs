@@ -1,7 +1,6 @@
 use std::convert::Infallible;
 
 use crate::{
-    defined::ultrasound_freq,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
@@ -13,8 +12,6 @@ use zerocopy::{Immutable, IntoBytes};
 struct Sync {
     tag: TypeTag,
     __: u8,
-    ufreq_mult: u16,
-    base_cnt: u16,
 }
 
 pub struct SyncOp {
@@ -31,17 +28,11 @@ impl Operation for SyncOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        let ultrasound_freq = ultrasound_freq().hz();
-        let mult = ultrasound_freq / 125;
-        let base_cnt = (ultrasound_freq as u64 * 256 * 500) / 1000000;
-
         super::write_to_tx(
             tx,
             Sync {
                 tag: TypeTag::Sync,
                 __: 0,
-                ufreq_mult: mult as _,
-                base_cnt: base_cnt as _,
             },
         );
 

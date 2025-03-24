@@ -114,15 +114,6 @@ impl<L: Link> Controller<L> {
         // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
         let _ = sender.send(ForceFan::new(|_| false));
 
-        #[cfg(feature = "dynamic_freq")]
-        {
-            tracing::debug!(
-                "Configuring ultrasound frequency to {:?}",
-                autd3_driver::defined::ultrasound_freq()
-            );
-            sender.send(autd3_driver::datagram::ConfigureFPGAClock::new())?;
-        }
-
         sender.send((Clear::new(), Synchronize::new()))?;
         Ok(self)
     }
@@ -145,7 +136,6 @@ impl<L: Link> Controller<L> {
                     strict_mode: false,
                     ..Default::default()
                 },
-                target: autd3_driver::firmware::fpga::SilencerTarget::Intensity,
             }),
             sender.send((Static::default(), Null)),
             sender.send(Clear {}),

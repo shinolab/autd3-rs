@@ -37,11 +37,11 @@ pub enum AUTDDriverError {
 
     /// FociSTM buffer size is out of range.
     #[error(
-        "FociSTM size ({0}) is out of range ([{min}, {max}])",
+        "The number of total foci ({0}) is out of range ([{min}, {max}])",
         min = STM_BUF_SIZE_MIN,
         max = FOCI_STM_BUF_SIZE_MAX
     )]
-    FociSTMPointSizeOutOfRange(usize),
+    FociSTMTotalSizeOutOfRange(usize),
     /// Number of foci is out of range.
     #[error(
         "Number of foci ({0}) is out of range ([{min}, {max}])",
@@ -91,11 +91,6 @@ pub enum AUTDDriverError {
     /// Invalid date time.
     #[error("The input data is invalid.")]
     InvalidDateTime,
-
-    #[cfg(feature = "dynamic_freq")]
-    #[error("Ultrasound frequency ({0:?}) is not supported")]
-    /// Invalid ultrasound frequency.
-    InvalidFrequency(autd3_core::defined::Freq<u32>),
 
     /// Not supported tag.
     ///

@@ -32,7 +32,6 @@ windows = { workspace = true, features = ["Win32_Security"] }
 default = []
 async = ["tokio", "autd3-core/async"]
 async-trait = ["async", "autd3-core/async-trait"]
-dynamic_freq = ["autd3-driver/dynamic_freq", "autd3-firmware-emulator/dynamic_freq"]
 
 [dev-dependencies]
 rand = { workspace = true, features = ["thread_rng"] }

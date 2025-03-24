@@ -95,7 +95,7 @@ impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Modulation for Sine
         self.calc_raw()?
             .map(|v| v.floor() as i16)
             .map(|v| {
-                if (u8::MIN as _..=u8::MAX as _).contains(&v) {
+                if (u8::MIN as i16..=u8::MAX as _).contains(&v) {
                     Ok(v as _)
                 } else if self.option.clamp {
                     Ok(v.clamp(u8::MIN as _, u8::MAX as _) as _)

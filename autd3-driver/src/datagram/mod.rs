@@ -1,7 +1,5 @@
 mod boxed;
 mod clear;
-#[cfg(feature = "dynamic_freq")]
-mod clock;
 mod cpu_gpio_out;
 mod force_fan;
 mod fpga_gpio_out;
@@ -26,8 +24,6 @@ pub use super::firmware::operation::SwapSegment;
 pub use super::firmware::operation::{ControlPoint, ControlPoints};
 pub use boxed::{BoxedDatagram, IntoBoxedDatagram};
 pub use clear::Clear;
-#[cfg(feature = "dynamic_freq")]
-pub use clock::ConfigureFPGAClock;
 #[doc(hidden)]
 pub use cpu_gpio_out::{CpuGPIOOutputs, CpuGPIOPort};
 pub use force_fan::ForceFan;
@@ -39,9 +35,7 @@ pub use modulation::{BoxedModulation, IntoBoxedModulation};
 pub use phase_corr::PhaseCorrection;
 pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
-#[cfg(not(feature = "dynamic_freq"))]
-pub use silencer::FixedCompletionTime;
-pub use silencer::{FixedCompletionSteps, FixedUpdateRate, Silencer};
+pub use silencer::{FixedCompletionSteps, FixedCompletionTime, FixedUpdateRate, Silencer};
 pub use stm::{
     FociSTM, FociSTMGenerator, FociSTMIterator, FociSTMIteratorGenerator, GainSTM,
     GainSTMGenerator, GainSTMIterator, GainSTMIteratorGenerator, GainSTMOption, STMConfig,

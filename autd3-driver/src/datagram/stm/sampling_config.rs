@@ -8,14 +8,14 @@ use crate::{defined::Freq, error::AUTDDriverError, firmware::fpga::SamplingConfi
 pub enum STMConfig {
     #[doc(hidden)]
     Freq(Freq<f32>),
-    #[cfg(not(feature = "dynamic_freq"))]
+
     #[doc(hidden)]
     Period(Duration),
     #[doc(hidden)]
     SamplingConfig(SamplingConfig),
     #[doc(hidden)]
     FreqNearest(Freq<f32>),
-    #[cfg(not(feature = "dynamic_freq"))]
+
     #[doc(hidden)]
     PeriodNearest(Duration),
 }
@@ -26,7 +26,7 @@ impl STMConfig {
     pub fn into_sampling_config(self, size: usize) -> Result<SamplingConfig, AUTDDriverError> {
         match self {
             STMConfig::Freq(f) => Ok(SamplingConfig::new(f * size as f32)),
-            #[cfg(not(feature = "dynamic_freq"))]
+
             STMConfig::Period(p) => {
                 if p.as_nanos() % size as u128 != 0 {
                     return Err(AUTDDriverError::STMPeriodInvalid(size, p));
@@ -37,7 +37,7 @@ impl STMConfig {
             STMConfig::FreqNearest(freq) => {
                 Ok(SamplingConfig::new(freq * size as f32).into_nearest())
             }
-            #[cfg(not(feature = "dynamic_freq"))]
+
             STMConfig::PeriodNearest(duration) => {
                 Ok(SamplingConfig::new(duration / size as u32).into_nearest())
             }
@@ -51,7 +51,6 @@ impl From<Freq<f32>> for STMConfig {
     }
 }
 
-#[cfg(not(feature = "dynamic_freq"))]
 impl From<Duration> for STMConfig {
     fn from(p: Duration) -> Self {
         Self::Period(p)
@@ -75,7 +74,6 @@ impl From<FreqNearest> for STMConfig {
     }
 }
 
-#[cfg(not(feature = "dynamic_freq"))]
 impl From<PeriodNearest> for STMConfig {
     fn from(p: PeriodNearest) -> Self {
         STMConfig::PeriodNearest(p.0)
@@ -109,7 +107,6 @@ mod tests {
         );
     }
 
-    #[cfg(not(feature = "dynamic_freq"))]
     #[rstest::rstest]
     #[test]
     #[case(
@@ -157,7 +154,6 @@ mod tests {
         );
     }
 
-    #[cfg(not(feature = "dynamic_freq"))]
     #[rstest::rstest]
     #[test]
     #[case(

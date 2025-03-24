@@ -115,17 +115,6 @@ impl<L: AsyncLink> Controller<L> {
         // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
         let _ = sender.send(ForceFan::new(|_| false)).await;
 
-        #[cfg(feature = "dynamic_freq")]
-        {
-            tracing::debug!(
-                "Configuring ultrasound frequency to {:?}",
-                autd3_driver::defined::ultrasound_freq()
-            );
-            sender
-                .send(autd3_driver::datagram::ConfigureFPGAClock::new())
-                .await?;
-        }
-
         sender.send((Clear::new(), Synchronize::new())).await?;
         Ok(self)
     }
@@ -145,7 +134,6 @@ impl<L: AsyncLink> Controller<L> {
                     strict_mode: false,
                     ..Default::default()
                 },
-                target: autd3_driver::firmware::fpga::SilencerTarget::Intensity,
             })
             .await,
             self.send((Static::default(), Null)).await,

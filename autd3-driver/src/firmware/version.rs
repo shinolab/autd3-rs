@@ -26,6 +26,7 @@ fn version_map(major: Major, minor: Minor) -> String {
         0x92..=0x92 => format!("v8.{}.{}", major - 0x92, minor),
         0xA0..=0xA1 => format!("v9.{}.{}", major - 0xA0, minor),
         0xA2..=0xA2 => format!("v10.{}.{}", major - 0xA2, minor),
+        0xA3..=0xA3 => format!("v11.{}.{}", major - 0xA3, minor),
         _ => format!("unknown ({major})"),
     }
 }
@@ -43,15 +44,7 @@ pub struct FPGAVersion {
 
 impl FPGAVersion {
     #[doc(hidden)]
-    pub const DYNAMIC_FREQ_BIT: u8 = 1 << 1;
-    #[doc(hidden)]
     pub const ENABLED_EMULATOR_BIT: u8 = 1 << 7;
-
-    #[doc(hidden)]
-    #[must_use]
-    pub const fn dynamic_freq_enabled(&self) -> bool {
-        (self.function_bits & Self::DYNAMIC_FREQ_BIT) == Self::DYNAMIC_FREQ_BIT
-    }
 
     #[doc(hidden)]
     #[must_use]
@@ -63,13 +56,10 @@ impl FPGAVersion {
 impl std::fmt::Display for FPGAVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", version_map(self.major, self.minor))?;
-        let features = [
-            self.is_emulator().then_some("Emulator"),
-            self.dynamic_freq_enabled().then_some("DynamicFreq"),
-        ]
-        .iter()
-        .filter_map(Option::as_ref)
-        .join(", ");
+        let features = [self.is_emulator().then_some("Emulator")]
+            .iter()
+            .filter_map(Option::as_ref)
+            .join(", ");
         if !features.is_empty() {
             write!(f, " [{}]", features)?;
         }
@@ -107,9 +97,9 @@ pub struct FirmwareVersion {
 
 impl FirmwareVersion {
     #[doc(hidden)]
-    pub const LATEST_VERSION_NUM_MAJOR: Major = Major(0xA2);
+    pub const LATEST_VERSION_NUM_MAJOR: Major = Major(0xA3);
     #[doc(hidden)]
-    pub const LATEST_VERSION_NUM_MINOR: Minor = Minor(0x01);
+    pub const LATEST_VERSION_NUM_MINOR: Minor = Minor(0x00);
 
     #[doc(hidden)]
     #[must_use]
@@ -177,6 +167,7 @@ mod tests {
     #[case("v9.0.0", 160)]
     #[case("v9.1.0", 161)]
     #[case("v10.0.0", 162)]
+    #[case("v11.0.0", 163)]
     #[case("unknown (147)", 147)]
     fn version(#[case] expected: &str, #[case] num: u8) {
         let info = FirmwareVersion {
@@ -197,7 +188,7 @@ mod tests {
 
     #[test]
     fn latest() {
-        assert_eq!("v10.0.1", FirmwareVersion::latest());
+        assert_eq!("v11.0.0", FirmwareVersion::latest());
     }
 
     #[rstest::rstest]
@@ -252,36 +243,6 @@ mod tests {
                 major: Major(2),
                 minor: Minor(4),
                 function_bits: FPGAVersion::ENABLED_EMULATOR_BIT
-            }
-        }
-    )]
-    #[case(
-        "0: CPU = v0.4, FPGA = v0.5 [DynamicFreq]",
-        FirmwareVersion {
-            idx: 0,
-            cpu: CPUVersion {
-                major: Major(1),
-                minor: Minor(3)
-            },
-            fpga: FPGAVersion {
-                major: Major(2),
-                minor: Minor(4),
-                function_bits: FPGAVersion::DYNAMIC_FREQ_BIT
-            }
-        }
-    )]
-    #[case(
-        "0: CPU = v0.4, FPGA = v0.5 [Emulator, DynamicFreq]",
-        FirmwareVersion {
-            idx: 0,
-            cpu: CPUVersion {
-                major: Major(1),
-                minor: Minor(3)
-            },
-            fpga: FPGAVersion {
-                major: Major(2),
-                minor: Minor(4),
-                function_bits: FPGAVersion::ENABLED_EMULATOR_BIT | FPGAVersion::DYNAMIC_FREQ_BIT
             }
         }
     )]

@@ -8,7 +8,7 @@ use autd3_driver::{
 
 use super::FPGAEmulator;
 
-const FPGA_MAIN_CLK_FREQ: u32 = 10240000;
+const FPGA_MAIN_CLK_FREQ: u32 = 20480000;
 
 pub(crate) struct Swapchain<const SET: u16> {
     sys_time: DcSysTime,
@@ -170,7 +170,7 @@ impl<const SET: u16> Swapchain<SET> {
 
     #[must_use]
     fn lap_and_idx(&self, segment: Segment, sys_time: DcSysTime) -> (usize, usize) {
-        let a = ((self.fpga_sys_time(sys_time) >> 8) / self.freq_div[&segment] as u64) as usize;
+        let a = ((self.fpga_sys_time(sys_time) >> 9) / self.freq_div[&segment] as u64) as usize;
         let b = self.cycle[&segment];
         let lap = a / b;
         let idx = a % b;

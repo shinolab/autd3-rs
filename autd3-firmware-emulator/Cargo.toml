@@ -26,4 +26,3 @@ rstest = { workspace = true }
 
 [features]
 default = []
-dynamic_freq = ["autd3-driver/dynamic_freq"]

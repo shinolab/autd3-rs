@@ -1,12 +1,9 @@
 use std::time::Duration;
 
 use crate::{
-    defined::ultrasound_freq,
+    defined::ULTRASOUND_FREQ,
     error::AUTDDriverError,
-    firmware::{
-        fpga::SilencerTarget,
-        operation::{Operation, TypeTag},
-    },
+    firmware::operation::{Operation, TypeTag},
     geometry::Device,
 };
 
@@ -28,22 +25,15 @@ pub struct SilencerFixedCompletionTimeOp {
     intensity: Duration,
     phase: Duration,
     strict_mode: bool,
-    target: SilencerTarget,
 }
 
 impl SilencerFixedCompletionTimeOp {
-    pub(crate) const fn new(
-        intensity: Duration,
-        phase: Duration,
-        strict_mode: bool,
-        target: SilencerTarget,
-    ) -> Self {
+    pub(crate) const fn new(intensity: Duration, phase: Duration, strict_mode: bool) -> Self {
         Self {
             is_done: false,
             intensity,
             phase,
             strict_mode,
-            target,
         }
     }
 }
@@ -54,13 +44,13 @@ impl Operation for SilencerFixedCompletionTimeOp {
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         let validate = |value: Duration| {
             const NANOSEC: u128 = 1_000_000_000;
-            let v = value.as_nanos() * ultrasound_freq().hz() as u128;
+            let v = value.as_nanos() * ULTRASOUND_FREQ.hz() as u128;
             let v = if v % NANOSEC == 0 {
                 v / NANOSEC
             } else {
                 return Err(AUTDDriverError::InvalidSilencerCompletionTime(value));
             };
-            if v == 0 || v > u16::MAX as _ {
+            if v == 0 || v > u16::MAX as u128 {
                 return Err(AUTDDriverError::SilencerCompletionTimeOutOfRange(value));
             }
             Ok(v as u16)
@@ -76,9 +66,6 @@ impl Operation for SilencerFixedCompletionTimeOp {
                     SilencerControlFlags::STRICT_MODE
                 } else {
                     SilencerControlFlags::NONE
-                } | match self.target {
-                    SilencerTarget::Intensity => SilencerControlFlags::NONE,
-                    SilencerTarget::PulseWidth => SilencerControlFlags::PULSE_WIDTH,
                 },
                 value_intensity: step_intensity,
                 value_phase: step_phase,
@@ -103,10 +90,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::{
-        defined::ultrasound_period, firmware::fpga::SilencerTarget,
-        firmware::operation::tests::create_device,
-    };
+    use crate::{defined::ULTRASOUND_PERIOD, firmware::operation::tests::create_device};
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 
@@ -120,10 +104,9 @@ mod tests {
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionTime>()];
 
         let mut op = SilencerFixedCompletionTimeOp::new(
-            ultrasound_period() * 0x12,
-            ultrasound_period() * 0x34,
+            ULTRASOUND_PERIOD * 0x12,
+            ULTRASOUND_PERIOD * 0x34,
             strict_mode,
-            SilencerTarget::Intensity,
         );
 
         assert_eq!(
@@ -185,12 +168,7 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionTime>()];
 
-        let mut op = SilencerFixedCompletionTimeOp::new(
-            time_intensity,
-            time_phase,
-            true,
-            SilencerTarget::Intensity,
-        );
+        let mut op = SilencerFixedCompletionTimeOp::new(time_intensity, time_phase, true);
 
         assert_eq!(expected, op.pack(&device, &mut tx).unwrap_err());
     }

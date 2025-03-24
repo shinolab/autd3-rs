@@ -1,7 +1,5 @@
 mod boxed;
 mod clear;
-#[cfg(feature = "dynamic_freq")]
-mod clock;
 mod cpu_gpio_out;
 mod debug;
 mod force_fan;
@@ -20,8 +18,6 @@ mod sync;
 pub(crate) use autd3_core::datagram::NullOp;
 pub use boxed::BoxedOperation;
 pub(crate) use clear::*;
-#[cfg(feature = "dynamic_freq")]
-pub(crate) use clock::*;
 pub(crate) use cpu_gpio_out::*;
 pub(crate) use debug::*;
 pub(crate) use force_fan::*;
@@ -56,8 +52,6 @@ pub(crate) enum TypeTag {
     Clear = 0x01,
     Sync = 0x02,
     FirmwareVersion = 0x03,
-    #[cfg(feature = "dynamic_freq")]
-    ConfigFPGAClock = 0x04,
     Modulation = 0x10,
     ModulationSwapSegment = 0x11,
     Silencer = 0x21,
@@ -69,7 +63,7 @@ pub(crate) enum TypeTag {
     FociSTMSwapSegment = 0x44,
     ForceFan = 0x60,
     ReadsFPGAState = 0x61,
-    ConfigPulseWidthEncoder = 0x71,
+    ConfigPulseWidthEncoder = 0x72,
     PhaseCorrection = 0x80,
     Debug = 0xF0,
     EmulateGPIOIn = 0xF1,

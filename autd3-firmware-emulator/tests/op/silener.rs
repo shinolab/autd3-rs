@@ -3,10 +3,7 @@ use std::num::NonZeroU16;
 use autd3_driver::{
     datagram::*,
     error::AUTDDriverError,
-    firmware::{
-        cpu::TxMessage,
-        fpga::{SamplingConfig, SilencerTarget},
-    },
+    firmware::{cpu::TxMessage, fpga::SamplingConfig},
     geometry::Point3,
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -30,16 +27,12 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
             intensity: NonZeroU16::new_unchecked(rng.random_range(1..=u16::MAX)),
             phase: NonZeroU16::new_unchecked(rng.random_range(1..=u16::MAX)),
         };
-        let d = Silencer {
-            config,
-            target: SilencerTarget::Intensity,
-        };
+        let d = Silencer { config };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(config, cpu.fpga().silencer_update_rate());
         assert!(cpu.fpga().silencer_fixed_update_rate_mode());
-        assert_eq!(SilencerTarget::Intensity, cpu.fpga().silencer_target());
     }
 
     unsafe {
@@ -47,25 +40,20 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
             intensity: NonZeroU16::new_unchecked(rng.random_range(1..=u16::MAX)),
             phase: NonZeroU16::new_unchecked(rng.random_range(1..=u16::MAX)),
         };
-        let d = Silencer {
-            config,
-            target: SilencerTarget::PulseWidth,
-        };
+        let d = Silencer { config };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(config, cpu.fpga().silencer_update_rate());
         assert!(cpu.fpga().silencer_fixed_update_rate_mode());
-        assert_eq!(SilencerTarget::PulseWidth, cpu.fpga().silencer_target());
     }
 
     Ok(())
 }
 
-#[cfg(not(feature = "dynamic_freq"))]
 #[test]
 fn send_silencer_fixed_completion_time_unsafe() {
-    use autd3_driver::defined::ultrasound_period;
+    use autd3_driver::defined::ULTRASOUND_PERIOD;
 
     let mut rng = rand::rng();
 
@@ -75,53 +63,45 @@ fn send_silencer_fixed_completion_time_unsafe() {
 
     {
         let config = FixedCompletionTime {
-            intensity: ultrasound_period() * rng.random_range(1..=10),
-            phase: ultrasound_period() * rng.random_range(1..=u8::MAX) as u32,
+            intensity: ULTRASOUND_PERIOD * rng.random_range(1..=10),
+            phase: ULTRASOUND_PERIOD * rng.random_range(1..=u8::MAX) as u32,
             strict_mode: true,
         };
-        let d = Silencer {
-            config,
-            target: SilencerTarget::Intensity,
-        };
+        let d = Silencer { config };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(
-            (config.intensity.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            (config.intensity.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
             cpu.fpga().silencer_completion_steps().intensity.get()
         );
         assert_eq!(
-            (config.phase.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            (config.phase.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
             cpu.fpga().silencer_completion_steps().phase.get()
         );
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
         assert!(cpu.silencer_strict_mode());
-        assert_eq!(SilencerTarget::Intensity, cpu.fpga().silencer_target());
     }
 
     {
         let config = FixedCompletionTime {
-            intensity: ultrasound_period() * rng.random_range(1..=10),
-            phase: ultrasound_period() * rng.random_range(1..=u8::MAX) as u32,
+            intensity: ULTRASOUND_PERIOD * rng.random_range(1..=10),
+            phase: ULTRASOUND_PERIOD * rng.random_range(1..=u8::MAX) as u32,
             strict_mode: true,
         };
-        let d = Silencer {
-            config,
-            target: SilencerTarget::PulseWidth,
-        };
+        let d = Silencer { config };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(
-            (config.intensity.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            (config.intensity.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
             cpu.fpga().silencer_completion_steps().intensity.get()
         );
         assert_eq!(
-            (config.phase.as_nanos() / ultrasound_period().as_nanos()) as u16,
+            (config.phase.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
             cpu.fpga().silencer_completion_steps().phase.get()
         );
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
         assert!(cpu.silencer_strict_mode());
-        assert_eq!(SilencerTarget::PulseWidth, cpu.fpga().silencer_target());
     }
 }
 
@@ -139,17 +119,13 @@ fn send_silencer_fixed_completion_steps_unsafe() {
             phase: NonZeroU16::new(rng.random_range(1..=u8::MAX) as u16).unwrap(),
             strict_mode: true,
         };
-        let d = Silencer {
-            config,
-            target: SilencerTarget::Intensity,
-        };
+        let d = Silencer { config };
 
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(config, cpu.fpga().silencer_completion_steps());
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
         assert!(cpu.silencer_strict_mode());
-        assert_eq!(SilencerTarget::Intensity, cpu.fpga().silencer_target());
     }
 
     {
@@ -158,16 +134,12 @@ fn send_silencer_fixed_completion_steps_unsafe() {
             phase: NonZeroU16::new(rng.random_range(1..=u8::MAX) as u16).unwrap(),
             strict_mode: true,
         };
-        let d = Silencer {
-            config,
-            target: SilencerTarget::PulseWidth,
-        };
+        let d = Silencer { config };
         assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(config, cpu.fpga().silencer_completion_steps());
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
         assert!(cpu.silencer_strict_mode());
-        assert_eq!(SilencerTarget::PulseWidth, cpu.fpga().silencer_target());
     }
 }
 
@@ -191,7 +163,6 @@ fn silencer_completetion_steps_too_large_mod(
             phase: NonZeroU16::MIN,
             strict_mode: true,
         },
-        target: SilencerTarget::Intensity,
     };
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -212,7 +183,6 @@ fn silencer_completetion_steps_too_large_mod(
             phase: NonZeroU16::new(steps_phase).unwrap(),
             strict_mode: true,
         },
-        target: SilencerTarget::Intensity,
     };
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
@@ -240,7 +210,6 @@ fn silencer_completetion_steps_too_large_stm(
             phase: NonZeroU16::MIN,
             strict_mode: true,
         },
-        target: SilencerTarget::Intensity,
     };
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -260,7 +229,6 @@ fn silencer_completetion_steps_too_large_stm(
             phase: NonZeroU16::new(steps_phase).unwrap(),
             strict_mode: true,
         },
-        target: SilencerTarget::Intensity,
     };
 
     assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
@@ -281,10 +249,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
         phase: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
         strict_mode: false,
     };
-    let d = Silencer {
-        config,
-        target: SilencerTarget::Intensity,
-    };
+    let d = Silencer { config };
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
@@ -312,10 +277,7 @@ fn send_silencer_fixed_completion_time_permissive() {
         phase: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
         strict_mode: false,
     };
-    let d = Silencer {
-        config,
-        target: SilencerTarget::Intensity,
-    };
+    let d = Silencer { config };
 
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
