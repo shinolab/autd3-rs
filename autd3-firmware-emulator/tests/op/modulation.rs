@@ -83,6 +83,13 @@ impl Modulation for TestModulation {
     Segment::S1,
     Some(TransitionMode::GPIO(GPIOIn::I3))
 )]
+#[cfg_attr(miri, ignore)]
+#[case(
+    32768 + 1,
+    LoopBehavior::Infinite,
+    Segment::S0,
+    Some(TransitionMode::Immediate)
+)]
 #[case(MOD_BUF_SIZE_MIN, LoopBehavior::ONCE, Segment::S1, None)]
 fn send_mod_unsafe(
     #[case] n: usize,

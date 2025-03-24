@@ -162,7 +162,7 @@ impl CPUEmulator {
                     BRAM_SELECT_MOD,
                     0,
                     data.add((page_capacity >> 1) as _),
-                    ((write - page_capacity) >> 1) as _,
+                    ((write - page_capacity + 1) >> 1) as _,
                 );
                 self.mod_cycle += (write - page_capacity) as u32;
             }
