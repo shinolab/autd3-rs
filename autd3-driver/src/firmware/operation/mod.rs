@@ -63,7 +63,7 @@ pub(crate) enum TypeTag {
     FociSTMSwapSegment = 0x44,
     ForceFan = 0x60,
     ReadsFPGAState = 0x61,
-    ConfigPulseWidthEncoder = 0x71,
+    ConfigPulseWidthEncoder = 0x72,
     PhaseCorrection = 0x80,
     Debug = 0xF0,
     EmulateGPIOIn = 0xF1,
