@@ -50,7 +50,7 @@ impl Operation for SilencerFixedCompletionTimeOp {
             } else {
                 return Err(AUTDDriverError::InvalidSilencerCompletionTime(value));
             };
-            if v == 0 || v > u16::MAX as _ {
+            if v == 0 || v > u16::MAX as u128 {
                 return Err(AUTDDriverError::SilencerCompletionTimeOutOfRange(value));
             }
             Ok(v as u16)
