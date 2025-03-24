@@ -6,7 +6,7 @@ use crate::{
 };
 
 use autd3_core::{
-    defined::{DEFAULT_TIMEOUT, ULTRASOUND_PERIOD_COUNT},
+    defined::{DEFAULT_TIMEOUT, ULTRASOUND_PERIOD_COUNT_BITS},
     derive::DatagramOption,
     gain::EmitIntensity,
 };
@@ -14,11 +14,12 @@ use derive_more::Debug;
 
 const DEFAULT_TABLE: &[u8; 512] = include_bytes!("asin.dat");
 
-fn default_table(i: EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> {
-    PulseWidth(u16::from_le_bytes([
+fn default_table(i: EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> {
+    PulseWidth::new(u16::from_le_bytes([
         DEFAULT_TABLE[((i.0 as usize) << 1) + 1],
         DEFAULT_TABLE[(i.0 as usize) << 1],
     ]))
+    .unwrap()
 }
 
 /// [`Datagram`] to configure pulse width encoder table.
@@ -37,21 +38,23 @@ fn default_table(i: EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> {
 /// ```
 /// # use autd3_driver::datagram::PulseWidthEncoder;
 /// # use autd3_driver::firmware::fpga::PulseWidth;
-/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::from_duty(i.0 as f32 / 510.));
+/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::from_duty(i.0 as f32 / 510.).unwrap());
 /// ```
 ///
 /// [`EmitIntensity`]: crate::firmware::fpga::EmitIntensity
 #[derive(Clone, Debug)]
 pub struct PulseWidthEncoder<
-    H: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> + Send + Sync,
+    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
     F: Fn(&Device) -> H,
 > {
     #[debug(ignore)]
     f: F,
 }
 
-impl<H: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> + Send + Sync, F: Fn(&Device) -> H>
-    PulseWidthEncoder<H, F>
+impl<
+    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
+    F: Fn(&Device) -> H,
+> PulseWidthEncoder<H, F>
 {
     /// Creates a new [`PulseWidthEncoder`].
     #[must_use]
@@ -62,12 +65,14 @@ impl<H: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> + Send + Sync, 
 
 impl Default
     for PulseWidthEncoder<
-        Box<dyn Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> + Send + Sync>,
+        Box<dyn Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync>,
         Box<
             dyn Fn(
                 &Device,
             ) -> Box<
-                dyn Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> + Send + Sync,
+                dyn Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS>
+                    + Send
+                    + Sync,
             >,
         >,
     >
@@ -78,14 +83,16 @@ impl Default
 }
 
 pub struct PulseWidthEncoderOpGenerator<
-    H: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> + Send + Sync,
+    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
     F: Fn(&Device) -> H,
 > {
     f: F,
 }
 
-impl<H: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> + Send + Sync, F: Fn(&Device) -> H>
-    OperationGenerator for PulseWidthEncoderOpGenerator<H, F>
+impl<
+    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
+    F: Fn(&Device) -> H,
+> OperationGenerator for PulseWidthEncoderOpGenerator<H, F>
 {
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = NullOp;
@@ -95,8 +102,10 @@ impl<H: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> + Send + Sync, 
     }
 }
 
-impl<H: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT> + Send + Sync, F: Fn(&Device) -> H>
-    Datagram for PulseWidthEncoder<H, F>
+impl<
+    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
+    F: Fn(&Device) -> H,
+> Datagram for PulseWidthEncoder<H, F>
 {
     type G = PulseWidthEncoderOpGenerator<H, F>;
     type Error = Infallible;
