@@ -14,7 +14,6 @@ async-trait = { workspace = true, optional = true }
 autd3-derive = { workspace = true, optional = true }
 bit-vec = { workspace = true, optional = true }
 bvh = { workspace = true, optional = true }
-const_fn = { workspace = true }
 derive_more = { workspace = true, optional = true }
 getset = { workspace = true, optional = true }
 nalgebra = { workspace = true, optional = true }
