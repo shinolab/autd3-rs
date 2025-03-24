@@ -56,16 +56,10 @@ impl Memory {
                 )
             }),
             duty_table_bram: LazyCell::new(|| {
-                let mut v = vec![0x0000; 256];
-                let pwe_init_data = include_bytes!("asin.dat");
-                unsafe {
-                    std::ptr::copy_nonoverlapping(
-                        pwe_init_data.as_ptr(),
-                        v.as_mut_ptr() as _,
-                        pwe_init_data.len(),
-                    );
-                }
-                RefCell::new(v)
+                let pwe_init_data: &[u8; 512] = include_bytes!("asin.dat");
+                RefCell::new(Vec::from_iter((0..256).map(|i| {
+                    u16::from_le_bytes([pwe_init_data[(i << 1) + 1], pwe_init_data[i << 1]])
+                })))
             }),
             stm_bram: LazyCell::new(|| {
                 RefCell::new(

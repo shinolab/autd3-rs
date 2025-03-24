@@ -24,6 +24,7 @@ thiserror = { workspace = true }
 time = { workspace = true, features = ["macros", "std"] }
 tracing = { workspace = true, features = ["attributes"] }
 zerocopy = { workspace = true }
+num = { workspace = true }
 
 [dev-dependencies]
 rand = { workspace = true, features = ["thread_rng"] }
