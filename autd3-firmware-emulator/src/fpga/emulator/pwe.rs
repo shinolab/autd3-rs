@@ -24,8 +24,7 @@ impl FPGAEmulator {
     #[must_use]
     pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> PulseWidth<u16, 9> {
         let key = (a.0 as usize * b as usize) / 255;
-        dbg!(key);
-        dbg!(self.pulse_width_encoder_table_at(key))
+        self.pulse_width_encoder_table_at(key)
     }
 }
 

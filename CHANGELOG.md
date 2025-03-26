@@ -1,3 +1,7 @@
+# 32.0.1
+
+- Remove unintended `dbg!` 
+
 # 32.0.0
 
 - Update firmware to v11.0.0
