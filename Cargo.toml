@@ -53,8 +53,8 @@ thiserror = { version = "2.0.12", default-features = false }
 time = { version = "0.3.41", default-features = false }
 tokio = { version = "1.44.1", default-features = false }
 tokio-test = { version = "0.4.4", default-features = false }
-tonic = { version = "0.12.3", default-features = false }
-tonic-build = { version = "0.12.3", default-features = false }
+tonic = { version = "0.13.0", default-features = false }
+tonic-build = { version = "0.13.0", default-features = false }
 rayon = { version = "1.10.0", default-features = false }
 derive_more = { version = "2.0.1", default-features = false }
 tracing-subscriber = { version = "0.3.19", default-features = false }
