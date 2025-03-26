@@ -51,7 +51,7 @@ autd3-modulation-audio-file = { workspace = true }
 autd3-protobuf = { workspace = true, optional = true }
 color-print = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"], optional = true }
-tonic = { workspace = true, optional = true }
+tonic = { workspace = true, features = ["router"], optional = true }
 tracing-subscriber = { workspace = true, features = ["fmt"] }
 tracing = { workspace = true }
 
