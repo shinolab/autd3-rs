@@ -55,11 +55,11 @@ impl<F: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Sen
 
         self.is_done = true;
 
-        Ok(size_of::<Pwe>() + PWE_BUF_SIZE)
+        Ok(size_of::<Pwe>() + PWE_BUF_SIZE * size_of::<u16>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        size_of::<Pwe>() + PWE_BUF_SIZE
+        size_of::<Pwe>() + PWE_BUF_SIZE * size_of::<u16>()
     }
 
     fn is_done(&self) -> bool {
@@ -84,7 +84,10 @@ mod tests {
 
         let mut op = PulseWidthEncoderOp::new(|i| PulseWidth::new(i.0 as u16).unwrap());
 
-        assert_eq!(size_of::<Pwe>() + PWE_BUF_SIZE, op.required_size(&device));
+        assert_eq!(
+            size_of::<Pwe>() + PWE_BUF_SIZE * size_of::<u16>(),
+            op.required_size(&device)
+        );
 
         assert!(!op.is_done());
 

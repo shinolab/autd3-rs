@@ -1,3 +1,7 @@
+# 32.0.2
+
+- Fix data size calculations in `PulseWidthEncoderOp`
+
 # 32.0.1
 
 - Remove unintended `dbg!` 
