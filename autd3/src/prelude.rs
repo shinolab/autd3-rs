@@ -22,7 +22,7 @@ pub use autd3_driver::{
     datagram::{
         Clear, ControlPoint, ControlPoints, FixedCompletionTime, FixedUpdateRate, FociSTM,
         ForceFan, GPIOOutputs, GainSTM, GainSTMOption, PhaseCorrection, PulseWidthEncoder,
-        ReadsFPGAState, Silencer, SwapSegment, WithLoopBehavior, WithSegment,
+        ReadsFPGAState, Silencer, SwapSegment, WithLoopBehavior, WithSegment, v10,
     },
     defined::{Hz, PI, ULTRASOUND_FREQ, deg, kHz, mm, rad},
     error::AUTDDriverError,

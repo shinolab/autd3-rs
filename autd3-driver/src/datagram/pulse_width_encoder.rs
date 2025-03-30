@@ -26,9 +26,9 @@ fn default_table(i: EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BI
 ///
 /// The pulse width encoder table is a table to determine the pulse width (or duty ratio) from the instensity.
 /// In the firmware, the intensity (0-255) is used as the index of the table to determine the pulse width (0-255).
-/// The period of the ultrasound is mapped to 256, and therefore, the ultrasound output is the ultrasound is maximum when the pulse width is 128 (50% in duty ratio).
+/// The period of the ultrasound is mapped to 512, and therefore, the ultrasound output is the ultrasound is maximum when the pulse width is 256 (50% in duty ratio).
 ///
-/// The default table is set by the arcsin function so that [`EmitIntensity`] is linear; that is, `table[i] = round(256*arcsin(i/255)/π)`.
+/// The default table is set by the arcsin function so that [`EmitIntensity`] is linear; that is, `table[i] = round(512*arcsin(i/255)/π)`.
 ///
 /// # Example
 ///

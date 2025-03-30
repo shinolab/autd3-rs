@@ -15,8 +15,11 @@ where
 {
     /// Creates a new [`PulseWidth`].
     pub fn new(pulse_width: T) -> Option<Self> {
-        let period: T = T::try_from(1 << BITS).ok()?;
-        if pulse_width < T::zero() || period <= pulse_width {
+        if pulse_width < T::zero()
+            || T::try_from(1 << BITS)
+                .map(|period| period <= pulse_width)
+                .unwrap_or(false)
+        {
             return None;
         }
         Some(Self { pulse_width })
@@ -38,8 +41,6 @@ where
 mod tests {
     use super::*;
 
-    const BITS: usize = 9;
-
     #[rstest::rstest]
     #[case(Some(0), 0)]
     #[case(Some(256), 256)]
@@ -47,7 +48,7 @@ mod tests {
     #[case(None, 512)]
     #[test]
     fn test_pulse_width_new(#[case] expected: Option<u16>, #[case] pulse_width: u16) {
-        let pulse_width = PulseWidth::<u16, BITS>::new(pulse_width);
+        let pulse_width = PulseWidth::<u16, 9>::new(pulse_width);
         assert_eq!(expected, pulse_width.map(|p| p.pulse_width()));
     }
 
@@ -60,7 +61,29 @@ mod tests {
     #[case(None, 1.5)]
     #[test]
     fn test_pulse_width_from_duty(#[case] expected: Option<u16>, #[case] duty: f32) {
-        let pulse_width = PulseWidth::<u16, BITS>::from_duty(duty);
+        let pulse_width = PulseWidth::<u16, 9>::from_duty(duty);
+        assert_eq!(expected, pulse_width.map(|p| p.pulse_width()));
+    }
+
+    #[rstest::rstest]
+    #[case(Some(0), 0)]
+    #[case(Some(255), 255)]
+    #[test]
+    fn test_pulse_width_new_u8(#[case] expected: Option<u8>, #[case] pulse_width: u8) {
+        let pulse_width = PulseWidth::<u8, 8>::new(pulse_width);
+        assert_eq!(expected, pulse_width.map(|p| p.pulse_width()));
+    }
+
+    #[rstest::rstest]
+    #[case(Some(0), 0.0)]
+    #[case(Some(128), 0.5)]
+    #[case(Some(255), 255.0 / 256.0)]
+    #[case(None, -0.5)]
+    #[case(None, 1.0)]
+    #[case(None, 1.5)]
+    #[test]
+    fn test_pulse_width_from_duty_u8(#[case] expected: Option<u8>, #[case] duty: f32) {
+        let pulse_width = PulseWidth::<u8, 8>::from_duty(duty);
         assert_eq!(expected, pulse_width.map(|p| p.pulse_width()));
     }
 }

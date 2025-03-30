@@ -15,6 +15,8 @@ mod silencer;
 mod stm;
 mod synchronize;
 mod tuple;
+#[doc(hidden)]
+pub mod v10;
 mod with_loop_behavior;
 mod with_segment;
 

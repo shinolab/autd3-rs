@@ -14,6 +14,7 @@ mod segment;
 mod silencer;
 mod stm;
 mod sync;
+pub(crate) mod v10;
 
 pub(crate) use autd3_core::datagram::NullOp;
 pub use boxed::BoxedOperation;
