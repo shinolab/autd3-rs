@@ -3,7 +3,7 @@
 #![warn(rustdoc::missing_crate_level_docs)]
 #![warn(rustdoc::unescaped_backticks)]
 
-//! This crate provides `Wav`, `RawPCM`, and `Csv` modulation.
+//! This crate provides `Wav`, and `Csv` modulation.
 
 mod csv;
 mod error;
