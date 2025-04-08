@@ -153,14 +153,21 @@ impl CPUEmulator {
         self.fpga.write(addr, data)
     }
 
-    pub(crate) fn bram_cpy(&mut self, select: u8, addr_base: u16, data: *const u16, size: usize) {
+    pub(crate) fn bram_cpy(
+        &mut self,
+        select: u8,
+        addr_base: u16,
+        src: *const u16,
+        size: usize,
+    ) -> *const u16 {
         let mut addr = Self::get_addr(select, addr_base);
-        let mut src = data;
+        let mut src = src;
         (0..size).for_each(|_| unsafe {
             self.fpga.write(addr, src.read());
-            addr += 1;
+            addr = addr.wrapping_add(1);
             src = src.add(1);
-        })
+        });
+        src
     }
 
     pub(crate) fn bram_set(&mut self, select: u8, addr_base: u16, value: u16, size: usize) {
