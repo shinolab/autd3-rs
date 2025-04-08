@@ -118,38 +118,12 @@ impl CPUEmulator {
                 FOCI_STM_BUF_PAGE_SIZE - ((self.stm_write as u16) & FOCI_STM_BUF_PAGE_SIZE_MASK);
             let size = d.subseq.send_num as u16 * self.num_foci as u16;
             if size < page_capacity {
-                let mut dst = ((self.stm_write as u16) & FOCI_STM_BUF_PAGE_SIZE_MASK) << 2;
-                (0..size as usize).for_each(|_| {
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                });
+                let dst = ((self.stm_write as u16) & FOCI_STM_BUF_PAGE_SIZE_MASK) << 2;
+                self.bram_cpy(BRAM_SELECT_STM, dst, src, size as usize * 4);
                 self.stm_write += size as u32;
             } else {
-                let mut dst = ((self.stm_write as u16) & FOCI_STM_BUF_PAGE_SIZE_MASK) << 2;
-                (0..page_capacity as usize).for_each(|_| {
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                });
+                let dst = ((self.stm_write as u16) & FOCI_STM_BUF_PAGE_SIZE_MASK) << 2;
+                src = self.bram_cpy(BRAM_SELECT_STM, dst, src, (page_capacity as usize) * 4);
                 self.stm_write += page_capacity as u32;
 
                 self.change_stm_wr_page(
@@ -157,23 +131,8 @@ impl CPUEmulator {
                         >> FOCI_STM_BUF_PAGE_SIZE_WIDTH) as _,
                 );
 
-                let mut dst = 0;
-                let cnt = size - page_capacity;
-                (0..cnt as usize).for_each(|_| {
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                    self.bram_write(BRAM_SELECT_STM, dst, src.read());
-                    dst += 1;
-                    src = src.add(1);
-                });
-                self.stm_write += cnt as u32;
+                self.bram_cpy(BRAM_SELECT_STM, 0, src, (size - page_capacity) as usize * 4);
+                self.stm_write += (size - page_capacity) as u32;
             }
 
             if (d.subseq.flag & FOCI_STM_FLAG_END) == FOCI_STM_FLAG_END {
