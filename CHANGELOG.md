@@ -1,6 +1,13 @@
-# 32.0.2
+# 32.1.0 (2025-04-16)
 
-- Fix data size calculations in `PulseWidthEncoderOp`
+## 🚀 Features
+
+- Supports `PulseWidthEncoder` for v10 firmware
+
+## 🐛 Bug Fixes
+
+- Size calculations in `PulseWidthEncoderOp` is invalid
+
 
 # 32.0.1
 
@@ -1011,3 +1018,4 @@
 - Add `objective` parameter to `gain::holo::Greedy`
 - Fix a bug in sending modulation and gain separately
 - Change Silencer API
+
