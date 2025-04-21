@@ -1,3 +1,10 @@
+# 32.1.1 (2025-04-21)
+
+## 🐛 Bug Fixes
+
+- Bump dependencies version
+
+
 # 32.1.0 (2025-04-16)
 
 ## 🚀 Features
