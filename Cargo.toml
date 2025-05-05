@@ -28,7 +28,7 @@ keywords = ["autd"]
 zerocopy = { version = "0.8.24", default-features = false }
 anyhow = { version = "1.0.98", default-features = false }
 async-trait = { version = "0.1.88", default-features = false }
-bitfield-struct = { version = "0.10.1", default-features = false }
+bitfield-struct = { version = "0.11.0", default-features = false }
 bitflags = { version = "2.9.0", default-features = false }
 bit-vec = { version = "0.8.0", default-features = false }
 bvh = { version = "0.11.0", default-features = false }
