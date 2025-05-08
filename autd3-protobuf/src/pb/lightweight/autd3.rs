@@ -937,7 +937,7 @@ pub struct SamplingConfig {
 /// Nested message and enum types in `SamplingConfig`.
 pub mod sampling_config {
     #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-    pub struct Division {
+    pub struct Divide {
         #[prost(uint32, tag = "1")]
         pub div: u32,
     }
@@ -965,7 +965,7 @@ pub mod sampling_config {
     #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
     pub enum Variant {
         #[prost(message, tag = "1")]
-        Division(Division),
+        Divide(Divide),
         #[prost(message, tag = "2")]
         Freq(Freq),
         #[prost(message, tag = "3")]

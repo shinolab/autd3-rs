@@ -220,7 +220,7 @@ impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> Operation
                         .map(|m| m.mode())
                         .unwrap_or(TRANSITION_MODE_NONE),
                     transition_value: self.transition_mode.map(TransitionMode::value).unwrap_or(0),
-                    freq_div: self.config.division()?,
+                    freq_div: self.config.divide()?,
                     rep: self.loop_behavior.rep(),
                 },
             );

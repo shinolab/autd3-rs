@@ -103,7 +103,7 @@ fn test_send_foci_stm_unsafe(
     assert!(!cpu.fpga().is_stm_gain_mode(segment));
     assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
     assert_eq!(foci.len(), cpu.fpga().stm_cycle(segment));
-    assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
+    assert_eq!(freq_div, cpu.fpga().stm_freq_divide(segment));
     if let Some(transition_mode) = transition_mode {
         assert_eq!(segment, cpu.fpga().req_stm_segment());
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
@@ -426,7 +426,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
         assert_eq!(segment, cpu.fpga().req_stm_segment());
         assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(Segment::S0));
         assert_eq!(foci.len(), cpu.fpga().stm_cycle(Segment::S0));
-        assert_eq!(freq_div, cpu.fpga().stm_freq_division(Segment::S0));
+        assert_eq!(freq_div, cpu.fpga().stm_freq_divide(Segment::S0));
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
         assert_eq!(
             (geometry[0].sound_speed / METER * 64.0).round() as u16,

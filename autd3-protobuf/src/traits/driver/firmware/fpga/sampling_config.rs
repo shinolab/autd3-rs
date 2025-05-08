@@ -6,12 +6,10 @@ use std::{num::NonZeroU16, time::Duration};
 impl From<autd3_driver::firmware::fpga::SamplingConfig> for SamplingConfig {
     fn from(value: autd3_driver::firmware::fpga::SamplingConfig) -> Self {
         match value {
-            autd3_driver::firmware::fpga::SamplingConfig::Division(div) => SamplingConfig {
-                variant: Some(sampling_config::Variant::Division(
-                    sampling_config::Division {
-                        div: div.get() as _,
-                    },
-                )),
+            autd3_driver::firmware::fpga::SamplingConfig::Divide(div) => SamplingConfig {
+                variant: Some(sampling_config::Variant::Divide(sampling_config::Divide {
+                    div: div.get() as _,
+                })),
             },
             autd3_driver::firmware::fpga::SamplingConfig::Freq(freq) => SamplingConfig {
                 variant: Some(sampling_config::Variant::Freq(sampling_config::Freq {
@@ -43,9 +41,9 @@ impl FromMessage<SamplingConfig> for autd3_driver::firmware::fpga::SamplingConfi
     fn from_msg(msg: SamplingConfig) -> Result<Self, AUTDProtoBufError> {
         Ok(
             match msg.variant.ok_or(AUTDProtoBufError::DataParseError)? {
-                sampling_config::Variant::Division(division) => {
-                    autd3_driver::firmware::fpga::SamplingConfig::Division(NonZeroU16::try_from(
-                        u16::try_from(division.div)?,
+                sampling_config::Variant::Divide(divide) => {
+                    autd3_driver::firmware::fpga::SamplingConfig::Divide(NonZeroU16::try_from(
+                        u16::try_from(divide.div)?,
                     )?)
                 }
                 sampling_config::Variant::Freq(freq) => {

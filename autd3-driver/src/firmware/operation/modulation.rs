@@ -130,7 +130,7 @@ impl Operation for ModulationOp {
                     tag: TypeTag::Modulation,
                     flag: ModulationControlFlags::BEGIN | flag,
                     size: send_num as _,
-                    freq_div: self.config.division()?,
+                    freq_div: self.config.divide()?,
                     rep: self.loop_behavior.rep(),
                     transition_mode: self
                         .transition_mode
