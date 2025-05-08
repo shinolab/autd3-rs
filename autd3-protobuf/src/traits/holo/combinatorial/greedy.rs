@@ -11,7 +11,7 @@ use autd3_core::acoustics::directivity::Sphere;
 impl From<autd3_gain_holo::GreedyOption<Sphere>> for GreedyOption {
     fn from(value: autd3_gain_holo::GreedyOption<Sphere>) -> Self {
         Self {
-            phase_div: Some(value.phase_div.get() as _),
+            phase_quantization_levels: Some(value.phase_quantization_levels.get() as _),
             constraint: Some(value.constraint.into()),
         }
     }
@@ -21,13 +21,13 @@ impl FromMessage<GreedyOption> for autd3_gain_holo::GreedyOption<Sphere> {
     fn from_msg(msg: GreedyOption) -> Result<Self, AUTDProtoBufError> {
         let default = autd3_gain_holo::GreedyOption::<Sphere>::default();
         Ok(Self {
-            phase_div: msg
-                .phase_div
+            phase_quantization_levels: msg
+                .phase_quantization_levels
                 .map(u8::try_from)
                 .transpose()?
                 .map(NonZeroU8::try_from)
                 .transpose()?
-                .unwrap_or(default.phase_div),
+                .unwrap_or(default.phase_quantization_levels),
             constraint: msg
                 .constraint
                 .map(autd3_gain_holo::EmissionConstraint::from_msg)
@@ -96,7 +96,7 @@ mod tests {
             ),
         ];
         let option = autd3_gain_holo::GreedyOption {
-            phase_div: NonZeroU8::new(rng.random()).unwrap(),
+            phase_quantization_levels: NonZeroU8::new(rng.random()).unwrap(),
             ..Default::default()
         };
         let holo = autd3_gain_holo::Greedy {
