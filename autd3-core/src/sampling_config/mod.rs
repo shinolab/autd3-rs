@@ -17,7 +17,7 @@ pub struct Nearest<T: Copy + Clone + Debug + PartialEq>(pub T);
 #[derive(Clone, Copy)]
 pub enum SamplingConfig {
     #[doc(hidden)]
-    Division(NonZeroU16),
+    Divide(NonZeroU16),
     #[doc(hidden)]
     Freq(Freq<f32>),
     #[doc(hidden)]
@@ -30,7 +30,7 @@ pub enum SamplingConfig {
 
 impl PartialEq for SamplingConfig {
     fn eq(&self, other: &Self) -> bool {
-        match (self.division(), other.division()) {
+        match (self.divide(), other.divide()) {
             (Ok(lhs), Ok(rhs)) => lhs == rhs,
             _ => false,
         }
@@ -40,7 +40,7 @@ impl PartialEq for SamplingConfig {
 impl std::fmt::Debug for SamplingConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SamplingConfig::Division(div) => write!(f, "SamplingConfig::Division({})", div),
+            SamplingConfig::Divide(div) => write!(f, "SamplingConfig::Divide({})", div),
             SamplingConfig::Freq(freq) => write!(f, "SamplingConfig::Freq({:?})", freq),
             SamplingConfig::Period(period) => write!(f, "SamplingConfig::Period({:?})", period),
             SamplingConfig::FreqNearest(nearest) => {
@@ -55,7 +55,7 @@ impl std::fmt::Debug for SamplingConfig {
 
 impl From<NonZeroU16> for SamplingConfig {
     fn from(value: NonZeroU16) -> Self {
-        Self::Division(value)
+        Self::Divide(value)
     }
 }
 
@@ -83,12 +83,12 @@ impl SamplingConfig {
         value.into()
     }
 
-    /// The division number of the sampling frequency.
+    /// The divide number of the sampling frequency.
     ///
-    /// The sampling frequency is [`ULTRASOUND_FREQ`] / `division`.
-    pub fn division(&self) -> Result<u16, SamplingConfigError> {
+    /// The sampling frequency is [`ULTRASOUND_FREQ`] / `divide`.
+    pub fn divide(&self) -> Result<u16, SamplingConfigError> {
         match *self {
-            SamplingConfig::Division(div) => Ok(div.get()),
+            SamplingConfig::Divide(div) => Ok(div.get()),
             SamplingConfig::Freq(freq) => {
                 let freq_max = ULTRASOUND_FREQ.hz() as f32 * Hz;
                 let freq_min = freq_max / u16::MAX as f32;
@@ -97,11 +97,11 @@ impl SamplingConfig {
                         freq, freq_min, freq_max,
                     ));
                 }
-                let division = ULTRASOUND_FREQ.hz() as f32 / freq.hz();
-                if !is_integer(division as _) {
+                let divide = ULTRASOUND_FREQ.hz() as f32 / freq.hz();
+                if !is_integer(divide as _) {
                     return Err(SamplingConfigError::FreqInvalidF(freq));
                 }
-                Ok(division as _)
+                Ok(divide as _)
             }
             SamplingConfig::Period(duration) => {
                 use crate::defined::ULTRASOUND_PERIOD;
@@ -136,12 +136,12 @@ impl SamplingConfig {
 
     /// The sampling frequency.
     pub fn freq(&self) -> Result<Freq<f32>, SamplingConfigError> {
-        Ok(ULTRASOUND_FREQ.hz() as f32 / self.division()? as f32 * Hz)
+        Ok(ULTRASOUND_FREQ.hz() as f32 / self.divide()? as f32 * Hz)
     }
 
     /// The sampling period.
     pub fn period(&self) -> Result<std::time::Duration, SamplingConfigError> {
-        Ok(crate::defined::ULTRASOUND_PERIOD * self.division()? as u32)
+        Ok(crate::defined::ULTRASOUND_PERIOD * self.divide()? as u32)
     }
 }
 
@@ -180,11 +180,11 @@ mod tests {
     #[case(Err(SamplingConfigError::PeriodInvalid(Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64) - Duration::from_nanos(1))), Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64) - Duration::from_nanos(1))]
     #[case(Err(SamplingConfigError::PeriodOutOfRange(ULTRASOUND_PERIOD / 2, ULTRASOUND_PERIOD, Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64))), ULTRASOUND_PERIOD / 2)]
     #[case(Err(SamplingConfigError::PeriodOutOfRange(Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64) * 2, ULTRASOUND_PERIOD, Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64))), Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64) * 2)]
-    fn division(
+    fn divide(
         #[case] expect: Result<u16, SamplingConfigError>,
         #[case] value: impl Into<SamplingConfig>,
     ) {
-        assert_eq!(expect, SamplingConfig::new(value).division());
+        assert_eq!(expect, SamplingConfig::new(value).divide());
     }
 
     #[rstest::rstest]
@@ -227,7 +227,7 @@ mod tests {
     fn from_freq_nearest(#[case] expected: u16, #[case] freq: Freq<f32>) {
         assert_eq!(
             Ok(expected),
-            SamplingConfig::new(freq).into_nearest().division()
+            SamplingConfig::new(freq).into_nearest().divide()
         );
     }
 
@@ -239,16 +239,13 @@ mod tests {
     #[case::out_of_range_min(1, ULTRASOUND_PERIOD / 2)]
     #[case::out_of_range_max(u16::MAX, Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64) * 2)]
     fn from_period_nearest(#[case] expected: u16, #[case] p: Duration) {
-        assert_eq!(
-            Ok(expected),
-            SamplingConfig::new(p).into_nearest().division()
-        );
+        assert_eq!(Ok(expected), SamplingConfig::new(p).into_nearest().divide());
     }
 
     #[rstest::rstest]
     #[case(
-        SamplingConfig::Division(NonZeroU16::MIN),
-        SamplingConfig::Division(NonZeroU16::MIN)
+        SamplingConfig::Divide(NonZeroU16::MIN),
+        SamplingConfig::Divide(NonZeroU16::MIN)
     )]
     #[case(SamplingConfig::FreqNearest(Nearest(1. * Hz)), SamplingConfig::Freq(1. * Hz))]
     #[case(
@@ -281,10 +278,7 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(
-        "SamplingConfig::Division(1)",
-        SamplingConfig::Division(NonZeroU16::MIN)
-    )]
+    #[case("SamplingConfig::Divide(1)", SamplingConfig::Divide(NonZeroU16::MIN))]
     #[case("SamplingConfig::Freq(1 Hz)", SamplingConfig::Freq(1. * Hz))]
     #[case(
         "SamplingConfig::Period(1µs)",

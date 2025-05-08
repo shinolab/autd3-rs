@@ -103,7 +103,7 @@ fn send_gain_stm_phase_intensity_full_unsafe(
     assert!(cpu.fpga().is_stm_gain_mode(segment));
     assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
     assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
-    assert_eq!(freq_div, cpu.fpga().stm_freq_division(segment));
+    assert_eq!(freq_div, cpu.fpga().stm_freq_divide(segment));
     if let Some(transition_mode) = transition_mode {
         assert_eq!(segment, cpu.fpga().req_stm_segment());
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());

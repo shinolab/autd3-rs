@@ -167,7 +167,7 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> Operation for FociSTMOp<N, It
                     transition_value: self.transition_mode.map(TransitionMode::value).unwrap_or(0),
                     send_num: send_num as _,
                     num_foci: N as u8,
-                    freq_div: self.config.division()?,
+                    freq_div: self.config.divide()?,
                     sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
                     rep: self.loop_behavior.rep(),
                     __: [0; 4],

@@ -7,9 +7,9 @@ use crate::defined::Freq;
 #[derive(Error, Debug, PartialEq, Copy, Clone)]
 /// An error produced by the sampling configuration.
 pub enum SamplingConfigError {
-    /// Invalid sampling division.
-    #[error("Sampling division must not be zero")]
-    DivisionInvalid,
+    /// Invalid sampling divide.
+    #[error("Sampling divide must not be zero")]
+    DivideInvalid,
     /// Invalid sampling frequency.
     #[error("Sampling frequency ({0:?}) must divide the ultrasound frequency")]
     FreqInvalid(Freq<u32>),

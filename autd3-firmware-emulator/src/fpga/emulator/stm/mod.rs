@@ -17,7 +17,7 @@ impl FPGAEmulator {
     }
 
     #[must_use]
-    pub fn stm_freq_division(&self, segment: Segment) -> u16 {
+    pub fn stm_freq_divide(&self, segment: Segment) -> u16 {
         Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
             ADDR_STM_FREQ_DIV0 + segment as usize,
