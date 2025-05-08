@@ -25,7 +25,7 @@ impl Modulation for Static {
     }
 
     fn sampling_config(&self) -> SamplingConfig {
-        SamplingConfig::Division(NonZeroU16::MAX)
+        SamplingConfig::Divide(NonZeroU16::MAX)
     }
 }
 
@@ -43,10 +43,7 @@ mod tests {
     fn test_static_default() {
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity);
-        assert_eq!(
-            SamplingConfig::Division(NonZeroU16::MAX),
-            m.sampling_config()
-        );
+        assert_eq!(SamplingConfig::Divide(NonZeroU16::MAX), m.sampling_config());
         assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc());
     }
 
@@ -54,10 +51,7 @@ mod tests {
     fn test_static() {
         let m = Static::new(u8::MIN);
         assert_eq!(u8::MIN, m.intensity);
-        assert_eq!(
-            SamplingConfig::Division(NonZeroU16::MAX),
-            m.sampling_config()
-        );
+        assert_eq!(SamplingConfig::Divide(NonZeroU16::MAX), m.sampling_config());
         assert_eq!(Ok(vec![u8::MIN, u8::MIN]), m.calc());
     }
 }

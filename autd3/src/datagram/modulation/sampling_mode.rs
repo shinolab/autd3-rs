@@ -55,7 +55,7 @@ impl SamplingMode {
             ));
         }
 
-        let fd = freq.hz() as u64 * sampling_config.division()? as u64;
+        let fd = freq.hz() as u64 * sampling_config.divide()? as u64;
         let fs = ULTRASOUND_FREQ.hz() as u64;
 
         let k = gcd(fs, fd);
@@ -86,7 +86,7 @@ impl SamplingMode {
                 sampling_config.freq()? / 2.
             )));
         }
-        let fd = freq.hz() as f64 * sampling_config.division()? as f64;
+        let fd = freq.hz() as f64 * sampling_config.divide()? as f64;
 
         for n in (ULTRASOUND_FREQ.hz() as f64 / fd).floor() as u32..=MOD_BUF_SIZE_MAX as u32 {
             if !is_integer(fd * n as f64) {

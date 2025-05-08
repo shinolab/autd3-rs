@@ -9,13 +9,13 @@ message EmitIntensity { uint32 value = 1; }
 message Phase { uint32 value = 1; }
 
 message SamplingConfig {
-  message Division { uint32 div = 1; }
+  message Divide { uint32 div = 1; }
   message Freq { float freq = 1; }
   message FreqNearest { float freq = 1; }
   message Period { uint64 ns = 1; }
   message PeriodNearest { uint64 ns = 1; }
   oneof variant {
-    Division division = 1;
+    Divide divide = 1;
     Freq freq = 2;
     FreqNearest freq_nearest = 3;
     Period period = 4;

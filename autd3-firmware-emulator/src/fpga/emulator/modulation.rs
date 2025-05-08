@@ -9,7 +9,7 @@ use super::{super::params::*, FPGAEmulator, memory::Memory};
 
 impl FPGAEmulator {
     #[must_use]
-    pub fn modulation_freq_division(&self, segment: Segment) -> u16 {
+    pub fn modulation_freq_divide(&self, segment: Segment) -> u16 {
         Memory::read_bram_as::<u16>(
             &self.mem.controller_bram.borrow(),
             ADDR_MOD_FREQ_DIV0 + segment as usize,

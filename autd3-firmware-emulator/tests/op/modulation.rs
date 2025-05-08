@@ -120,7 +120,7 @@ fn send_mod_unsafe(
     assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(m.len(), cpu.fpga().modulation_cycle(segment));
-    assert_eq!(freq_div, cpu.fpga().modulation_freq_division(segment));
+    assert_eq!(freq_div, cpu.fpga().modulation_freq_divide(segment));
     assert_eq!(loop_behavior, cpu.fpga().modulation_loop_behavior(segment));
     if let Some(transition_mode) = transition_mode {
         assert_eq!(segment, cpu.fpga().req_modulation_segment());

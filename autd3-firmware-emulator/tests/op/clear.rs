@@ -113,8 +113,8 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
 
     assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S0));
     assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S1));
-    assert_eq!(0xFFFF, cpu.fpga().modulation_freq_division(Segment::S0));
-    assert_eq!(0xFFFF, cpu.fpga().modulation_freq_division(Segment::S1));
+    assert_eq!(0xFFFF, cpu.fpga().modulation_freq_divide(Segment::S0));
+    assert_eq!(0xFFFF, cpu.fpga().modulation_freq_divide(Segment::S1));
     assert_eq!(
         LoopBehavior::Infinite,
         cpu.fpga().modulation_loop_behavior(Segment::S0)
@@ -132,8 +132,8 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
     assert_eq!(vec![Drive::NULL; 249], cpu.fpga().drives_at(Segment::S1, 0));
     assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
     assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
-    assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S0));
-    assert_eq!(0xFFFF, cpu.fpga().stm_freq_division(Segment::S1));
+    assert_eq!(0xFFFF, cpu.fpga().stm_freq_divide(Segment::S0));
+    assert_eq!(0xFFFF, cpu.fpga().stm_freq_divide(Segment::S1));
     assert_eq!(
         LoopBehavior::Infinite,
         cpu.fpga().stm_loop_behavior(Segment::S0)
