@@ -16,8 +16,8 @@ use rand::prelude::*;
 /// The option of [`Greedy`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GreedyOption<D: Directivity> {
-    /// The number of phase divisions.
-    pub phase_div: NonZeroU8,
+    /// The quantization levels of the phase.
+    pub phase_quantization_levels: NonZeroU8,
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
     #[doc(hidden)]
@@ -27,7 +27,7 @@ pub struct GreedyOption<D: Directivity> {
 impl<D: Directivity> Default for GreedyOption<D> {
     fn default() -> Self {
         Self {
-            phase_div: NonZeroU8::new(16).unwrap(),
+            phase_quantization_levels: NonZeroU8::new(16).unwrap(),
             constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
             __phantom: std::marker::PhantomData,
         }
@@ -115,9 +115,13 @@ impl<D: Directivity> Gain for Greedy<D> {
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
-        let phase_candidates = (0..self.option.phase_div.get())
+        let phase_candidates = (0..self.option.phase_quantization_levels.get())
             .map(|i| {
-                Complex::new(0., 2.0 * PI * i as f32 / self.option.phase_div.get() as f32).exp()
+                Complex::new(
+                    0.,
+                    2.0 * PI * i as f32 / self.option.phase_quantization_levels.get() as f32,
+                )
+                .exp()
             })
             .collect::<Vec<_>>();
 

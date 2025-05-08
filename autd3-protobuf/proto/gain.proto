@@ -110,7 +110,7 @@ message LM {
 
 message GreedyOption {
   optional EmissionConstraint constraint = 1;
-  optional uint32 phase_div = 2;
+  optional uint32 phase_quantization_levels = 2;
 }
 
 message Greedy {
