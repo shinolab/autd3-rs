@@ -169,7 +169,11 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
             self.link.receive(self.rx)?;
             tracing::trace!("recv: {}", self.rx.iter().join(", "));
 
-            if check_if_msg_is_processed(self.tx, self.rx).all(std::convert::identity) {
+            if check_if_msg_is_processed(self.tx, self.rx)
+                .zip(self.geometry.iter())
+                .filter_map(|(r, dev)| dev.enable.then_some(r))
+                .all(std::convert::identity)
+            {
                 return Ok(());
             }
             if start.elapsed() > timeout {
