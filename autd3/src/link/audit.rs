@@ -1,6 +1,6 @@
 use autd3_core::{
     geometry::Geometry,
-    link::{Link, LinkError},
+    link::{Link, LinkError, MsgId},
 };
 
 use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
@@ -11,7 +11,7 @@ use derive_more::{Deref, DerefMut};
 #[derive(Default)]
 #[doc(hidden)]
 pub struct AuditOption {
-    pub initial_msg_id: Option<u8>,
+    pub initial_msg_id: Option<MsgId>,
     pub initial_phase_corr: Option<u8>,
     pub broken: bool,
 }

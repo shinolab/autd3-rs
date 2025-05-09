@@ -29,7 +29,7 @@ getset = { workspace = true }
 windows = { workspace = true, features = ["Win32_Security"] }
 
 [features]
-default = ["async"]
+default = []
 async = ["tokio", "autd3-core/async"]
 async-trait = ["async", "autd3-core/async-trait"]
 

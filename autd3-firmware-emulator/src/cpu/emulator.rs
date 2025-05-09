@@ -1,6 +1,7 @@
 use autd3_driver::{
     ethercat::{DcSysTime, EC_OUTPUT_FRAME_SIZE},
     firmware::cpu::{Header, RxMessage, TxMessage},
+    link::MsgId,
 };
 
 use getset::{CopyGetters, Getters, MutGetters};
@@ -14,7 +15,7 @@ pub struct CPUEmulator {
     #[getset(get_copy = "pub")]
     pub(crate) idx: usize,
     pub(crate) ack: u8,
-    pub(crate) last_msg_id: u8,
+    pub(crate) last_msg_id: MsgId,
     pub(crate) rx_data: u8,
     #[getset(get_copy = "pub")]
     pub(crate) reads_fpga_state: bool,
@@ -60,7 +61,7 @@ impl CPUEmulator {
         let mut s = Self {
             idx: id,
             ack: 0x00,
-            last_msg_id: 0xFF,
+            last_msg_id: MsgId::new(0xFF),
             rx_data: 0x00,
             reads_fpga_state: false,
             reads_fpga_state_store: false,
@@ -138,9 +139,9 @@ impl CPUEmulator {
         self.reads_fpga_state
     }
 
-    pub fn set_last_msg_id(&mut self, msg_id: u8) {
+    pub fn set_last_msg_id(&mut self, msg_id: MsgId) {
         self.last_msg_id = msg_id;
-        self.ack = msg_id;
+        self.ack = msg_id.get();
     }
 }
 
@@ -243,7 +244,7 @@ impl CPUEmulator {
 
         self.read_fpga_state();
 
-        if (header.msg_id & 0x80) != 0 {
+        if (header.msg_id.get() & 0x80) != 0 {
             self.ack = ERR_INVALID_MSG_ID;
             return;
         }
@@ -268,7 +269,7 @@ impl CPUEmulator {
             self.fpga_flags_internal,
         );
 
-        self.ack = header.msg_id;
+        self.ack = header.msg_id.get();
     }
 }
 

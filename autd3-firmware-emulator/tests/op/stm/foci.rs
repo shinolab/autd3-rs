@@ -1,3 +1,4 @@
+use autd3_core::link::MsgId;
 use std::{collections::HashMap, num::NonZeroU16, time::Duration};
 
 use autd3_core::gain::EmitIntensity;
@@ -74,13 +75,14 @@ fn test_send_foci_stm_unsafe(
     geometry.set_sound_speed(400e3);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     let phase_corr: Vec<_> = (0..geometry.num_transducers())
         .map(|_| Phase(rng.random()))
         .collect();
     {
         let d = PhaseCorrection::new(|_| |tr| phase_corr[tr.idx()]);
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
     }
 
     let freq_div = rng.random_range(
@@ -98,7 +100,7 @@ fn test_send_foci_stm_unsafe(
         transition_mode,
     };
 
-    assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx));
 
     assert!(!cpu.fpga().is_stm_gain_mode(segment));
     assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
@@ -143,6 +145,7 @@ fn change_foci_stm_segment_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
@@ -156,12 +159,12 @@ fn change_foci_stm_segment_unsafe() -> anyhow::Result<()> {
         transition_mode: None,
     };
 
-    assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx));
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
     let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::Immediate);
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
     assert!(!cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
 
@@ -173,6 +176,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     {
         let stm = FociSTM {
@@ -182,7 +186,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 
         assert_eq!(
             Err(AUTDDriverError::InvalidSilencerSettings),
-            send(&mut cpu, stm, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx)
         );
     }
 
@@ -193,10 +197,10 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
                 .map(|dev| (dev.idx(), dev.iter().map(|_| Drive::NULL).collect()))
                 .collect(),
         };
-        assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, g, &geometry, &mut tx));
 
         let d = Silencer::<FixedCompletionSteps>::default();
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
         let stm = WithSegment {
             inner: FociSTM {
@@ -212,7 +216,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
             transition_mode: None,
         };
 
-        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx));
 
         let d = Silencer {
             config: FixedCompletionSteps {
@@ -221,12 +225,12 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
                 strict_mode: true,
             },
         };
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
         let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSilencerSettings),
-            send(&mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
         );
     }
 
@@ -238,6 +242,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     // segment 0: Gain
     {
@@ -247,7 +252,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { data: buf.clone() };
 
-        assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, g, &geometry, &mut tx));
     }
 
     // segment 1: GainSTM
@@ -273,20 +278,20 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
             transition_mode: Some(TransitionMode::Immediate),
         };
 
-        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx));
     }
 
     {
         let d = SwapSegment::FociSTM(Segment::S0, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
-            send(&mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
         );
 
         let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
-            send(&mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
         );
     }
 
@@ -298,6 +303,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     // segment 0 to 0
     {
@@ -311,7 +317,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
         };
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
-            send(&mut cpu, stm, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx)
         );
     }
 
@@ -328,7 +334,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
         };
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
-            send(&mut cpu, stm, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx)
         );
     }
 
@@ -343,12 +349,12 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
             transition_mode: None,
         };
 
-        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx));
 
         let d = SwapSegment::FociSTM(Segment::S1, TransitionMode::SyncIdx);
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
-            send(&mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
         );
     }
 
@@ -368,6 +374,7 @@ fn test_miss_transition_time(
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
 
@@ -382,7 +389,7 @@ fn test_miss_transition_time(
     };
 
     cpu.update_with_sys_time(DcSysTime::from_utc(systime).unwrap());
-    assert_eq!(expect, send(&mut cpu, stm, &geometry, &mut tx));
+    assert_eq!(expect, send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx));
     if expect.is_ok() {
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
     }
@@ -400,6 +407,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
     geometry.set_sound_speed(400e3);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     {
         let freq_div = rng.random_range(
@@ -420,7 +428,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
             transition_mode: Some(transition_mode),
         };
 
-        assert_eq!(Ok(()), send(&mut cpu, stm, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, stm, &geometry, &mut tx));
 
         assert!(!cpu.fpga().is_stm_gain_mode(Segment::S0));
         assert_eq!(segment, cpu.fpga().req_stm_segment());

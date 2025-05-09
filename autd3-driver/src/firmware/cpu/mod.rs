@@ -5,8 +5,6 @@ pub use gain_stm_mode::*;
 
 use crate::error::AUTDDriverError;
 
-pub(crate) const MSG_ID_MAX: u8 = 0x7F;
-
 #[doc(hidden)]
 pub fn check_firmware_err(msg: &RxMessage) -> Result<(), AUTDDriverError> {
     if msg.ack() & 0x80 != 0 {
@@ -22,11 +20,12 @@ pub fn check_if_msg_is_processed<'a>(
 ) -> impl Iterator<Item = bool> + 'a {
     tx.iter()
         .zip(rx.iter())
-        .map(|(tx, r)| tx.header.msg_id == r.ack())
+        .map(|(tx, r)| tx.header.msg_id.get() == r.ack())
 }
 
 #[cfg(test)]
 mod tests {
+    use autd3_core::link::MsgId;
     use itertools::Itertools;
     use zerocopy::FromZeros;
 
@@ -35,9 +34,9 @@ mod tests {
     #[rstest::fixture]
     fn tx() -> Vec<TxMessage> {
         let mut tx = vec![TxMessage::new_zeroed(); 3];
-        tx[0].header.msg_id = 0;
-        tx[1].header.msg_id = 1;
-        tx[2].header.msg_id = 2;
+        tx[0].header.msg_id = MsgId::new(0);
+        tx[1].header.msg_id = MsgId::new(1);
+        tx[2].header.msg_id = MsgId::new(2);
         tx
     }
 

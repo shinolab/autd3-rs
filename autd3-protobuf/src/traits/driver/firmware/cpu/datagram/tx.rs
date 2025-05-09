@@ -31,7 +31,7 @@ mod tests {
         let mut rng = rand::rng();
         let mut tx = vec![autd3_driver::firmware::cpu::TxMessage::new_zeroed(); 10];
         (0..10).for_each(|i| {
-            tx[i].header.msg_id = rng.random();
+            tx[i].header.msg_id = autd3_core::link::MsgId::new(rng.random());
             tx[i].header.slot_2_offset = rng.random();
         });
         let msg: TxRawData = tx.as_slice().into();

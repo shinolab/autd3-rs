@@ -1,3 +1,4 @@
+use autd3_core::link::MsgId;
 use autd3_driver::{datagram::*, firmware::cpu::TxMessage};
 use autd3_firmware_emulator::CPUEmulator;
 
@@ -14,7 +15,10 @@ fn send_sync() -> anyhow::Result<()> {
     let d = Synchronize::new();
     assert!(!cpu.synchronized());
 
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut MsgId::new(0), &mut cpu, d, &geometry, &mut tx)
+    );
 
     assert!(cpu.synchronized());
 
