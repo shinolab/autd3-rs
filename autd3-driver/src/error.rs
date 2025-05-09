@@ -118,9 +118,9 @@ pub enum AUTDDriverError {
     /// Miss transition time.
     #[error("Miss transition time")]
     MissTransitionTime,
-    /// Silencer cannot complete phase/intensity completion in the specified sampling period.
+    /// Silencer cannot complete phase/intensity interpolation in the specified sampling period.
     #[error(
-        "Silencer cannot complete phase/intensity completion in the specified sampling period. Please lower the sampling frequency or make the completion time of Silencer longer than the sampling period."
+        "Silencer cannot complete phase/intensity interpolation in the specified sampling period. Please lower the sampling frequency or make the completion time of Silencer longer than the sampling period of the AM/STM."
     )]
     InvalidSilencerSettings,
 }
