@@ -51,6 +51,7 @@ pub struct CPUEmulator {
     pub(crate) dc_sys_time: DcSysTime,
     #[getset(get_copy = "pub")]
     pub(crate) port_a_podr: u8,
+    pub(crate) broken: bool,
 }
 
 impl CPUEmulator {
@@ -89,9 +90,18 @@ impl CPUEmulator {
             stm_rep: [0xFFFF, 0xFFFF],
             mod_rep: [0xFFFF, 0xFFFF],
             port_a_podr: 0x00,
+            broken: false,
         };
         s.init();
         s
+    }
+
+    pub const fn break_down(&mut self) {
+        self.broken = true;
+    }
+
+    pub const fn repair(&mut self) {
+        self.broken = false;
     }
 
     #[must_use]
@@ -100,6 +110,9 @@ impl CPUEmulator {
     }
 
     pub fn send(&mut self, tx: &[TxMessage]) {
+        if self.broken {
+            return;
+        }
         self.ecat_recv(&tx[self.idx]);
     }
 
