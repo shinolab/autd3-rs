@@ -219,7 +219,6 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
 #[cfg(test)]
 mod tests {
     use autd3_core::link::{LinkError, TxBufferPoolSync};
-    use zerocopy::FromZeros;
 
     #[cfg(target_os = "windows")]
     use crate::controller::sender::WaitableSleeper;
@@ -344,18 +343,16 @@ mod tests {
             sleeper,
         };
 
-        assert_eq!(
-            Ok(()),
-            sender.send_receive(vec![TxMessage::new_zeroed()], Duration::ZERO)
-        );
-        assert_eq!(
-            Ok(()),
-            sender.send_receive(vec![TxMessage::new_zeroed()], Duration::from_millis(1))
-        );
+        let tx = sender.link.alloc_tx_buffer();
+        assert_eq!(Ok(()), sender.send_receive(tx, Duration::ZERO));
+
+        let tx = sender.link.alloc_tx_buffer();
+        assert_eq!(Ok(()), sender.send_receive(tx, Duration::from_millis(1)));
 
         sender.link.is_open = false;
+        let tx = sender.link.alloc_tx_buffer();
         assert_eq!(
-            sender.send_receive(vec![TxMessage::new_zeroed()], Duration::ZERO),
+            sender.send_receive(tx, Duration::ZERO),
             Err(AUTDDriverError::LinkClosed)
         );
     }
