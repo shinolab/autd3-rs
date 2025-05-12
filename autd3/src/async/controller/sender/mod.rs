@@ -5,7 +5,11 @@ pub use sleep::AsyncSleeper;
 
 use std::time::{Duration, Instant};
 
-use autd3_core::{datagram::Datagram, geometry::Geometry, link::AsyncLink};
+use autd3_core::{
+    datagram::Datagram,
+    geometry::Geometry,
+    link::{AsyncLink, MsgId},
+};
 use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
@@ -20,6 +24,7 @@ use crate::controller::SenderOption;
 
 /// A struct to send the [`Datagram`] to the devices.
 pub struct Sender<'a, L: AsyncLink, S: AsyncSleep> {
+    pub(crate) msg_id: &'a mut MsgId,
     pub(crate) link: &'a mut L,
     pub(crate) geometry: &'a mut Geometry,
     pub(crate) tx: &'a mut [TxMessage],
@@ -79,7 +84,14 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
         // For example, if the `send_interval` is 1ms and it takes 1.5ms to transmit due to some reason, the next transmission will be performed not 1ms later but 0.5ms later.
         let mut send_timing = Instant::now();
         loop {
-            OperationHandler::pack(&mut operations, self.geometry, self.tx, parallel)?;
+            self.msg_id.increment();
+            OperationHandler::pack(
+                *self.msg_id,
+                &mut operations,
+                self.geometry,
+                self.tx,
+                parallel,
+            )?;
 
             self.send_receive(timeout).await?;
 
@@ -228,9 +240,11 @@ mod tests {
         let mut geometry = create_geometry(1);
         let mut tx = vec![];
         let mut rx = Vec::new();
+        let mut msg_id = MsgId::new(0);
 
         assert!(link.open(&geometry).await.is_ok());
         let mut sender = Sender {
+            msg_id: &mut msg_id,
             link: &mut link,
             geometry: &mut geometry,
             tx: &mut tx,
@@ -264,11 +278,13 @@ mod tests {
         let mut link = MockAsyncLink::default();
         let mut geometry = create_geometry(1);
         let mut tx = vec![TxMessage::new_zeroed(); 1];
-        tx[0].header.msg_id = 2;
+        tx[0].header.msg_id = MsgId::new(2);
         let mut rx = vec![RxMessage::new(0, 0)];
+        let mut msg_id = MsgId::new(0);
 
         assert!(link.open(&geometry).await.is_ok());
         let mut sender = Sender {
+            msg_id: &mut msg_id,
             link: &mut link,
             geometry: &mut geometry,
             tx: &mut tx,
@@ -309,7 +325,7 @@ mod tests {
 
         sender.link.down = false;
         sender.link.recv_cnt = 0;
-        sender.tx[0].header.msg_id = 20;
+        sender.tx[0].header.msg_id = MsgId::new(20);
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::new("too many"))),
             sender.wait_msg_processed(Duration::from_secs(10)).await

@@ -1,4 +1,4 @@
-use autd3_core::derive::*;
+use autd3_core::{derive::*, link::MsgId};
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::{Datagram, IntoBoxedGain},
@@ -104,7 +104,14 @@ fn focus(c: &mut Criterion) {
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
                     let generator = g.operation_generator(geometry, false).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
-                    OperationHandler::pack(&mut operations, geometry, &mut tx, false).unwrap();
+                    OperationHandler::pack(
+                        MsgId::new(0),
+                        &mut operations,
+                        geometry,
+                        &mut tx,
+                        false,
+                    )
+                    .unwrap();
                 })
             },
         );
@@ -126,7 +133,8 @@ fn focus_parallel(c: &mut Criterion) {
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
                     let generator = g.operation_generator(geometry, true).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
-                    OperationHandler::pack(&mut operations, geometry, &mut tx, true).unwrap();
+                    OperationHandler::pack(MsgId::new(0), &mut operations, geometry, &mut tx, true)
+                        .unwrap();
                 })
             },
         );
@@ -152,7 +160,14 @@ fn focus_boxed(c: &mut Criterion) {
                     .into_boxed();
                     let generator = g.operation_generator(geometry, false).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
-                    OperationHandler::pack(&mut operations, geometry, &mut tx, false).unwrap();
+                    OperationHandler::pack(
+                        MsgId::new(0),
+                        &mut operations,
+                        geometry,
+                        &mut tx,
+                        false,
+                    )
+                    .unwrap();
                 })
             },
         );

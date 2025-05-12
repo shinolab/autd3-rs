@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use autd3_core::derive::*;
+use autd3_core::{derive::*, link::MsgId};
 use autd3_driver::{
     datagram::*,
     error::AUTDDriverError,
@@ -67,6 +67,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     {
         let buf: HashMap<usize, Vec<Drive>> = geometry
@@ -85,7 +86,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { data: buf.clone() };
 
-        assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, g, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
@@ -117,7 +118,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
             .collect();
         let g = WithSegment::new(TestGain { data: buf.clone() }, Segment::S1, None);
 
-        assert_eq!(Ok(()), send(&mut cpu, g, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, g, &geometry, &mut tx));
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
@@ -138,7 +139,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
     {
         let d = SwapSegment::Gain(Segment::S1, TransitionMode::Immediate);
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
     }
@@ -151,9 +152,11 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     // segment 0: FociSTM
     send(
+        &mut msg_id,
         &mut cpu,
         WithSegment {
             inner: FociSTM {
@@ -171,6 +174,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
 
     // segment 1: GainSTM
     send(
+        &mut msg_id,
         &mut cpu,
         WithSegment {
             inner: GainSTM {
@@ -197,13 +201,13 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
         let d = SwapSegment::Gain(Segment::S0, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
-            send(&mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
         );
 
         let d = SwapSegment::Gain(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
-            send(&mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
         );
     }
 

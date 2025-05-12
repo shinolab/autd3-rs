@@ -1,3 +1,4 @@
+use autd3_core::link::MsgId;
 use autd3_driver::{
     datagram::PhaseCorrection,
     firmware::{cpu::TxMessage, fpga::Phase},
@@ -17,6 +18,7 @@ fn phase_corr_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     let buf: Vec<_> = (0..geometry.num_transducers())
         .map(|_| Phase(rng.random()))
@@ -24,7 +26,7 @@ fn phase_corr_unsafe() -> anyhow::Result<()> {
 
     let d = PhaseCorrection::new(|_| |tr| buf[tr.idx()]);
 
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(buf, cpu.fpga().phase_correction());
     assert_eq!(
