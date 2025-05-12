@@ -155,11 +155,11 @@ impl AsyncLink for Simulator {
         }
     }
 
-    async fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
+    async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
         if let Some(inner) = self.inner.as_mut() {
-            inner.alloc_tx_buffer()
+            Ok(inner.alloc_tx_buffer())
         } else {
-            vec![]
+            Err(LinkError::new("Link is closed"))
         }
     }
 
@@ -228,16 +228,18 @@ impl Link for Simulator {
             })
     }
 
-    fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
-        self.runtime.as_ref().map_or(vec![], |runtime| {
-            runtime.block_on(async {
-                if let Some(inner) = self.inner.as_mut() {
-                    inner.alloc_tx_buffer()
-                } else {
-                    vec![]
-                }
+    fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        self.runtime
+            .as_ref()
+            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+                runtime.block_on(async {
+                    if let Some(inner) = self.inner.as_mut() {
+                        Ok(inner.alloc_tx_buffer())
+                    } else {
+                        Err(LinkError::new("Link is closed"))
+                    }
+                })
             })
-        })
     }
 
     fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {

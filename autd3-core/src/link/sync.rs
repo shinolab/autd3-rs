@@ -16,7 +16,7 @@ pub trait Link: Send {
     }
 
     /// Allocate a sending buffer for the link.
-    fn alloc_tx_buffer(&mut self) -> Vec<TxMessage>;
+    fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError>;
 
     /// Sends a message to the device.
     fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError>;
@@ -42,7 +42,7 @@ impl Link for Box<dyn Link> {
         self.as_mut().update(geometry)
     }
 
-    fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
+    fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
         self.as_mut().alloc_tx_buffer()
     }
 

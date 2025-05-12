@@ -25,7 +25,7 @@ mod internal {
         }
 
         /// Allocate a sending buffer for the link.
-        async fn alloc_tx_buffer(&mut self) -> Vec<TxMessage>;
+        async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError>;
 
         /// Sends a message to the device.
         async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError>;
@@ -52,7 +52,7 @@ mod internal {
             self.as_mut().update(geometry).await
         }
 
-        async fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
+        async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
             self.as_mut().alloc_tx_buffer().await
         }
 
@@ -94,7 +94,9 @@ mod internal {
         }
 
         /// Allocate a sending buffer for the link.
-        fn alloc_tx_buffer(&mut self) -> impl std::future::Future<Output = Vec<TxMessage>>;
+        fn alloc_tx_buffer(
+            &mut self,
+        ) -> impl std::future::Future<Output = Result<Vec<TxMessage>, LinkError>>;
 
         /// Sends a message to the device.
         fn send(

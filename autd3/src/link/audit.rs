@@ -79,8 +79,8 @@ impl Link for Audit {
         Ok(())
     }
 
-    fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
-        self.buffer_pool.borrow()
+    fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        Ok(self.buffer_pool.borrow())
     }
 
     fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
@@ -129,7 +129,7 @@ impl AsyncLink for Audit {
         <Self as Link>::close(self)
     }
 
-    async fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
+    async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
         <Self as Link>::alloc_tx_buffer(self)
     }
 

@@ -84,7 +84,7 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
         // For example, if the `send_interval` is 1ms and it takes 1.5ms to transmit due to some reason, the next transmission will be performed not 1ms later but 0.5ms later.
         let mut send_timing = Instant::now();
         loop {
-            let mut tx = self.link.alloc_tx_buffer().await;
+            let mut tx = self.link.alloc_tx_buffer().await?;
 
             self.msg_id.increment();
             OperationHandler::pack(
@@ -196,8 +196,8 @@ mod tests {
             Ok(())
         }
 
-        async fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
-            self.buffer_pool.borrow()
+        async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+            Ok(self.buffer_pool.borrow())
         }
 
         async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
@@ -268,16 +268,17 @@ mod tests {
             sleeper,
         };
 
-        let tx = sender.link.alloc_tx_buffer().await;
+        let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(Ok(()), sender.send_receive(tx, Duration::ZERO).await);
-        let tx = sender.link.alloc_tx_buffer().await;
+
+        let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
             Ok(()),
             sender.send_receive(tx, Duration::from_millis(1)).await
         );
 
         sender.link.is_open = false;
-        let tx = sender.link.alloc_tx_buffer().await;
+        let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
             Err(AUTDDriverError::LinkClosed),
             sender.send_receive(tx, Duration::ZERO).await,
