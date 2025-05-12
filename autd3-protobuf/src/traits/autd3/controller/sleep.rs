@@ -1,6 +1,6 @@
 use std::num::NonZeroU32;
 
-use crate::{AUTDProtoBufError, FromMessage, SpinStrategy, sender_option::Sleeper};
+use crate::{AUTDProtoBufError, FromMessage, Sleeper, SpinStrategy, sleeper};
 
 impl From<SpinStrategy> for autd3::controller::SpinStrategy {
     fn from(value: SpinStrategy) -> Self {
@@ -29,31 +29,74 @@ impl FromMessage<i32> for autd3::controller::SpinStrategy {
 
 impl FromMessage<Sleeper> for Box<dyn autd3::r#async::controller::AsyncSleep + Send + Sync> {
     fn from_msg(value: Sleeper) -> Result<Self, AUTDProtoBufError> {
-        match value {
-            Sleeper::Std(std_sleeper) => Ok(Box::new(autd3::controller::StdSleeper {
+        Ok(match value.sleeper {
+            Some(sleeper::Sleeper::Std(std_sleeper)) => Box::new(autd3::controller::StdSleeper {
                 timer_resolution: std_sleeper.timer_resolution.and_then(NonZeroU32::new),
-            })),
-            Sleeper::Spin(spin_sleeper) => Ok(Box::new(
+            }),
+            Some(sleeper::Sleeper::Spin(spin_sleeper)) => Box::new(
                 autd3::controller::SpinSleeper::new(spin_sleeper.native_accuracy_ns)
                     .with_spin_strategy(autd3::controller::SpinStrategy::from_msg(
                         spin_sleeper.spin_strategy,
                     )?),
-            )),
+            ),
             #[cfg(target_os = "windows")]
-            Sleeper::Waitable(_) => Ok(Box::new(
-                autd3::controller::WaitableSleeper::new().map_err(|_| {
+            Some(sleeper::Sleeper::Waitable(_)) => {
+                Box::new(autd3::controller::WaitableSleeper::new().map_err(|_| {
                     AUTDProtoBufError::Status(tonic::Status::unknown("WaitableSleeper"))
-                })?,
-            )),
-            #[cfg(not(target_os = "windows"))]
-            Sleeper::Waitable(_) => Err(AUTDProtoBufError::Status(tonic::Status::unimplemented(
-                "WaitableSleeper is not supported",
-            ))),
-            Sleeper::Async(async_sleeper) => {
-                Ok(Box::new(autd3::r#async::controller::AsyncSleeper {
-                    timer_resolution: async_sleeper.timer_resolution.and_then(NonZeroU32::new),
-                }))
+                })?)
             }
+            #[cfg(not(target_os = "windows"))]
+            Some(sleeper::Sleeper::Waitable(_)) => {
+                return Err(AUTDProtoBufError::Status(tonic::Status::unimplemented(
+                    "WaitableSleeper is not supported",
+                )));
+            }
+            Some(sleeper::Sleeper::Async(async_sleeper)) => {
+                Box::new(autd3::r#async::controller::AsyncSleeper {
+                    timer_resolution: async_sleeper.timer_resolution.and_then(NonZeroU32::new),
+                })
+            }
+            None => Box::new(autd3::r#async::controller::AsyncSleeper::default()),
+        })
+    }
+}
+
+impl From<&autd3::controller::StdSleeper> for Sleeper {
+    fn from(value: &autd3::controller::StdSleeper) -> Self {
+        Self {
+            sleeper: Some(sleeper::Sleeper::Std(crate::StdSleeper {
+                timer_resolution: value.timer_resolution.map(|t| t.get()),
+            })),
+        }
+    }
+}
+
+impl From<&autd3::controller::SpinSleeper> for Sleeper {
+    fn from(value: &autd3::controller::SpinSleeper) -> Self {
+        Self {
+            sleeper: Some(sleeper::Sleeper::Spin(crate::SpinSleeper {
+                native_accuracy_ns: value.native_accuracy_ns(),
+                spin_strategy: SpinStrategy::from(value.spin_strategy()) as _,
+            })),
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+impl From<&autd3::controller::WaitableSleeper> for Sleeper {
+    fn from(_: &autd3::controller::WaitableSleeper) -> Self {
+        Self {
+            sleeper: Some(sleeper::Sleeper::Waitable(crate::WaitableSleeper {})),
+        }
+    }
+}
+
+impl From<&autd3::r#async::controller::AsyncSleeper> for Sleeper {
+    fn from(value: &autd3::r#async::controller::AsyncSleeper) -> Self {
+        Self {
+            sleeper: Some(sleeper::Sleeper::Async(crate::AsyncSleeper {
+                timer_resolution: value.timer_resolution.map(|t| t.get()),
+            })),
         }
     }
 }

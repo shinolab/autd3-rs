@@ -24,7 +24,8 @@ pub struct Sender<'a, L: AsyncLink, S: AsyncSleep> {
     pub(crate) geometry: &'a mut Geometry,
     pub(crate) tx: &'a mut [TxMessage],
     pub(crate) rx: &'a mut [RxMessage],
-    pub(crate) option: SenderOption<S>,
+    pub(crate) option: SenderOption,
+    pub(crate) sleeper: S,
 }
 
 impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
@@ -87,7 +88,7 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
             }
 
             send_timing += self.option.send_interval;
-            self.option.sleeper.sleep_until(send_timing).await;
+            self.sleeper.sleep_until(send_timing).await;
         }
     }
 
@@ -122,7 +123,7 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
                 break;
             }
             receive_timing += self.option.receive_interval;
-            self.option.sleeper.sleep_until(receive_timing).await;
+            self.sleeper.sleep_until(receive_timing).await;
         }
         self.rx
             .iter()
@@ -239,8 +240,8 @@ mod tests {
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel: ParallelMode::Auto,
-                sleeper,
             },
+            sleeper,
         };
 
         assert_eq!(Ok(()), sender.send_receive(Duration::ZERO).await);
@@ -277,8 +278,8 @@ mod tests {
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel: ParallelMode::Auto,
-                sleeper,
             },
+            sleeper,
         };
 
         assert_eq!(

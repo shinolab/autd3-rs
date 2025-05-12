@@ -1,12 +1,21 @@
 mod tests;
 
+use std::time::Duration;
+
 use anyhow::Result;
 
 use autd3::prelude::*;
 use autd3_link_simulator::Simulator;
 
 fn main() -> Result<()> {
-    let autd = Controller::open(
+    // use tracing_subscriber::{EnvFilter, fmt, prelude::*};
+
+    // tracing_subscriber::registry()
+    //     .with(fmt::layer())
+    //     .with(EnvFilter::new("autd3=debug"))
+    //     .init();
+
+    let autd = Controller::open_with_option(
         [
             AUTD3 {
                 pos: Point3::origin(),
@@ -18,6 +27,11 @@ fn main() -> Result<()> {
             },
         ],
         Simulator::new("127.0.0.1:8080".parse()?),
+        SenderOption {
+            timeout: Some(Duration::from_millis(200)),
+            ..Default::default()
+        },
+        SpinSleeper::default(),
     )?;
 
     tests::run(autd)

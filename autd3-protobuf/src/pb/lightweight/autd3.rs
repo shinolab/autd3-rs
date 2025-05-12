@@ -1692,6 +1692,26 @@ pub struct AsyncSleeper {
     pub timer_resolution: ::core::option::Option<u32>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct Sleeper {
+    #[prost(oneof = "sleeper::Sleeper", tags = "1, 2, 3, 4")]
+    pub sleeper: ::core::option::Option<sleeper::Sleeper>,
+}
+/// Nested message and enum types in `Sleeper`.
+pub mod sleeper {
+    #[non_exhaustive]
+    #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
+    pub enum Sleeper {
+        #[prost(message, tag = "1")]
+        Std(super::StdSleeper),
+        #[prost(message, tag = "2")]
+        Spin(super::SpinSleeper),
+        #[prost(message, tag = "3")]
+        Waitable(super::WaitableSleeper),
+        #[prost(message, tag = "4")]
+        Async(super::AsyncSleeper),
+    }
+}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct SenderOption {
     #[prost(uint64, tag = "1")]
     pub send_interval_ns: u64,
@@ -1701,23 +1721,6 @@ pub struct SenderOption {
     pub timeout_ns: ::core::option::Option<u64>,
     #[prost(enumeration = "ParallelMode", tag = "4")]
     pub parallel: i32,
-    #[prost(oneof = "sender_option::Sleeper", tags = "5, 6, 7, 8")]
-    pub sleeper: ::core::option::Option<sender_option::Sleeper>,
-}
-/// Nested message and enum types in `SenderOption`.
-pub mod sender_option {
-    #[non_exhaustive]
-    #[derive(Clone, Copy, PartialEq, ::prost::Oneof)]
-    pub enum Sleeper {
-        #[prost(message, tag = "5")]
-        Std(super::StdSleeper),
-        #[prost(message, tag = "6")]
-        Spin(super::SpinSleeper),
-        #[prost(message, tag = "7")]
-        Waitable(super::WaitableSleeper),
-        #[prost(message, tag = "8")]
-        Async(super::AsyncSleeper),
-    }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SendRequestLightweight {
@@ -1725,6 +1728,8 @@ pub struct SendRequestLightweight {
     pub datagram: ::core::option::Option<DatagramTuple>,
     #[prost(message, optional, tag = "2")]
     pub sender_option: ::core::option::Option<SenderOption>,
+    #[prost(message, optional, tag = "3")]
+    pub sleeper: ::core::option::Option<Sleeper>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SendResponseLightweight {
@@ -1741,6 +1746,8 @@ pub struct GroupSendRequestLightweight {
     pub datagrams: ::prost::alloc::vec::Vec<DatagramTuple>,
     #[prost(message, optional, tag = "3")]
     pub sender_option: ::core::option::Option<SenderOption>,
+    #[prost(message, optional, tag = "4")]
+    pub sleeper: ::core::option::Option<Sleeper>,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct FirmwareVersionRequestLightweight {}
@@ -1797,6 +1804,8 @@ pub struct OpenRequestLightweight {
     pub geometry: ::core::option::Option<Geometry>,
     #[prost(message, optional, tag = "2")]
     pub sender_option: ::core::option::Option<SenderOption>,
+    #[prost(message, optional, tag = "3")]
+    pub sleeper: ::core::option::Option<Sleeper>,
 }
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
