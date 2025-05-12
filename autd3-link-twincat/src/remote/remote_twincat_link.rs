@@ -6,7 +6,7 @@ use zerocopy::IntoBytes;
 
 use autd3_core::{
     geometry::Geometry,
-    link::{Link, LinkError, RxMessage, TxMessage},
+    link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
 };
 
 use crate::{error::AdsError, remote::native_methods::*};
@@ -26,6 +26,7 @@ pub struct RemoteTwinCAT {
     option: RemoteTwinCATOption,
     port: c_long,
     net_id: AmsNetId,
+    buffer_pool: TxBufferPoolSync,
 }
 
 /// The option of [`RemoteTwinCAT`].
@@ -46,12 +47,13 @@ impl RemoteTwinCAT {
             option,
             port: 0,
             net_id: AmsNetId { b: [0; 6] },
+            buffer_pool: TxBufferPoolSync::default(),
         }
     }
 }
 
 impl Link for RemoteTwinCAT {
-    fn open(&mut self, _: &Geometry) -> Result<(), LinkError> {
+    fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
         tracing::info!("Connecting to TwinCAT3");
 
         let RemoteTwinCATOption {
@@ -125,6 +127,8 @@ impl Link for RemoteTwinCAT {
         self.port = port;
         self.net_id = net_id;
 
+        self.buffer_pool.init(geometry);
+
         Ok(())
     }
 
@@ -144,7 +148,11 @@ impl Link for RemoteTwinCAT {
         Ok(())
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        Ok(self.buffer_pool.borrow())
+    }
+
+    fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         let addr = AmsAddr {
             net_id: self.net_id,
             port: PORT,
@@ -160,6 +168,8 @@ impl Link for RemoteTwinCAT {
                 tx.as_ptr() as _,
             )
         };
+
+        self.buffer_pool.return_buffer(tx);
 
         if res == 0 {
             return Ok(());
@@ -215,7 +225,11 @@ impl AsyncLink for RemoteTwinCAT {
         <Self as Link>::close(self)
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        <Self as Link>::alloc_tx_buffer(self)
+    }
+
+    async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         <Self as Link>::send(self, tx)
     }
 

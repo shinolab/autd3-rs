@@ -15,9 +15,10 @@ autd3-core = { workspace = true, features = ["link", "async"] }
 tonic = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true, optional = true, features = ["rt-multi-thread"] }
+zerocopy = { workspace = true }
 
 [features]
-default = []
+default = ["blocking"]
 blocking = ["tokio"]
 async-trait = ["autd3-core/async-trait", "autd3-protobuf/async-trait"]
 
