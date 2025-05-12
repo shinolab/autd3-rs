@@ -11,7 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use autd3_core::{datagram::Datagram, geometry::Geometry, link::Link};
+use autd3_core::{datagram::Datagram, defined::DEFAULT_TIMEOUT, geometry::Geometry, link::Link};
 use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
@@ -48,7 +48,7 @@ impl ParallelMode {
 
 /// The option of [`Sender`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SenderOption<S: Debug> {
+pub struct SenderOption {
     /// The duration between sending operations.
     pub send_interval: Duration,
     /// The duration between receiving operations.
@@ -61,18 +61,15 @@ pub struct SenderOption<S: Debug> {
     ///
     /// [`Datagram`]: autd3_driver::datagram::Datagram
     pub parallel: ParallelMode,
-    /// The sleeper to manage the sending/receiving timing.
-    pub sleeper: S,
 }
 
-impl<S: Default + Debug> Default for SenderOption<S> {
+impl Default for SenderOption {
     fn default() -> Self {
         Self {
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
-            timeout: None,
+            timeout: Some(DEFAULT_TIMEOUT),
             parallel: ParallelMode::Auto,
-            sleeper: S::default(),
         }
     }
 }
@@ -83,7 +80,8 @@ pub struct Sender<'a, L: Link, S: Sleep> {
     pub(crate) geometry: &'a mut Geometry,
     pub(crate) tx: &'a mut [TxMessage],
     pub(crate) rx: &'a mut [RxMessage],
-    pub(crate) option: SenderOption<S>,
+    pub(crate) option: SenderOption,
+    pub(crate) sleeper: S,
 }
 
 impl<L: Link, S: Sleep> Sender<'_, L, S> {
@@ -145,7 +143,7 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
             }
 
             send_timing += self.option.send_interval;
-            self.option.sleeper.sleep_until(send_timing);
+            self.sleeper.sleep_until(send_timing);
         }
     }
 
@@ -180,7 +178,7 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
                 break;
             }
             receive_timing += self.option.receive_interval;
-            self.option.sleeper.sleep_until(receive_timing);
+            self.sleeper.sleep_until(receive_timing);
         }
         self.rx
             .iter()
@@ -313,8 +311,8 @@ mod tests {
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel: ParallelMode::Auto,
-                sleeper,
             },
+            sleeper,
         };
 
         assert_eq!(Ok(()), sender.send_receive(Duration::ZERO));
@@ -350,8 +348,8 @@ mod tests {
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel: ParallelMode::Auto,
-                sleeper,
             },
+            sleeper,
         };
 
         assert_eq!(Ok(()), sender.wait_msg_processed(Duration::from_millis(10)));

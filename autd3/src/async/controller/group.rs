@@ -30,7 +30,7 @@ impl<L: AsyncLink> Controller<L> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.sender(SenderOption::<AsyncSleeper>::default())
+        self.sender(SenderOption::default(), AsyncSleeper::default())
             .group_send(key_map, datagram_map)
             .await
     }

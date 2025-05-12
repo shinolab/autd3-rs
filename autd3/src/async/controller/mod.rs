@@ -3,7 +3,7 @@ mod sender;
 
 use crate::{controller::SenderOption, error::AUTDError, gain::Null, modulation::Static};
 
-use autd3_core::{defined::DEFAULT_TIMEOUT, link::AsyncLink};
+use autd3_core::link::AsyncLink;
 
 use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
@@ -39,6 +39,8 @@ pub struct Controller<L: AsyncLink> {
     geometry: Geometry,
     tx_buf: Vec<TxMessage>,
     rx_buf: Vec<RxMessage>,
+    /// The default sender option used for [`send`](Controller::send).
+    pub default_sender_option: SenderOption,
 }
 
 impl<L: AsyncLink> Controller<L> {
@@ -50,10 +52,8 @@ impl<L: AsyncLink> Controller<L> {
         Self::open_with_option::<D, F, AsyncSleeper>(
             devices,
             link,
-            SenderOption {
-                timeout: Some(DEFAULT_TIMEOUT),
-                ..Default::default()
-            },
+            SenderOption::default(),
+            AsyncSleeper::default(),
         )
         .await
     }
@@ -64,7 +64,8 @@ impl<L: AsyncLink> Controller<L> {
     pub async fn open_with_option<D: Into<Device>, F: IntoIterator<Item = D>, S: AsyncSleep>(
         devices: F,
         mut link: L,
-        option: SenderOption<S>,
+        option: SenderOption,
+        sleeper: S,
     ) -> Result<Self, AUTDError> {
         tracing::debug!("Opening a controller with option {:?})", option);
 
@@ -75,19 +76,21 @@ impl<L: AsyncLink> Controller<L> {
             tx_buf: vec![TxMessage::new_zeroed(); geometry.len()], // Do not use `num_devices` here because the devices may be disabled.
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             geometry,
+            default_sender_option: option,
         }
-        .open_impl(option)
+        .open_impl(option, sleeper)
         .await
     }
 
     /// Returns the [`Sender`] to send data to the devices.
-    pub fn sender<S: AsyncSleep>(&mut self, option: SenderOption<S>) -> Sender<'_, L, S> {
+    pub fn sender<S: AsyncSleep>(&mut self, option: SenderOption, sleeper: S) -> Sender<'_, L, S> {
         Sender {
             link: &mut self.link,
             geometry: &mut self.geometry,
             tx: &mut self.tx_buf,
             rx: &mut self.rx_buf,
             option,
+            sleeper,
         }
     }
 
@@ -100,16 +103,17 @@ impl<L: AsyncLink> Controller<L> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.sender(SenderOption::<AsyncSleeper>::default())
+        self.sender(self.default_sender_option, AsyncSleeper::default())
             .send(s)
             .await
     }
 
     pub(crate) async fn open_impl<S: AsyncSleep>(
         mut self,
-        option: SenderOption<S>,
+        option: SenderOption,
+        sleeper: S,
     ) -> Result<Self, AUTDError> {
-        let mut sender = self.sender(option);
+        let mut sender = self.sender(option, sleeper);
 
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
         // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
@@ -119,7 +123,11 @@ impl<L: AsyncLink> Controller<L> {
         Ok(self)
     }
 
-    async fn close_impl(&mut self) -> Result<(), AUTDDriverError> {
+    async fn close_impl<S: AsyncSleep>(
+        &mut self,
+        option: SenderOption,
+        sleeper: S,
+    ) -> Result<(), AUTDDriverError> {
         tracing::info!("Closing controller");
 
         if !self.link.is_open() {
@@ -128,16 +136,20 @@ impl<L: AsyncLink> Controller<L> {
         }
 
         self.geometry.iter_mut().for_each(|dev| dev.enable = true);
+
+        let mut sender = self.sender(option, sleeper);
+
         [
-            self.send(Silencer {
-                config: FixedCompletionSteps {
-                    strict_mode: false,
-                    ..Default::default()
-                },
-            })
-            .await,
-            self.send((Static::default(), Null)).await,
-            self.send(Clear {}).await,
+            sender
+                .send(Silencer {
+                    config: FixedCompletionSteps {
+                        strict_mode: false,
+                        ..Default::default()
+                    },
+                })
+                .await,
+            sender.send((Static::default(), Null)).await,
+            sender.send(Clear {}).await,
             Ok(self.link.close().await?),
         ]
         .into_iter()
@@ -147,7 +159,8 @@ impl<L: AsyncLink> Controller<L> {
     /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn close(mut self) -> Result<(), AUTDDriverError> {
-        self.close_impl().await
+        self.close_impl(self.default_sender_option, AsyncSleeper::default())
+            .await
     }
 
     async fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
@@ -248,11 +261,13 @@ impl<L: AsyncLink + 'static> Controller<L> {
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
+        let default_sender_option = unsafe { std::ptr::read(&cnt.default_sender_option) };
         Controller {
             link: Box::new(link) as _,
             geometry,
             tx_buf,
             rx_buf,
+            default_sender_option,
         }
     }
 
@@ -267,11 +282,13 @@ impl<L: AsyncLink + 'static> Controller<L> {
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
+        let default_sender_option = unsafe { std::ptr::read(&cnt.default_sender_option) };
         Controller {
             link: unsafe { *Box::from_raw(Box::into_raw(link) as *mut L) },
             geometry,
             tx_buf,
             rx_buf,
+            default_sender_option,
         }
     }
 }
@@ -285,7 +302,9 @@ impl<L: AsyncLink> Drop for Controller<L> {
             tokio::runtime::RuntimeFlavor::CurrentThread => {}
             tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async {
-                    let _ = self.close_impl().await;
+                    let _ = self
+                        .close_impl(self.default_sender_option, AsyncSleeper::default())
+                        .await;
                 });
             }),
             _ => unimplemented!(),
@@ -441,7 +460,8 @@ mod tests {
     async fn close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1).await?;
-            autd.close_impl().await?;
+            autd.close_impl(SenderOption::default(), AsyncSleeper::default())
+                .await?;
             autd.close().await?;
         }
 

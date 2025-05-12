@@ -14,18 +14,22 @@ fn audit_test() -> anyhow::Result<()> {
     let mut autd = Controller::open_with_option(
         [AUTD3::default()],
         Audit::new(AuditOption::default()),
-        SenderOption::<SpinSleeper> {
+        SenderOption {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()
         },
+        SpinSleeper::default(),
     )?;
     assert_eq!(0, autd.link()[0].idx());
 
     {
-        autd.sender(SenderOption::<SpinSleeper> {
-            timeout: Some(Duration::from_millis(20)),
-            ..Default::default()
-        })
+        autd.sender(
+            SenderOption {
+                timeout: Some(Duration::from_millis(20)),
+                ..Default::default()
+            },
+            SpinSleeper::default(),
+        )
         .send(Null {})?;
     }
 
