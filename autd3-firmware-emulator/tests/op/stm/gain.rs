@@ -499,6 +499,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
 fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0);
 
@@ -514,7 +515,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
 
     let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
-    OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
+    OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
     tx[0].payload_mut()[2] = 3;
 
     cpu.send(&tx);

@@ -63,6 +63,7 @@ fn send_firminfo() -> anyhow::Result<()> {
 fn invalid_info_type() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0);
 
@@ -75,6 +76,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
         msg_id,
         &mut [Some((op, op_null))],
         &geometry,
+        &mut sent_flags,
         &mut tx,
         false,
     )?;

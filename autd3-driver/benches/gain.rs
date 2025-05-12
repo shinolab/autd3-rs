@@ -98,6 +98,7 @@ fn focus(c: &mut Criterion) {
             BenchmarkId::new("Gain::Focus", size),
             &generate_geometry(size),
             |b, geometry| {
+                let mut sent_flags = vec![false; size];
                 let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
                     let g =
@@ -108,6 +109,7 @@ fn focus(c: &mut Criterion) {
                         MsgId::new(0),
                         &mut operations,
                         geometry,
+                        &mut sent_flags,
                         &mut tx,
                         false,
                     )
@@ -127,14 +129,22 @@ fn focus_parallel(c: &mut Criterion) {
             BenchmarkId::new("Gain::FocusParallel", size),
             &generate_geometry(size),
             |b, geometry| {
+                let mut sent_flags = vec![false; size];
                 let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
                     let generator = g.operation_generator(geometry, true).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
-                    OperationHandler::pack(MsgId::new(0), &mut operations, geometry, &mut tx, true)
-                        .unwrap();
+                    OperationHandler::pack(
+                        MsgId::new(0),
+                        &mut operations,
+                        geometry,
+                        &mut sent_flags,
+                        &mut tx,
+                        true,
+                    )
+                    .unwrap();
                 })
             },
         );
@@ -150,6 +160,7 @@ fn focus_boxed(c: &mut Criterion) {
             BenchmarkId::new("Gain::FocusBoxed", size),
             &generate_geometry(size),
             |b, geometry| {
+                let mut sent_flags = vec![false; size];
                 let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
                     let g = Box::new(Focus::new(Point3::new(
@@ -164,6 +175,7 @@ fn focus_boxed(c: &mut Criterion) {
                         MsgId::new(0),
                         &mut operations,
                         geometry,
+                        &mut sent_flags,
                         &mut tx,
                         false,
                     )

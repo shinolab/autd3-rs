@@ -9,7 +9,7 @@ use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
     error::AUTDDriverError,
     firmware::{
-        cpu::{RxMessage, TxMessage, check_if_msg_is_processed},
+        cpu::{RxMessage, check_if_msg_is_processed},
         fpga::FPGAState,
         operation::{FirmwareVersionType, Operation, OperationGenerator},
         version::FirmwareVersion,
@@ -22,7 +22,6 @@ pub use sender::{AsyncSleeper, Sender, sleep::AsyncSleep};
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
 use tracing;
-use zerocopy::FromZeros;
 
 /// An asynchronous controller for the AUTD devices.
 ///
@@ -38,7 +37,7 @@ pub struct Controller<L: AsyncLink> {
     #[deref_mut]
     geometry: Geometry,
     msg_id: MsgId,
-    tx_buf: Vec<TxMessage>,
+    sent_flags: Vec<bool>,
     rx_buf: Vec<RxMessage>,
     /// The default sender option used for [`send`](Controller::send).
     pub default_sender_option: SenderOption,
@@ -74,7 +73,8 @@ impl<L: AsyncLink> Controller<L> {
         link.open(&geometry).await?;
         Controller {
             link,
-            tx_buf: vec![TxMessage::new_zeroed(); geometry.len()], // Do not use `num_devices` here because the devices may be disabled.
+            // Do not use `num_devices` here because the devices may be disabled.
+            sent_flags: vec![false; geometry.len()],
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             msg_id: MsgId::new(0),
             geometry,
@@ -90,7 +90,7 @@ impl<L: AsyncLink> Controller<L> {
             msg_id: &mut self.msg_id,
             link: &mut self.link,
             geometry: &mut self.geometry,
-            tx: &mut self.tx_buf,
+            sent_flags: &mut self.sent_flags,
             rx: &mut self.rx_buf,
             option,
             sleeper,
@@ -170,7 +170,7 @@ impl<L: AsyncLink> Controller<L> {
         self.send(ty).await.map_err(|e| {
             tracing::error!("Fetch firmware info failed: {:?}", e);
             AUTDError::ReadFirmwareVersionFailed(
-                check_if_msg_is_processed(&self.tx_buf, &self.rx_buf).collect(),
+                check_if_msg_is_processed(self.msg_id, &self.rx_buf).collect(),
             )
         })?;
         Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
@@ -263,14 +263,14 @@ impl<L: AsyncLink + 'static> Controller<L> {
         let msg_id = unsafe { std::ptr::read(&cnt.msg_id) };
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
-        let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
+        let sent_flags = unsafe { std::ptr::read(&cnt.sent_flags) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
         let default_sender_option = unsafe { std::ptr::read(&cnt.default_sender_option) };
         Controller {
             msg_id,
             link: Box::new(link) as _,
             geometry,
-            tx_buf,
+            sent_flags,
             rx_buf,
             default_sender_option,
         }
@@ -286,14 +286,14 @@ impl<L: AsyncLink + 'static> Controller<L> {
         let msg_id = unsafe { std::ptr::read(&cnt.msg_id) };
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
-        let tx_buf = unsafe { std::ptr::read(&cnt.tx_buf) };
+        let sent_flags = unsafe { std::ptr::read(&cnt.sent_flags) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
         let default_sender_option = unsafe { std::ptr::read(&cnt.default_sender_option) };
         Controller {
             msg_id,
             link: unsafe { *Box::from_raw(Box::into_raw(link) as *mut L) },
             geometry,
-            tx_buf,
+            sent_flags,
             rx_buf,
             default_sender_option,
         }

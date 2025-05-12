@@ -1,6 +1,6 @@
 use autd3_core::{
     derive::*,
-    link::{Link, LinkError},
+    link::{Link, LinkError, TxBufferPoolSync},
 };
 
 use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
@@ -13,6 +13,7 @@ use autd3_firmware_emulator::CPUEmulator;
 pub struct Nop {
     is_open: bool,
     cpus: Vec<CPUEmulator>,
+    buffer_pool: TxBufferPoolSync,
 }
 
 impl Nop {
@@ -21,6 +22,7 @@ impl Nop {
         Self {
             is_open: false,
             cpus: Vec::new(),
+            buffer_pool: TxBufferPoolSync::new(),
         }
     }
 }
@@ -33,6 +35,7 @@ impl Link for Nop {
             .enumerate()
             .map(|(i, dev)| CPUEmulator::new(i, dev.num_transducers()))
             .collect();
+        self.buffer_pool.init(geometry);
         Ok(())
     }
 
@@ -41,10 +44,15 @@ impl Link for Nop {
         Ok(())
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
+        self.buffer_pool.borrow()
+    }
+
+    fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         self.cpus.iter_mut().for_each(|cpu| {
-            cpu.send(tx);
+            cpu.send(&tx);
         });
+        self.buffer_pool.return_buffer(tx);
         Ok(())
     }
 
@@ -76,7 +84,11 @@ impl AsyncLink for Nop {
         <Self as Link>::close(self)
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    async fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
+        <Self as Link>::alloc_tx_buffer(self)
+    }
+
+    async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         <Self as Link>::send(self, tx)
     }
 

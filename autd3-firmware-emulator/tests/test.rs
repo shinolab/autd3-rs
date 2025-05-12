@@ -46,12 +46,13 @@ where
     let parallel = geometry.num_devices() > option.parallel_threshold;
     let generator = d.operation_generator(geometry, parallel)?;
     let mut op = OperationHandler::generate(generator, geometry);
+    let mut sent_flags = vec![false; geometry.len()];
     loop {
         if OperationHandler::is_done(&op) {
             break;
         }
         msg_id.increment();
-        OperationHandler::pack(*msg_id, &mut op, geometry, tx, parallel)?;
+        OperationHandler::pack(*msg_id, &mut op, geometry, &mut sent_flags, tx, parallel)?;
         cpu.send(tx);
         if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
             return Err(AUTDDriverError::firmware_err(cpu.rx().ack()));
@@ -96,20 +97,21 @@ fn send_invalid_msg_id() {
 fn send_ingore_same_data() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0x10);
 
     let d = Clear::new();
     let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
-    OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
+    OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
     cpu.send(&tx);
     assert_eq!(cpu.rx().ack(), tx[0].header.msg_id.get());
 
     let d = Synchronize::new();
     let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
-    OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
+    OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
     assert!(!cpu.synchronized());
     cpu.send(&tx);
     assert!(!cpu.synchronized());
@@ -121,13 +123,14 @@ fn send_ingore_same_data() -> anyhow::Result<()> {
 fn send_slot_2_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0x12);
 
     let d = (Clear::new(), Synchronize::new());
     let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
-    OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
+    OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
 
     assert!(!cpu.synchronized());
     cpu.send(&tx);
@@ -141,13 +144,14 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
 fn send_slot_2_err() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0);
 
     let d = (Clear::new(), Synchronize::new());
     let generator = d.operation_generator(&geometry, false)?;
     let mut op = OperationHandler::generate(generator, &geometry);
-    OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
+    OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
 
     let slot2_offset = tx[0].header.slot_2_offset as usize;
     tx[0].payload_mut()[slot2_offset] = 0xFF;
