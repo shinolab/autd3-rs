@@ -1,6 +1,6 @@
 use zerocopy::FromZeros;
 
-use crate::derive::Geometry;
+use crate::geometry::Geometry;
 
 use super::TxMessage;
 

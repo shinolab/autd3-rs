@@ -44,7 +44,7 @@ pub struct Controller<L: AsyncLink> {
 }
 
 impl<L: AsyncLink> Controller<L> {
-    /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`] and [`SpinSleeper`].
+    /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`] and [`AsyncSleeper`].
     pub async fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
         devices: F,
         link: L,
