@@ -39,7 +39,8 @@ pub struct Controller<L: AsyncLink> {
     geometry: Geometry,
     tx_buf: Vec<TxMessage>,
     rx_buf: Vec<RxMessage>,
-    default_sender_option: SenderOption,
+    /// The default sender option used for [`send`](Controller::send).
+    pub default_sender_option: SenderOption,
 }
 
 impl<L: AsyncLink> Controller<L> {

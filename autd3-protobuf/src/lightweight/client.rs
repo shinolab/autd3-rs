@@ -13,7 +13,8 @@ pub struct Controller {
     client: Client,
     #[deref]
     geometry: Geometry,
-    default_sender_option: autd3::controller::SenderOption,
+    /// The default sender option used for [`send`](Controller::send).
+    pub default_sender_option: autd3::controller::SenderOption,
 }
 
 pub struct Sender<'a, S>

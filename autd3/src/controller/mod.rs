@@ -42,7 +42,8 @@ pub struct Controller<L: Link> {
     geometry: Geometry,
     tx_buf: Vec<TxMessage>,
     rx_buf: Vec<RxMessage>,
-    default_sender_option: SenderOption,
+    /// The default sender option used for [`send`](Controller::send).
+    pub default_sender_option: SenderOption,
 }
 
 impl<L: Link> Controller<L> {
