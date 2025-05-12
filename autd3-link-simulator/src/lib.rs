@@ -7,7 +7,7 @@
 //!
 //! [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
 
-use autd3_core::link::{AsyncLink, LinkError, RxMessage, TxMessage};
+use autd3_core::link::{AsyncLink, LinkError, RxMessage, TxBufferPoolSync, TxMessage};
 
 use autd3_protobuf::*;
 
@@ -16,6 +16,7 @@ use std::net::SocketAddr;
 struct SimulatorInner {
     client: simulator_client::SimulatorClient<tonic::transport::Channel>,
     last_geometry_version: usize,
+    buffer_pool: TxBufferPoolSync,
 }
 
 impl SimulatorInner {
@@ -39,9 +40,13 @@ impl SimulatorInner {
                 AUTDProtoBufError::SendError("Failed to initialize simulator".to_string())
             })?;
 
+        let mut buffer_pool = TxBufferPoolSync::default();
+        buffer_pool.init(geometry);
+
         Ok(Self {
             client,
             last_geometry_version: geometry.version(),
+            buffer_pool,
         })
     }
 
@@ -69,11 +74,18 @@ impl SimulatorInner {
         Ok(())
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
-        self.client
-            .send_data(TxRawData::from(tx))
+    fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
+        self.buffer_pool.borrow()
+    }
+
+    async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
+        let r = self
+            .client
+            .send_data(TxRawData::from(tx.as_slice()))
             .await
-            .map_err(AUTDProtoBufError::from)?;
+            .map_err(AUTDProtoBufError::from);
+        self.buffer_pool.return_buffer(tx);
+        r?;
         Ok(())
     }
 
@@ -98,6 +110,7 @@ impl SimulatorInner {
 ///
 /// [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
 pub struct Simulator {
+    num_devices: usize,
     addr: SocketAddr,
     inner: Option<SimulatorInner>,
     #[cfg(feature = "blocking")]
@@ -109,6 +122,7 @@ impl Simulator {
     #[must_use]
     pub const fn new(addr: SocketAddr) -> Simulator {
         Simulator {
+            num_devices: 0,
             addr,
             inner: None,
             #[cfg(feature = "blocking")]
@@ -121,6 +135,7 @@ impl Simulator {
 impl AsyncLink for Simulator {
     async fn open(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
         self.inner = Some(SimulatorInner::open(&self.addr, geometry).await?);
+        self.num_devices = geometry.len();
         Ok(())
     }
 
@@ -140,7 +155,15 @@ impl AsyncLink for Simulator {
         }
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        if let Some(inner) = self.inner.as_mut() {
+            Ok(inner.alloc_tx_buffer())
+        } else {
+            Err(LinkError::new("Link is closed"))
+        }
+    }
+
+    async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         if let Some(inner) = self.inner.as_mut() {
             inner.send(tx).await?;
             Ok(())
@@ -205,7 +228,21 @@ impl Link for Simulator {
             })
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        self.runtime
+            .as_ref()
+            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+                runtime.block_on(async {
+                    if let Some(inner) = self.inner.as_mut() {
+                        Ok(inner.alloc_tx_buffer())
+                    } else {
+                        Err(LinkError::new("Link is closed"))
+                    }
+                })
+            })
+    }
+
+    fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         self.runtime
             .as_ref()
             .map_or(Err(LinkError::new("Link is closed")), |runtime| {

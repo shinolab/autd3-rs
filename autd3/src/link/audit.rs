@@ -1,6 +1,6 @@
 use autd3_core::{
     geometry::Geometry,
-    link::{Link, LinkError},
+    link::{Link, LinkError, MsgId, TxBufferPoolSync},
 };
 
 use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
@@ -11,7 +11,7 @@ use derive_more::{Deref, DerefMut};
 #[derive(Default)]
 #[doc(hidden)]
 pub struct AuditOption {
-    pub initial_msg_id: Option<u8>,
+    pub initial_msg_id: Option<MsgId>,
     pub initial_phase_corr: Option<u8>,
     pub broken: bool,
 }
@@ -25,6 +25,7 @@ pub struct Audit {
     #[deref_mut]
     cpus: Vec<CPUEmulator>,
     broken: bool,
+    buffer_pool: TxBufferPoolSync,
 }
 
 impl Audit {
@@ -34,6 +35,7 @@ impl Audit {
             is_open: false,
             cpus: Vec::new(),
             broken: false,
+            buffer_pool: TxBufferPoolSync::new(),
         }
     }
 
@@ -68,6 +70,7 @@ impl Link for Audit {
             })
             .collect();
         self.broken = self.option.broken;
+        self.buffer_pool.init(geometry);
         Ok(())
     }
 
@@ -76,13 +79,21 @@ impl Link for Audit {
         Ok(())
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        Ok(self.buffer_pool.borrow())
+    }
+
+    fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         if self.broken {
             return Err(LinkError::new("broken"));
         }
+
         self.cpus.iter_mut().for_each(|cpu| {
-            cpu.send(tx);
+            cpu.send(&tx);
         });
+
+        self.buffer_pool.return_buffer(tx);
+
         Ok(())
     }
 
@@ -118,7 +129,11 @@ impl AsyncLink for Audit {
         <Self as Link>::close(self)
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        <Self as Link>::alloc_tx_buffer(self)
+    }
+
+    async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         <Self as Link>::send(self, tx)
     }
 

@@ -1,5 +1,6 @@
 use std::num::NonZeroU16;
 
+use autd3_core::link::MsgId;
 use autd3_driver::{
     datagram::*,
     error::AUTDDriverError,
@@ -21,6 +22,7 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     unsafe {
         let config = FixedUpdateRate {
@@ -29,7 +31,7 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
         };
         let d = Silencer { config };
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(config, cpu.fpga().silencer_update_rate());
         assert!(cpu.fpga().silencer_fixed_update_rate_mode());
@@ -42,7 +44,7 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
         };
         let d = Silencer { config };
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(config, cpu.fpga().silencer_update_rate());
         assert!(cpu.fpga().silencer_fixed_update_rate_mode());
@@ -60,6 +62,7 @@ fn send_silencer_fixed_completion_time_unsafe() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     {
         let config = FixedCompletionTime {
@@ -69,7 +72,7 @@ fn send_silencer_fixed_completion_time_unsafe() {
         };
         let d = Silencer { config };
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(
             (config.intensity.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
@@ -90,7 +93,7 @@ fn send_silencer_fixed_completion_time_unsafe() {
             strict_mode: true,
         };
         let d = Silencer { config };
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(
             (config.intensity.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as u16,
@@ -112,6 +115,7 @@ fn send_silencer_fixed_completion_steps_unsafe() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     {
         let config = FixedCompletionSteps {
@@ -121,7 +125,7 @@ fn send_silencer_fixed_completion_steps_unsafe() {
         };
         let d = Silencer { config };
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(config, cpu.fpga().silencer_completion_steps());
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
@@ -135,7 +139,7 @@ fn send_silencer_fixed_completion_steps_unsafe() {
             strict_mode: true,
         };
         let d = Silencer { config };
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
         assert_eq!(config, cpu.fpga().silencer_completion_steps());
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
@@ -156,6 +160,7 @@ fn silencer_completetion_steps_too_large_mod(
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     let d = Silencer {
         config: FixedCompletionSteps {
@@ -164,7 +169,7 @@ fn silencer_completetion_steps_too_large_mod(
             strict_mode: true,
         },
     };
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
     // Send modulation
     {
@@ -173,7 +178,7 @@ fn silencer_completetion_steps_too_large_mod(
             sampling_config: SamplingConfig::FREQ_40K,
         };
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
     }
 
     let steps_phase = 1;
@@ -185,7 +190,7 @@ fn silencer_completetion_steps_too_large_mod(
         },
     };
 
-    assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(expect, send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
     Ok(())
 }
@@ -203,6 +208,7 @@ fn silencer_completetion_steps_too_large_stm(
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     let d = Silencer {
         config: FixedCompletionSteps {
@@ -211,7 +217,7 @@ fn silencer_completetion_steps_too_large_stm(
             strict_mode: true,
         },
     };
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
     // Send FociSTM
     {
@@ -220,7 +226,7 @@ fn silencer_completetion_steps_too_large_stm(
             config: SamplingConfig::FREQ_40K,
         };
 
-        assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
     }
 
     let d = Silencer {
@@ -231,7 +237,7 @@ fn silencer_completetion_steps_too_large_stm(
         },
     };
 
-    assert_eq!(expect, send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(expect, send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
     Ok(())
 }
@@ -243,6 +249,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     let config = FixedCompletionSteps {
         intensity: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
@@ -251,7 +258,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     };
     let d = Silencer { config };
 
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(
         config.intensity,
@@ -271,6 +278,7 @@ fn send_silencer_fixed_completion_time_permissive() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
 
     let config = FixedCompletionSteps {
         intensity: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
@@ -279,7 +287,7 @@ fn send_silencer_fixed_completion_time_permissive() {
     };
     let d = Silencer { config };
 
-    assert_eq!(Ok(()), send(&mut cpu, d, &geometry, &mut tx));
+    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
 
     assert_eq!(
         config.intensity,

@@ -5,7 +5,11 @@ pub use sleep::AsyncSleeper;
 
 use std::time::{Duration, Instant};
 
-use autd3_core::{datagram::Datagram, geometry::Geometry, link::AsyncLink};
+use autd3_core::{
+    datagram::Datagram,
+    geometry::Geometry,
+    link::{AsyncLink, MsgId},
+};
 use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
@@ -20,9 +24,10 @@ use crate::controller::SenderOption;
 
 /// A struct to send the [`Datagram`] to the devices.
 pub struct Sender<'a, L: AsyncLink, S: AsyncSleep> {
+    pub(crate) msg_id: &'a mut MsgId,
     pub(crate) link: &'a mut L,
     pub(crate) geometry: &'a mut Geometry,
-    pub(crate) tx: &'a mut [TxMessage],
+    pub(crate) sent_flags: &'a mut [bool],
     pub(crate) rx: &'a mut [RxMessage],
     pub(crate) option: SenderOption,
     pub(crate) sleeper: S,
@@ -79,9 +84,19 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
         // For example, if the `send_interval` is 1ms and it takes 1.5ms to transmit due to some reason, the next transmission will be performed not 1ms later but 0.5ms later.
         let mut send_timing = Instant::now();
         loop {
-            OperationHandler::pack(&mut operations, self.geometry, self.tx, parallel)?;
+            let mut tx = self.link.alloc_tx_buffer().await?;
 
-            self.send_receive(timeout).await?;
+            self.msg_id.increment();
+            OperationHandler::pack(
+                *self.msg_id,
+                &mut operations,
+                self.geometry,
+                self.sent_flags,
+                &mut tx,
+                parallel,
+            )?;
+
+            self.send_receive(tx, timeout).await?;
 
             if OperationHandler::is_done(&operations) {
                 return Ok(());
@@ -92,13 +107,17 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
         }
     }
 
-    async fn send_receive(&mut self, timeout: Duration) -> Result<(), AUTDDriverError> {
+    async fn send_receive(
+        &mut self,
+        tx: Vec<TxMessage>,
+        timeout: Duration,
+    ) -> Result<(), AUTDDriverError> {
         if !self.link.is_open() {
             return Err(AUTDDriverError::LinkClosed);
         }
 
-        tracing::trace!("send: {}", self.tx.iter().join(", "));
-        self.link.send(self.tx).await?;
+        tracing::trace!("send: {}", tx.iter().join(", "));
+        self.link.send(tx).await?;
         self.wait_msg_processed(timeout).await
     }
 
@@ -112,9 +131,9 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
             self.link.receive(self.rx).await?;
             tracing::trace!("recv: {}", self.rx.iter().join(", "));
 
-            if check_if_msg_is_processed(self.tx, self.rx)
-                .zip(self.geometry.iter())
-                .filter_map(|(r, dev)| dev.enable.then_some(r))
+            if check_if_msg_is_processed(*self.msg_id, self.rx)
+                .zip(self.sent_flags.iter())
+                .filter_map(|(r, sent)| sent.then_some(r))
                 .all(std::convert::identity)
             {
                 return Ok(());
@@ -143,9 +162,8 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::link::LinkError;
+    use autd3_core::link::{LinkError, TxBufferPoolSync};
     use spin_sleep::SpinSleeper;
-    use zerocopy::FromZeros;
 
     #[cfg(target_os = "windows")]
     use crate::controller::WaitableSleeper;
@@ -162,15 +180,14 @@ mod tests {
         pub send_cnt: usize,
         pub recv_cnt: usize,
         pub down: bool,
+        pub buffer_pool: TxBufferPoolSync,
     }
 
     #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
     impl AsyncLink for MockAsyncLink {
-        async fn open(&mut self, _: &Geometry) -> Result<(), LinkError> {
+        async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
             self.is_open = true;
-            self.send_cnt = 0;
-            self.recv_cnt = 0;
-            self.down = false;
+            self.buffer_pool.init(geometry);
             Ok(())
         }
 
@@ -179,10 +196,15 @@ mod tests {
             Ok(())
         }
 
-        async fn send(&mut self, _: &[TxMessage]) -> Result<(), LinkError> {
+        async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+            Ok(self.buffer_pool.borrow())
+        }
+
+        async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
             if !self.down {
                 self.send_cnt += 1;
             }
+            self.buffer_pool.return_buffer(tx);
             Ok(())
         }
 
@@ -226,14 +248,16 @@ mod tests {
     async fn test_send_receive(#[case] sleeper: impl AsyncSleep) {
         let mut link = MockAsyncLink::default();
         let mut geometry = create_geometry(1);
-        let mut tx = vec![];
+        let mut sent_flags = vec![false; 1];
         let mut rx = Vec::new();
+        let mut msg_id = MsgId::new(0);
 
         assert!(link.open(&geometry).await.is_ok());
         let mut sender = Sender {
+            msg_id: &mut msg_id,
             link: &mut link,
             geometry: &mut geometry,
-            tx: &mut tx,
+            sent_flags: &mut sent_flags,
             rx: &mut rx,
             option: SenderOption {
                 send_interval: Duration::from_millis(1),
@@ -244,13 +268,20 @@ mod tests {
             sleeper,
         };
 
-        assert_eq!(Ok(()), sender.send_receive(Duration::ZERO).await);
-        assert_eq!(Ok(()), sender.send_receive(Duration::from_millis(1)).await);
+        let tx = sender.link.alloc_tx_buffer().await.unwrap();
+        assert_eq!(Ok(()), sender.send_receive(tx, Duration::ZERO).await);
+
+        let tx = sender.link.alloc_tx_buffer().await.unwrap();
+        assert_eq!(
+            Ok(()),
+            sender.send_receive(tx, Duration::from_millis(1)).await
+        );
 
         sender.link.is_open = false;
+        let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
             Err(AUTDDriverError::LinkClosed),
-            sender.send_receive(Duration::ZERO).await,
+            sender.send_receive(tx, Duration::ZERO).await,
         );
     }
 
@@ -263,15 +294,16 @@ mod tests {
     async fn test_wait_msg_processed(#[case] sleeper: impl AsyncSleep) {
         let mut link = MockAsyncLink::default();
         let mut geometry = create_geometry(1);
-        let mut tx = vec![TxMessage::new_zeroed(); 1];
-        tx[0].header.msg_id = 2;
+        let mut sent_flags = vec![true; 1];
         let mut rx = vec![RxMessage::new(0, 0)];
+        let mut msg_id = MsgId::new(1);
 
         assert!(link.open(&geometry).await.is_ok());
         let mut sender = Sender {
+            msg_id: &mut msg_id,
             link: &mut link,
             geometry: &mut geometry,
-            tx: &mut tx,
+            sent_flags: &mut sent_flags,
             rx: &mut rx,
             option: SenderOption {
                 send_interval: Duration::from_millis(1),
@@ -309,7 +341,7 @@ mod tests {
 
         sender.link.down = false;
         sender.link.recv_cnt = 0;
-        sender.tx[0].header.msg_id = 20;
+        *sender.msg_id = MsgId::new(20);
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::new("too many"))),
             sender.wait_msg_processed(Duration::from_secs(10)).await

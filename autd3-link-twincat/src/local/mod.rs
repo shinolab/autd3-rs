@@ -8,7 +8,7 @@ use zerocopy::IntoBytes;
 
 use autd3_core::{
     geometry::Geometry,
-    link::{Link, LinkError, RxMessage, TxMessage},
+    link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
 };
 
 #[repr(C)]
@@ -38,6 +38,7 @@ const PORT: u16 = 301;
 pub struct TwinCAT {
     port: i32,
     send_addr: AmsAddr,
+    buffer_pool: TxBufferPoolSync,
     dll: Library,
 }
 
@@ -50,13 +51,14 @@ impl TwinCAT {
                 net_id: AmsNetId { b: [0; 6] },
                 port: 0,
             },
+            buffer_pool: TxBufferPoolSync::default(),
             dll: unsafe { lib::Library::new("TcAdsDll") }.map_err(|_| AdsError::DllNotFound)?,
         })
     }
 }
 
 impl Link for TwinCAT {
-    fn open(&mut self, _: &Geometry) -> Result<(), LinkError> {
+    fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
         let port = unsafe {
             self.dll
                 .get::<unsafe extern "C" fn() -> i32>(b"AdsPortOpenEx")
@@ -84,6 +86,9 @@ impl Link for TwinCAT {
             net_id: ams_addr.net_id,
             port: PORT,
         };
+
+        self.buffer_pool.init(geometry);
+
         Ok(())
     }
 
@@ -99,7 +104,11 @@ impl Link for TwinCAT {
         Ok(())
     }
 
-    fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        Ok(self.buffer_pool.borrow())
+    }
+
+    fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         unsafe {
             let n_err = self.dll.get::<unsafe extern "C" fn(
                 i32,
@@ -121,6 +130,8 @@ impl Link for TwinCAT {
                     tx.as_bytes().len() as _,
                     tx.as_ptr() as _,
             );
+
+            self.buffer_pool.return_buffer(tx);
 
             if n_err > 0 {
                 Err(AdsError::SendData(n_err).into())
@@ -182,7 +193,11 @@ impl AsyncLink for TwinCAT {
         <Self as Link>::close(self)
     }
 
-    async fn send(&mut self, tx: &[TxMessage]) -> Result<(), LinkError> {
+    async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        <Self as Link>::alloc_tx_buffer(self)
+    }
+
+    async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         <Self as Link>::send(self, tx)
     }
 
