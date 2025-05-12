@@ -13,10 +13,7 @@ use spin_sleep::SpinSleeper;
 
 use crate::error::AUTDError;
 
-use super::{
-    Controller, Sleep,
-    sender::{Sender, SenderOption},
-};
+use super::{Controller, Sleep, sender::Sender};
 
 impl<L: Link> Controller<L> {
     /// Groups the devices by given function and send different data to each group. This is a shortcut for [`Sender::group_send`].
@@ -34,7 +31,7 @@ impl<L: Link> Controller<L> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.sender(SenderOption::<SpinSleeper>::default())
+        self.sender(self.default_sender_option, SpinSleeper::default())
             .group_send(key_map, datagram_map)
     }
 }
@@ -54,7 +51,7 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
     /// # fn main() -> Result<(), AUTDError> {
     /// let mut autd = Controller::open((0..3).map(|_| AUTD3::default()), Nop::new())?;
     ///
-    /// autd.sender(SenderOption::<SpinSleeper>::default())
+    /// autd.sender(SenderOption::default(), SpinSleeper::default())
     /// .group_send(
     ///     |dev| match dev.idx() {
     ///         0 => Some("static"),
@@ -217,10 +214,13 @@ mod tests {
             phase: Phase::ZERO,
         })?;
 
-        autd.sender(SenderOption::<SpinSleeper> {
-            parallel,
-            ..Default::default()
-        })
+        autd.sender(
+            SenderOption {
+                parallel,
+                ..Default::default()
+            },
+            SpinSleeper::default(),
+        )
         .group_send(
             |dev| match dev.idx() {
                 0 | 1 | 3 => Some(dev.idx()),

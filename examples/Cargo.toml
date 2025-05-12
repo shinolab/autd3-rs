@@ -59,7 +59,7 @@ tracing = { workspace = true }
 default = []
 nop = []
 async = ["autd3/async", "tokio"]
-simulator = ["autd3-link-simulator"]
+simulator = ["autd3-link-simulator", "tracing-subscriber/env-filter"]
 twincat = ["autd3-link-twincat/local"]
 remote_twincat = ["autd3-link-twincat/remote"]
 lightweight = ["autd3-protobuf/lightweight", "autd3-protobuf/async-trait", "tokio"]

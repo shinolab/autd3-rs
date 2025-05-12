@@ -53,23 +53,28 @@ message WaitableSleeper {}
 
 message AsyncSleeper { optional uint32 timer_resolution = 1; }
 
+message Sleeper {
+  oneof sleeper {
+    StdSleeper std = 1;
+    SpinSleeper spin = 2;
+    WaitableSleeper waitable = 3;
+    AsyncSleeper async = 4;
+  }
+}
+
 message SenderOption {
   uint64 send_interval_ns = 1;
   uint64 receive_interval_ns = 2;
   optional uint64 timeout_ns = 3;
   ParallelMode parallel = 4;
-  oneof sleeper {
-    StdSleeper std = 5;
-    SpinSleeper spin = 6;
-    WaitableSleeper waitable = 7;
-    AsyncSleeper async = 8;
-  }
 }
 
 message SendRequestLightweight {
   DatagramTuple datagram = 1;
   optional SenderOption sender_option = 2;
+  optional Sleeper sleeper = 3;
 }
+
 message SendResponseLightweight {
   bool err = 1;
   string msg = 2;
@@ -79,6 +84,7 @@ message GroupSendRequestLightweight {
   repeated int32 keys = 1;
   repeated DatagramTuple datagrams = 2;
   optional SenderOption sender_option = 3;
+  optional Sleeper sleeper = 4;
 }
 
 message FirmwareVersionRequestLightweight {}
@@ -108,6 +114,7 @@ message CloseRequestLightweight {}
 message OpenRequestLightweight {
   Geometry geometry = 1;
   optional SenderOption sender_option = 2;
+  optional Sleeper sleeper = 3;
 }
 
 service ECATLight {

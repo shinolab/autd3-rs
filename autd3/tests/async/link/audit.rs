@@ -13,19 +13,23 @@ async fn audit_test() -> anyhow::Result<()> {
     let mut autd = Controller::open_with_option(
         [AUTD3::default()],
         Audit::new(AuditOption::default()),
-        SenderOption::<AsyncSleeper> {
+        SenderOption {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()
         },
+        AsyncSleeper::default(),
     )
     .await?;
     assert_eq!(0, autd.link()[0].idx());
 
     {
-        autd.sender(SenderOption::<AsyncSleeper> {
-            timeout: Some(Duration::from_millis(20)),
-            ..Default::default()
-        })
+        autd.sender(
+            SenderOption {
+                timeout: Some(Duration::from_millis(20)),
+                ..Default::default()
+            },
+            AsyncSleeper::default(),
+        )
         .send(Null {})
         .await?;
     }

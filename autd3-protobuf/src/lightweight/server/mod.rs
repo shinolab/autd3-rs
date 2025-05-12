@@ -446,14 +446,19 @@ where
         if let Some(autd) = self.autd.write().await.as_mut() {
             let req = req.into_inner();
             let option = req.sender_option;
+            let sleeper = req.sleeper;
             let datagram = req.datagram.ok_or(AUTDProtoBufError::DataParseError)?;
             let d = into_datagram_tuple(datagram)?;
             let res = match option {
                 Some(option) => {
-                    let option = autd3::controller::SenderOption::<
-                        Box<dyn autd3::r#async::controller::AsyncSleep + Send + Sync>,
-                    >::from_msg(option)?;
-                    autd.sender(option).send(d).await
+                    let option = autd3::controller::SenderOption::from_msg(option)?;
+                    let sleeper = sleeper
+                        .map(
+                            Box::<dyn autd3::r#async::controller::AsyncSleep + Send + Sync>::from_msg
+                        )
+                        .transpose()?
+                        .unwrap_or_else(|| Box::new(autd3::r#async::AsyncSleeper::default()));
+                    autd.sender(option, sleeper).send(d).await
                 }
                 None => autd.send(d).await,
             };
@@ -482,6 +487,7 @@ where
         if let Some(autd) = self.autd.write().await.as_mut() {
             let req = req.into_inner();
             let option = req.sender_option;
+            let sleeper = req.sleeper;
             let keys = req.keys;
             let datagrams = req
                 .datagrams
@@ -496,10 +502,14 @@ where
             }
             let res = match option {
                 Some(option) => {
-                    let option = autd3::controller::SenderOption::<
-                        Box<dyn autd3::r#async::controller::AsyncSleep + Send + Sync>,
-                    >::from_msg(option)?;
-                    autd.sender(option)
+                    let option = autd3::controller::SenderOption::from_msg(option)?;
+                    let sleeper = sleeper
+                    .map(
+                        Box::<dyn autd3::r#async::controller::AsyncSleep + Send + Sync>::from_msg
+                    )
+                    .transpose()?
+                    .unwrap_or_else(|| Box::new(autd3::r#async::AsyncSleeper::default()));
+                    autd.sender(option, sleeper)
                         .group_send(
                             |dev| {
                                 let key = keys[dev.idx()];

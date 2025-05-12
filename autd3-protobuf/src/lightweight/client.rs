@@ -4,7 +4,7 @@ use autd3_core::geometry::{Device, Geometry};
 
 use derive_more::Deref;
 
-use crate::{OpenRequestLightweight, SenderOption, traits::*};
+use crate::{OpenRequestLightweight, Sleeper, traits::*};
 
 type Client = crate::pb::ecat_light_client::EcatLightClient<tonic::transport::Channel>;
 
@@ -13,14 +13,17 @@ pub struct Controller {
     client: Client,
     #[deref]
     geometry: Geometry,
+    default_sender_option: autd3::controller::SenderOption,
 }
 
-pub struct Sender<'a, S: autd3::r#async::controller::AsyncSleep>
+pub struct Sender<'a, S>
 where
-    SenderOption: for<'b> From<&'b autd3::controller::SenderOption<S>>,
+    S: autd3::r#async::controller::AsyncSleep,
+    Sleeper: for<'b> From<&'b S>,
 {
     pub(crate) controller: &'a mut Controller,
-    pub(crate) option: autd3::controller::SenderOption<S>,
+    pub(crate) option: autd3::controller::SenderOption,
+    pub(crate) sleeper: S,
 }
 
 pub trait Datagram {
@@ -57,34 +60,44 @@ impl Controller {
         devices: F,
         addr: SocketAddr,
     ) -> Result<Self, crate::error::AUTDProtoBufError> {
-        Controller::open_impl(devices.into_iter().map(|d| d.into()).collect(), addr, None).await
-    }
-
-    pub async fn open_with_option<
-        D: Into<Device>,
-        F: IntoIterator<Item = D>,
-        S: autd3::r#async::controller::AsyncSleep,
-    >(
-        devices: F,
-        addr: SocketAddr,
-        sender_option: autd3::controller::SenderOption<S>,
-    ) -> Result<Self, crate::error::AUTDProtoBufError>
-    where
-        SenderOption: From<autd3::controller::SenderOption<S>>,
-    {
         Controller::open_impl(
             devices.into_iter().map(|d| d.into()).collect(),
             addr,
-            Some(sender_option.into()),
+            Default::default(),
+            autd3::r#async::AsyncSleeper::default(),
         )
         .await
     }
 
-    async fn open_impl(
+    pub async fn open_with_option<D: Into<Device>, F: IntoIterator<Item = D>, S>(
+        devices: F,
+        addr: SocketAddr,
+        sender_option: autd3::controller::SenderOption,
+        sleeper: S,
+    ) -> Result<Self, crate::error::AUTDProtoBufError>
+    where
+        S: autd3::r#async::controller::AsyncSleep,
+        Sleeper: for<'a> From<&'a S>,
+    {
+        Controller::open_impl(
+            devices.into_iter().map(|d| d.into()).collect(),
+            addr,
+            sender_option,
+            sleeper,
+        )
+        .await
+    }
+
+    async fn open_impl<S>(
         devices: Vec<Device>,
         addr: SocketAddr,
-        sender_option: Option<crate::SenderOption>,
-    ) -> Result<Self, crate::error::AUTDProtoBufError> {
+        option: autd3::controller::SenderOption,
+        sleeper: S,
+    ) -> Result<Self, crate::error::AUTDProtoBufError>
+    where
+        S: autd3::r#async::controller::AsyncSleep,
+        Sleeper: for<'a> From<&'a S>,
+    {
         let conn = tonic::transport::Endpoint::new(format!("http://{}", addr))?
             .connect()
             .await?;
@@ -93,14 +106,19 @@ impl Controller {
         let res = client
             .open(OpenRequestLightweight {
                 geometry: Some((&geometry).into()),
-                sender_option,
+                sender_option: Some(option.into()),
+                sleeper: Some((&sleeper).into()),
             })
             .await?
             .into_inner();
         if res.err {
             return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
         }
-        Ok(Self { client, geometry })
+        Ok(Self {
+            client,
+            geometry,
+            default_sender_option: option,
+        })
     }
 
     pub async fn firmware_version(
@@ -147,7 +165,8 @@ impl Controller {
             .client
             .send(tonic::Request::new(crate::SendRequestLightweight {
                 datagram: Some(datagram.into_lightweight()),
-                sender_option: None,
+                sender_option: Some(self.default_sender_option.into()),
+                sleeper: None,
             }))
             .await?
             .into_inner();
@@ -190,7 +209,8 @@ impl Controller {
             .group_send(tonic::Request::new(crate::GroupSendRequestLightweight {
                 keys,
                 datagrams,
-                sender_option: None,
+                sender_option: Some(self.default_sender_option.into()),
+                sleeper: None,
             }))
             .await?
             .into_inner();
@@ -212,23 +232,23 @@ impl Controller {
         Ok(())
     }
 
-    pub fn sender<S: autd3::r#async::controller::AsyncSleep>(
-        &mut self,
-        option: autd3::controller::SenderOption<S>,
-    ) -> Sender<S>
+    pub fn sender<S>(&mut self, option: autd3::controller::SenderOption, sleeper: S) -> Sender<S>
     where
-        SenderOption: for<'a> From<&'a autd3::controller::SenderOption<S>>,
+        S: autd3::r#async::controller::AsyncSleep,
+        Sleeper: for<'a> From<&'a S>,
     {
         Sender {
             controller: self,
             option,
+            sleeper,
         }
     }
 }
 
-impl<S: autd3::r#async::controller::AsyncSleep> Sender<'_, S>
+impl<S> Sender<'_, S>
 where
-    SenderOption: for<'a> From<&'a autd3::controller::SenderOption<S>>,
+    S: autd3::r#async::controller::AsyncSleep,
+    Sleeper: for<'a> From<&'a S>,
 {
     pub async fn send(
         &mut self,
@@ -239,7 +259,8 @@ where
             .client
             .send(tonic::Request::new(crate::SendRequestLightweight {
                 datagram: Some(datagram.into_lightweight()),
-                sender_option: Some((&self.option).into()),
+                sender_option: Some(self.option.into()),
+                sleeper: Some((&self.sleeper).into()),
             }))
             .await?
             .into_inner();
@@ -284,7 +305,8 @@ where
             .group_send(tonic::Request::new(crate::GroupSendRequestLightweight {
                 keys,
                 datagrams,
-                sender_option: Some((&self.option).into()),
+                sender_option: Some(self.option.into()),
+                sleeper: Some((&self.sleeper).into()),
             }))
             .await?
             .into_inner();
