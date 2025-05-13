@@ -6,6 +6,38 @@ edition = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
 
+[features]
+default = []
+nop = []
+async = ["autd3/async", "tokio"]
+simulator = ["autd3-link-simulator", "tracing-subscriber/env-filter"]
+twincat = ["autd3-link-twincat/local"]
+remote_twincat = ["autd3-link-twincat/remote"]
+lightweight = ["autd3-protobuf/lightweight", "autd3-protobuf/async-trait", "tokio"]
+lightweight_server = [
+    "autd3-protobuf/lightweight",
+    "autd3-link-twincat/local",
+    "autd3-link-twincat/async-trait",
+    "autd3-protobuf/async-trait",
+    "tonic",
+    "tokio/signal",
+]
+all = ["async", "twincat", "remote_twincat", "simulator"]
+
+[dependencies]
+anyhow = { workspace = true }
+autd3 = { workspace = true }
+autd3-gain-holo = { workspace = true }
+autd3-link-simulator = { workspace = true, optional = true, features = ["blocking"] }
+autd3-link-twincat = { workspace = true, optional = true }
+autd3-modulation-audio-file = { workspace = true }
+autd3-protobuf = { workspace = true, optional = true }
+color-print = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"], optional = true }
+tonic = { workspace = true, features = ["router"], optional = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["fmt"] }
+
 [[bin]]
 name = "nop"
 path = "src/nop.rs"
@@ -40,28 +72,3 @@ required-features = ["lightweight"]
 name = "lightweight_server"
 path = "src/lightweight_server.rs"
 required-features = ["lightweight_server"]
-
-[dependencies]
-anyhow = { workspace = true }
-autd3 = { workspace = true }
-autd3-gain-holo = { workspace = true }
-autd3-link-simulator = { workspace = true, optional = true, features = ["blocking"] }
-autd3-link-twincat = { workspace = true, optional = true }
-autd3-modulation-audio-file = { workspace = true }
-autd3-protobuf = { workspace = true, optional = true }
-color-print = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"], optional = true }
-tonic = { workspace = true, features = ["router"], optional = true }
-tracing-subscriber = { workspace = true, features = ["fmt"] }
-tracing = { workspace = true }
-
-[features]
-default = []
-nop = []
-async = ["autd3/async", "tokio"]
-simulator = ["autd3-link-simulator", "tracing-subscriber/env-filter"]
-twincat = ["autd3-link-twincat/local"]
-remote_twincat = ["autd3-link-twincat/remote"]
-lightweight = ["autd3-protobuf/lightweight", "autd3-protobuf/async-trait", "tokio"]
-lightweight_server = ["autd3-protobuf/lightweight", "autd3-link-twincat/local", "autd3-link-twincat/async-trait", "autd3-protobuf/async-trait", "tonic", "tokio/signal"]
-all = ["async", "twincat", "remote_twincat", "simulator"]

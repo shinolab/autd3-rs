@@ -9,6 +9,18 @@ edition = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
 
+[package.metadata.docs.rs]
+features = ["local", "remote", "async"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["local"]
+local = ["libloading"]
+remote = ["itertools", "cc", "tracing"]
+async = ["autd3-core/async"]
+async-trait = ["async", "autd3-core/async-trait"]
+all = ["local", "remote"]
+
 [dependencies]
 autd3-core = { workspace = true, features = ["link"] }
 itertools = { workspace = true, optional = true }
@@ -19,15 +31,3 @@ zerocopy = { workspace = true }
 
 [build-dependencies]
 cc = { workspace = true, optional = true }
-
-[features]
-default = ["local"]
-local = ["libloading"]
-remote = ["itertools", "cc", "tracing"]
-async = ["autd3-core/async"]
-async-trait = ["async", "autd3-core/async-trait"]
-all = ["local", "remote"]
-
-[package.metadata.docs.rs]
-features = ["local", "remote", "async"]
-rustdoc-args = ["--cfg", "docsrs"]

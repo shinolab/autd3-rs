@@ -9,9 +9,9 @@ edition = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
 
-[lib]
-proc-macro = true
-
 [dependencies]
 quote = { workspace = true, features = ["proc-macro"] }
 syn = { workspace = true, features = ["clone-impls", "printing", "derive", "parsing", "proc-macro"] }
+
+[lib]
+proc-macro = true

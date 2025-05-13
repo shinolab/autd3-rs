@@ -9,6 +9,9 @@ edition = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
 
+[features]
+default = []
+
 [dependencies]
 autd3-driver = { workspace = true }
 bitfield-struct = { workspace = true }
@@ -19,10 +22,7 @@ zerocopy = { workspace = true }
 [dev-dependencies]
 anyhow = { workspace = true }
 autd3-core = { workspace = true, features = ["derive"] }
-time = { workspace = true, features = ["macros"] }
 itertools = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
-
-[features]
-default = []
+time = { workspace = true, features = ["macros"] }
