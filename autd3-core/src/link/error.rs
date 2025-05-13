@@ -16,4 +16,20 @@ impl LinkError {
             msg: msg.to_string(),
         }
     }
+
+    /// Creates a new [`LinkError`] with a message indicating that the link is closed.
+    pub fn closed() -> LinkError {
+        LinkError::new("Link is closed")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn link_error_closed() {
+        let err = LinkError::closed();
+        assert_eq!("Link is closed", err.to_string());
+    }
 }
