@@ -18,8 +18,8 @@ message CloseResponse {}
 message GeometryResponse {}
 
 service Simulator {
-  rpc ConfigGeomety(Geometry) returns (GeometryResponse) {}
-  rpc UpdateGeomety(Geometry) returns (GeometryResponse) {}
+  rpc ConfigGeometry(Geometry) returns (GeometryResponse) {}
+  rpc UpdateGeometry(Geometry) returns (GeometryResponse) {}
   rpc SendData(TxRawData) returns (SendResponse) {}
   rpc ReadData(ReadRequest) returns (RxMessage) {}
   rpc Close(CloseRequest) returns (CloseResponse) {}

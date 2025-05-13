@@ -381,11 +381,11 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
         assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
     }
 
-    // segment 1: FcousSTM
+    // segment 1: FocusSTM
     {
         let freq_div = 0xFFFF;
 
-        let loop_behaviour = LoopBehavior::Infinite;
+        let loop_behavior = LoopBehavior::Infinite;
         let segment = Segment::S1;
         let transition_mode = TransitionMode::Ext;
         let d = WithLoopBehavior {
@@ -397,7 +397,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
             },
             segment,
             transition_mode: Some(transition_mode),
-            loop_behavior: loop_behaviour,
+            loop_behavior,
         };
         assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
     }
@@ -446,7 +446,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
         );
     }
 
-    // segment 0 to 1 immidiate
+    // segment 0 to 1 immediate
     {
         let d = WithLoopBehavior {
             inner: GainSTM {

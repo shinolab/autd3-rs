@@ -24,7 +24,7 @@ fn default_table(i: EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BI
 
 /// [`Datagram`] to configure pulse width encoder table.
 ///
-/// The pulse width encoder table is a table to determine the pulse width (or duty ratio) from the instensity.
+/// The pulse width encoder table is a table to determine the pulse width (or duty ratio) from the intensity.
 /// In the firmware, the intensity (0-255) is used as the index of the table to determine the pulse width (0-255).
 /// The period of the ultrasound is mapped to 512, and therefore, the ultrasound output is the ultrasound is maximum when the pulse width is 256 (50% in duty ratio).
 ///

@@ -3,11 +3,11 @@ use std::num::NonZeroU32;
 /// A utility to set the timer resolution on Windows.
 #[doc(hidden)]
 #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
-pub struct TimerResolutionGurad {
+pub struct TimerResolutionGuard {
     timer_resolution: Option<NonZeroU32>,
 }
 
-impl TimerResolutionGurad {
+impl TimerResolutionGuard {
     #[must_use]
     pub fn new(timer_resolution: Option<NonZeroU32>) -> Self {
         #[cfg(target_os = "windows")]
@@ -18,7 +18,7 @@ impl TimerResolutionGurad {
     }
 }
 
-impl Drop for TimerResolutionGurad {
+impl Drop for TimerResolutionGuard {
     fn drop(&mut self) {
         #[cfg(target_os = "windows")]
         self.timer_resolution.map(|timer_resolution| unsafe {

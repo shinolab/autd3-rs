@@ -92,7 +92,7 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
 
                     let datagram = datagram_map
                         .remove(&k)
-                        .ok_or(AUTDError::UnkownKey(format!("{:?}", k)))?;
+                        .ok_or(AUTDError::UnknownKey(format!("{:?}", k)))?;
                     datagram_option = DatagramOption {
                         timeout: datagram_option.timeout.max(datagram.option().timeout),
                         parallel_threshold: datagram_option
@@ -365,7 +365,7 @@ mod tests {
         let mut autd = create_controller(2).await?;
 
         assert_eq!(
-            Some(AUTDError::UnkownKey("1".to_owned())),
+            Some(AUTDError::UnknownKey("1".to_owned())),
             autd.group_send(|dev| Some(dev.idx()), HashMap::from([(0, Null {})]))
                 .await
                 .err()

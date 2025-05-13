@@ -321,7 +321,7 @@ fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
         );
     }
 
-    // segment 0 to 1 immidiate
+    // segment 0 to 1 immediate
     {
         let stm = WithLoopBehavior {
             inner: FociSTM {

@@ -17,7 +17,7 @@ mod modulation;
 mod phase_corr;
 mod pulse_width_encoder;
 mod reads_fpga_state;
-mod silecer;
+mod silencer;
 mod stm;
 mod sync;
 

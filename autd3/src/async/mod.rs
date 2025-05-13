@@ -1,4 +1,4 @@
-/// Asyncronous [`Controller`] module.
+/// Asynchronous [`Controller`] module.
 pub mod controller;
 
 pub use controller::AsyncSleeper;
