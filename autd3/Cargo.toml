@@ -9,37 +9,37 @@ edition = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
 
-[dependencies]
-autd3-firmware-emulator = { workspace = true }
-autd3-core = { workspace = true, features = ["link", "derive", "gain", "modulation"] }
-autd3-driver = { workspace = true }
-autd3-derive = { workspace = true }
-num = { workspace = true }
-thiserror = { workspace = true }
-tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = true }
-derive_more = { workspace = true }
-itertools = { workspace = true }
-tracing = { workspace = true }
-bit-vec = { workspace = true }
-zerocopy = { workspace = true }
-spin_sleep = { workspace = true }
-getset = { workspace = true }
-
-[target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_Security"] }
+[package.metadata.docs.rs]
+features = ["async"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
 async = ["tokio", "autd3-core/async"]
 async-trait = ["async", "autd3-core/async-trait"]
 
+[dependencies]
+autd3-core = { workspace = true, features = ["link", "derive", "gain", "modulation"] }
+autd3-derive = { workspace = true }
+autd3-driver = { workspace = true }
+autd3-firmware-emulator = { workspace = true }
+bit-vec = { workspace = true }
+derive_more = { workspace = true }
+getset = { workspace = true }
+itertools = { workspace = true }
+num = { workspace = true }
+spin_sleep = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = true }
+tracing = { workspace = true }
+zerocopy = { workspace = true }
+
 [dev-dependencies]
-rand = { workspace = true, features = ["thread_rng"] }
-tokio = { workspace = true, features = ["macros", "rt"] }
 anyhow = { workspace = true }
+rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt"] }
 tokio-test = { workspace = true }
 
-[package.metadata.docs.rs]
-features = ["async"]
-rustdoc-args = ["--cfg", "docsrs"]
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = ["Win32_Security"] }
