@@ -150,7 +150,7 @@ impl AsyncLink for Simulator {
             inner.update(geometry).await?;
             Ok(())
         } else {
-            Err(LinkError::new("Link is closed"))
+            Err(LinkError::closed())
         }
     }
 
@@ -158,7 +158,7 @@ impl AsyncLink for Simulator {
         if let Some(inner) = self.inner.as_mut() {
             Ok(inner.alloc_tx_buffer())
         } else {
-            Err(LinkError::new("Link is closed"))
+            Err(LinkError::closed())
         }
     }
 
@@ -167,7 +167,7 @@ impl AsyncLink for Simulator {
             inner.send(tx).await?;
             Ok(())
         } else {
-            Err(LinkError::new("Link is closed"))
+            Err(LinkError::closed())
         }
     }
 
@@ -176,7 +176,7 @@ impl AsyncLink for Simulator {
             inner.receive(rx).await?;
             Ok(())
         } else {
-            Err(LinkError::new("Link is closed"))
+            Err(LinkError::closed())
         }
     }
 
@@ -204,7 +204,7 @@ impl Link for Simulator {
     fn close(&mut self) -> Result<(), LinkError> {
         self.runtime
             .as_ref()
-            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+            .map_or(Err(LinkError::closed()), |runtime| {
                 runtime.block_on(async {
                     if let Some(mut inner) = self.inner.take() {
                         inner.close().await?;
@@ -217,7 +217,7 @@ impl Link for Simulator {
     fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
         self.runtime
             .as_ref()
-            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+            .map_or(Err(LinkError::closed()), |runtime| {
                 runtime.block_on(async {
                     if let Some(inner) = self.inner.as_mut() {
                         inner.update(geometry).await?;
@@ -230,12 +230,12 @@ impl Link for Simulator {
     fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
         self.runtime
             .as_ref()
-            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+            .map_or(Err(LinkError::closed()), |runtime| {
                 runtime.block_on(async {
                     if let Some(inner) = self.inner.as_mut() {
                         Ok(inner.alloc_tx_buffer())
                     } else {
-                        Err(LinkError::new("Link is closed"))
+                        Err(LinkError::closed())
                     }
                 })
             })
@@ -244,13 +244,13 @@ impl Link for Simulator {
     fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         self.runtime
             .as_ref()
-            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+            .map_or(Err(LinkError::closed()), |runtime| {
                 runtime.block_on(async {
                     if let Some(inner) = self.inner.as_mut() {
                         inner.send(tx).await?;
                         Ok(())
                     } else {
-                        Err(LinkError::new("Link is closed"))
+                        Err(LinkError::closed())
                     }
                 })
             })
@@ -259,13 +259,13 @@ impl Link for Simulator {
     fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         self.runtime
             .as_ref()
-            .map_or(Err(LinkError::new("Link is closed")), |runtime| {
+            .map_or(Err(LinkError::closed()), |runtime| {
                 runtime.block_on(async {
                     if let Some(inner) = self.inner.as_mut() {
                         inner.receive(rx).await?;
                         Ok(())
                     } else {
-                        Err(LinkError::new("Link is closed"))
+                        Err(LinkError::closed())
                     }
                 })
             })
