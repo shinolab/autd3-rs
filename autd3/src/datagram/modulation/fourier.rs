@@ -20,7 +20,7 @@ pub struct FourierOption {
     pub offset: u8,
 }
 
-/// `Moudlation` that is a sum of multiple [`Sine`].
+/// `Modulation` that is a sum of multiple [`Sine`].
 ///
 /// The modulation value is calculated as `⌊offset + scale_factor * (sum of components)⌋`, where `offset` and `scale_factor` can be set by the [`FourierOption`].
 #[derive(Modulation, Clone, PartialEq, Debug, Deref)]

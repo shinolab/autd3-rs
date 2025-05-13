@@ -118,7 +118,7 @@ mod tests {
     }
 
     #[test]
-    fn not_exisit() -> anyhow::Result<()> {
+    fn not_exists() -> anyhow::Result<()> {
         let m = Csv {
             path: Path::new("not_exists.csv"),
             sampling_config: 4000. * Hz,

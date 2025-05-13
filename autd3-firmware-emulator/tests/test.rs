@@ -94,7 +94,7 @@ fn send_invalid_msg_id() {
 }
 
 #[test]
-fn send_ingore_same_data() -> anyhow::Result<()> {
+fn send_ignore_same_data() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut sent_flags = vec![false; 1];

@@ -41,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
     let server = LightweightServer::new(TwinCAT::new);
 
     println!("Starting server...");
-    println!("Wainting client to connect...");
+    println!("Waiting client to connect...");
     println!("Press Ctrl-C to shutdown the server.");
     let shutdown_signal = shutdown_signal();
     Server::builder()

@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use autd3_core::utils::timer::TimerResolutionGurad;
+use autd3_core::utils::timer::TimerResolutionGuard;
 pub use spin_sleep::SpinSleeper;
 
 /// A trait for sleep operations.
@@ -34,7 +34,7 @@ impl Default for StdSleeper {
 
 impl Sleep for StdSleeper {
     fn sleep_until(&self, deadline: Instant) {
-        let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
+        let _timer_guard = TimerResolutionGuard::new(self.timer_resolution);
         std::thread::sleep(deadline - Instant::now());
     }
 }
@@ -124,7 +124,7 @@ mod win {
                     true
                 };
                 if !set_and_wait() {
-                    let _timer_guard = super::TimerResolutionGurad::new(Some(
+                    let _timer_guard = super::TimerResolutionGuard::new(Some(
                         std::num::NonZeroU32::new(1).unwrap(),
                     ));
                     std::thread::sleep(time);

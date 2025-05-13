@@ -100,7 +100,7 @@ mod tests {
     }
 
     #[test]
-    fn addsub() {
+    fn add_sub() {
         let utc = time::macros::datetime!(2000-01-01 0:0:0 UTC);
         let t = DcSysTime::from_utc(utc);
         assert!(t.is_ok());

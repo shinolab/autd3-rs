@@ -13,15 +13,15 @@ pub(crate) const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
 /// Transition mode of segment
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum TransitionMode {
-    /// Transites when the sampling index in the destination segment is 0.
+    /// Transition when the sampling index in the destination segment is 0.
     SyncIdx,
-    /// Transites when the system time is the specified time.
+    /// Transition when the system time is the specified time.
     SysTime(DcSysTime),
-    /// Transites when the specified GPIO pin is high.
+    /// Transition when the specified GPIO pin is high.
     GPIO(GPIOIn),
-    /// Transites to the next segment automatically when the data in the current segment is finished.
+    /// Transition to the next segment automatically when the data in the current segment is finished.
     Ext,
-    /// Transites immediately.
+    /// Transition immediately.
     Immediate,
 }
 

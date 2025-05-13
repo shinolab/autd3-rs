@@ -135,7 +135,7 @@ fn send_mod_unsafe(
 }
 
 #[test]
-fn swap_mod_segmemt_unsafe() -> anyhow::Result<()> {
+fn swap_mod_segment_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -245,7 +245,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         );
     }
 
-    // segment 0 to 1 immidiate
+    // segment 0 to 1 immediate
     {
         let d = WithLoopBehavior {
             inner: TestModulation {

@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use autd3_core::utils::timer::TimerResolutionGurad;
+use autd3_core::utils::timer::TimerResolutionGuard;
 pub use spin_sleep::SpinSleeper;
 
 use crate::controller::StdSleeper;
@@ -38,7 +38,7 @@ pub use internal::*;
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncSleep for StdSleeper {
     async fn sleep_until(&self, deadline: Instant) {
-        let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
+        let _timer_guard = TimerResolutionGuard::new(self.timer_resolution);
         std::thread::sleep(deadline - Instant::now());
     }
 }
@@ -68,7 +68,7 @@ impl Default for AsyncSleeper {
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncSleep for AsyncSleeper {
     async fn sleep_until(&self, deadline: Instant) {
-        let _timer_guard = TimerResolutionGurad::new(self.timer_resolution);
+        let _timer_guard = TimerResolutionGuard::new(self.timer_resolution);
         tokio::time::sleep_until(tokio::time::Instant::from_std(deadline)).await;
     }
 }
@@ -121,7 +121,7 @@ mod win {
                     true
                 };
                 if !set_and_wait() {
-                    let _timer_guard = super::TimerResolutionGurad::new(Some(
+                    let _timer_guard = super::TimerResolutionGuard::new(Some(
                         std::num::NonZeroU32::new(1).unwrap(),
                     ));
                     std::thread::sleep(time);
