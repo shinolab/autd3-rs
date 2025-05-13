@@ -79,13 +79,12 @@ impl SimulatorInner {
     }
 
     async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
-        let r = self
-            .client
-            .send_data(TxRawData::from(tx.as_slice()))
-            .await
-            .map_err(AUTDProtoBufError::from);
+        let tx_data = TxRawData::from(tx.as_slice());
         self.buffer_pool.return_buffer(tx);
-        r?;
+        self.client
+            .send_data(tx_data)
+            .await
+            .map_err(AUTDProtoBufError::from)?;
         Ok(())
     }
 
