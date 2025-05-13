@@ -9,19 +9,19 @@ edition = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
 
-[dependencies]
-hound = { workspace = true }
-autd3-core = { workspace = true, features = ["derive", "modulation"] }
-autd3-derive = { workspace = true }
-thiserror = { workspace = true }
-csv = { workspace = true }
-tracing = { workspace = true, features = ["attributes"] }
-
 [features]
 default = []
 async-trait = ["autd3-core/async-trait"]
 
+[dependencies]
+autd3-core = { workspace = true, features = ["derive", "modulation"] }
+autd3-derive = { workspace = true }
+csv = { workspace = true }
+hound = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true, features = ["attributes"] }
+
 [dev-dependencies]
 anyhow = { workspace = true }
-tempfile = { workspace = true }
 rstest = { workspace = true }
+tempfile = { workspace = true }

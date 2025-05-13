@@ -9,6 +9,14 @@ edition = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
 
+[package.metadata.docs.rs]
+features = []
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = []
+lightweight = []
+
 [dependencies]
 autd3-core = { workspace = true, features = ["gain", "defined", "geometry", "derive", "link", "ethercat", "modulation", "sampling_config"] }
 autd3-derive = { workspace = true }
@@ -18,24 +26,20 @@ derive_more = { workspace = true, features = ["deref_mut"] }
 getset = { workspace = true }
 itertools = { workspace = true, features = ["use_alloc"] }
 nalgebra = { workspace = true }
+num = { workspace = true }
 rayon = { workspace = true }
 seq-macro = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["macros", "std"] }
 tracing = { workspace = true, features = ["attributes"] }
 zerocopy = { workspace = true }
-num = { workspace = true }
 
 [dev-dependencies]
-rand = { workspace = true, features = ["thread_rng"] }
-approx = { workspace = true }
 anyhow = { workspace = true }
-rstest = { workspace = true }
+approx = { workspace = true }
 criterion = { workspace = true }
-
-[features]
-default = []
-lightweight = []
+rand = { workspace = true, features = ["thread_rng"] }
+rstest = { workspace = true }
 
 [lib]
 bench = false
@@ -44,7 +48,3 @@ bench = false
 name = "autd3-driver"
 path = "benches/gain.rs"
 harness = false
-
-[package.metadata.docs.rs]
-features = []
-rustdoc-args = ["--cfg", "docsrs"]
