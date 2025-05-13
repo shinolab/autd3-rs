@@ -15,7 +15,7 @@ pub enum AUTDError {
 
     /// Unknown group key.
     #[error("Unknown group key({0})")]
-    UnkownKey(String),
+    UnknownKey(String),
     /// Unused group key.
     #[error("Unused group key({0})")]
     UnusedKey(String),

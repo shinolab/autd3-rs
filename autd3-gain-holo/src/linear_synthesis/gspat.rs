@@ -32,7 +32,7 @@ impl<D: Directivity> Default for GSPATOption<D> {
     }
 }
 
-/// Gershberg-Saxon for Phased Arrays of Transducers
+/// Gerchberg-Saxon for Phased Arrays of Transducers
 ///
 /// See [Plasencia, et al., 2020](https://dl.acm.org/doi/10.1145/3386569.3392492) for more details.
 #[derive(Gain, Debug)]

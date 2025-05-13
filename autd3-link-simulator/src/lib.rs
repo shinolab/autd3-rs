@@ -33,7 +33,7 @@ impl SimulatorInner {
         let mut client = simulator_client::SimulatorClient::new(conn);
 
         client
-            .config_geomety(Geometry::from(geometry))
+            .config_geometry(Geometry::from(geometry))
             .await
             .map_err(|e| {
                 tracing::error!("Failed to configure simulator geometry: {}", e);
@@ -65,7 +65,7 @@ impl SimulatorInner {
         }
         self.last_geometry_version = geometry.version();
         self.client
-            .update_geomety(Geometry::from(geometry))
+            .update_geometry(Geometry::from(geometry))
             .await
             .map_err(|e| {
                 tracing::error!("Failed to update geometry: {}", e);

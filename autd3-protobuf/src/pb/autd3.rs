@@ -151,7 +151,7 @@ pub mod simulator_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        pub async fn config_geomety(
+        pub async fn config_geometry(
             &mut self,
             request: impl tonic::IntoRequest<super::Geometry>,
         ) -> std::result::Result<tonic::Response<super::GeometryResponse>, tonic::Status> {
@@ -159,13 +159,13 @@ pub mod simulator_client {
                 tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/autd3.Simulator/ConfigGeomety");
+            let path = http::uri::PathAndQuery::from_static("/autd3.Simulator/ConfigGeometry");
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.Simulator", "ConfigGeomety"));
+                .insert(GrpcMethod::new("autd3.Simulator", "ConfigGeometry"));
             self.inner.unary(req, path, codec).await
         }
-        pub async fn update_geomety(
+        pub async fn update_geometry(
             &mut self,
             request: impl tonic::IntoRequest<super::Geometry>,
         ) -> std::result::Result<tonic::Response<super::GeometryResponse>, tonic::Status> {
@@ -173,10 +173,10 @@ pub mod simulator_client {
                 tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/autd3.Simulator/UpdateGeomety");
+            let path = http::uri::PathAndQuery::from_static("/autd3.Simulator/UpdateGeometry");
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("autd3.Simulator", "UpdateGeomety"));
+                .insert(GrpcMethod::new("autd3.Simulator", "UpdateGeometry"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn send_data(
@@ -356,11 +356,11 @@ pub mod simulator_server {
     /// Generated trait containing gRPC methods that should be implemented for use with SimulatorServer.
     #[async_trait]
     pub trait Simulator: std::marker::Send + std::marker::Sync + 'static {
-        async fn config_geomety(
+        async fn config_geometry(
             &self,
             request: tonic::Request<super::Geometry>,
         ) -> std::result::Result<tonic::Response<super::GeometryResponse>, tonic::Status>;
-        async fn update_geomety(
+        async fn update_geometry(
             &self,
             request: tonic::Request<super::Geometry>,
         ) -> std::result::Result<tonic::Response<super::GeometryResponse>, tonic::Status>;
@@ -450,10 +450,10 @@ pub mod simulator_server {
         }
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             match req.uri().path() {
-                "/autd3.Simulator/ConfigGeomety" => {
+                "/autd3.Simulator/ConfigGeometry" => {
                     #[allow(non_camel_case_types)]
-                    struct ConfigGeometySvc<T: Simulator>(pub Arc<T>);
-                    impl<T: Simulator> tonic::server::UnaryService<super::Geometry> for ConfigGeometySvc<T> {
+                    struct ConfigGeometrySvc<T: Simulator>(pub Arc<T>);
+                    impl<T: Simulator> tonic::server::UnaryService<super::Geometry> for ConfigGeometrySvc<T> {
                         type Response = super::GeometryResponse;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
@@ -462,7 +462,7 @@ pub mod simulator_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as Simulator>::config_geomety(&inner, request).await
+                                <T as Simulator>::config_geometry(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -473,7 +473,7 @@ pub mod simulator_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = ConfigGeometySvc(inner);
+                        let method = ConfigGeometrySvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
@@ -489,10 +489,10 @@ pub mod simulator_server {
                     };
                     Box::pin(fut)
                 }
-                "/autd3.Simulator/UpdateGeomety" => {
+                "/autd3.Simulator/UpdateGeometry" => {
                     #[allow(non_camel_case_types)]
-                    struct UpdateGeometySvc<T: Simulator>(pub Arc<T>);
-                    impl<T: Simulator> tonic::server::UnaryService<super::Geometry> for UpdateGeometySvc<T> {
+                    struct UpdateGeometrySvc<T: Simulator>(pub Arc<T>);
+                    impl<T: Simulator> tonic::server::UnaryService<super::Geometry> for UpdateGeometrySvc<T> {
                         type Response = super::GeometryResponse;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
@@ -501,7 +501,7 @@ pub mod simulator_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                <T as Simulator>::update_geomety(&inner, request).await
+                                <T as Simulator>::update_geometry(&inner, request).await
                             };
                             Box::pin(fut)
                         }
@@ -512,7 +512,7 @@ pub mod simulator_server {
                     let max_encoding_message_size = self.max_encoding_message_size;
                     let inner = self.inner.clone();
                     let fut = async move {
-                        let method = UpdateGeometySvc(inner);
+                        let method = UpdateGeometrySvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
