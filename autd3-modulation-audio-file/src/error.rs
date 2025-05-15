@@ -32,7 +32,7 @@ mod tests {
 
     #[test]
     fn test_audio_file_error() {
-        let e = AudioFileError::Io(std::io::Error::new(std::io::ErrorKind::Other, "test"));
+        let e = AudioFileError::Io(std::io::Error::other("test"));
         assert_eq!(e.to_string(), "test");
         assert_eq!(
             format!("{:?}", e),
