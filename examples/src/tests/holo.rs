@@ -55,7 +55,7 @@ pub fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
         ),
         (
             "Greedy",
-            Greedy::<Sphere> {
+            Greedy {
                 foci: foci.to_vec(),
                 option: Default::default(),
             }
