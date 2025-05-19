@@ -3,7 +3,10 @@ use std::{collections::HashMap, num::NonZeroU8};
 use crate::{Amplitude, Complex, constraint::EmissionConstraint};
 
 use autd3_core::{
-    acoustics::{directivity::Directivity, propagate},
+    acoustics::{
+        directivity::{Directivity, Sphere},
+        propagate,
+    },
     defined::PI,
     derive::*,
     geometry::{Point3, UnitVector3},
@@ -13,22 +16,41 @@ use derive_more::Debug;
 use nalgebra::ComplexField;
 use rand::prelude::*;
 
+/// The trait for the objective function of [`Greedy`].
+pub trait GreedyObjectiveFn: std::fmt::Debug + Clone + Copy + PartialEq {
+    /// The objective function for the greedy algorithm.
+    fn objective_func(c: Complex, a: Amplitude) -> f32;
+}
+
+/// The objective function for [`Greedy`] that minimizes the absolute value of the difference
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct AbsGreedyObjectiveFn;
+
+impl GreedyObjectiveFn for AbsGreedyObjectiveFn {
+    fn objective_func(c: Complex, a: Amplitude) -> f32 {
+        (a.value - c.abs()).abs()
+    }
+}
+
 /// The option of [`Greedy`].
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct GreedyOption<D: Directivity> {
+pub struct GreedyOption<D: Directivity, F: GreedyObjectiveFn> {
     /// The quantization levels of the phase.
     pub phase_quantization_levels: NonZeroU8,
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
+    /// The objective function.
+    pub objective_func: F,
     #[doc(hidden)]
     pub __phantom: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity> Default for GreedyOption<D> {
+impl Default for GreedyOption<Sphere, AbsGreedyObjectiveFn> {
     fn default() -> Self {
         Self {
             phase_quantization_levels: NonZeroU8::new(16).unwrap(),
             constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+            objective_func: AbsGreedyObjectiveFn,
             __phantom: std::marker::PhantomData,
         }
     }
@@ -39,19 +61,19 @@ impl<D: Directivity> Default for GreedyOption<D> {
 /// [`Greedy`] is based on the method of optimizing by brute-force search and greedy algorithm by discretizing the phase.
 /// See [Suzuki, et al., 2021](https://ieeexplore.ieee.org/document/9419757) for more details.
 #[derive(Gain, Debug)]
-pub struct Greedy<D: Directivity> {
+pub struct Greedy<D: Directivity, F: GreedyObjectiveFn> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
     /// The opinion of the Gain.
-    pub option: GreedyOption<D>,
+    pub option: GreedyOption<D, F>,
 }
 
-impl<D: Directivity> Greedy<D> {
+impl<D: Directivity, F: GreedyObjectiveFn> Greedy<D, F> {
     /// Create a new [`Greedy`].
     #[must_use]
     pub fn new(
         foci: impl IntoIterator<Item = (Point3, Amplitude)>,
-        option: GreedyOption<D>,
+        option: GreedyOption<D, F>,
     ) -> Self {
         Self {
             foci: foci.into_iter().collect(),
@@ -60,7 +82,7 @@ impl<D: Directivity> Greedy<D> {
     }
 }
 
-impl<D: Directivity> Greedy<D> {
+impl<D: Directivity, F: GreedyObjectiveFn> Greedy<D, F> {
     fn transfer_foci(
         trans: &Transducer,
         wavenumber: f32,
@@ -98,7 +120,7 @@ impl GainCalculatorGenerator for Generator {
     }
 }
 
-impl<D: Directivity> Gain for Greedy<D> {
+impl<D: Directivity, F: GreedyObjectiveFn> Gain for Greedy<D, F> {
     type G = Generator;
 
     // GRCOV_EXCL_START
@@ -175,7 +197,7 @@ impl<D: Directivity> Gain for Greedy<D> {
                             .zip(amps.iter())
                             .zip(tmp.iter())
                             .fold(0., |acc, ((c, a), f)| {
-                                acc + (a.value - (f * phase + c).abs()).abs()
+                                acc + F::objective_func(f * phase + c, *a)
                             });
                         if v < acc.1 { (phase, v) } else { acc }
                     });
@@ -194,7 +216,6 @@ impl<D: Directivity> Gain for Greedy<D> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::acoustics::directivity::Sphere;
 
     use crate::tests::create_geometry;
 
@@ -204,7 +225,7 @@ mod tests {
     fn test_greedy_all() {
         let geometry = create_geometry(1, 1);
 
-        let g = Greedy::<Sphere>::new(
+        let g = Greedy::new(
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             GreedyOption::default(),
         );
@@ -225,7 +246,7 @@ mod tests {
         let mut geometry = create_geometry(2, 1);
         geometry[0].enable = false;
 
-        let g = Greedy::<Sphere> {
+        let g = Greedy {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             option: GreedyOption::default(),
         };
@@ -247,7 +268,7 @@ mod tests {
     fn test_greedy_filtered() {
         let geometry = create_geometry(1, 1);
 
-        let g = Greedy::<Sphere> {
+        let g = Greedy {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             option: GreedyOption::default(),
         };
@@ -273,7 +294,7 @@ mod tests {
         let mut geometry = create_geometry(2, 1);
         geometry[0].enable = false;
 
-        let g = Greedy::<Sphere> {
+        let g = Greedy {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             option: GreedyOption::default(),
         };
