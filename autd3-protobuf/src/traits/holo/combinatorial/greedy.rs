@@ -7,9 +7,10 @@ use crate::{
     traits::{FromMessage, driver::datagram::gain::IntoLightweightGain},
 };
 use autd3_core::acoustics::directivity::Sphere;
+use autd3_gain_holo::AbsGreedyObjectiveFn;
 
-impl From<autd3_gain_holo::GreedyOption<Sphere>> for GreedyOption {
-    fn from(value: autd3_gain_holo::GreedyOption<Sphere>) -> Self {
+impl From<autd3_gain_holo::GreedyOption<Sphere, AbsGreedyObjectiveFn>> for GreedyOption {
+    fn from(value: autd3_gain_holo::GreedyOption<Sphere, AbsGreedyObjectiveFn>) -> Self {
         Self {
             phase_quantization_levels: Some(value.phase_quantization_levels.get() as _),
             constraint: Some(value.constraint.into()),
@@ -17,9 +18,9 @@ impl From<autd3_gain_holo::GreedyOption<Sphere>> for GreedyOption {
     }
 }
 
-impl FromMessage<GreedyOption> for autd3_gain_holo::GreedyOption<Sphere> {
+impl FromMessage<GreedyOption> for autd3_gain_holo::GreedyOption<Sphere, AbsGreedyObjectiveFn> {
     fn from_msg(msg: GreedyOption) -> Result<Self, AUTDProtoBufError> {
-        let default = autd3_gain_holo::GreedyOption::<Sphere>::default();
+        let default = autd3_gain_holo::GreedyOption::<Sphere, AbsGreedyObjectiveFn>::default();
         Ok(Self {
             phase_quantization_levels: msg
                 .phase_quantization_levels
@@ -33,12 +34,13 @@ impl FromMessage<GreedyOption> for autd3_gain_holo::GreedyOption<Sphere> {
                 .map(autd3_gain_holo::EmissionConstraint::from_msg)
                 .transpose()?
                 .unwrap_or(default.constraint),
+            objective_func: AbsGreedyObjectiveFn,
             __phantom: std::marker::PhantomData,
         })
     }
 }
 
-impl IntoLightweightGain for autd3_gain_holo::Greedy<Sphere> {
+impl IntoLightweightGain for autd3_gain_holo::Greedy<Sphere, AbsGreedyObjectiveFn> {
     fn into_lightweight(self) -> Gain {
         Gain {
             gain: Some(gain::Gain::Greedy(Greedy {
@@ -49,7 +51,7 @@ impl IntoLightweightGain for autd3_gain_holo::Greedy<Sphere> {
     }
 }
 
-impl FromMessage<Greedy> for autd3_gain_holo::Greedy<Sphere> {
+impl FromMessage<Greedy> for autd3_gain_holo::Greedy<Sphere, AbsGreedyObjectiveFn> {
     fn from_msg(msg: Greedy) -> Result<Self, AUTDProtoBufError> {
         Ok(Self {
             foci: msg
