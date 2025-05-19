@@ -1,3 +1,5 @@
+use std::hint::black_box;
+
 use autd3_core::{derive::*, link::MsgId};
 use autd3_driver::{
     autd3_device::AUTD3,
@@ -11,7 +13,7 @@ use autd3_driver::{
     geometry::{Device, Geometry, Point3, Transducer},
 };
 
-use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use zerocopy::FromZeros;
 
 pub fn generate_geometry(size: usize) -> Geometry {
