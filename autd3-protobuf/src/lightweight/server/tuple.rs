@@ -30,7 +30,12 @@ impl OperationGenerator for OperationGeneratorTuple {
     type O2 = BoxedOperation;
 
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        (self.g1.generate(device).0, self.g2.generate(device).0)
+        match (self.g1.generate(device), self.g2.generate(device)) {
+            (Some((o1, _)), Some((o2, _))) => {
+                Some((BoxedOperation::new(o1), BoxedOperation::new(o2)))
+            }
+            _ => None,
+        }
     }
 }
 
