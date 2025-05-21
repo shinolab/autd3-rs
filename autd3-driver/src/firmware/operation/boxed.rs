@@ -61,7 +61,7 @@ impl Operation for BoxedOperation {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use autd3_core::{
         derive::Transducer,
         geometry::{Point3, UnitQuaternion},
@@ -71,10 +71,10 @@ mod tests {
     use super::*;
 
     #[derive(Clone, Copy)]
-    struct TestOp {
-        req_size: usize,
-        pack_size: usize,
-        done: bool,
+    pub struct TestOp {
+        pub req_size: usize,
+        pub pack_size: usize,
+        pub done: bool,
     }
 
     impl Operation for TestOp {

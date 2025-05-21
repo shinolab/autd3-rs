@@ -1,4 +1,4 @@
-mod boxed;
+pub(crate) mod boxed;
 mod clear;
 mod cpu_gpio_out;
 mod debug;
@@ -79,7 +79,7 @@ pub trait OperationGenerator {
     type O1: Operation;
     type O2: Operation;
     #[must_use]
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2);
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)>;
 }
 
 #[doc(hidden)]
@@ -90,7 +90,7 @@ impl OperationHandler {
     pub fn generate<G: OperationGenerator>(
         mut generator: G,
         geometry: &Geometry,
-    ) -> Vec<(G::O1, G::O2)> {
+    ) -> Vec<Option<(G::O1, G::O2)>> {
         geometry
             .devices()
             .map(|dev| generator.generate(dev))
@@ -98,17 +98,20 @@ impl OperationHandler {
     }
 
     #[must_use]
-    pub fn is_done<O1, O2>(operations: &[(O1, O2)]) -> bool
+    pub fn is_done<O1, O2>(operations: &[Option<(O1, O2)>]) -> bool
     where
         O1: Operation,
         O2: Operation,
     {
-        operations.iter().all(|op| op.0.is_done() && op.1.is_done())
+        operations.iter().all(|op| {
+            op.as_ref()
+                .is_none_or(|(op1, op2)| op1.is_done() && op2.is_done())
+        })
     }
 
     pub fn pack<O1, O2>(
         msg_id: MsgId,
-        operations: &mut [(O1, O2)],
+        operations: &mut [Option<(O1, O2)>],
         geometry: &Geometry,
         sent_flags: &mut [bool],
         tx: &mut [TxMessage],
@@ -131,8 +134,12 @@ impl OperationHandler {
                 .zip(operations.iter_mut())
                 .par_bridge()
                 .try_for_each(|((dev, sent, tx), op)| {
-                    let (op1, op2) = op;
-                    Self::pack_op2(msg_id, op1, op2, dev, sent, tx)
+                    if let Some((op1, op2)) = op {
+                        Self::pack_op2(msg_id, op1, op2, dev, sent, tx)
+                    } else {
+                        *sent = false;
+                        Ok(())
+                    }
                 })
         } else {
             geometry
@@ -145,8 +152,12 @@ impl OperationHandler {
                 })
                 .zip(operations.iter_mut())
                 .try_for_each(|((dev, sent, tx), op)| {
-                    let (op1, op2) = op;
-                    Self::pack_op2(msg_id, op1, op2, dev, sent, tx)
+                    if let Some((op1, op2)) = op {
+                        Self::pack_op2(msg_id, op1, op2, dev, sent, tx)
+                    } else {
+                        *sent = false;
+                        Ok(())
+                    }
                 })
         }
     }
@@ -254,7 +265,7 @@ pub(crate) mod tests {
     #[test]
     #[case::serial(false)]
     #[case::parallel(true)]
-    fn test(#[case] parallel: bool) {
+    fn operation_handler(#[case] parallel: bool) {
         use crate::geometry::Point3;
 
         let geometry = Geometry::new(vec![Device::new(
@@ -262,7 +273,7 @@ pub(crate) mod tests {
             vec![Transducer::new(Point3::origin())],
         )]);
 
-        let mut op = vec![(
+        let mut op = vec![Some((
             OperationMock {
                 pack_size: 1,
                 required_size: 2,
@@ -275,7 +286,7 @@ pub(crate) mod tests {
                 num_frames: 3,
                 broken: false,
             },
-        )];
+        ))];
 
         assert!(!OperationHandler::is_done(&op));
 
@@ -294,12 +305,13 @@ pub(crate) mod tests {
             )
             .is_ok()
         );
-        assert_eq!(op[0].0.num_frames, 2);
-        assert_eq!(op[0].1.num_frames, 2);
+        assert_eq!(op[0].as_ref().unwrap().0.num_frames, 2);
+        assert_eq!(op[0].as_ref().unwrap().1.num_frames, 2);
         assert!(sent_flags[0]);
         assert!(!OperationHandler::is_done(&op));
 
-        op[0].0.pack_size = EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].1.required_size;
+        op[0].as_mut().unwrap().0.pack_size =
+            EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].as_ref().unwrap().1.required_size;
         assert!(
             OperationHandler::pack(
                 msg_id,
@@ -311,12 +323,14 @@ pub(crate) mod tests {
             )
             .is_ok()
         );
-        assert_eq!(op[0].0.num_frames, 1);
-        assert_eq!(op[0].1.num_frames, 1);
+        assert_eq!(op[0].as_ref().unwrap().0.num_frames, 1);
+        assert_eq!(op[0].as_ref().unwrap().1.num_frames, 1);
         assert!(sent_flags[0]);
         assert!(!OperationHandler::is_done(&op));
 
-        op[0].0.pack_size = EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].1.required_size + 1;
+        op[0].as_mut().unwrap().0.pack_size =
+            EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].as_ref().unwrap().1.required_size
+                + 1;
         assert!(
             OperationHandler::pack(
                 msg_id,
@@ -328,8 +342,8 @@ pub(crate) mod tests {
             )
             .is_ok()
         );
-        assert_eq!(op[0].0.num_frames, 0);
-        assert_eq!(op[0].1.num_frames, 1);
+        assert_eq!(op[0].as_ref().unwrap().0.num_frames, 0);
+        assert_eq!(op[0].as_ref().unwrap().1.num_frames, 1);
         assert!(sent_flags[0]);
         assert!(!OperationHandler::is_done(&op));
 
@@ -344,9 +358,44 @@ pub(crate) mod tests {
             )
             .is_ok()
         );
-        assert_eq!(op[0].0.num_frames, 0);
-        assert_eq!(op[0].1.num_frames, 0);
+        assert_eq!(op[0].as_ref().unwrap().0.num_frames, 0);
+        assert_eq!(op[0].as_ref().unwrap().1.num_frames, 0);
         assert!(sent_flags[0]);
+        assert!(OperationHandler::is_done(&op));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::serial(false)]
+    #[case::parallel(true)]
+    fn operation_handler_none(#[case] parallel: bool) {
+        use crate::geometry::Point3;
+
+        let geometry = Geometry::new(vec![Device::new(
+            UnitQuaternion::identity(),
+            vec![Transducer::new(Point3::origin())],
+        )]);
+
+        let mut op: Vec<Option<(OperationMock, OperationMock)>> = vec![None, None];
+
+        assert!(OperationHandler::is_done(&op));
+
+        let msg_id = MsgId::new(0);
+        let mut sent_flags = vec![false; 1];
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
+
+        assert!(
+            OperationHandler::pack(
+                msg_id,
+                &mut op,
+                &geometry,
+                &mut sent_flags,
+                &mut tx,
+                parallel
+            )
+            .is_ok()
+        );
+        assert!(!sent_flags[0]);
         assert!(OperationHandler::is_done(&op));
     }
 
@@ -357,7 +406,7 @@ pub(crate) mod tests {
             vec![Transducer::new(Point3::origin())],
         )]);
 
-        let mut op = vec![(
+        let mut op = vec![Some((
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
@@ -370,10 +419,10 @@ pub(crate) mod tests {
                 num_frames: 0,
                 broken: false,
             },
-        )];
+        ))];
 
-        assert!(!op[0].0.is_done());
-        assert!(op[0].1.is_done());
+        assert!(!op[0].as_ref().unwrap().0.is_done());
+        assert!(op[0].as_ref().unwrap().1.is_done());
         assert!(!OperationHandler::is_done(&op));
 
         let msg_id = MsgId::new(0);
@@ -384,8 +433,8 @@ pub(crate) mod tests {
             OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)
                 .is_ok()
         );
-        assert!(op[0].0.is_done());
-        assert!(op[0].1.is_done());
+        assert!(op[0].as_ref().unwrap().0.is_done());
+        assert!(op[0].as_ref().unwrap().1.is_done());
         assert!(sent_flags[0]);
         assert!(OperationHandler::is_done(&op));
     }
@@ -397,7 +446,7 @@ pub(crate) mod tests {
             vec![Transducer::new(Point3::origin())],
         )]);
 
-        let mut op = vec![(
+        let mut op = vec![Some((
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
@@ -410,10 +459,10 @@ pub(crate) mod tests {
                 num_frames: 1,
                 broken: false,
             },
-        )];
+        ))];
 
-        assert!(op[0].0.is_done());
-        assert!(!op[0].1.is_done());
+        assert!(op[0].as_ref().unwrap().0.is_done());
+        assert!(!op[0].as_ref().unwrap().1.is_done());
         assert!(!OperationHandler::is_done(&op));
 
         let msg_id = MsgId::new(0);
@@ -424,8 +473,8 @@ pub(crate) mod tests {
             OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)
                 .is_ok()
         );
-        assert!(op[0].0.is_done());
-        assert!(op[0].1.is_done());
+        assert!(op[0].as_ref().unwrap().0.is_done());
+        assert!(op[0].as_ref().unwrap().1.is_done());
         assert!(sent_flags[0]);
         assert!(OperationHandler::is_done(&op));
     }
@@ -437,7 +486,7 @@ pub(crate) mod tests {
             vec![Transducer::new(Point3::origin())],
         )]);
 
-        let mut op = vec![(
+        let mut op = vec![Some((
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
@@ -450,7 +499,7 @@ pub(crate) mod tests {
                 num_frames: 1,
                 broken: false,
             },
-        )];
+        ))];
 
         let msg_id = MsgId::new(0);
         let mut sent_flags = vec![false; 1];
@@ -461,26 +510,26 @@ pub(crate) mod tests {
             OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)
         );
 
-        op[0].0.broken = false;
-        op[0].1.broken = true;
+        op[0].as_mut().unwrap().0.broken = false;
+        op[0].as_mut().unwrap().1.broken = true;
 
         assert_eq!(
             Err(AUTDDriverError::NotSupportedTag),
             OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)
         );
 
-        op[0].0.num_frames = 0;
+        op[0].as_mut().unwrap().0.num_frames = 0;
 
         assert_eq!(
             Err(AUTDDriverError::NotSupportedTag),
             OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)
         );
 
-        op[0].0.broken = true;
-        op[0].1.broken = false;
+        op[0].as_mut().unwrap().0.broken = true;
+        op[0].as_mut().unwrap().1.broken = false;
 
-        op[0].0.num_frames = 1;
-        op[0].1.num_frames = 0;
+        op[0].as_mut().unwrap().0.num_frames = 1;
+        op[0].as_mut().unwrap().1.num_frames = 0;
 
         assert_eq!(
             Err(AUTDDriverError::NotSupportedTag),
@@ -495,7 +544,7 @@ pub(crate) mod tests {
             vec![Transducer::new(Point3::origin())],
         )]);
 
-        let mut op = vec![(
+        let mut op = vec![Some((
             OperationMock {
                 pack_size: 0,
                 required_size: 0,
@@ -508,7 +557,7 @@ pub(crate) mod tests {
                 num_frames: 0,
                 broken: false,
             },
-        )];
+        ))];
 
         assert!(OperationHandler::is_done(&op));
 

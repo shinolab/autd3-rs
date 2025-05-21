@@ -86,10 +86,8 @@ where
     type O1 = <D::G as OperationGenerator>::O1;
     type O2 = <D::G as OperationGenerator>::O2;
 
-    fn generate(&mut self, dev: &Device) -> (Self::O1, Self::O2) {
-        self.operations[dev.idx()]
-            .take()
-            .expect("Group operation for is not generated")
+    fn generate(&mut self, dev: &Device) -> Option<(Self::O1, Self::O2)> {
+        self.operations[dev.idx()].take()
     }
 }
 
@@ -127,7 +125,7 @@ where
 
         let enable_store = geometry.iter().map(|dev| dev.enable).collect::<Vec<_>>();
 
-        let mut operations: Vec<_> = geometry.devices().map(|_| None).collect();
+        let mut operations: Vec<_> = geometry.iter().map(|_| None).collect();
 
         filters
             .into_iter()
@@ -157,12 +155,11 @@ where
 
                     operations
                         .iter_mut()
-                        .zip(geometry.devices())
-                        .filter(|(_, dev)| filter[dev.idx()])
+                        .zip(geometry.iter())
+                        .filter(|(_, dev)| dev.enable && filter[dev.idx()])
                         .for_each(|(op, dev)| {
                             tracing::debug!("Generate operation for device {}", dev.idx());
-                            let (op1, op2) = generator.generate(dev);
-                            *op = Some((op1, op2));
+                            *op = generator.generate(dev);
                         });
                     Ok(())
                 }
@@ -205,9 +202,89 @@ mod tests {
         type O1 = NullOp;
         type O2 = NullOp;
 
-        fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-            (NullOp, NullOp)
+        fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
+            Some((NullOp, NullOp))
         }
+    }
+
+    #[test]
+    fn group() -> anyhow::Result<()> {
+        #[derive(Debug)]
+        pub struct TestDatagram;
+
+        impl Datagram for TestDatagram {
+            type G = NullOperationGenerator;
+            type Error = Infallible;
+
+            fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+                Ok(NullOperationGenerator)
+            }
+        }
+
+        let mut geometry = create_geometry(3, 1);
+        geometry[0].enable = false;
+
+        let mut g = Group::new(
+            |dev| match dev.idx() {
+                0 => Some(0), // GRCOV_EXCL_LINE
+                1 => Some(1),
+                _ => None,
+            },
+            HashMap::from([(1, TestDatagram)]),
+        )
+        .operation_generator(&mut geometry)?;
+
+        assert!(g.generate(&geometry[0]).is_none());
+        assert!(g.generate(&geometry[1]).is_some());
+        assert!(g.generate(&geometry[2]).is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn group_option() -> anyhow::Result<()> {
+        #[derive(Debug)]
+        pub struct TestDatagram {
+            pub option: DatagramOption,
+        }
+
+        impl Datagram for TestDatagram {
+            type G = NullOperationGenerator;
+            type Error = Infallible;
+
+            // GRCOV_EXCL_START
+            fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+                Ok(NullOperationGenerator)
+            }
+            // GRCOV_EXCL_STOP
+
+            fn option(&self) -> DatagramOption {
+                self.option
+            }
+        }
+
+        let option1 = DatagramOption {
+            timeout: Duration::from_secs(1),
+            parallel_threshold: 10,
+        };
+        let option2 = DatagramOption {
+            timeout: Duration::from_secs(2),
+            parallel_threshold: 5,
+        };
+
+        assert_eq!(
+            option1.merge(option2),
+            Group::new(
+                |dev| Some(dev.idx()),
+                HashMap::from([
+                    (0, TestDatagram { option: option1 }),
+                    (1, TestDatagram { option: option2 }),
+                ]),
+            )
+            .option()
+        );
+
+        Ok(())
     }
 
     #[test]

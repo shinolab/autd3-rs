@@ -144,8 +144,8 @@ impl<T: GainSTMIteratorGenerator> OperationGenerator for GainSTMOperationGenerat
     type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator>::Calculator, T::Iterator>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((
             Self::O1::new(
                 self.g.generate(device),
                 self.size,
@@ -156,7 +156,7 @@ impl<T: GainSTMIteratorGenerator> OperationGenerator for GainSTMOperationGenerat
                 self.transition_mode,
             ),
             Self::O2 {},
-        )
+        ))
     }
 }
 

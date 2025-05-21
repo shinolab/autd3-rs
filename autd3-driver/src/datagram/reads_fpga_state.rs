@@ -28,8 +28,8 @@ impl<F: Fn(&Device) -> bool> OperationGenerator for ReadsFPGAStateOpGenerator<F>
     type O1 = ReadsFPGAStateOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new((self.f)(device)), Self::O2 {})
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((Self::O1::new((self.f)(device)), Self::O2 {}))
     }
 }
 

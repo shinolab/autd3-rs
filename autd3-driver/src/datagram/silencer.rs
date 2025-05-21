@@ -141,11 +141,11 @@ impl OperationGenerator for SilencerOpGenerator<FixedUpdateRate> {
     type O1 = SilencerFixedUpdateRateOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (
+    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((
             Self::O1::new(self.config.intensity, self.config.phase),
             Self::O2 {},
-        )
+        ))
     }
 }
 
@@ -153,15 +153,15 @@ impl OperationGenerator for SilencerOpGenerator<FixedCompletionTime> {
     type O1 = crate::firmware::operation::SilencerFixedCompletionTimeOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (
+    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((
             Self::O1::new(
                 self.config.intensity,
                 self.config.phase,
                 self.config.strict_mode,
             ),
             Self::O2 {},
-        )
+        ))
     }
 }
 
@@ -169,15 +169,15 @@ impl OperationGenerator for SilencerOpGenerator<FixedCompletionSteps> {
     type O1 = SilencerFixedCompletionStepsOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (
+    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((
             Self::O1::new(
                 self.config.intensity,
                 self.config.phase,
                 self.config.strict_mode,
             ),
             Self::O2 {},
-        )
+        ))
     }
 }
 

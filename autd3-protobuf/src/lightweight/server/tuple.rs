@@ -29,7 +29,7 @@ impl OperationGenerator for OperationGeneratorTuple {
     type O1 = BoxedOperation;
     type O2 = BoxedOperation;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
         (self.g1.generate(device).0, self.g2.generate(device).0)
     }
 }

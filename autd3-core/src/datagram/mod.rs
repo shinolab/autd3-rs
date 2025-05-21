@@ -141,3 +141,23 @@ impl<D: DatagramS> Datagram for D {
         <D as DatagramS>::option(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn datagram_option_merge() {
+        let opt1 = DatagramOption {
+            timeout: Duration::from_secs(1),
+            parallel_threshold: 10,
+        };
+        let opt2 = DatagramOption {
+            timeout: Duration::from_secs(2),
+            parallel_threshold: 5,
+        };
+        let opt3 = opt1.merge(opt2);
+        assert_eq!(opt3.timeout, Duration::from_secs(2));
+        assert_eq!(opt3.parallel_threshold, 5);
+    }
+}

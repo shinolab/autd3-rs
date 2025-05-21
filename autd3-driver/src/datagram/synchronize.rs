@@ -22,8 +22,8 @@ impl OperationGenerator for SynchronizeOpGenerator {
     type O1 = SyncOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new(), Self::O2 {})
+    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((Self::O1::new(), Self::O2 {}))
     }
 }
 

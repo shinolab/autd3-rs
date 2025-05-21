@@ -12,7 +12,7 @@ use autd3_core::{
 
 pub trait DOperationGenerator {
     #[must_use]
-    fn dyn_generate(&mut self, device: &Device) -> (BoxedOperation, BoxedOperation);
+    fn dyn_generate(&mut self, device: &Device) -> Option<(BoxedOperation, BoxedOperation)>;
 }
 
 #[cfg(feature = "lightweight")]
@@ -28,7 +28,7 @@ impl OperationGenerator for DynOperationGenerator {
     type O1 = BoxedOperation;
     type O2 = BoxedOperation;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
         self.g.dyn_generate(device)
     }
 }
@@ -39,9 +39,9 @@ where
     G::O2: 'static,
     AUTDDriverError: From<<G::O1 as Operation>::Error> + From<<G::O2 as Operation>::Error>,
 {
-    fn dyn_generate(&mut self, device: &Device) -> (BoxedOperation, BoxedOperation) {
-        let (o1, o2) = self.generate(device);
-        (BoxedOperation::new(o1), BoxedOperation::new(o2))
+    fn dyn_generate(&mut self, device: &Device) -> Option<(BoxedOperation, BoxedOperation)> {
+        self.generate(device)
+            .map(|(o1, o2)| (BoxedOperation::new(o1), BoxedOperation::new(o2)))
     }
 }
 
@@ -159,19 +159,34 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::datagram::tests::create_geometry;
 
     use super::*;
 
-    // GRCOV_EXCL_START
-    struct TestDatagram;
+    #[derive(Clone, Copy)]
+    struct TestDatagram {
+        pub option: DatagramOption,
+    }
+
     struct TestOperationGenerator;
 
     impl OperationGenerator for TestOperationGenerator {
-        type O1 = autd3_core::datagram::NullOp;
-        type O2 = autd3_core::datagram::NullOp;
+        type O1 = crate::firmware::operation::boxed::tests::TestOp;
+        type O2 = crate::firmware::operation::boxed::tests::TestOp;
 
-        fn generate(&mut self, _device: &Device) -> (Self::O1, Self::O2) {
-            unimplemented!()
+        fn generate(&mut self, _device: &Device) -> Option<(Self::O1, Self::O2)> {
+            Some((
+                Self::O1 {
+                    req_size: 1,
+                    pack_size: 2,
+                    done: false,
+                },
+                Self::O2 {
+                    req_size: 3,
+                    pack_size: 4,
+                    done: true,
+                },
+            ))
         }
     }
 
@@ -182,8 +197,11 @@ mod tests {
         fn operation_generator(self, _geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
             Ok(Self::G {})
         }
+
+        fn option(&self) -> DatagramOption {
+            self.option
+        }
     }
-    // GRCOV_EXCL_STOP
 
     impl std::fmt::Debug for TestDatagram {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -192,8 +210,33 @@ mod tests {
     }
 
     #[test]
+    fn boxed_datagram() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(1, 1);
+
+        let d = TestDatagram {
+            option: Default::default(),
+        };
+        let bd = d.into_boxed();
+
+        assert_eq!(d.option(), bd.option());
+
+        let mut g = Datagram::operation_generator(bd, &mut geometry)?;
+        let (mut op1, mut op2) = g.generate(&geometry[0]).unwrap();
+        assert_eq!(1, op1.required_size(&geometry[0]));
+        assert_eq!(2, op1.pack(&geometry[0], &mut [])?);
+        assert!(!op1.is_done());
+        assert_eq!(3, op2.required_size(&geometry[0]));
+        assert_eq!(4, op2.pack(&geometry[0], &mut [])?);
+        assert!(op2.is_done());
+
+        Ok(())
+    }
+
+    #[test]
     fn boxed_fmt() {
-        let d = TestDatagram;
+        let d = TestDatagram {
+            option: Default::default(),
+        };
         let bd = BoxedDatagram::new(d);
         assert_eq!(format!("{:?}", bd), "test");
     }

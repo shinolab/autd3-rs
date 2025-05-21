@@ -71,11 +71,11 @@ fn invalid_info_type() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0);
 
     let d = FirmwareVersionType::CPUMajor;
-    let (op, op_null) = d.operation_generator(&mut geometry)?.generate(&geometry[0]);
+    let operations = d.operation_generator(&mut geometry)?.generate(&geometry[0]);
 
     OperationHandler::pack(
         msg_id,
-        &mut [(op, op_null)],
+        &mut [operations],
         &geometry,
         &mut sent_flags,
         &mut tx,
