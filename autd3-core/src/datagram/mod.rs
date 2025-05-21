@@ -34,6 +34,16 @@ impl Default for DatagramOption {
     }
 }
 
+impl DatagramOption {
+    /// Merges two [`DatagramOption`]s.
+    pub fn merge(self, other: DatagramOption) -> Self {
+        Self {
+            timeout: self.timeout.max(other.timeout),
+            parallel_threshold: self.parallel_threshold.min(other.parallel_threshold),
+        }
+    }
+}
+
 /// [`DatagramL`] is a [`Datagram`] with [`LoopBehavior`].
 pub trait DatagramL: std::fmt::Debug {
     #[doc(hidden)]

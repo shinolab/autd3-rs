@@ -44,14 +44,7 @@ where
     }
 
     fn option(&self) -> DatagramOption {
-        DatagramOption {
-            timeout: self.0.option().timeout.max(self.1.option().timeout),
-            parallel_threshold: self
-                .0
-                .option()
-                .parallel_threshold
-                .min(self.1.option().parallel_threshold),
-        }
+        self.0.option().merge(self.1.option())
     }
 }
 
