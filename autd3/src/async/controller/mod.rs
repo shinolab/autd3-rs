@@ -405,7 +405,7 @@ mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None, false)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -415,7 +415,7 @@ mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None, false)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -606,7 +606,7 @@ mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None, false)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -616,7 +616,7 @@ mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None, false)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

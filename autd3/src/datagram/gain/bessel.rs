@@ -98,7 +98,12 @@ impl GainCalculatorGenerator for Bessel {
 impl Gain for Bessel {
     type G = Bessel;
 
-    fn init(self) -> Result<Self::G, GainError> {
+    fn init(
+        self,
+        _: &Geometry,
+        _: Option<&HashMap<usize, BitVec>>,
+        _: bool,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -121,8 +126,8 @@ mod tests {
         intensity: EmitIntensity,
         phase_offset: Phase,
         geometry: &Geometry,
-    ) -> anyhow::Result<()> {
-        let mut b = g.init()?;
+    ) {
+        let mut b = g;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
@@ -146,8 +151,6 @@ mod tests {
                 assert_eq!(intensity, d.intensity);
             });
         });
-
-        Ok(())
     }
 
     #[test]
@@ -179,7 +182,7 @@ mod tests {
                 phase_offset,
             },
         };
-        bessel_check(g, pos, dir, theta, intensity, phase_offset, &geometry)?;
+        bessel_check(g, pos, dir, theta, intensity, phase_offset, &geometry);
 
         Ok(())
     }

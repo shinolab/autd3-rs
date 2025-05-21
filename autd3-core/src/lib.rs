@@ -94,7 +94,12 @@ pub use async_trait::async_trait;
 /// impl Gain for FocalPoint {
 ///     type G = FocalPoint;
 ///
-///     fn init(self) -> Result<Self::G, GainError> {
+///     fn init(
+///         self,
+///         _geometry: &Geometry,
+///         _filter: Option<&HashMap<usize, BitVec>>,
+///         _parallel: bool,
+///     ) -> Result<Self::G, GainError> {
 ///         Ok(self)
 ///     }
 /// }

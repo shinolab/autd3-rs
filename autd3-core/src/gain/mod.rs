@@ -53,20 +53,15 @@ pub trait Gain: std::fmt::Debug + Sized {
     type G: GainCalculatorGenerator;
 
     /// Initialize the gain and generate the calculator generator.
-    fn init(self) -> Result<Self::G, GainError>;
-
-    /// Initialize the gain and generate the calculator generator.
     ///
     /// `filter` is a hash map that holds a bit vector representing the indices of the enabled transducers for each device index.
     /// If `filter` is `None`, all transducers are enabled.
-    fn init_full(
+    fn init(
         self,
-        _: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-        _parallel: bool,
-    ) -> Result<Self::G, GainError> {
-        self.init()
-    }
+        geometry: &Geometry,
+        filter: Option<&HashMap<usize, BitVec>>,
+        parallel: bool,
+    ) -> Result<Self::G, GainError>;
 }
 
 #[doc(hidden)]
@@ -85,7 +80,7 @@ impl<G: GainCalculatorGenerator> GainOperationGenerator<G> {
         parallel: bool,
     ) -> Result<Self, GainError> {
         Ok(Self {
-            generator: gain.init_full(geometry, None, parallel)?,
+            generator: gain.init(geometry, None, parallel)?,
             segment,
             transition,
         })

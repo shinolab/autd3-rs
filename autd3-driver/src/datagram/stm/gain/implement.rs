@@ -44,7 +44,7 @@ impl<G: Gain> GainSTMGenerator for Vec<G> {
         parallel: bool,
     ) -> Result<Self::T, GainError> {
         self.into_iter()
-            .map(|g| g.init_full(geometry, filter, parallel))
+            .map(|g| g.init(geometry, filter, parallel))
             .collect::<Result<Vec<_>, _>>()
     }
     fn len(&self) -> usize {

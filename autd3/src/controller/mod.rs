@@ -345,13 +345,7 @@ pub(crate) mod tests {
     impl Gain for TestGain {
         type G = Null;
 
-        // GRCOV_EXCL_START
-        fn init(self) -> Result<Self::G, GainError> {
-            unimplemented!()
-        }
-        // GRCOV_EXCL_STOP
-
-        fn init_full(
+        fn init(
             self,
             geometry: &Geometry,
             _filter: Option<&HashMap<usize, BitVec>>,
@@ -416,7 +410,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None, false)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -426,7 +420,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None, false)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -631,7 +625,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None, false)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -641,7 +635,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None, false)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

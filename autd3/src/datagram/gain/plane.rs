@@ -75,7 +75,12 @@ impl GainCalculatorGenerator for Plane {
 impl Gain for Plane {
     type G = Plane;
 
-    fn init(self) -> Result<Self::G, GainError> {
+    fn init(
+        self,
+        _: &Geometry,
+        _: Option<&HashMap<usize, BitVec>>,
+        _: bool,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -94,8 +99,8 @@ mod tests {
         intensity: EmitIntensity,
         phase_offset: Phase,
         geometry: &Geometry,
-    ) -> anyhow::Result<()> {
-        let mut b = g.init()?;
+    ) {
+        let mut b = g;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
@@ -107,19 +112,17 @@ mod tests {
                 assert_eq!(intensity, d.intensity);
             });
         });
-
-        Ok(())
     }
 
     #[test]
-    fn test_plane() -> anyhow::Result<()> {
+    fn test_plane() {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
 
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let g = Plane::new(dir, PlaneOption::default());
-        plane_check(g, dir, EmitIntensity::MAX, Phase::ZERO, &geometry)?;
+        plane_check(g, dir, EmitIntensity::MAX, Phase::ZERO, &geometry);
 
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let intensity = EmitIntensity(rng.random());
@@ -131,8 +134,6 @@ mod tests {
                 phase_offset,
             },
         };
-        plane_check(g, dir, intensity, phase_offset, &geometry)?;
-
-        Ok(())
+        plane_check(g, dir, intensity, phase_offset, &geometry);
     }
 }

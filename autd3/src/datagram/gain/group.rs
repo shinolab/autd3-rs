@@ -140,13 +140,7 @@ where
 {
     type G = Generator;
 
-    // GRCOV_EXCL_START
-    fn init(self) -> Result<Self::G, GainError> {
-        unimplemented!()
-    }
-    // GRCOV_EXCL_STOP
-
-    fn init_full(
+    fn init(
         self,
         geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
@@ -161,7 +155,7 @@ where
                 let g = gain_map
                     .remove(&k)
                     .ok_or(GainError::new(format!("Unknown group key: {:?}", k)))?;
-                let mut g = g.init_full(geometry, Some(&filter), parallel)?;
+                let mut g = g.init(geometry, Some(&filter), parallel)?;
                 Ok((
                     k,
                     geometry
@@ -265,7 +259,7 @@ mod tests {
             ]),
         );
 
-        let mut g = gain.init_full(&geometry, None, false)?;
+        let mut g = gain.init(&geometry, None, false)?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -315,7 +309,7 @@ mod tests {
         let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unknown group key: \"test\"")),
-            gain.init_full(&geometry, None, false).err()
+            gain.init(&geometry, None, false).err()
         );
 
         Ok(())
@@ -331,7 +325,7 @@ mod tests {
         let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unused group keys: 2")),
-            gain.init_full(&geometry, None, false).err()
+            gain.init(&geometry, None, false).err()
         );
 
         Ok(())

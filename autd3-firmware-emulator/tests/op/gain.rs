@@ -46,11 +46,7 @@ impl GainCalculatorGenerator for TestGain {
 impl Gain for TestGain {
     type G = Self;
 
-    fn init(self) -> Result<Self::G, GainError> {
-        unimplemented!()
-    }
-
-    fn init_full(
+    fn init(
         self,
         _: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,

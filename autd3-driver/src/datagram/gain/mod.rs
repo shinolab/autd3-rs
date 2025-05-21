@@ -74,7 +74,12 @@ pub mod tests {
     impl Gain for TestGain {
         type G = Self;
 
-        fn init(self) -> Result<Self::G, GainError> {
+        fn init(
+            self,
+            _: &Geometry,
+            _: Option<&HashMap<usize, BitVec>>,
+            _: bool,
+        ) -> Result<Self::G, GainError> {
             Ok(self)
         }
     }
@@ -128,7 +133,7 @@ pub mod tests {
             },
             &geometry,
         );
-        let mut f = g.init()?;
+        let mut f = g.init(&geometry, None, false)?;
         assert_eq!(
             expect,
             geometry

@@ -1,4 +1,9 @@
-use autd3_core::gain::{GainCalculator, GainCalculatorGenerator};
+use std::collections::HashMap;
+
+use autd3_core::{
+    gain::{BitVec, GainCalculator, GainCalculatorGenerator},
+    geometry::Geometry,
+};
 
 use crate::{Datagram, DatagramLightweight, Gain, datagram};
 
@@ -38,7 +43,12 @@ impl GainCalculatorGenerator for Nop {
 impl autd3_core::gain::Gain for Gain {
     type G = Nop;
 
-    fn init(self) -> Result<Self::G, autd3_core::gain::GainError> {
+    fn init(
+        self,
+        _: &Geometry,
+        _: Option<&HashMap<usize, BitVec>>,
+        _: bool,
+    ) -> Result<Self::G, autd3_core::gain::GainError> {
         unreachable!()
     }
 }
