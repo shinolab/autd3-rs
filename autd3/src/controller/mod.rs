@@ -306,8 +306,6 @@ impl<L: Link> Drop for Controller<L> {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use std::sync::Mutex;
-
     use crate::{
         core::{
             defined::mm,
@@ -327,33 +325,11 @@ pub(crate) mod tests {
 
     use super::*;
 
-    // GRCOV_EXCL_START
     pub fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
         Ok(Controller::open(
             (0..dev_num).map(|_| AUTD3::default()),
             Audit::new(AuditOption::default()),
         )?)
-    }
-    // GRCOV_EXCL_STOP
-
-    #[derive(Gain, Debug)]
-    pub struct TestGain {
-        pub test: Arc<Mutex<Vec<bool>>>,
-    }
-
-    impl Gain for TestGain {
-        type G = Null;
-
-        fn init(
-            self,
-            geometry: &Geometry,
-            _filter: Option<&HashMap<usize, BitVec>>,
-        ) -> Result<Self::G, GainError> {
-            geometry.iter().for_each(|dev| {
-                self.test.lock().unwrap()[dev.idx()] = dev.enable;
-            });
-            Ok(Null {})
-        }
     }
 
     #[test]

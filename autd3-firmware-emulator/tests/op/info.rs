@@ -75,7 +75,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
 
     OperationHandler::pack(
         msg_id,
-        &mut [Some((op, op_null))],
+        &mut [(op, op_null)],
         &geometry,
         &mut sent_flags,
         &mut tx,

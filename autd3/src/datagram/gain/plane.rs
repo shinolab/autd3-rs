@@ -89,13 +89,12 @@ mod tests {
     use crate::tests::{create_geometry, random_vector3};
 
     fn plane_check(
-        g: Plane,
+        mut b: Plane,
         dir: UnitVector3,
         intensity: EmitIntensity,
         phase_offset: Phase,
         geometry: &Geometry,
     ) {
-        let mut b = g;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
@@ -129,6 +128,12 @@ mod tests {
                 phase_offset,
             },
         };
-        plane_check(g, dir, intensity, phase_offset, &geometry);
+        plane_check(
+            g.init(&geometry, None).unwrap(),
+            dir,
+            intensity,
+            phase_offset,
+            &geometry,
+        );
     }
 }

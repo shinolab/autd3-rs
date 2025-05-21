@@ -114,7 +114,7 @@ mod tests {
     use crate::tests::{create_geometry, random_point3, random_vector3};
 
     fn bessel_check(
-        g: Bessel,
+        mut b: Bessel,
         pos: Point3,
         dir: UnitVector3,
         theta: Angle,
@@ -122,7 +122,6 @@ mod tests {
         phase_offset: Phase,
         geometry: &Geometry,
     ) {
-        let mut b = g;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
@@ -177,7 +176,15 @@ mod tests {
                 phase_offset,
             },
         };
-        bessel_check(g, pos, dir, theta, intensity, phase_offset, &geometry);
+        bessel_check(
+            g.init(&geometry, None).unwrap(),
+            pos,
+            dir,
+            theta,
+            intensity,
+            phase_offset,
+            &geometry,
+        );
 
         Ok(())
     }

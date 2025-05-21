@@ -187,3 +187,128 @@ where
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::datagram::tests::create_geometry;
+
+    use super::*;
+
+    use std::{
+        convert::Infallible,
+        sync::{Arc, Mutex},
+    };
+
+    pub struct NullOperationGenerator;
+
+    impl OperationGenerator for NullOperationGenerator {
+        type O1 = NullOp;
+        type O2 = NullOp;
+
+        fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
+            (NullOp, NullOp)
+        }
+    }
+
+    #[test]
+    fn test_group_only_for_enabled() -> anyhow::Result<()> {
+        #[derive(Debug)]
+        pub struct TestDatagram;
+
+        impl Datagram for TestDatagram {
+            type G = NullOperationGenerator;
+            type Error = Infallible;
+
+            fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+                Ok(NullOperationGenerator)
+            }
+        }
+
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[0].enable = false;
+
+        let check = Arc::new(Mutex::new([false; 2]));
+        Group::new(
+            |dev| {
+                check.lock().unwrap()[dev.idx()] = true;
+                Some(())
+            },
+            HashMap::from([((), TestDatagram)]),
+        )
+        .operation_generator(&mut geometry)?;
+
+        assert!(!check.lock().unwrap()[0]);
+        assert!(check.lock().unwrap()[1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_group_only_for_set() -> anyhow::Result<()> {
+        #[derive(Debug)]
+        pub struct TestDatagram {
+            pub test: Arc<Mutex<Vec<bool>>>,
+        }
+
+        impl Datagram for TestDatagram {
+            type G = NullOperationGenerator;
+            type Error = Infallible;
+
+            fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
+                geometry.iter().for_each(|dev| {
+                    self.test.lock().unwrap()[dev.idx()] = dev.enable;
+                });
+                Ok(NullOperationGenerator)
+            }
+        }
+
+        let mut geometry = create_geometry(3, 1);
+
+        let test = Arc::new(Mutex::new(vec![false; 3]));
+        Group::new(
+            |dev| match dev.idx() {
+                0 | 2 => Some(()),
+                _ => None,
+            },
+            HashMap::from([((), TestDatagram { test: test.clone() })]),
+        )
+        .operation_generator(&mut geometry)?;
+
+        assert!(test.lock().unwrap()[0]);
+        assert!(!test.lock().unwrap()[1]);
+        assert!(test.lock().unwrap()[2]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn unknown_key() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        assert_eq!(
+            Some(AUTDDriverError::UnknownKey("1".to_owned())),
+            Group::new(|dev| Some(dev.idx()), HashMap::from([(0, Clear {})]))
+                .operation_generator(&mut geometry)
+                .err()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn unused_key() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+        assert_eq!(
+            Some(AUTDDriverError::UnusedKey("2".to_owned())),
+            Group::new(
+                |dev| Some(dev.idx()),
+                HashMap::from([(0, Clear {}), (1, Clear {}), (2, Clear {})])
+            )
+            .operation_generator(&mut geometry)
+            .err()
+        );
+
+        Ok(())
+    }
+}

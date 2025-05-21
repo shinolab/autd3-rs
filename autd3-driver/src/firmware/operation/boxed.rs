@@ -59,3 +59,64 @@ impl Operation for BoxedOperation {
         self.inner.is_done()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use autd3_core::{
+        derive::Transducer,
+        geometry::{Point3, UnitQuaternion},
+    };
+    use rand::Rng;
+
+    use super::*;
+
+    #[derive(Clone, Copy)]
+    struct TestOp {
+        req_size: usize,
+        pack_size: usize,
+        done: bool,
+    }
+
+    impl Operation for TestOp {
+        type Error = AUTDDriverError;
+
+        fn required_size(&self, _device: &Device) -> usize {
+            self.req_size
+        }
+
+        fn pack(&mut self, _device: &Device, _tx: &mut [u8]) -> Result<usize, Self::Error> {
+            Ok(self.pack_size)
+        }
+
+        fn is_done(&self) -> bool {
+            self.done
+        }
+    }
+
+    #[test]
+    fn test_boxed_operation() {
+        let mut rng = rand::rng();
+
+        let mut op = TestOp {
+            req_size: rng.random::<u32>() as usize,
+            pack_size: rng.random::<u32>() as usize,
+            done: rng.random(),
+        };
+        let mut boxed_op = BoxedOperation::new(op);
+
+        let device = Device::new(
+            UnitQuaternion::identity(),
+            vec![Transducer::new(Point3::origin())],
+        );
+
+        assert_eq!(
+            Operation::required_size(&op, &device),
+            Operation::required_size(&boxed_op, &device)
+        );
+        assert_eq!(
+            Operation::pack(&mut op, &device, &mut []),
+            Operation::pack(&mut boxed_op, &device, &mut [])
+        );
+        assert_eq!(Operation::is_done(&op), Operation::is_done(&boxed_op));
+    }
+}

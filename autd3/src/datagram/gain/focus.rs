@@ -87,13 +87,12 @@ mod tests {
     use super::*;
     use rand::Rng;
     fn focus_check(
-        g: Focus,
+        mut b: Focus,
         pos: Point3,
         intensity: EmitIntensity,
         phase_offset: Phase,
         geometry: &Geometry,
     ) {
-        let mut b = g;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
@@ -115,7 +114,13 @@ mod tests {
 
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let g = Focus::new(pos, Default::default());
-        focus_check(g, pos, EmitIntensity::MAX, Phase::ZERO, &geometry);
+        focus_check(
+            g.init(&geometry, None).unwrap(),
+            pos,
+            EmitIntensity::MAX,
+            Phase::ZERO,
+            &geometry,
+        );
 
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let intensity = EmitIntensity(rng.random());
@@ -127,6 +132,12 @@ mod tests {
                 phase_offset,
             },
         };
-        focus_check(g, pos, intensity, phase_offset, &geometry);
+        focus_check(
+            g.init(&geometry, None).unwrap(),
+            pos,
+            intensity,
+            phase_offset,
+            &geometry,
+        );
     }
 }

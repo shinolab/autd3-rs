@@ -104,7 +104,7 @@ mod tests {
             }
         });
 
-        let mut d = transducer_test;
+        let mut d = transducer_test.init(&geometry, None).unwrap();
         geometry.iter().for_each(|dev| {
             let d = d.generate(dev);
             dev.iter().enumerate().for_each(|(idx, tr)| {
