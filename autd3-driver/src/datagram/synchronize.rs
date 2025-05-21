@@ -31,7 +31,7 @@ impl Datagram for Synchronize {
     type G = SynchronizeOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(SynchronizeOpGenerator {})
     }
 }

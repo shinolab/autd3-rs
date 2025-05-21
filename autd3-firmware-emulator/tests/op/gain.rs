@@ -50,7 +50,6 @@ impl Gain for TestGain {
         self,
         _: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
-        _: bool,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }

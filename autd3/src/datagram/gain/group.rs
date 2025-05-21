@@ -144,7 +144,6 @@ where
         self,
         geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
-        parallel: bool,
     ) -> Result<Self::G, GainError> {
         let filters = self.get_filters(geometry);
 
@@ -155,7 +154,7 @@ where
                 let g = gain_map
                     .remove(&k)
                     .ok_or(GainError::new(format!("Unknown group key: {:?}", k)))?;
-                let mut g = g.init(geometry, Some(&filter), parallel)?;
+                let mut g = g.init(geometry, Some(&filter))?;
                 Ok((
                     k,
                     geometry
@@ -259,7 +258,7 @@ mod tests {
             ]),
         );
 
-        let mut g = gain.init(&geometry, None, false)?;
+        let mut g = gain.init(&geometry, None)?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -309,7 +308,7 @@ mod tests {
         let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unknown group key: \"test\"")),
-            gain.init(&geometry, None, false).err()
+            gain.init(&geometry, None).err()
         );
 
         Ok(())
@@ -325,7 +324,7 @@ mod tests {
         let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unused group keys: 2")),
-            gain.init(&geometry, None, false).err()
+            gain.init(&geometry, None).err()
         );
 
         Ok(())

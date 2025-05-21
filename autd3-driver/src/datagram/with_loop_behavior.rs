@@ -45,12 +45,10 @@ impl<D: DatagramL> Datagram for WithLoopBehavior<D> {
     fn operation_generator(
         self,
         geometry: &autd3_core::derive::Geometry,
-        parallel: bool,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramL>::operation_generator_with_loop_behavior(
             self.inner,
             geometry,
-            parallel,
             self.segment,
             self.transition_mode,
             self.loop_behavior,

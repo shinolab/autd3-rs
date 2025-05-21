@@ -87,12 +87,7 @@ impl GainCalculatorGenerator for Focus {
 impl Gain for Focus {
     type G = Focus;
 
-    fn init(
-        self,
-        _: &Geometry,
-        _: Option<&HashMap<usize, BitVec>>,
-        _: bool,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -110,7 +105,7 @@ fn focus(c: &mut Criterion) {
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
-                    let generator = g.operation_generator(geometry, false).unwrap();
+                    let generator = g.operation_generator(geometry).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(
                         MsgId::new(0),
@@ -141,7 +136,7 @@ fn focus_parallel(c: &mut Criterion) {
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
-                    let generator = g.operation_generator(geometry, true).unwrap();
+                    let generator = g.operation_generator(geometry).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(
                         MsgId::new(0),
@@ -176,7 +171,7 @@ fn focus_boxed(c: &mut Criterion) {
                         black_box(150.),
                     )))
                     .into_boxed();
-                    let generator = g.operation_generator(geometry, false).unwrap();
+                    let generator = g.operation_generator(geometry).unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(
                         MsgId::new(0),

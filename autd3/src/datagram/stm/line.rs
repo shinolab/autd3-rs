@@ -130,7 +130,6 @@ impl GainSTMGenerator for Line {
         self,
         _: &Geometry,
         _filter: Option<&std::collections::HashMap<usize, bit_vec::BitVec>>,
-        _: bool,
     ) -> Result<Self::T, GainError> {
         Ok(self)
     }

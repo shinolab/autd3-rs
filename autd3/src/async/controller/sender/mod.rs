@@ -57,10 +57,7 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
         self.send_impl(
-            OperationHandler::generate(
-                s.operation_generator(self.geometry, parallel)?,
-                self.geometry,
-            ),
+            OperationHandler::generate(s.operation_generator(self.geometry)?, self.geometry),
             timeout,
             parallel,
         )

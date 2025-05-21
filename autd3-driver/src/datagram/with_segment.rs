@@ -33,12 +33,10 @@ impl<D: DatagramS> Datagram for WithSegment<D> {
     fn operation_generator(
         self,
         geometry: &autd3_core::derive::Geometry,
-        parallel: bool,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramS>::operation_generator_with_segment(
             self.inner,
             geometry,
-            parallel,
             self.segment,
             self.transition_mode,
         )

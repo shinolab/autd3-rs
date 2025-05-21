@@ -21,7 +21,6 @@ impl autd3_core::datagram::Datagram for NullDatagram {
     fn operation_generator(
         self,
         _: &autd3_core::geometry::Geometry,
-        _: bool,
     ) -> Result<Self::G, Self::Error> {
         Ok(NullOperationGenerator)
     }

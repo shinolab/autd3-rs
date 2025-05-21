@@ -60,7 +60,6 @@ pub trait Gain: std::fmt::Debug + Sized {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        parallel: bool,
     ) -> Result<Self::G, GainError>;
 }
 
@@ -77,10 +76,9 @@ impl<G: GainCalculatorGenerator> GainOperationGenerator<G> {
         geometry: &Geometry,
         segment: Segment,
         transition: Option<TransitionMode>,
-        parallel: bool,
     ) -> Result<Self, GainError> {
         Ok(Self {
-            generator: gain.init(geometry, None, parallel)?,
+            generator: gain.init(geometry, None)?,
             segment,
             transition,
         })

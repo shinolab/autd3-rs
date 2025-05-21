@@ -36,7 +36,6 @@ impl Gain for MyUniform {
         self,
         _geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
-        _parallel: bool,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }

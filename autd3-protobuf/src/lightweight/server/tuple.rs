@@ -38,14 +38,10 @@ impl Datagram for BoxedDatagramTuple {
     type G = OperationGeneratorTuple;
     type Error = AUTDDriverError;
 
-    fn operation_generator(
-        self,
-        geometry: &Geometry,
-        parallel: bool,
-    ) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(OperationGeneratorTuple {
-            g1: self.d1.operation_generator(geometry, parallel)?,
-            g2: self.d2.operation_generator(geometry, parallel)?,
+            g1: self.d1.operation_generator(geometry)?,
+            g2: self.d2.operation_generator(geometry)?,
         })
     }
 

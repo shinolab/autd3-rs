@@ -99,12 +99,9 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
                             .parallel_threshold
                             .min(datagram.option().parallel_threshold),
                     };
-                    let parallel = self.option.parallel.is_parallel(
-                        self.geometry.num_devices(),
-                        datagram.option().parallel_threshold,
-                    );
+
                     let mut generator = datagram
-                        .operation_generator(self.geometry, parallel)
+                        .operation_generator(self.geometry)
                         .map_err(AUTDDriverError::from)?;
 
                     // restore enable flag

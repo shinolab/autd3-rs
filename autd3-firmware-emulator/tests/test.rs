@@ -44,7 +44,7 @@ where
 {
     let option = d.option();
     let parallel = geometry.num_devices() > option.parallel_threshold;
-    let generator = d.operation_generator(geometry, parallel)?;
+    let generator = d.operation_generator(geometry)?;
     let mut op = OperationHandler::generate(generator, geometry);
     let mut sent_flags = vec![false; geometry.len()];
     loop {
@@ -102,14 +102,14 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0x10);
 
     let d = Clear::new();
-    let generator = d.operation_generator(&geometry, false)?;
+    let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
     cpu.send(&tx);
     assert_eq!(cpu.rx().ack(), tx[0].header.msg_id.get());
 
     let d = Synchronize::new();
-    let generator = d.operation_generator(&geometry, false)?;
+    let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
     assert!(!cpu.synchronized());
@@ -128,7 +128,7 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0x12);
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry, false)?;
+    let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
 
@@ -149,7 +149,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0);
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry, false)?;
+    let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
 

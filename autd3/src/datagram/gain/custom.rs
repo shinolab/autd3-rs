@@ -68,12 +68,7 @@ impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) ->
 {
     type G = Custom<'a, FT, F>;
 
-    fn init(
-        self,
-        _: &Geometry,
-        _: Option<&HashMap<usize, BitVec>>,
-        _: bool,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

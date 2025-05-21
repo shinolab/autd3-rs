@@ -46,7 +46,6 @@ pub trait GainSTMGenerator: std::fmt::Debug {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        parallel: bool,
     ) -> Result<Self::T, GainError>;
     /// Returns the length of the sequence of gains.
     #[must_use]
@@ -168,7 +167,6 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C
     fn operation_generator_with_loop_behavior(
         self,
         geometry: &Geometry,
-        parallel: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,
@@ -179,7 +177,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C
         let GainSTMOption { mode } = self.option;
         let gains = self.gains;
         Ok(GainSTMOperationGenerator {
-            g: gains.init(geometry, None, parallel)?,
+            g: gains.init(geometry, None)?,
             size,
             sampling_config,
             mode,

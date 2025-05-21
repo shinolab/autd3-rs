@@ -41,10 +41,9 @@ impl<G: Gain> GainSTMGenerator for Vec<G> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        parallel: bool,
     ) -> Result<Self::T, GainError> {
         self.into_iter()
-            .map(|g| g.init(geometry, filter, parallel))
+            .map(|g| g.init(geometry, filter))
             .collect::<Result<Vec<_>, _>>()
     }
     fn len(&self) -> usize {

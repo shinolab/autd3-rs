@@ -349,7 +349,6 @@ pub(crate) mod tests {
             self,
             geometry: &Geometry,
             _filter: Option<&HashMap<usize, BitVec>>,
-            _: bool,
         ) -> Result<Self::G, GainError> {
             geometry.iter().for_each(|dev| {
                 self.test.lock().unwrap()[dev.idx()] = dev.enable;
@@ -410,7 +409,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, false)?
+            .init(&autd.geometry, None)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -420,7 +419,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, false)?
+            .init(&autd.geometry, None)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -625,7 +624,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, false)?
+            .init(&autd.geometry, None)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -635,7 +634,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None, false)?
+            .init(&autd.geometry, None)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

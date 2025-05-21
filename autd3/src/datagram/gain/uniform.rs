@@ -39,12 +39,7 @@ impl GainCalculatorGenerator for Uniform {
 impl Gain for Uniform {
     type G = Uniform;
 
-    fn init(
-        self,
-        _: &Geometry,
-        _: Option<&HashMap<usize, BitVec>>,
-        _: bool,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

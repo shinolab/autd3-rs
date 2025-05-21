@@ -37,7 +37,7 @@ impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
     type G = ForceFanOpGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(ForceFanOpGenerator { f: self.f })
     }
 }

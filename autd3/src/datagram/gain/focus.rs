@@ -75,12 +75,7 @@ impl GainCalculatorGenerator for Focus {
 impl Gain for Focus {
     type G = Focus;
 
-    fn init(
-        self,
-        _: &Geometry,
-        _: Option<&HashMap<usize, BitVec>>,
-        _: bool,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

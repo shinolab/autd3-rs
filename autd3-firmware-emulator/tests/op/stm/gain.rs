@@ -513,7 +513,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
         option: GainSTMOption::default(),
     };
 
-    let generator = d.operation_generator(&geometry, false)?;
+    let generator = d.operation_generator(&geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
     tx[0].payload_mut()[2] = 3;

@@ -25,7 +25,7 @@ impl Datagram for FirmwareVersionType {
     type G = FetchFirmwareInfoOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
         Ok(Self::G { inner: self })
     }
 }

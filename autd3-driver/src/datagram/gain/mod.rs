@@ -78,7 +78,6 @@ pub mod tests {
             self,
             _: &Geometry,
             _: Option<&HashMap<usize, BitVec>>,
-            _: bool,
         ) -> Result<Self::G, GainError> {
             Ok(self)
         }
@@ -133,7 +132,7 @@ pub mod tests {
             },
             &geometry,
         );
-        let mut f = g.init(&geometry, None, false)?;
+        let mut f = g.init(&geometry, None)?;
         assert_eq!(
             expect,
             geometry

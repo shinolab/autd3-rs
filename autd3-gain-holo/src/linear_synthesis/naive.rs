@@ -64,7 +64,6 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        _: bool,
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
@@ -121,7 +120,7 @@ mod tests {
         );
 
         assert_eq!(
-            g.init(&geometry, None, false).map(|mut res| {
+            g.init(&geometry, None).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -147,7 +146,7 @@ mod tests {
             },
         };
 
-        let mut g = g.init(&geometry, None, false)?;
+        let mut g = g.init(&geometry, None)?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]
@@ -179,7 +178,7 @@ mod tests {
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect();
         assert_eq!(
-            g.init(&geometry, Some(&filter), false).map(|mut res| {
+            g.init(&geometry, Some(&filter)).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -209,7 +208,7 @@ mod tests {
             .iter()
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect();
-        let mut g = g.init(&geometry, Some(&filter), false)?;
+        let mut g = g.init(&geometry, Some(&filter))?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]

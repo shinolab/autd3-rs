@@ -47,7 +47,6 @@ impl autd3_core::gain::Gain for Gain {
         self,
         _: &Geometry,
         _: Option<&HashMap<usize, BitVec>>,
-        _: bool,
     ) -> Result<Self::G, autd3_core::gain::GainError> {
         unreachable!()
     }

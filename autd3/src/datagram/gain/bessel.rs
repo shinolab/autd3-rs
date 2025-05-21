@@ -98,12 +98,7 @@ impl GainCalculatorGenerator for Bessel {
 impl Gain for Bessel {
     type G = Bessel;
 
-    fn init(
-        self,
-        _: &Geometry,
-        _: Option<&HashMap<usize, BitVec>>,
-        _: bool,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

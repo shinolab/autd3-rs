@@ -28,14 +28,10 @@ where
     type G = CombinedOperationGenerator<D1::G, D2::G>;
     type Error = CombinedError<E1, E2>;
 
-    fn operation_generator(
-        self,
-        geometry: &Geometry,
-        parallel: bool,
-    ) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, Self::Error> {
         match (
-            self.0.operation_generator(geometry, parallel),
-            self.1.operation_generator(geometry, parallel),
+            self.0.operation_generator(geometry),
+            self.1.operation_generator(geometry),
         ) {
             (Ok(g1), Ok(g2)) => Ok(CombinedOperationGenerator { o1: g1, o2: g2 }),
             (Err(e1), _) => Err(Self::Error::E1(e1)),
@@ -64,7 +60,7 @@ mod tests {
         type G = ();
         type Error = ();
 
-        fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+        fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
             self.result
         }
 
@@ -95,7 +91,7 @@ mod tests {
                     result: result2,
                 }
             )
-                .operation_generator(&Geometry::new(Default::default()), false)
+                .operation_generator(&Geometry::new(Default::default()))
         );
     }
 

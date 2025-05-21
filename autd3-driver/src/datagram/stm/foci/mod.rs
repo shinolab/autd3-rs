@@ -133,7 +133,6 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Debug> Datagra
     fn operation_generator_with_loop_behavior(
         self,
         _: &Geometry,
-        _: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,

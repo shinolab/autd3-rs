@@ -49,7 +49,6 @@ pub trait DDatagram: std::fmt::Debug {
     fn dyn_operation_generator(
         &mut self,
         geometry: &Geometry,
-        parallel: bool,
     ) -> Result<DynDOperationGenerator, AUTDDriverError>;
     #[must_use]
     fn dyn_option(&self) -> DatagramOption;
@@ -68,12 +67,11 @@ where
     fn dyn_operation_generator(
         &mut self,
         geometry: &Geometry,
-        parallel: bool,
     ) -> Result<DynDOperationGenerator, AUTDDriverError> {
         let mut tmp = MaybeUninit::<T>::uninit();
         std::mem::swap(&mut tmp, self);
         let d = unsafe { tmp.assume_init() };
-        Ok(Box::new(d.operation_generator(geometry, parallel)?))
+        Ok(Box::new(d.operation_generator(geometry)?))
     }
 
     fn dyn_option(&self) -> DatagramOption {
@@ -124,14 +122,10 @@ impl Datagram for BoxedDatagram {
     type G = DynOperationGenerator;
     type Error = AUTDDriverError;
 
-    fn operation_generator(
-        self,
-        geometry: &Geometry,
-        parallel: bool,
-    ) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, Self::Error> {
         let Self { mut d } = self;
         Ok(DynOperationGenerator {
-            g: d.dyn_operation_generator(geometry, parallel)?,
+            g: d.dyn_operation_generator(geometry)?,
         })
     }
 
@@ -185,11 +179,7 @@ mod tests {
         type G = TestOperationGenerator;
         type Error = AUTDDriverError;
 
-        fn operation_generator(
-            self,
-            _geometry: &Geometry,
-            _parallel: bool,
-        ) -> Result<Self::G, Self::Error> {
+        fn operation_generator(self, _geometry: &Geometry) -> Result<Self::G, Self::Error> {
             Ok(Self::G {})
         }
     }
