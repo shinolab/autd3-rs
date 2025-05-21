@@ -22,8 +22,8 @@ impl OperationGenerator for ClearOpGenerator {
     type O1 = ClearOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new(), Self::O2 {})
+    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((Self::O1::new(), Self::O2 {}))
     }
 }
 
@@ -31,7 +31,7 @@ impl Datagram for Clear {
     type G = ClearOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(ClearOpGenerator {})
     }
 }

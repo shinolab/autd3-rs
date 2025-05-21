@@ -141,17 +141,10 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
     type G = HoloCalculatorGenerator<f32>;
 
-    // GRCOV_EXCL_START
-    fn init(self) -> Result<Self::G, GainError> {
-        unimplemented!()
-    }
-    // GRCOV_EXCL_STOP
-
-    fn init_full(
+    fn init(
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        _: bool,
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
@@ -319,7 +312,7 @@ mod tests {
         );
 
         assert_eq!(
-            g.init_full(&geometry, None, false).map(|mut res| {
+            g.init(&geometry, None).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -353,7 +346,7 @@ mod tests {
             .take(1)
             .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
             .collect::<HashMap<_, _>>();
-        let mut g = g.init_full(&geometry, Some(&filter), false).unwrap();
+        let mut g = g.init(&geometry, Some(&filter)).unwrap();
         assert_eq!(
             {
                 let f = g.generate(&geometry[0]);

@@ -12,9 +12,9 @@ impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G
     type O1 = GainOp<G::Calculator>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
         let c = self.generator.generate(device);
-        (Self::O1::new(self.segment, self.transition, c), Self::O2 {})
+        Some((Self::O1::new(self.segment, self.transition, c), Self::O2 {}))
     }
 }
 
@@ -74,7 +74,11 @@ pub mod tests {
     impl Gain for TestGain {
         type G = Self;
 
-        fn init(self) -> Result<Self::G, GainError> {
+        fn init(
+            self,
+            _: &Geometry,
+            _: Option<&HashMap<usize, BitVec>>,
+        ) -> Result<Self::G, GainError> {
             Ok(self)
         }
     }
@@ -128,7 +132,7 @@ pub mod tests {
             },
             &geometry,
         );
-        let mut f = g.init()?;
+        let mut f = g.init(&geometry, None)?;
         assert_eq!(
             expect,
             geometry

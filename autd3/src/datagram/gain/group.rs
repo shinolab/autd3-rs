@@ -15,14 +15,14 @@ use derive_more::Debug;
 
 /// [`Gain`] for grouping transducers and sending different [`Gain`] to each group.
 ///
-/// If grouping by device is sufficient, [`Controller::group_send`] is recommended.
+/// If grouping by device is sufficient, [`autd3_driver::datagram::Group`] is recommended.
 ///
 /// # Examples
 ///
 /// ```
 /// # use std::collections::HashMap;
 /// use autd3::prelude::*;
-/// use autd3::gain::IntoBoxedGain;
+/// use autd3::gain::{Group, IntoBoxedGain};
 ///
 /// Group {
 ///     key_map: |dev| {
@@ -47,8 +47,6 @@ use derive_more::Debug;
 ///     ]),
 /// };
 /// ```
-///
-/// [`Controller::group_send`]: crate::controller::Controller::group_send
 #[derive(Gain, Debug)]
 pub struct Group<K, FK, F, G: Gain>
 where
@@ -140,17 +138,10 @@ where
 {
     type G = Generator;
 
-    // GRCOV_EXCL_START
-    fn init(self) -> Result<Self::G, GainError> {
-        unimplemented!()
-    }
-    // GRCOV_EXCL_STOP
-
-    fn init_full(
+    fn init(
         self,
         geometry: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
-        parallel: bool,
     ) -> Result<Self::G, GainError> {
         let filters = self.get_filters(geometry);
 
@@ -161,7 +152,7 @@ where
                 let g = gain_map
                     .remove(&k)
                     .ok_or(GainError::new(format!("Unknown group key: {:?}", k)))?;
-                let mut g = g.init_full(geometry, Some(&filter), parallel)?;
+                let mut g = g.init(geometry, Some(&filter))?;
                 Ok((
                     k,
                     geometry
@@ -265,7 +256,7 @@ mod tests {
             ]),
         );
 
-        let mut g = gain.init_full(&geometry, None, false)?;
+        let mut g = gain.init(&geometry, None)?;
         let drives = geometry
             .devices()
             .map(|dev| {
@@ -315,7 +306,7 @@ mod tests {
         let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unknown group key: \"test\"")),
-            gain.init_full(&geometry, None, false).err()
+            gain.init(&geometry, None).err()
         );
 
         Ok(())
@@ -331,7 +322,7 @@ mod tests {
         let geometry = create_geometry(1);
         assert_eq!(
             Some(GainError::new("Unused group keys: 2")),
-            gain.init_full(&geometry, None, false).err()
+            gain.init(&geometry, None).err()
         );
 
         Ok(())

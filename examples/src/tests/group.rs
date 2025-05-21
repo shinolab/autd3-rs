@@ -7,13 +7,13 @@ pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
-    autd.group_send(
-        |dev| match dev.idx() {
+    autd.send(Group {
+        key_map: |dev| match dev.idx() {
             0 => Some("null"),
             1 => Some("focus"),
             _ => None,
         },
-        HashMap::from([
+        datagram_map: HashMap::from([
             ("null", Null {}.into_boxed()),
             (
                 "focus",
@@ -24,7 +24,7 @@ pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
                 .into_boxed(),
             ),
         ]),
-    )?;
+    })?;
 
     Ok(true)
 }
@@ -34,7 +34,7 @@ pub fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Result<b
 
     let pos = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
-    let g = Group {
+    let g = gain::Group {
         key_map: move |dev| {
             let cx = dev.center().x;
             move |tr| {

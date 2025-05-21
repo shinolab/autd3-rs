@@ -12,9 +12,9 @@ impl OperationGenerator for ModulationOperationGenerator {
     type O1 = ModulationOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
         let d = self.g.clone();
-        (
+        Some((
             Self::O1::new(
                 d,
                 self.config,
@@ -23,7 +23,7 @@ impl OperationGenerator for ModulationOperationGenerator {
                 self.transition_mode,
             ),
             Self::O2 {},
-        )
+        ))
     }
 }
 

@@ -99,7 +99,7 @@ fn send_mod_unsafe(
 ) -> anyhow::Result<()> {
     let mut rng = rand::rng();
 
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -118,7 +118,10 @@ fn send_mod_unsafe(
         transition_mode,
     );
 
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
 
     assert_eq!(m.len(), cpu.fpga().modulation_cycle(segment));
     assert_eq!(freq_div, cpu.fpga().modulation_freq_divide(segment));
@@ -136,7 +139,7 @@ fn send_mod_unsafe(
 
 #[test]
 fn swap_mod_segment_unsafe() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -153,11 +156,17 @@ fn swap_mod_segment_unsafe() -> anyhow::Result<()> {
         loop_behavior: LoopBehavior::Infinite,
     };
 
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
     assert_eq!(Segment::S0, cpu.fpga().req_modulation_segment());
 
     let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
     assert_eq!(Segment::S1, cpu.fpga().req_modulation_segment());
 
     Ok(())
@@ -165,7 +174,7 @@ fn swap_mod_segment_unsafe() -> anyhow::Result<()> {
 
 #[test]
 fn mod_freq_div_too_small() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -177,7 +186,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
         };
         assert_eq!(
             Err(AUTDDriverError::InvalidSilencerSettings),
-            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         )
     }
 
@@ -186,10 +195,16 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
             buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
             sampling_config: SamplingConfig::new(NonZeroU16::MAX),
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = Silencer::<FixedCompletionSteps>::default();
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = WithSegment {
             inner: TestModulation {
@@ -201,7 +216,10 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
             segment: Segment::S1,
             transition_mode: None,
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = Silencer {
             config: FixedCompletionSteps {
@@ -210,12 +228,15 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
                 strict_mode: true,
             },
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSilencerSettings),
-            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
     }
 
@@ -224,7 +245,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 
 #[test]
 fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -241,7 +262,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         };
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
-            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
     }
 
@@ -258,7 +279,7 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         };
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
-            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
     }
 
@@ -272,12 +293,15 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
             segment: Segment::S1,
             transition_mode: None,
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = SwapSegment::Modulation(Segment::S1, TransitionMode::SyncIdx);
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
-            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
     }
 
@@ -294,7 +318,7 @@ fn test_miss_transition_time(
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
 ) -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -312,7 +336,10 @@ fn test_miss_transition_time(
     };
 
     cpu.update_with_sys_time(DcSysTime::from_utc(systime).unwrap());
-    assert_eq!(expect, send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        expect,
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
     if expect.is_ok() {
         assert_eq!(transition_mode, cpu.fpga().modulation_transition_mode());
     }

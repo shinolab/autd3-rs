@@ -98,7 +98,7 @@ impl GainCalculatorGenerator for Bessel {
 impl Gain for Bessel {
     type G = Bessel;
 
-    fn init(self) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -114,15 +114,14 @@ mod tests {
     use crate::tests::{create_geometry, random_point3, random_vector3};
 
     fn bessel_check(
-        g: Bessel,
+        mut b: Bessel,
         pos: Point3,
         dir: UnitVector3,
         theta: Angle,
         intensity: EmitIntensity,
         phase_offset: Phase,
         geometry: &Geometry,
-    ) -> anyhow::Result<()> {
-        let mut b = g.init()?;
+    ) {
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
@@ -146,8 +145,6 @@ mod tests {
                 assert_eq!(intensity, d.intensity);
             });
         });
-
-        Ok(())
     }
 
     #[test]
@@ -179,7 +176,15 @@ mod tests {
                 phase_offset,
             },
         };
-        bessel_check(g, pos, dir, theta, intensity, phase_offset, &geometry)?;
+        bessel_check(
+            g.init(&geometry, None).unwrap(),
+            pos,
+            dir,
+            theta,
+            intensity,
+            phase_offset,
+            &geometry,
+        );
 
         Ok(())
     }

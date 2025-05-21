@@ -9,8 +9,8 @@ impl autd3_driver::firmware::operation::OperationGenerator for NullOperationGene
     type O1 = autd3_core::datagram::NullOp;
     type O2 = autd3_core::datagram::NullOp;
 
-    fn generate(&mut self, _: &autd3_core::derive::Device) -> (Self::O1, Self::O2) {
-        (autd3_core::datagram::NullOp, autd3_core::datagram::NullOp)
+    fn generate(&mut self, _: &autd3_core::derive::Device) -> Option<(Self::O1, Self::O2)> {
+        Some((autd3_core::datagram::NullOp, autd3_core::datagram::NullOp))
     }
 }
 
@@ -20,8 +20,7 @@ impl autd3_core::datagram::Datagram for NullDatagram {
 
     fn operation_generator(
         self,
-        _: &autd3_core::geometry::Geometry,
-        _: bool,
+        _: &mut autd3_core::geometry::Geometry,
     ) -> Result<Self::G, Self::Error> {
         Ok(NullOperationGenerator)
     }

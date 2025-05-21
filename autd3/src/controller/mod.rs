@@ -1,4 +1,3 @@
-mod group;
 mod sender;
 
 use crate::{error::AUTDError, gain::Null, modulation::Static};
@@ -307,8 +306,6 @@ impl<L: Link> Drop for Controller<L> {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use std::sync::Mutex;
-
     use crate::{
         core::{
             defined::mm,
@@ -328,40 +325,11 @@ pub(crate) mod tests {
 
     use super::*;
 
-    // GRCOV_EXCL_START
     pub fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
         Ok(Controller::open(
             (0..dev_num).map(|_| AUTD3::default()),
             Audit::new(AuditOption::default()),
         )?)
-    }
-    // GRCOV_EXCL_STOP
-
-    #[derive(Gain, Debug)]
-    pub struct TestGain {
-        pub test: Arc<Mutex<Vec<bool>>>,
-    }
-
-    impl Gain for TestGain {
-        type G = Null;
-
-        // GRCOV_EXCL_START
-        fn init(self) -> Result<Self::G, GainError> {
-            unimplemented!()
-        }
-        // GRCOV_EXCL_STOP
-
-        fn init_full(
-            self,
-            geometry: &Geometry,
-            _filter: Option<&HashMap<usize, BitVec>>,
-            _: bool,
-        ) -> Result<Self::G, GainError> {
-            geometry.iter().for_each(|dev| {
-                self.test.lock().unwrap()[dev.idx()] = dev.enable;
-            });
-            Ok(Null {})
-        }
     }
 
     #[test]
@@ -416,7 +384,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -426,7 +394,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -631,7 +599,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -641,7 +609,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init()?
+            .init(&autd.geometry, None)?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

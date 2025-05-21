@@ -1,4 +1,4 @@
-mod boxed;
+pub(crate) mod boxed;
 mod clear;
 mod cpu_gpio_out;
 mod debug;
@@ -79,7 +79,7 @@ pub trait OperationGenerator {
     type O1: Operation;
     type O2: Operation;
     #[must_use]
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2);
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)>;
 }
 
 #[doc(hidden)]
@@ -93,7 +93,7 @@ impl OperationHandler {
     ) -> Vec<Option<(G::O1, G::O2)>> {
         geometry
             .devices()
-            .map(|dev| Some(generator.generate(dev)))
+            .map(|dev| generator.generate(dev))
             .collect()
     }
 
@@ -265,7 +265,7 @@ pub(crate) mod tests {
     #[test]
     #[case::serial(false)]
     #[case::parallel(true)]
-    fn test(#[case] parallel: bool) {
+    fn operation_handler(#[case] parallel: bool) {
         use crate::geometry::Point3;
 
         let geometry = Geometry::new(vec![Device::new(
@@ -361,6 +361,41 @@ pub(crate) mod tests {
         assert_eq!(op[0].as_ref().unwrap().0.num_frames, 0);
         assert_eq!(op[0].as_ref().unwrap().1.num_frames, 0);
         assert!(sent_flags[0]);
+        assert!(OperationHandler::is_done(&op));
+    }
+
+    #[rstest::rstest]
+    #[test]
+    #[case::serial(false)]
+    #[case::parallel(true)]
+    fn operation_handler_none(#[case] parallel: bool) {
+        use crate::geometry::Point3;
+
+        let geometry = Geometry::new(vec![Device::new(
+            UnitQuaternion::identity(),
+            vec![Transducer::new(Point3::origin())],
+        )]);
+
+        let mut op: Vec<Option<(OperationMock, OperationMock)>> = vec![None, None];
+
+        assert!(OperationHandler::is_done(&op));
+
+        let msg_id = MsgId::new(0);
+        let mut sent_flags = vec![false; 1];
+        let mut tx = vec![TxMessage::new_zeroed(); 1];
+
+        assert!(
+            OperationHandler::pack(
+                msg_id,
+                &mut op,
+                &geometry,
+                &mut sent_flags,
+                &mut tx,
+                parallel
+            )
+            .is_ok()
+        );
+        assert!(!sent_flags[0]);
         assert!(OperationHandler::is_done(&op));
     }
 

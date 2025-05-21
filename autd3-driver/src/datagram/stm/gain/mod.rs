@@ -46,7 +46,6 @@ pub trait GainSTMGenerator: std::fmt::Debug {
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        parallel: bool,
     ) -> Result<Self::T, GainError>;
     /// Returns the length of the sequence of gains.
     #[must_use]
@@ -145,8 +144,8 @@ impl<T: GainSTMIteratorGenerator> OperationGenerator for GainSTMOperationGenerat
     type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator>::Calculator, T::Iterator>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((
             Self::O1::new(
                 self.g.generate(device),
                 self.size,
@@ -157,7 +156,7 @@ impl<T: GainSTMIteratorGenerator> OperationGenerator for GainSTMOperationGenerat
                 self.transition_mode,
             ),
             Self::O2 {},
-        )
+        ))
     }
 }
 
@@ -168,7 +167,6 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C
     fn operation_generator_with_loop_behavior(
         self,
         geometry: &Geometry,
-        parallel: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,
@@ -179,7 +177,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C
         let GainSTMOption { mode } = self.option;
         let gains = self.gains;
         Ok(GainSTMOperationGenerator {
-            g: gains.init(geometry, None, parallel)?,
+            g: gains.init(geometry, None)?,
             size,
             sampling_config,
             mode,

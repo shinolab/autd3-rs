@@ -7,15 +7,48 @@ use crate::firmware::operation::OperationGenerator;
 
 impl<O1, O2> OperationGenerator for CombinedOperationGenerator<O1, O2>
 where
-    O1: OperationGenerator,
+    O1: OperationGenerator<O2 = NullOp>,
     O2: OperationGenerator<O2 = NullOp>,
 {
     type O1 = O1::O1;
     type O2 = O2::O1;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        let (o1, _) = self.o1.generate(device);
-        let (o2, _) = self.o2.generate(device);
-        (o1, o2)
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        match (self.o1.generate(device), self.o2.generate(device)) {
+            (Some((o1, _)), Some((o2, _))) => Some((o1, o2)),
+            _ => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::firmware::operation::{OperationGenerator, tests::create_device};
+
+    struct TestOpGen {
+        has: bool,
+    }
+
+    impl OperationGenerator for TestOpGen {
+        type O1 = NullOp;
+        type O2 = NullOp;
+
+        fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
+            self.has.then_some((NullOp {}, NullOp {}))
+        }
+    }
+
+    #[rstest::rstest]
+    #[case(true, true)]
+    #[case(false, false)]
+    #[test]
+    fn combined_operation_generator(#[case] expect: bool, #[case] has: bool) {
+        let device = create_device(1);
+        let mut generator = CombinedOperationGenerator {
+            o1: TestOpGen { has },
+            o2: TestOpGen { has },
+        };
+        assert_eq!(expect, generator.generate(&device).is_some());
     }
 }

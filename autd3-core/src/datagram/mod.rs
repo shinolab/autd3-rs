@@ -34,6 +34,16 @@ impl Default for DatagramOption {
     }
 }
 
+impl DatagramOption {
+    /// Merges two [`DatagramOption`]s.
+    pub fn merge(self, other: DatagramOption) -> Self {
+        Self {
+            timeout: self.timeout.max(other.timeout),
+            parallel_threshold: self.parallel_threshold.min(other.parallel_threshold),
+        }
+    }
+}
+
 /// [`DatagramL`] is a [`Datagram`] with [`LoopBehavior`].
 pub trait DatagramL: std::fmt::Debug {
     #[doc(hidden)]
@@ -45,7 +55,6 @@ pub trait DatagramL: std::fmt::Debug {
     fn operation_generator_with_loop_behavior(
         self,
         geometry: &Geometry,
-        parallel: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,
@@ -67,7 +76,6 @@ pub trait DatagramS: std::fmt::Debug {
     fn operation_generator_with_segment(
         self,
         geometry: &Geometry,
-        parallel: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, Self::Error>;
@@ -84,13 +92,11 @@ impl<D: DatagramL> DatagramS for D {
     fn operation_generator_with_segment(
         self,
         geometry: &Geometry,
-        parallel: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_loop_behavior(
             geometry,
-            parallel,
             segment,
             transition_mode,
             LoopBehavior::Infinite,
@@ -110,11 +116,7 @@ pub trait Datagram: std::fmt::Debug {
     type Error;
 
     #[doc(hidden)]
-    fn operation_generator(
-        self,
-        geometry: &Geometry,
-        parallel: bool,
-    ) -> Result<Self::G, Self::Error>;
+    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
     #[must_use]
@@ -127,14 +129,9 @@ impl<D: DatagramS> Datagram for D {
     type G = D::G;
     type Error = D::Error;
 
-    fn operation_generator(
-        self,
-        geometry: &Geometry,
-        parallel: bool,
-    ) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_segment(
             geometry,
-            parallel,
             Segment::S0,
             Some(TransitionMode::Immediate),
         )
@@ -142,5 +139,25 @@ impl<D: DatagramS> Datagram for D {
 
     fn option(&self) -> DatagramOption {
         <D as DatagramS>::option(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn datagram_option_merge() {
+        let opt1 = DatagramOption {
+            timeout: Duration::from_secs(1),
+            parallel_threshold: 10,
+        };
+        let opt2 = DatagramOption {
+            timeout: Duration::from_secs(2),
+            parallel_threshold: 5,
+        };
+        let opt3 = opt1.merge(opt2);
+        assert_eq!(opt3.timeout, Duration::from_secs(2));
+        assert_eq!(opt3.parallel_threshold, 5);
     }
 }

@@ -23,7 +23,7 @@ use zerocopy::FromZeros;
 
 #[test]
 fn send_clear_unsafe() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -36,7 +36,10 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
                 strict_mode: true,
             },
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = Silencer {
             config: FixedUpdateRate {
@@ -44,13 +47,19 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
                 phase: NonZeroU16::new(1).unwrap(),
             },
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect(),
             sampling_config: SamplingConfig::new(NonZeroU16::MAX),
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = TestGain {
             data: [(
@@ -66,7 +75,10 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
             .into_iter()
             .collect(),
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = WithSegment {
             inner: FociSTM {
@@ -81,18 +93,30 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
             segment: Segment::S0,
             transition_mode: Some(TransitionMode::Ext),
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = PhaseCorrection::new(|_| |_| Phase::PI);
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = PulseWidthEncoder::new(|_| |_| PulseWidth::new(0xFF).unwrap());
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
     }
 
     let d = Clear::new();
 
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
 
     assert!(!cpu.reads_fpga_state());
     assert_eq!(
