@@ -16,8 +16,8 @@ impl OperationGenerator for FetchFirmwareInfoOpGenerator {
     type O1 = FirmInfoOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, _: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new(self.inner), Self::O2 {})
+    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((Self::O1::new(self.inner), Self::O2 {}))
     }
 }
 
@@ -25,7 +25,7 @@ impl Datagram for FirmwareVersionType {
     type G = FetchFirmwareInfoOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(Self::G { inner: self })
     }
 }

@@ -8,7 +8,7 @@ use zerocopy::FromZeros;
 
 #[test]
 fn send_force_fan() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -16,11 +16,17 @@ fn send_force_fan() -> anyhow::Result<()> {
     assert!(!cpu.fpga().is_force_fan());
 
     let d = ForceFan::new(|_dev| true);
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
     assert!(cpu.fpga().is_force_fan());
 
     let d = ForceFan::new(|_dev| false);
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
     assert!(!cpu.fpga().is_force_fan());
 
     Ok(())

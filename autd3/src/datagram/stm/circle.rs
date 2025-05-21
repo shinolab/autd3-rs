@@ -146,7 +146,6 @@ impl GainSTMGenerator for Circle {
         self,
         _: &Geometry,
         _filter: Option<&HashMap<usize, BitVec>>,
-        _: bool,
     ) -> Result<Self::T, GainError> {
         Ok(self)
     }

@@ -30,7 +30,7 @@ impl GainCalculatorGenerator for Null {
 impl Gain for Null {
     type G = Null;
 
-    fn init(self) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -42,18 +42,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_null() -> anyhow::Result<()> {
+    fn test_null() {
         let geometry = create_geometry(1);
 
         let g = Null::new();
-        let mut b = g.init()?;
+        let mut b = g;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
                 assert_eq!(Drive::NULL, d.calc(tr));
             });
         });
-
-        Ok(())
     }
 }

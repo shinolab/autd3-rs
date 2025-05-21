@@ -97,8 +97,8 @@ impl<
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new((self.f)(device)), Self::O2 {})
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((Self::O1::new((self.f)(device)), Self::O2 {}))
     }
 }
 
@@ -110,7 +110,7 @@ impl<
     type G = PulseWidthEncoderOpGenerator<H, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(PulseWidthEncoderOpGenerator { f: self.f })
     }
 

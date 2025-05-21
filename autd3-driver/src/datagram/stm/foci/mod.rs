@@ -109,8 +109,8 @@ impl<const N: usize, G: FociSTMIteratorGenerator<N>> OperationGenerator
     type O1 = FociSTMOp<N, G::Iterator>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((
             Self::O1::new(
                 self.generator.generate(device),
                 self.size,
@@ -120,7 +120,7 @@ impl<const N: usize, G: FociSTMIteratorGenerator<N>> OperationGenerator
                 self.transition_mode,
             ),
             Self::O2 {},
-        )
+        ))
     }
 }
 
@@ -133,7 +133,6 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Debug> Datagra
     fn operation_generator_with_loop_behavior(
         self,
         _: &Geometry,
-        _: bool,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,

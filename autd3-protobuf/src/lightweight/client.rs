@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug, hash::Hash, net::SocketAddr};
+use std::net::SocketAddr;
 
 use autd3_core::geometry::{Device, Geometry};
 
@@ -177,50 +177,6 @@ impl Controller {
         Ok(())
     }
 
-    pub async fn group_send<K, F>(
-        &mut self,
-        key_map: F,
-        datagram_map: HashMap<K, crate::DatagramTuple>,
-    ) -> Result<(), crate::error::AUTDProtoBufError>
-    where
-        K: Hash + Eq + Debug,
-        F: Fn(&Device) -> Option<K>,
-    {
-        let (datagram_key, datagrams): (Vec<_>, Vec<_>) = datagram_map.into_iter().collect();
-        let keys = self
-            .geometry
-            .iter()
-            .map(|dev| {
-                if !dev.enable {
-                    return -1;
-                }
-                if let Some(key) = key_map(dev) {
-                    datagram_key
-                        .iter()
-                        .position(|k| k == &key)
-                        .map(|i| i as i32)
-                        .unwrap_or(-1)
-                } else {
-                    -1
-                }
-            })
-            .collect();
-        let res = self
-            .client
-            .group_send(tonic::Request::new(crate::GroupSendRequestLightweight {
-                keys,
-                datagrams,
-                sender_option: Some(self.default_sender_option.into()),
-                sleeper: None,
-            }))
-            .await?
-            .into_inner();
-        if res.err {
-            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
-        }
-        Ok(())
-    }
-
     pub async fn close(mut self) -> Result<(), crate::error::AUTDProtoBufError> {
         let res = self
             .client
@@ -260,52 +216,6 @@ where
             .client
             .send(tonic::Request::new(crate::SendRequestLightweight {
                 datagram: Some(datagram.into_lightweight()),
-                sender_option: Some(self.option.into()),
-                sleeper: Some((&self.sleeper).into()),
-            }))
-            .await?
-            .into_inner();
-        if res.err {
-            return Err(crate::error::AUTDProtoBufError::SendError(res.msg));
-        }
-        Ok(())
-    }
-
-    pub async fn group_send<K, D, F>(
-        &mut self,
-        key_map: F,
-        datagram_map: HashMap<K, crate::DatagramTuple>,
-    ) -> Result<(), crate::error::AUTDProtoBufError>
-    where
-        K: Hash + Eq + Debug,
-        F: Fn(&Device) -> Option<K>,
-    {
-        let (datagram_key, datagrams): (Vec<_>, Vec<_>) = datagram_map.into_iter().collect();
-        let keys = self
-            .controller
-            .geometry
-            .iter()
-            .map(|dev| {
-                if !dev.enable {
-                    return -1;
-                }
-                if let Some(key) = key_map(dev) {
-                    datagram_key
-                        .iter()
-                        .position(|k| k == &key)
-                        .map(|i| i as i32)
-                        .unwrap_or(-1)
-                } else {
-                    -1
-                }
-            })
-            .collect();
-        let res = self
-            .controller
-            .client
-            .group_send(tonic::Request::new(crate::GroupSendRequestLightweight {
-                keys,
-                datagrams,
                 sender_option: Some(self.option.into()),
                 sleeper: Some((&self.sleeper).into()),
             }))

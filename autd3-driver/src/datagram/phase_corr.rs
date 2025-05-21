@@ -46,8 +46,8 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Operation
     type O1 = PhaseCorrectionOp<FT>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (Self::O1::new((self.f)(device)), Self::O2 {})
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((Self::O1::new((self.f)(device)), Self::O2 {}))
     }
 }
 
@@ -57,7 +57,7 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Datagram
     type G = PhaseCorrectionOpGenerator<FT, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(Self::G { f: self.f })
     }
 }

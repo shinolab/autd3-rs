@@ -29,8 +29,13 @@ impl OperationGenerator for OperationGeneratorTuple {
     type O1 = BoxedOperation;
     type O2 = BoxedOperation;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (self.g1.generate(device).0, self.g2.generate(device).0)
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        match (self.g1.generate(device), self.g2.generate(device)) {
+            (Some((o1, _)), Some((o2, _))) => {
+                Some((BoxedOperation::new(o1), BoxedOperation::new(o2)))
+            }
+            _ => None,
+        }
     }
 }
 
@@ -38,14 +43,10 @@ impl Datagram for BoxedDatagramTuple {
     type G = OperationGeneratorTuple;
     type Error = AUTDDriverError;
 
-    fn operation_generator(
-        self,
-        geometry: &Geometry,
-        parallel: bool,
-    ) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(OperationGeneratorTuple {
-            g1: self.d1.operation_generator(geometry, parallel)?,
-            g2: self.d2.operation_generator(geometry, parallel)?,
+            g1: self.d1.operation_generator(geometry)?,
+            g2: self.d2.operation_generator(geometry)?,
         })
     }
 

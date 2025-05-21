@@ -46,14 +46,14 @@ impl<F: Fn(&Device, GPIOOut) -> GPIOOutputType + Send + Sync> OperationGenerator
     type O1 = DebugSettingOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
-        (
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((
             Self::O1::new(
                 [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
                     .map(|gpio| (self.f)(device, gpio).into()),
             ),
             Self::O2 {},
-        )
+        ))
     }
 }
 
@@ -61,7 +61,7 @@ impl<F: Fn(&Device, GPIOOut) -> GPIOOutputType + Send + Sync> Datagram for GPIOO
     type G = DebugSettingOpGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(DebugSettingOpGenerator { f: self.f })
     }
 }

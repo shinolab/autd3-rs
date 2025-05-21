@@ -46,7 +46,6 @@ trait DGain {
         &mut self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        parallel: bool,
     ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
@@ -61,13 +60,12 @@ impl<
         &mut self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        parallel: bool,
     ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Gain::init`.
         let g = unsafe { tmp.assume_init() };
-        Ok(Box::new(g.init_full(geometry, filter, parallel)?) as _)
+        Ok(Box::new(g.init(geometry, filter)?) as _)
     }
 
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -99,23 +97,16 @@ impl std::fmt::Debug for BoxedGain {
 impl Gain for BoxedGain {
     type G = DynGainCalculatorGenerator;
 
-    fn init_full(
+    fn init(
         self,
         geometry: &Geometry,
         filter: Option<&HashMap<usize, BitVec>>,
-        parallel: bool,
     ) -> Result<Self::G, GainError> {
         let Self { mut g, .. } = self;
         Ok(DynGainCalculatorGenerator {
-            g: g.dyn_init(geometry, filter, parallel)?,
+            g: g.dyn_init(geometry, filter)?,
         })
     }
-
-    // GRCOV_EXCL_START
-    fn init(self) -> Result<Self::G, GainError> {
-        unimplemented!()
-    }
-    // GRCOV_EXCL_STOP
 }
 
 /// Trait to convert [`Gain`] to [`BoxedGain`].
@@ -198,7 +189,7 @@ pub mod tests {
         )
         .into_boxed();
 
-        let mut f = g.init_full(&geometry, None, false)?;
+        let mut f = g.init(&geometry, None)?;
         assert_eq!(
             expect,
             geometry

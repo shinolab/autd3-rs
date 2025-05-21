@@ -19,7 +19,7 @@ fn fpga_state(cpu: &CPUEmulator) -> FPGAState {
 
 #[test]
 fn send_reads_fpga_state_unsafe() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -28,7 +28,10 @@ fn send_reads_fpga_state_unsafe() -> anyhow::Result<()> {
 
     let d = ReadsFPGAState::new(|_| true);
 
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
 
     assert!(cpu.reads_fpga_state());
     assert_eq!(0, cpu.rx().data());
@@ -62,7 +65,10 @@ fn send_reads_fpga_state_unsafe() -> anyhow::Result<()> {
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         let d = WithSegment {
             inner: FociSTM {
@@ -74,7 +80,10 @@ fn send_reads_fpga_state_unsafe() -> anyhow::Result<()> {
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
         };
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
     }
     cpu.update();
     let state = fpga_state(&cpu);

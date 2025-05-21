@@ -56,28 +56,9 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
             .is_parallel(self.geometry.num_devices(), s.option().parallel_threshold);
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
-        self.send_impl(
-            OperationHandler::generate(
-                s.operation_generator(self.geometry, parallel)?,
-                self.geometry,
-            ),
-            timeout,
-            parallel,
-        )
-        .await
-    }
+        let g = s.operation_generator(self.geometry)?;
+        let mut operations = OperationHandler::generate(g, self.geometry);
 
-    pub(crate) async fn send_impl<O1, O2>(
-        &mut self,
-        mut operations: Vec<Option<(O1, O2)>>,
-        timeout: Duration,
-        parallel: bool,
-    ) -> Result<(), AUTDDriverError>
-    where
-        O1: Operation,
-        O2: Operation,
-        AUTDDriverError: From<O1::Error> + From<O2::Error>,
-    {
         self.link.update(self.geometry).await?;
 
         // We prioritize average behavior for the transmission timing. That is, not the interval from the previous transmission, but ensuring that T/`send_interval` transmissions are performed in a sufficiently long time T.

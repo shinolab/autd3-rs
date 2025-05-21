@@ -39,7 +39,7 @@ impl GainCalculatorGenerator for Uniform {
 impl Gain for Uniform {
     type G = Uniform;
 
-    fn init(self) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -53,7 +53,7 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    fn test_uniform() -> anyhow::Result<()> {
+    fn test_uniform() {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
@@ -62,7 +62,7 @@ mod tests {
         let phase = Phase(rng.random());
         let g = Uniform::new(intensity, phase);
 
-        let mut b = g.init()?;
+        let mut b = g;
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
@@ -71,6 +71,5 @@ mod tests {
                 assert_eq!(intensity, d.intensity);
             });
         });
-        Ok(())
     }
 }

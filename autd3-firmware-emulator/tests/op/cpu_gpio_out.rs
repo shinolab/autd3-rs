@@ -17,14 +17,17 @@ fn send_cpu_gpio_out(
     #[case] pa5: bool,
     #[case] pa7: bool,
 ) -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
 
     let d = CpuGPIOOutputs::new(|_| CpuGPIOPort::new(pa5, pa7));
 
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
 
     assert_eq!(expect, cpu.port_a_podr());
 

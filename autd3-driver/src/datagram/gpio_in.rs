@@ -32,12 +32,12 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerato
     type O1 = EmulateGPIOInOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
         let h = (self.f)(device);
-        (
+        Some((
             Self::O1::new([h(GPIOIn::I0), h(GPIOIn::I1), h(GPIOIn::I2), h(GPIOIn::I3)]),
             Self::O2 {},
-        )
+        ))
     }
 }
 
@@ -45,7 +45,7 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for Emul
     type G = EmulateGPIOInOpGenerator<H, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(EmulateGPIOInOpGenerator { f: self.f })
     }
 }

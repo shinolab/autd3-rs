@@ -81,6 +81,13 @@ pub enum AUTDDriverError {
     #[error("{0}")]
     Link(#[from] LinkError),
 
+    /// Unknown group key.
+    #[error("Unknown group key({0})")]
+    UnknownKey(String),
+    /// Unused group key.
+    #[error("Unused group key({0})")]
+    UnusedKey(String),
+
     /// Link is closed.
     #[error("Link is closed")]
     LinkClosed,

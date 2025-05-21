@@ -68,7 +68,7 @@ impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) ->
 {
     type G = Custom<'a, FT, F>;
 
-    fn init(self) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -83,7 +83,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_custom() -> anyhow::Result<()> {
+    fn test_custom() {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(2);
@@ -104,7 +104,7 @@ mod tests {
             }
         });
 
-        let mut d = transducer_test.init()?;
+        let mut d = transducer_test.init(&geometry, None).unwrap();
         geometry.iter().for_each(|dev| {
             let d = d.generate(dev);
             dev.iter().enumerate().for_each(|(idx, tr)| {
@@ -115,7 +115,5 @@ mod tests {
                 }
             });
         });
-
-        Ok(())
     }
 }

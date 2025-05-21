@@ -44,9 +44,9 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator for CpuGPIO
     type O1 = CpuGPIOOutOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> (Self::O1, Self::O2) {
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
         let port = (self.f)(device);
-        (CpuGPIOOutOp::new(port.pa5, port.pa7), Self::O2 {})
+        Some((CpuGPIOOutOp::new(port.pa5, port.pa7), Self::O2 {}))
     }
 }
 
@@ -54,7 +54,7 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIOOutputs<F>
     type G = CpuGPIOOutOpGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: bool) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(Self::G { f: self.f })
     }
 }

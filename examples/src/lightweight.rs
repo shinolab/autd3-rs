@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use autd3::prelude::*;
 
 use autd3_protobuf::lightweight::Controller;
@@ -47,32 +45,6 @@ async fn main() -> anyhow::Result<()> {
             option: Default::default(),
         };
         autd.send(stm).await?;
-    }
-
-    {
-        // group_send requires `autd3_protobuf::lightweight::Datagram::into_lightweight()`
-        use autd3_protobuf::lightweight::Datagram;
-        autd.group_send(
-            |dev| Some(dev.idx()),
-            HashMap::from([
-                (0, Null {}.into_lightweight()),
-                (
-                    1,
-                    (
-                        Sine {
-                            freq: 150. * Hz,
-                            option: Default::default(),
-                        },
-                        Focus {
-                            pos: center,
-                            option: Default::default(),
-                        },
-                    )
-                        .into_lightweight(),
-                ),
-            ]),
-        )
-        .await?;
     }
 
     println!("Press enter to exit...");

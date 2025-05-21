@@ -15,7 +15,7 @@ use zerocopy::FromZeros;
 fn config_pwe_unsafe() -> anyhow::Result<()> {
     let mut rng = rand::rng();
 
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -27,7 +27,10 @@ fn config_pwe_unsafe() -> anyhow::Result<()> {
 
         let d = PulseWidthEncoder::new(|_| |i| buf[i.0 as usize]);
 
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         assert_eq!(buf, cpu.fpga().pulse_width_encoder_table());
     }
@@ -44,7 +47,10 @@ fn config_pwe_unsafe() -> anyhow::Result<()> {
 
         let d = PulseWidthEncoder::default();
 
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         assert_eq!(default_table, cpu.fpga().pulse_width_encoder_table());
     }

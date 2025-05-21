@@ -8,7 +8,7 @@ use zerocopy::FromZeros;
 
 #[test]
 fn send_sync() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
 
@@ -17,7 +17,7 @@ fn send_sync() -> anyhow::Result<()> {
 
     assert_eq!(
         Ok(()),
-        send(&mut MsgId::new(0), &mut cpu, d, &geometry, &mut tx)
+        send(&mut MsgId::new(0), &mut cpu, d, &mut geometry, &mut tx)
     );
 
     assert!(cpu.synchronized());

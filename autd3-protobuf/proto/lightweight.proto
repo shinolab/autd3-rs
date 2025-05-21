@@ -80,13 +80,6 @@ message SendResponseLightweight {
   string msg = 2;
 }
 
-message GroupSendRequestLightweight {
-  repeated int32 keys = 1;
-  repeated DatagramTuple datagrams = 2;
-  optional SenderOption sender_option = 3;
-  optional Sleeper sleeper = 4;
-}
-
 message FirmwareVersionRequestLightweight {}
 message FirmwareVersionResponseLightweight {
   message FirmwareVersion {
@@ -124,7 +117,5 @@ service ECATLight {
   rpc FpgaState(FPGAStateRequestLightweight)
       returns (FPGAStateResponseLightweight) {}
   rpc Send(SendRequestLightweight) returns (SendResponseLightweight) {}
-  rpc GroupSend(GroupSendRequestLightweight) returns (SendResponseLightweight) {
-  }
   rpc Close(CloseRequestLightweight) returns (SendResponseLightweight) {}
 }
