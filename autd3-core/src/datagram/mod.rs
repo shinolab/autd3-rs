@@ -116,7 +116,7 @@ pub trait Datagram: std::fmt::Debug {
     type Error;
 
     #[doc(hidden)]
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, Self::Error>;
+    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
     #[must_use]
@@ -129,7 +129,7 @@ impl<D: DatagramS> Datagram for D {
     type G = D::G;
     type Error = D::Error;
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_segment(
             geometry,
             Segment::S0,

@@ -32,7 +32,7 @@ impl<D: DatagramS> Datagram for WithSegment<D> {
 
     fn operation_generator(
         self,
-        geometry: &autd3_core::derive::Geometry,
+        geometry: &mut autd3_core::derive::Geometry,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramS>::operation_generator_with_segment(
             self.inner,

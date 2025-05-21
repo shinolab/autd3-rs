@@ -23,7 +23,7 @@ fn send_debug_output_idx(
     #[case] expect_values: [u64; 4],
     #[case] debug_types: [GPIOOutputType<'static>; 4],
 ) -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -35,7 +35,10 @@ fn send_debug_output_idx(
         GPIOOut::O3 => debug_types[3].clone(),
     });
 
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
 
     assert_eq!(expect_types, cpu.fpga().debug_types());
     assert_eq!(expect_values, cpu.fpga().debug_values());
@@ -45,7 +48,7 @@ fn send_debug_output_idx(
 
 #[test]
 fn send_debug_pwm_out() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -57,7 +60,10 @@ fn send_debug_pwm_out() -> anyhow::Result<()> {
         GPIOOut::O3 => GPIOOutputType::PwmOut(&dev[3]),
     });
 
-    assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
 
     assert_eq!(
         [DBG_PWM_OUT, DBG_PWM_OUT, DBG_PWM_OUT, DBG_PWM_OUT],

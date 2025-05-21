@@ -15,14 +15,14 @@ use derive_more::Debug;
 
 /// [`Gain`] for grouping transducers and sending different [`Gain`] to each group.
 ///
-/// If grouping by device is sufficient, [`Controller::group_send`] is recommended.
+/// If grouping by device is sufficient, [`autd3_driver::datagram::Group`] is recommended.
 ///
 /// # Examples
 ///
 /// ```
 /// # use std::collections::HashMap;
 /// use autd3::prelude::*;
-/// use autd3::gain::IntoBoxedGain;
+/// use autd3::gain::{Group, IntoBoxedGain};
 ///
 /// Group {
 ///     key_map: |dev| {
@@ -47,8 +47,6 @@ use derive_more::Debug;
 ///     ]),
 /// };
 /// ```
-///
-/// [`Controller::group_send`]: crate::controller::Controller::group_send
 #[derive(Gain, Debug)]
 pub struct Group<K, FK, F, G: Gain>
 where

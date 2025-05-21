@@ -57,7 +57,7 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Datagram
     type G = PhaseCorrectionOpGenerator<FT, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(Self::G { f: self.f })
     }
 }

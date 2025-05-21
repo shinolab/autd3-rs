@@ -16,7 +16,7 @@ fn only_for_enabled() -> anyhow::Result<()> {
 
     autd[0].enable = false;
 
-    autd.send(Group {
+    autd.send(gain::Group {
         key_map: |dev| {
             check.lock().unwrap()[dev.idx()] = true;
             move |_| Some(0)

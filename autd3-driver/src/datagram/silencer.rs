@@ -188,7 +188,7 @@ where
     type G = SilencerOpGenerator<T>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(Self::G {
             config: self.config,
         })

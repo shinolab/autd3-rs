@@ -5,6 +5,7 @@ mod force_fan;
 mod fpga_gpio_out;
 mod gain;
 mod gpio_in;
+mod group;
 mod info;
 mod modulation;
 mod phase_corr;
@@ -33,6 +34,7 @@ pub use fpga_gpio_out::GPIOOutputs;
 pub use gain::{BoxedGain, IntoBoxedGain};
 #[doc(hidden)]
 pub use gpio_in::EmulateGPIOIn;
+pub use group::Group;
 pub use modulation::{BoxedModulation, IntoBoxedModulation};
 pub use phase_corr::PhaseCorrection;
 pub use pulse_width_encoder::PulseWidthEncoder;

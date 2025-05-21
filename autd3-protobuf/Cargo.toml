@@ -16,14 +16,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = []
 tonic-build = ["dep:tonic-build"]
-lightweight = [
-    "tokio",
-    "derive_more",
-    "autd3",
-    "autd3-gain-holo",
-    "autd3-driver/lightweight",
-    "async-trait",
-]
+lightweight = ["tokio", "derive_more", "autd3", "autd3-gain-holo", "autd3-driver/lightweight", "async-trait"]
 async-trait = ["autd3-core/async-trait", "autd3/async-trait"]
 
 [dependencies]

@@ -113,8 +113,9 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
             .is_parallel(self.geometry.num_devices(), s.option().parallel_threshold);
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
+        let g = s.operation_generator(self.geometry)?;
         self.send_impl(
-            OperationHandler::generate(s.operation_generator(self.geometry)?, self.geometry),
+            OperationHandler::generate(g, self.geometry),
             timeout,
             parallel,
         )

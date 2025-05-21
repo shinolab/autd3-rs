@@ -45,7 +45,7 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for Emul
     type G = EmulateGPIOInOpGenerator<H, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(EmulateGPIOInOpGenerator { f: self.f })
     }
 }

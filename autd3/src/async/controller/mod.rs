@@ -1,4 +1,3 @@
-mod group;
 mod sender;
 
 use crate::{controller::SenderOption, error::AUTDError, gain::Null, modulation::Static};

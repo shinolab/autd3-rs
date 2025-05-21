@@ -110,7 +110,7 @@ impl<
     type G = PulseWidthEncoderOpGenerator<H, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
         Ok(PulseWidthEncoderOpGenerator { f: self.f })
     }
 

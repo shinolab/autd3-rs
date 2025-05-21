@@ -44,7 +44,7 @@ impl<D: DatagramL> Datagram for WithLoopBehavior<D> {
 
     fn operation_generator(
         self,
-        geometry: &autd3_core::derive::Geometry,
+        geometry: &mut autd3_core::derive::Geometry,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramL>::operation_generator_with_loop_behavior(
             self.inner,

@@ -48,7 +48,7 @@ where
 pub trait DDatagram: std::fmt::Debug {
     fn dyn_operation_generator(
         &mut self,
-        geometry: &Geometry,
+        geometry: &mut Geometry,
     ) -> Result<DynDOperationGenerator, AUTDDriverError>;
     #[must_use]
     fn dyn_option(&self) -> DatagramOption;
@@ -66,7 +66,7 @@ where
 {
     fn dyn_operation_generator(
         &mut self,
-        geometry: &Geometry,
+        geometry: &mut Geometry,
     ) -> Result<DynDOperationGenerator, AUTDDriverError> {
         let mut tmp = MaybeUninit::<T>::uninit();
         std::mem::swap(&mut tmp, self);
@@ -122,7 +122,7 @@ impl Datagram for BoxedDatagram {
     type G = DynOperationGenerator;
     type Error = AUTDDriverError;
 
-    fn operation_generator(self, geometry: &Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
         let Self { mut d } = self;
         Ok(DynOperationGenerator {
             g: d.dyn_operation_generator(geometry)?,
@@ -179,7 +179,7 @@ mod tests {
         type G = TestOperationGenerator;
         type Error = AUTDDriverError;
 
-        fn operation_generator(self, _geometry: &Geometry) -> Result<Self::G, Self::Error> {
+        fn operation_generator(self, _geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
             Ok(Self::G {})
         }
     }

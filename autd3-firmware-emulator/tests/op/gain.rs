@@ -59,7 +59,7 @@ impl Gain for TestGain {
 fn send_gain_unsafe() -> anyhow::Result<()> {
     let mut rng = rand::rng();
 
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -81,7 +81,10 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
             .collect();
         let g = TestGain { data: buf.clone() };
 
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, g, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, g, &mut geometry, &mut tx)
+        );
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
@@ -113,7 +116,10 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
             .collect();
         let g = WithSegment::new(TestGain { data: buf.clone() }, Segment::S1, None);
 
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, g, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, g, &mut geometry, &mut tx)
+        );
 
         assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
@@ -134,7 +140,10 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
     {
         let d = SwapSegment::Gain(Segment::S1, TransitionMode::Immediate);
 
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
 
         assert_eq!(Segment::S1, cpu.fpga().req_stm_segment());
     }
@@ -144,7 +153,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
 
 #[test]
 fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -163,7 +172,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             segment: Segment::S0,
             transition_mode: Some(TransitionMode::Immediate),
         },
-        &geometry,
+        &mut geometry,
         &mut tx,
     )?;
 
@@ -188,7 +197,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
         },
-        &geometry,
+        &mut geometry,
         &mut tx,
     )?;
 
@@ -196,13 +205,13 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
         let d = SwapSegment::Gain(Segment::S0, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
-            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
 
         let d = SwapSegment::Gain(Segment::S1, TransitionMode::Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
-            send(&mut msg_id, &mut cpu, d, &geometry, &mut tx)
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
     }
 

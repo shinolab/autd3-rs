@@ -32,7 +32,7 @@ pub fn send<D>(
     msg_id: &mut MsgId,
     cpu: &mut CPUEmulator,
     d: D,
-    geometry: &Geometry,
+    geometry: &mut Geometry,
     tx: &mut [TxMessage],
 ) -> Result<(), AUTDDriverError>
 where
@@ -95,21 +95,21 @@ fn send_invalid_msg_id() {
 
 #[test]
 fn send_ignore_same_data() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0x10);
 
     let d = Clear::new();
-    let generator = d.operation_generator(&geometry)?;
+    let generator = d.operation_generator(&mut geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
     cpu.send(&tx);
     assert_eq!(cpu.rx().ack(), tx[0].header.msg_id.get());
 
     let d = Synchronize::new();
-    let generator = d.operation_generator(&geometry)?;
+    let generator = d.operation_generator(&mut geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
     assert!(!cpu.synchronized());
@@ -121,14 +121,14 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
 
 #[test]
 fn send_slot_2_unsafe() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0x12);
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry)?;
+    let generator = d.operation_generator(&mut geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
 
@@ -142,14 +142,14 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
 
 #[test]
 fn send_slot_2_err() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0);
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry)?;
+    let generator = d.operation_generator(&mut geometry)?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut sent_flags, &mut tx, false)?;
 

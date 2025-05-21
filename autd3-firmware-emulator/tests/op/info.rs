@@ -20,7 +20,7 @@ fn send_firminfo() -> anyhow::Result<()> {
 
     const EMULATOR_BIT: u8 = 1 << 7;
 
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -29,31 +29,34 @@ fn send_firminfo() -> anyhow::Result<()> {
     {
         assert!(!cpu.reads_fpga_state());
         let d = ReadsFPGAState::new(|_| true);
-        assert_eq!(Ok(()), send(&mut msg_id, &mut cpu, d, &geometry, &mut tx));
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
         assert!(cpu.reads_fpga_state());
     }
 
-    send(&mut msg_id, &mut cpu, CPUMajor, &geometry, &mut tx)?;
+    send(&mut msg_id, &mut cpu, CPUMajor, &mut geometry, &mut tx)?;
     assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MAJOR.0, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
-    send(&mut msg_id, &mut cpu, CPUMinor, &geometry, &mut tx)?;
+    send(&mut msg_id, &mut cpu, CPUMinor, &mut geometry, &mut tx)?;
     assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR.0, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
-    send(&mut msg_id, &mut cpu, FPGAMajor, &geometry, &mut tx)?;
+    send(&mut msg_id, &mut cpu, FPGAMajor, &mut geometry, &mut tx)?;
     assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MAJOR.0, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
-    send(&mut msg_id, &mut cpu, FPGAMinor, &geometry, &mut tx)?;
+    send(&mut msg_id, &mut cpu, FPGAMinor, &mut geometry, &mut tx)?;
     assert_eq!(FirmwareVersion::LATEST_VERSION_NUM_MINOR.0, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
-    send(&mut msg_id, &mut cpu, FPGAFunctions, &geometry, &mut tx)?;
+    send(&mut msg_id, &mut cpu, FPGAFunctions, &mut geometry, &mut tx)?;
     assert_eq!(EMULATOR_BIT, cpu.rx().data());
     assert!(!cpu.reads_fpga_state());
 
-    send(&mut msg_id, &mut cpu, Clear, &geometry, &mut tx)?;
+    send(&mut msg_id, &mut cpu, Clear, &mut geometry, &mut tx)?;
     assert!(cpu.reads_fpga_state());
 
     Ok(())
@@ -61,14 +64,14 @@ fn send_firminfo() -> anyhow::Result<()> {
 
 #[test]
 fn invalid_info_type() -> anyhow::Result<()> {
-    let geometry = create_geometry(1);
+    let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0);
 
     let d = FirmwareVersionType::CPUMajor;
-    let (op, op_null) = d.operation_generator(&geometry)?.generate(&geometry[0]);
+    let (op, op_null) = d.operation_generator(&mut geometry)?.generate(&geometry[0]);
 
     OperationHandler::pack(
         msg_id,
