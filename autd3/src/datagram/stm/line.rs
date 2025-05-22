@@ -146,8 +146,8 @@ mod tests {
 
     use autd3_core::sampling_config::SamplingConfig;
     use autd3_driver::{
+        common::mm,
         datagram::{FociSTM, GainSTM, GainSTMOption},
-        defined::mm,
     };
 
     use crate::assert_near_vector3;

@@ -1,5 +1,5 @@
 use crate::{
-    defined::mm,
+    common::mm,
     geometry::{Device, Isometry, Point3, Transducer, Translation, UnitQuaternion},
 };
 use getset::Getters;

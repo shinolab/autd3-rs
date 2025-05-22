@@ -18,7 +18,7 @@ default = []
 lightweight = []
 
 [dependencies]
-autd3-core = { workspace = true, features = ["gain", "defined", "geometry", "derive", "link", "ethercat", "modulation", "sampling_config"] }
+autd3-core = { workspace = true, features = ["gain", "common", "geometry", "derive", "link", "ethercat", "modulation", "sampling_config"] }
 autd3-derive = { workspace = true }
 bitfield-struct = { workspace = true }
 bitflags = { workspace = true }

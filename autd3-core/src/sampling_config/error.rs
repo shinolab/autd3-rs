@@ -2,7 +2,7 @@ use std::{convert::Infallible, time::Duration};
 
 use thiserror::Error;
 
-use crate::defined::Freq;
+use crate::common::Freq;
 
 #[derive(Error, Debug, PartialEq, Copy, Clone)]
 /// An error produced by the sampling configuration.

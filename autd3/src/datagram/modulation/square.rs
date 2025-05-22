@@ -1,4 +1,4 @@
-use autd3_core::{defined::Freq, derive::*};
+use autd3_core::{common::Freq, derive::*};
 
 use super::sampling_mode::{Nearest, SamplingMode};
 
@@ -95,7 +95,7 @@ impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Modulation for Squa
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::defined::Hz;
+    use autd3_driver::common::Hz;
 
     use super::*;
 

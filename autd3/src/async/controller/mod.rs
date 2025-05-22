@@ -321,15 +321,15 @@ impl<L: AsyncLink> Drop for Controller<L> {
 #[cfg(test)]
 mod tests {
     use autd3_core::{
-        defined::mm,
+        common::mm,
         derive::{Modulation, Segment},
         gain::{EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator, Phase},
         link::LinkError,
     };
     use autd3_driver::{
         autd3_device::AUTD3,
+        common::Hz,
         datagram::{GainSTM, ReadsFPGAState},
-        defined::Hz,
     };
 
     use crate::{

@@ -16,4 +16,4 @@ pub mod error;
 /// A module for working with firmware.
 pub mod firmware;
 
-pub use autd3_core::{defined, ethercat, geometry, link};
+pub use autd3_core::{common, ethercat, geometry, link};

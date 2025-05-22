@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use autd3_driver::{
-    defined::{Freq, Hz},
+    common::{Freq, Hz},
     ethercat::DcSysTime,
     firmware::fpga::{LoopBehavior, Segment, TransitionMode},
 };

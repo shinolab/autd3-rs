@@ -7,7 +7,7 @@ use autd3_core::{
         directivity::{Directivity, Sphere},
         propagate,
     },
-    defined::PI,
+    common::PI,
     derive::*,
     geometry::{Point3, UnitVector3},
 };

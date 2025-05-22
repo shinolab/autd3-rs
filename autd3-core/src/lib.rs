@@ -9,14 +9,14 @@
 #[cfg(feature = "acoustics")]
 /// Utilities for acoustics.
 pub mod acoustics;
+#[cfg_attr(docsrs, doc(cfg(feature = "common")))]
+#[cfg(feature = "common")]
+/// Common constants and types.
+pub mod common;
 #[cfg_attr(docsrs, doc(cfg(feature = "datagram")))]
 #[cfg(feature = "datagram")]
 /// Core traits for Datagram.
 pub mod datagram;
-#[cfg_attr(docsrs, doc(cfg(feature = "defined")))]
-#[cfg(feature = "defined")]
-/// Common constants and types.
-pub mod defined;
 #[cfg_attr(docsrs, doc(cfg(feature = "ethercat")))]
 #[cfg(feature = "ethercat")]
 /// Definitions for EtherCAT.
@@ -50,7 +50,7 @@ pub mod utils;
 #[cfg(feature = "async-trait")]
 pub use async_trait::async_trait;
 
-/// Utilities for user-defined [`Gain`] and [`Modulation`].
+/// Utilities for user-common [`Gain`] and [`Modulation`].
 ///
 /// # Example
 ///
@@ -59,7 +59,7 @@ pub use async_trait::async_trait;
 /// ```
 /// use autd3_core::derive::*;
 /// use autd3_core::geometry::Point3;
-/// use autd3_core::defined::rad;
+/// use autd3_core::common::rad;
 ///
 /// #[derive(Gain, Debug)]
 /// pub struct FocalPoint {
@@ -107,7 +107,7 @@ pub use async_trait::async_trait;
 /// The following example shows how to define a modulation that outputs the maximum value only for a moment.
 ///
 /// ```
-/// use autd3_core::defined::kHz;
+/// use autd3_core::common::kHz;
 /// use autd3_core::derive::*;
 ///
 /// #[derive(Modulation, Debug)]

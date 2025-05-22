@@ -61,7 +61,7 @@ fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
 
 #[test]
 fn send_silencer_fixed_completion_time_unsafe() {
-    use autd3_driver::defined::ULTRASOUND_PERIOD;
+    use autd3_driver::common::ULTRASOUND_PERIOD;
 
     let mut rng = rand::rng();
 

@@ -119,8 +119,8 @@ impl<S: Into<SamplingMode> + Clone + Copy + Debug> Modulation for Fourier<S> {
 mod tests {
     use super::*;
 
-    use autd3_core::defined::Freq;
-    use autd3_driver::defined::{Hz, PI, rad};
+    use autd3_core::common::Freq;
+    use autd3_driver::common::{Hz, PI, rad};
 
     #[test]
     fn test_fourier() -> anyhow::Result<()> {

@@ -308,15 +308,15 @@ impl<L: Link> Drop for Controller<L> {
 pub(crate) mod tests {
     use crate::{
         core::{
-            defined::mm,
+            common::mm,
             derive::*,
             gain::{Gain, GainCalculator, GainCalculatorGenerator},
             link::LinkError,
         },
         driver::{
             autd3_device::AUTD3,
+            common::Hz,
             datagram::{GainSTM, ReadsFPGAState},
-            defined::Hz,
         },
         gain::Uniform,
         link::{Audit, AuditOption},

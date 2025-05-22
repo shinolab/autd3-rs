@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use autd3_core::{
-    defined::rad,
+    common::rad,
     gain::{BitVec, Drive, GainCalculator, GainCalculatorGenerator, GainError, Phase},
     geometry::{Device, Geometry, Transducer},
 };

@@ -1,6 +1,6 @@
 use crate::{AUTDProtoBufError, FromMessage, pb::modulation::Modulation};
 use autd3::modulation::*;
-use autd3_core::defined::Freq;
+use autd3_core::common::Freq;
 use autd3_driver::datagram::BoxedModulation;
 
 #[allow(clippy::result_large_err)]

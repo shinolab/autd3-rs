@@ -91,7 +91,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::defined::{Freq, Hz};
+    use autd3_core::common::{Freq, Hz};
 
     use super::*;
     use std::io::Write;

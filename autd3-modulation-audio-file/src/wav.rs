@@ -1,4 +1,4 @@
-use autd3_core::{defined::Hz, derive::*};
+use autd3_core::{common::Hz, derive::*};
 use autd3_derive::Modulation;
 use hound::SampleFormat;
 

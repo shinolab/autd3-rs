@@ -14,7 +14,7 @@ pub use tuple::{CombinedError, CombinedOperationGenerator};
 
 use std::time::Duration;
 
-use crate::{defined::DEFAULT_TIMEOUT, geometry::Geometry};
+use crate::{common::DEFAULT_TIMEOUT, geometry::Geometry};
 
 /// The option of the datagram.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
