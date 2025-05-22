@@ -100,7 +100,8 @@ impl std::fmt::Debug for BoxedDatagram {
 }
 
 impl BoxedDatagram {
-    fn new<
+    /// Creates a new [`BoxedDatagram`].
+    pub fn new<
         E,
         #[cfg(feature = "lightweight")] G: OperationGenerator + Send + 'static,
         #[cfg(not(feature = "lightweight"))] G: OperationGenerator + 'static,

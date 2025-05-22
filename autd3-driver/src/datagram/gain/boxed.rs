@@ -83,6 +83,22 @@ pub struct BoxedGain {
     g: Box<dyn DGain>,
 }
 
+impl BoxedGain {
+    /// Creates a new [`BoxedGain`].
+    #[must_use]
+    pub fn new<
+        #[cfg(feature = "lightweight")] GG: GainCalculatorGenerator + Send + Sync + 'static,
+        #[cfg(not(feature = "lightweight"))] G: Gain + 'static,
+        #[cfg(feature = "lightweight")] G: Gain<G = GG> + Send + Sync + 'static,
+    >(
+        g: G,
+    ) -> Self {
+        Self {
+            g: Box::new(MaybeUninit::new(g)),
+        }
+    }
+}
+
 #[cfg(feature = "lightweight")]
 unsafe impl Send for BoxedGain {}
 #[cfg(feature = "lightweight")]
@@ -123,9 +139,7 @@ impl<
 > IntoBoxedGain for G
 {
     fn into_boxed(self) -> BoxedGain {
-        BoxedGain {
-            g: Box::new(MaybeUninit::new(self)),
-        }
+        BoxedGain::new(self)
     }
 }
 
