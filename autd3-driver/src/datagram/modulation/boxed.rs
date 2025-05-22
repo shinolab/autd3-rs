@@ -37,6 +37,22 @@ pub struct BoxedModulation {
     sampling_config: SamplingConfig,
 }
 
+impl BoxedModulation {
+    /// Creates a new [`BoxedModulation`].
+    pub fn new<
+        #[cfg(not(feature = "lightweight"))] M: Modulation + 'static,
+        #[cfg(feature = "lightweight")] M: Modulation + Send + Sync + 'static,
+    >(
+        m: M,
+    ) -> BoxedModulation {
+        let sampling_config = m.sampling_config();
+        BoxedModulation {
+            m: Box::new(MaybeUninit::new(m)),
+            sampling_config,
+        }
+    }
+}
+
 #[cfg(feature = "lightweight")]
 unsafe impl Send for BoxedModulation {}
 #[cfg(feature = "lightweight")]
@@ -72,11 +88,7 @@ impl<
 > IntoBoxedModulation for M
 {
     fn into_boxed(self) -> BoxedModulation {
-        let sampling_config = self.sampling_config();
-        BoxedModulation {
-            m: Box::new(MaybeUninit::new(self)),
-            sampling_config,
-        }
+        BoxedModulation::new(self)
     }
 }
 
