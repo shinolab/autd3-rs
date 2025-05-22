@@ -3,7 +3,6 @@ use autd3::gain::*;
 use autd3_driver::datagram::BoxedGain;
 use autd3_gain_holo::*;
 
-#[allow(clippy::result_large_err)]
 pub(crate) fn gain_into_boxed(msg: crate::pb::Gain) -> Result<BoxedGain, AUTDProtoBufError> {
     let gain = msg.gain.ok_or(AUTDProtoBufError::DataParseError)?;
     match gain {

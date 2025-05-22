@@ -4,8 +4,10 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 #[non_exhaustive]
 pub enum AUTDProtoBufError {
+    // Do not use `tonic::Status` directly because it cause `clippy::result_large_err`
+    // https://github.com/hyperium/tonic/issues/2253
     #[error("{0}")]
-    Status(#[from] tonic::Status),
+    Status(String),
     #[error("{0}")]
     DecodeError(#[from] prost::DecodeError),
     #[error("{0}")]
@@ -34,9 +36,17 @@ pub enum AUTDProtoBufError {
     #[cfg(feature = "lightweight")]
     #[error("{0}")]
     TryFromInt(#[from] std::num::TryFromIntError),
+    #[error("{0}")]
+    Unknown(String),
 }
 
 // GRCOV_EXCL_START
+
+impl From<tonic::Status> for AUTDProtoBufError {
+    fn from(e: tonic::Status) -> Self {
+        AUTDProtoBufError::Status(e.to_string())
+    }
+}
 
 impl From<AUTDProtoBufError> for tonic::Status {
     fn from(e: AUTDProtoBufError) -> Self {
