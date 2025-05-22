@@ -1,4 +1,4 @@
-use autd3::driver::defined::Hz;
+use autd3::driver::common::Hz;
 
 use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 use std::{num::NonZeroU16, time::Duration};

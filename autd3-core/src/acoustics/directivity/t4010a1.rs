@@ -73,7 +73,7 @@ impl Directivity for T4010A1 {
 
 #[cfg(test)]
 mod tests {
-    use crate::defined::deg;
+    use crate::common::deg;
 
     use super::*;
 

@@ -152,7 +152,7 @@ impl std::ops::DerefMut for Geometry {
 pub(crate) mod tests {
     use rand::Rng;
 
-    use crate::defined::{deg, mm};
+    use crate::common::{deg, mm};
 
     use super::*;
 

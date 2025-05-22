@@ -6,7 +6,7 @@ use crate::{
 };
 
 use autd3_core::{
-    defined::{DEFAULT_TIMEOUT, ULTRASOUND_PERIOD_COUNT_BITS},
+    common::{DEFAULT_TIMEOUT, ULTRASOUND_PERIOD_COUNT_BITS},
     derive::DatagramOption,
     gain::EmitIntensity,
 };

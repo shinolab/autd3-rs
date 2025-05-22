@@ -3,11 +3,11 @@ use std::{collections::HashMap, num::NonZeroU16, time::Duration};
 
 use autd3_core::gain::EmitIntensity;
 use autd3_driver::{
+    common::{METER, mm},
     datagram::{
         ControlPoint, ControlPoints, FixedCompletionSteps, FociSTM, GainSTM, GainSTMOption,
         Silencer, SwapSegment, WithLoopBehavior, WithSegment,
     },
-    defined::{METER, mm},
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::{

@@ -3,7 +3,7 @@ use autd3_core::{
     utils::float::is_integer,
 };
 use autd3_driver::{
-    defined::{Freq, Hz, ULTRASOUND_FREQ},
+    common::{Freq, Hz, ULTRASOUND_FREQ},
     firmware::fpga::MOD_BUF_SIZE_MAX,
 };
 use num::integer::gcd;
@@ -153,7 +153,7 @@ impl From<Nearest> for SamplingMode {
 #[cfg(test)]
 mod tests {
 
-    use autd3_driver::defined::Hz;
+    use autd3_driver::common::Hz;
 
     use super::*;
 

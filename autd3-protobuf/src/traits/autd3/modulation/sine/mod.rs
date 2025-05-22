@@ -32,7 +32,7 @@ impl FromMessage<SineOption> for autd3::modulation::SineOption {
                 .unwrap_or(default.offset),
             phase: msg
                 .phase
-                .map(autd3_core::defined::Angle::from_msg)
+                .map(autd3_core::common::Angle::from_msg)
                 .transpose()?
                 .unwrap_or(default.phase),
             clamp: msg.clamp.unwrap_or(false),

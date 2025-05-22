@@ -1,23 +1,23 @@
 use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
-impl From<autd3_core::defined::Angle> for Angle {
-    fn from(value: autd3_core::defined::Angle) -> Self {
+impl From<autd3_core::common::Angle> for Angle {
+    fn from(value: autd3_core::common::Angle) -> Self {
         Self {
             rad: value.radian(),
         }
     }
 }
 
-impl FromMessage<Angle> for autd3_core::defined::Angle {
+impl FromMessage<Angle> for autd3_core::common::Angle {
     fn from_msg(msg: Angle) -> Result<Self, AUTDProtoBufError> {
-        Ok(msg.rad * autd3_core::defined::rad)
+        Ok(msg.rad * autd3_core::common::rad)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_core::defined::{Angle, rad};
+    use autd3_core::common::{Angle, rad};
     use rand::Rng;
 
     #[test]

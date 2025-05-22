@@ -14,15 +14,15 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-acoustics = ["defined", "geometry"]
+acoustics = ["common", "geometry"]
 async = []
 async-trait = ["async", "dep:async-trait"]
-datagram = ["defined", "geometry", "ethercat"]
-defined = ["derive_more", "derive_more/add", "derive_more/mul", "derive_more/debug"]
+datagram = ["common", "geometry", "ethercat"]
+common = ["derive_more", "derive_more/add", "derive_more/mul", "derive_more/debug"]
 derive = ["datagram", "getset", "tracing", "autd3-derive"]
 ethercat = ["time", "thiserror"]
 gain = [
-    "defined",
+    "common",
     "datagram",
     "geometry",
     "thiserror",
@@ -36,7 +36,7 @@ geometry = [
     "bvh",
     "paste",
     "getset",
-    "defined",
+    "common",
     "derive_more",
     "derive_more/add",
     "derive_more/mul",
@@ -58,12 +58,12 @@ modulation = [
     "getset",
     "sampling_config",
     "utils",
-    "defined",
+    "common",
     "datagram",
     "derive_more",
     "derive_more/display",
 ]
-sampling_config = ["defined", "thiserror", "utils"]
+sampling_config = ["common", "thiserror", "utils"]
 use_meter = []
 utils = ["windows"]
 

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-    defined::ULTRASOUND_FREQ,
+    common::ULTRASOUND_FREQ,
     error::AUTDDriverError,
     firmware::operation::{Operation, TypeTag},
     geometry::Device,
@@ -90,7 +90,7 @@ mod tests {
     use std::mem::size_of;
 
     use super::*;
-    use crate::{defined::ULTRASOUND_PERIOD, firmware::operation::tests::create_device};
+    use crate::{common::ULTRASOUND_PERIOD, firmware::operation::tests::create_device};
 
     const NUM_TRANS_IN_UNIT: u8 = 249;
 

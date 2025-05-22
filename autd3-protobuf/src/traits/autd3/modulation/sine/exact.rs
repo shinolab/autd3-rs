@@ -1,4 +1,4 @@
-use autd3_core::defined::Freq;
+use autd3_core::common::Freq;
 
 use crate::{
     AUTDProtoBufError,
@@ -25,7 +25,7 @@ impl DatagramLightweight for autd3::modulation::Sine<Freq<u32>> {
 impl FromMessage<SineExact> for autd3::modulation::Sine<Freq<u32>> {
     fn from_msg(msg: SineExact) -> Result<Self, AUTDProtoBufError> {
         Ok(autd3::modulation::Sine {
-            freq: msg.freq * autd3_core::defined::Hz,
+            freq: msg.freq * autd3_core::common::Hz,
             option: autd3::modulation::SineOption::from_msg(
                 msg.option.ok_or(AUTDProtoBufError::DataParseError)?,
             )?,
@@ -36,7 +36,7 @@ impl FromMessage<SineExact> for autd3::modulation::Sine<Freq<u32>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_core::defined::Hz;
+    use autd3_core::common::Hz;
 
     #[test]
     fn test_sine() {

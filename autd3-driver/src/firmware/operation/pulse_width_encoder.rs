@@ -8,7 +8,7 @@ use crate::{
     geometry::Device,
 };
 
-use autd3_core::{defined::ULTRASOUND_PERIOD_COUNT_BITS, gain::EmitIntensity};
+use autd3_core::{common::ULTRASOUND_PERIOD_COUNT_BITS, gain::EmitIntensity};
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]

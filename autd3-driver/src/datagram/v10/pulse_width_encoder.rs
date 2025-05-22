@@ -7,7 +7,7 @@ use crate::{
     firmware::{fpga::PulseWidth, operation::v10::PulseWidthEncoderOp},
 };
 
-use autd3_core::{defined::DEFAULT_TIMEOUT, derive::DatagramOption, gain::EmitIntensity};
+use autd3_core::{common::DEFAULT_TIMEOUT, derive::DatagramOption, gain::EmitIntensity};
 use derive_more::Debug;
 
 const DEFAULT_TABLE: &[u8; 256] = include_bytes!("asin.dat");
