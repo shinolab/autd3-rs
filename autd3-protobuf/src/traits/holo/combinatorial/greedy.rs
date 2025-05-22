@@ -98,7 +98,7 @@ mod tests {
             ),
         ];
         let option = autd3_gain_holo::GreedyOption {
-            phase_quantization_levels: NonZeroU8::new(rng.random()).unwrap(),
+            phase_quantization_levels: NonZeroU8::new(rng.random()).unwrap_or(NonZeroU8::MIN),
             ..Default::default()
         };
         let holo = autd3_gain_holo::Greedy {
