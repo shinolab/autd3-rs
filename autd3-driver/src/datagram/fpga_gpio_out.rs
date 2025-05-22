@@ -16,19 +16,19 @@ use derive_more::Debug;
 /// # use autd3_driver::datagram::GPIOOutputs;
 /// # use autd3_driver::firmware::fpga::{GPIOOutputType, GPIOOut};
 /// GPIOOutputs::new(|dev, gpio| match gpio {
-///     GPIOOut::O0 => GPIOOutputType::BaseSignal,
-///     GPIOOut::O1 => GPIOOutputType::Sync,
-///     GPIOOut::O2 => GPIOOutputType::PwmOut(&dev[0]),
-///     GPIOOut::O3 => GPIOOutputType::Direct(true),
+///     GPIOOut::O0 => Some(GPIOOutputType::BaseSignal),
+///     GPIOOut::O1 => Some(GPIOOutputType::Sync),
+///     GPIOOut::O2 => Some(GPIOOutputType::PwmOut(&dev[0])),
+///     GPIOOut::O3 => Some(GPIOOutputType::Direct(true)),
 /// });
 /// ```
 #[derive(Debug)]
-pub struct GPIOOutputs<F: Fn(&Device, GPIOOut) -> GPIOOutputType + Send + Sync> {
+pub struct GPIOOutputs<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> {
     #[debug(ignore)]
     f: F,
 }
 
-impl<F: Fn(&Device, GPIOOut) -> GPIOOutputType + Send + Sync> GPIOOutputs<F> {
+impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> GPIOOutputs<F> {
     /// Creates a new [`GPIOOutputs`].
     #[must_use]
     pub const fn new(f: F) -> Self {
@@ -36,11 +36,12 @@ impl<F: Fn(&Device, GPIOOut) -> GPIOOutputType + Send + Sync> GPIOOutputs<F> {
     }
 }
 
-pub struct DebugSettingOpGenerator<F: Fn(&Device, GPIOOut) -> GPIOOutputType + Send + Sync> {
+pub struct DebugSettingOpGenerator<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync>
+{
     f: F,
 }
 
-impl<F: Fn(&Device, GPIOOut) -> GPIOOutputType + Send + Sync> OperationGenerator
+impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator
     for DebugSettingOpGenerator<F>
 {
     type O1 = DebugSettingOp;
@@ -57,7 +58,7 @@ impl<F: Fn(&Device, GPIOOut) -> GPIOOutputType + Send + Sync> OperationGenerator
     }
 }
 
-impl<F: Fn(&Device, GPIOOut) -> GPIOOutputType + Send + Sync> Datagram for GPIOOutputs<F> {
+impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> Datagram for GPIOOutputs<F> {
     type G = DebugSettingOpGenerator<F>;
     type Error = Infallible;
 

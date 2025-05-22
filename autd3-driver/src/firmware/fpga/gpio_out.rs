@@ -11,8 +11,6 @@ use super::ec_time_to_sys_time;
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub enum GPIOOutputType<'a> {
-    /// Do not output.
-    None,
     /// Base signal (50% duty cycle square wave with the same frequency as ultrasound).
     BaseSignal,
     /// High if the temperature sensor is asserted.
@@ -52,38 +50,38 @@ pub(crate) struct DebugValue {
     pub(crate) tag: u8,
 }
 
-impl From<GPIOOutputType<'_>> for DebugValue {
-    fn from(ty: GPIOOutputType<'_>) -> Self {
+impl From<Option<GPIOOutputType<'_>>> for DebugValue {
+    fn from(ty: Option<GPIOOutputType<'_>>) -> Self {
         Self::new()
             .with_value(match &ty {
-                GPIOOutputType::None
-                | GPIOOutputType::BaseSignal
-                | GPIOOutputType::Thermo
-                | GPIOOutputType::ForceFan
-                | GPIOOutputType::Sync
-                | GPIOOutputType::ModSegment
-                | GPIOOutputType::StmSegment
-                | GPIOOutputType::IsStmMode => 0,
-                GPIOOutputType::PwmOut(tr) => tr.idx() as _,
-                GPIOOutputType::ModIdx(idx) => *idx as _,
-                GPIOOutputType::StmIdx(idx) => *idx as _,
-                GPIOOutputType::SysTimeEq(time) => ec_time_to_sys_time(time) >> 9,
-                GPIOOutputType::Direct(v) => *v as _,
+                None
+                | Some(GPIOOutputType::BaseSignal)
+                | Some(GPIOOutputType::Thermo)
+                | Some(GPIOOutputType::ForceFan)
+                | Some(GPIOOutputType::Sync)
+                | Some(GPIOOutputType::ModSegment)
+                | Some(GPIOOutputType::StmSegment)
+                | Some(GPIOOutputType::IsStmMode) => 0,
+                Some(GPIOOutputType::PwmOut(tr)) => tr.idx() as _,
+                Some(GPIOOutputType::ModIdx(idx)) => *idx as _,
+                Some(GPIOOutputType::StmIdx(idx)) => *idx as _,
+                Some(GPIOOutputType::SysTimeEq(time)) => ec_time_to_sys_time(time) >> 9,
+                Some(GPIOOutputType::Direct(v)) => *v as _,
             })
             .with_tag(match &ty {
-                GPIOOutputType::None => 0x00,
-                GPIOOutputType::BaseSignal => 0x01,
-                GPIOOutputType::Thermo => 0x02,
-                GPIOOutputType::ForceFan => 0x03,
-                GPIOOutputType::Sync => 0x10,
-                GPIOOutputType::ModSegment => 0x20,
-                GPIOOutputType::ModIdx(_) => 0x21,
-                GPIOOutputType::StmSegment => 0x50,
-                GPIOOutputType::StmIdx(_) => 0x51,
-                GPIOOutputType::IsStmMode => 0x52,
-                GPIOOutputType::SysTimeEq(_) => 0x60,
-                GPIOOutputType::PwmOut(_) => 0xE0,
-                GPIOOutputType::Direct(_) => 0xF0,
+                None => 0x00,
+                Some(GPIOOutputType::BaseSignal) => 0x01,
+                Some(GPIOOutputType::Thermo) => 0x02,
+                Some(GPIOOutputType::ForceFan) => 0x03,
+                Some(GPIOOutputType::Sync) => 0x10,
+                Some(GPIOOutputType::ModSegment) => 0x20,
+                Some(GPIOOutputType::ModIdx(_)) => 0x21,
+                Some(GPIOOutputType::StmSegment) => 0x50,
+                Some(GPIOOutputType::StmIdx(_)) => 0x51,
+                Some(GPIOOutputType::IsStmMode) => 0x52,
+                Some(GPIOOutputType::SysTimeEq(_)) => 0x60,
+                Some(GPIOOutputType::PwmOut(_)) => 0xE0,
+                Some(GPIOOutputType::Direct(_)) => 0xF0,
             })
     }
 }
@@ -96,7 +94,6 @@ mod tests {
 
     #[test]
     fn display() {
-        assert_eq!("None", format!("{:?}", GPIOOutputType::None));
         assert_eq!("BaseSignal", format!("{:?}", GPIOOutputType::BaseSignal));
         assert_eq!("Thermo", format!("{:?}", GPIOOutputType::Thermo));
         assert_eq!("ForceFan", format!("{:?}", GPIOOutputType::ForceFan));
