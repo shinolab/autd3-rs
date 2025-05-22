@@ -41,7 +41,6 @@ where
     }
 }
 
-#[allow(clippy::result_large_err)]
 fn into_boxed_datagram(datagram: datagram::Datagram) -> Result<BoxedDatagram, AUTDProtoBufError> {
     use autd3_driver::datagram::*;
     match datagram {
@@ -291,7 +290,6 @@ fn into_boxed_datagram(datagram: datagram::Datagram) -> Result<BoxedDatagram, AU
     }
 }
 
-#[allow(clippy::result_large_err)]
 fn into_datagram_tuple(
     tuple: DatagramTuple,
 ) -> Result<tuple::BoxedDatagramTuple, AUTDProtoBufError> {

@@ -7,7 +7,6 @@ pub(crate) mod driver;
 mod holo;
 
 #[cfg(feature = "lightweight")]
-#[allow(clippy::result_large_err)]
 pub trait DatagramLightweight {
     fn into_datagram_lightweight(
         self,
@@ -15,7 +14,6 @@ pub trait DatagramLightweight {
     ) -> Result<crate::Datagram, AUTDProtoBufError>;
 }
 
-#[allow(clippy::result_large_err)]
 pub trait FromMessage<T>
 where
     Self: Sized,

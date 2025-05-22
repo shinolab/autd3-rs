@@ -40,16 +40,13 @@ impl FromMessage<Sleeper> for Box<dyn autd3::r#async::controller::AsyncSleep + S
                     )?),
             ),
             #[cfg(target_os = "windows")]
-            Some(sleeper::Sleeper::Waitable(_)) => {
-                Box::new(autd3::controller::WaitableSleeper::new().map_err(|_| {
-                    AUTDProtoBufError::Status(tonic::Status::unknown("WaitableSleeper"))
-                })?)
-            }
+            Some(sleeper::Sleeper::Waitable(_)) => Box::new(
+                autd3::controller::WaitableSleeper::new()
+                    .map_err(|_| AUTDProtoBufError::Unknown("WaitableTimer".to_string()))?,
+            ),
             #[cfg(not(target_os = "windows"))]
             Some(sleeper::Sleeper::Waitable(_)) => {
-                return Err(AUTDProtoBufError::Status(tonic::Status::unimplemented(
-                    "WaitableSleeper is not supported",
-                )));
+                return Err(AUTDProtoBufError::NotSupportedData);
             }
             Some(sleeper::Sleeper::Async(async_sleeper)) => {
                 Box::new(autd3::r#async::controller::AsyncSleeper {

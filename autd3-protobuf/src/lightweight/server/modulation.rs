@@ -3,7 +3,6 @@ use autd3::modulation::*;
 use autd3_core::common::Freq;
 use autd3_driver::datagram::BoxedModulation;
 
-#[allow(clippy::result_large_err)]
 pub(crate) fn modulation_into_boxed(
     msg: crate::pb::Modulation,
 ) -> Result<BoxedModulation, AUTDProtoBufError> {
