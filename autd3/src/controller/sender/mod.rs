@@ -12,8 +12,8 @@ use std::{
 };
 
 use autd3_core::{
+    common::DEFAULT_TIMEOUT,
     datagram::Datagram,
-    defined::DEFAULT_TIMEOUT,
     geometry::Geometry,
     link::{Link, MsgId},
 };

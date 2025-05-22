@@ -1,4 +1,4 @@
-use crate::defined::Angle;
+use crate::common::Angle;
 
 use super::{UnitQuaternion, Vector3};
 
@@ -89,7 +89,7 @@ pub type EulerAngle = EulerAngleIntrinsic;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::defined::{PI, deg, rad};
+    use crate::common::{PI, deg, rad};
 
     macro_rules! assert_approx_eq_quat {
         ($a:expr, $b:expr) => {

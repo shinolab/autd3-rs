@@ -46,7 +46,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::defined::kHz;
+    use autd3_driver::common::kHz;
     use rand::Rng;
 
     use super::*;

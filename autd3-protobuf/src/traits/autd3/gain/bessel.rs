@@ -53,7 +53,7 @@ impl FromMessage<Bessel> for autd3::gain::Bessel {
             dir: autd3_core::geometry::UnitVector3::from_msg(
                 msg.dir.ok_or(AUTDProtoBufError::DataParseError)?,
             )?,
-            theta: autd3_core::defined::Angle::from_msg(
+            theta: autd3_core::common::Angle::from_msg(
                 msg.theta.ok_or(AUTDProtoBufError::DataParseError)?,
             )?,
             option: autd3::gain::BesselOption::from_msg(
@@ -70,7 +70,7 @@ mod tests {
     use super::*;
     use autd3::prelude::Phase;
     use autd3_driver::{
-        defined::rad,
+        common::rad,
         firmware::fpga::EmitIntensity,
         geometry::{Point3, Vector3},
     };

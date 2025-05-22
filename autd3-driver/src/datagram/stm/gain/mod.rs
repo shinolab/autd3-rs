@@ -5,8 +5,8 @@ use std::{collections::HashMap, fmt::Debug, time::Duration};
 use super::sampling_config::*;
 pub use crate::firmware::operation::GainSTMIterator;
 use crate::{
+    common::Freq,
     datagram::*,
-    defined::Freq,
     firmware::{
         cpu::GainSTMMode,
         fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
@@ -15,7 +15,7 @@ use crate::{
 };
 
 use autd3_core::{
-    defined::DEFAULT_TIMEOUT,
+    common::DEFAULT_TIMEOUT,
     derive::{DatagramL, DatagramOption},
     gain::{BitVec, GainCalculatorGenerator, GainError},
 };

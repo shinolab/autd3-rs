@@ -15,7 +15,7 @@ pub use gpio_out::GPIOOutputType;
 pub use pulse_width::PulseWidth;
 pub(crate) use stm_focus::STMFocus;
 
-use crate::{defined::mm, ethercat::DcSysTime};
+use crate::{common::mm, ethercat::DcSysTime};
 
 /// The unit of the fixed-point number used in the [`FociSTM`].
 ///

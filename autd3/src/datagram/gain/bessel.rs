@@ -1,6 +1,6 @@
 use autd3_core::derive::*;
 use autd3_driver::{
-    defined::{Angle, rad},
+    common::{Angle, rad},
     firmware::fpga::{EmitIntensity, Phase},
     geometry::{Point3, UnitQuaternion, UnitVector3, Vector3},
 };
@@ -107,7 +107,7 @@ impl Gain for Bessel {
 mod tests {
     use rand::Rng;
 
-    use autd3_driver::defined::PI;
+    use autd3_driver::common::PI;
 
     use super::*;
 

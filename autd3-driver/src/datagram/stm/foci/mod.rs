@@ -4,8 +4,8 @@ use std::{fmt::Debug, time::Duration};
 
 use super::sampling_config::*;
 use crate::{
+    common::Freq,
     datagram::*,
-    defined::Freq,
     firmware::{
         fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
         operation::FociSTMOp,
@@ -15,7 +15,7 @@ use crate::{
 pub use crate::firmware::operation::FociSTMIterator;
 
 use autd3_core::{
-    defined::DEFAULT_TIMEOUT,
+    common::DEFAULT_TIMEOUT,
     derive::{DatagramL, DatagramOption},
 };
 use derive_more::{Deref, DerefMut};

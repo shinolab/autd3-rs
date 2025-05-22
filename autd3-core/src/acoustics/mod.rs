@@ -4,7 +4,7 @@ pub mod directivity;
 use std::f32::consts::PI;
 
 use crate::{
-    defined::T4010A1_AMPLITUDE,
+    common::T4010A1_AMPLITUDE,
     geometry::{Complex, Point3, Transducer, UnitVector3},
 };
 
@@ -35,7 +35,7 @@ mod tests {
     use rand::Rng;
 
     use crate::{
-        defined::mm,
+        common::mm,
         geometry::{Device, UnitQuaternion, Vector3},
     };
     use directivity::tests::TestDirectivity;

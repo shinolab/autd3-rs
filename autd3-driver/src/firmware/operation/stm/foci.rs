@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use crate::{
-    defined::METER,
+    common::METER,
     error::AUTDDriverError,
     firmware::{
         fpga::{
@@ -214,7 +214,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        defined::mm,
+        common::mm,
         ethercat::DcSysTime,
         firmware::{
             fpga::{FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X},

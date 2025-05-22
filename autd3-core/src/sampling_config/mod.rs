@@ -3,7 +3,7 @@ mod error;
 use std::{fmt::Debug, num::NonZeroU16};
 
 use crate::{
-    defined::{Freq, Hz, ULTRASOUND_FREQ},
+    common::{Freq, Hz, ULTRASOUND_FREQ},
     utils::float::is_integer,
 };
 
@@ -104,7 +104,7 @@ impl SamplingConfig {
                 Ok(divide as _)
             }
             SamplingConfig::Period(duration) => {
-                use crate::defined::ULTRASOUND_PERIOD;
+                use crate::common::ULTRASOUND_PERIOD;
 
                 let period_min = ULTRASOUND_PERIOD;
                 let period_max = std::time::Duration::from_micros(
@@ -125,7 +125,7 @@ impl SamplingConfig {
             .clamp(1.0, u16::MAX as f32)
             .round() as u16),
             SamplingConfig::PeriodNearest(nearest) => {
-                use crate::defined::ULTRASOUND_PERIOD;
+                use crate::common::ULTRASOUND_PERIOD;
 
                 Ok(((nearest.0.as_nanos() + ULTRASOUND_PERIOD.as_nanos() / 2)
                     / ULTRASOUND_PERIOD.as_nanos())
@@ -141,7 +141,7 @@ impl SamplingConfig {
 
     /// The sampling period.
     pub fn period(&self) -> Result<std::time::Duration, SamplingConfigError> {
-        Ok(crate::defined::ULTRASOUND_PERIOD * self.divide()? as u32)
+        Ok(crate::common::ULTRASOUND_PERIOD * self.divide()? as u32)
     }
 }
 
@@ -159,9 +159,9 @@ impl SamplingConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::defined::{Hz, kHz};
+    use crate::common::{Hz, kHz};
 
-    use crate::defined::ULTRASOUND_PERIOD;
+    use crate::common::ULTRASOUND_PERIOD;
     use std::time::Duration;
 
     use super::*;

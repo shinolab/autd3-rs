@@ -4,7 +4,7 @@ use bvh::aabb::Aabb;
 use derive_more::{Deref, IntoIterator};
 use getset::Getters;
 
-use crate::defined::{METER, ULTRASOUND_FREQ};
+use crate::common::{METER, ULTRASOUND_FREQ};
 
 use super::{Isometry, Point3, Quaternion, Transducer, UnitQuaternion, UnitVector3, Vector3};
 
@@ -138,7 +138,7 @@ impl Device {
 pub(crate) mod tests {
     use super::*;
     use crate::{
-        defined::{PI, mm},
+        common::{PI, mm},
         geometry::tests::{TestDevice, create_device},
     };
 

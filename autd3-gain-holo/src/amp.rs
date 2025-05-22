@@ -1,4 +1,4 @@
-use autd3_core::defined::ABSOLUTE_THRESHOLD_OF_HEARING;
+use autd3_core::common::ABSOLUTE_THRESHOLD_OF_HEARING;
 
 use derive_more::{Display, Div, Mul};
 use zerocopy::{Immutable, IntoBytes};

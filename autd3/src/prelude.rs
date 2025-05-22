@@ -20,12 +20,12 @@ pub use autd3_core::modulation::Modulation;
 
 pub use autd3_driver::{
     autd3_device::AUTD3,
+    common::{Hz, PI, ULTRASOUND_FREQ, deg, kHz, mm, rad},
     datagram::{
         Clear, ControlPoint, ControlPoints, FixedCompletionTime, FixedUpdateRate, FociSTM,
         ForceFan, GPIOOutputs, GainSTM, GainSTMOption, Group, PhaseCorrection, PulseWidthEncoder,
         ReadsFPGAState, Silencer, SwapSegment, WithLoopBehavior, WithSegment, v10,
     },
-    defined::{Hz, PI, ULTRASOUND_FREQ, deg, kHz, mm, rad},
     error::AUTDDriverError,
     ethercat::DcSysTime,
     firmware::{
