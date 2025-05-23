@@ -1,5 +1,6 @@
-use autd3_core::datagram::{
-    Datagram, DatagramL, DatagramOption, LoopBehavior, Segment, TransitionMode,
+use autd3_core::{
+    datagram::{Datagram, DatagramL, DatagramOption, LoopBehavior, Segment, TransitionMode},
+    derive::{Geometry, Inspectable, InspectionResult},
 };
 
 use derive_more::Deref;
@@ -57,5 +58,33 @@ impl<D: DatagramL> Datagram for WithLoopBehavior<D> {
 
     fn option(&self) -> DatagramOption {
         <D as DatagramL>::option(&self.inner)
+    }
+}
+
+#[doc(hidden)]
+pub trait InspectionResultWithLoopBehavior {
+    fn with_loop_behavior(
+        self,
+        loop_behavior: LoopBehavior,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
+    ) -> Self;
+}
+
+impl<D> Inspectable for WithLoopBehavior<D>
+where
+    D: Inspectable + DatagramL,
+    D::Result: InspectionResultWithLoopBehavior,
+    <D as DatagramL>::Error: From<<D as Datagram>::Error>,
+{
+    type Result = D::Result;
+
+    fn inspect(
+        self,
+        geometry: &mut Geometry,
+    ) -> Result<InspectionResult<Self::Result>, Self::Error> {
+        Ok(self.inner.inspect(geometry)?.modify(|t| {
+            t.with_loop_behavior(self.loop_behavior, self.segment, self.transition_mode)
+        }))
     }
 }

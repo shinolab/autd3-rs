@@ -1,11 +1,15 @@
 mod boxed;
 
-use autd3_core::derive::ModulationOperationGenerator;
+use autd3_core::derive::{ModulationInspectionResult, ModulationOperationGenerator};
 pub use boxed::{BoxedModulation, IntoBoxedModulation};
 
 use crate::{
     firmware::operation::{ModulationOp, NullOp, OperationGenerator},
     geometry::Device,
+};
+
+use super::{
+    with_loop_behavior::InspectionResultWithLoopBehavior, with_segment::InspectionResultWithSegment,
 };
 
 impl OperationGenerator for ModulationOperationGenerator {
@@ -24,6 +28,36 @@ impl OperationGenerator for ModulationOperationGenerator {
             ),
             Self::O2 {},
         ))
+    }
+}
+
+impl InspectionResultWithSegment for ModulationInspectionResult {
+    fn with_segment(
+        self,
+        segment: autd3_core::derive::Segment,
+        transition_mode: Option<autd3_core::derive::TransitionMode>,
+    ) -> Self {
+        Self {
+            segment,
+            transition_mode,
+            ..self
+        }
+    }
+}
+
+impl InspectionResultWithLoopBehavior for ModulationInspectionResult {
+    fn with_loop_behavior(
+        self,
+        loop_behavior: autd3_core::derive::LoopBehavior,
+        segment: autd3_core::derive::Segment,
+        transition_mode: Option<autd3_core::derive::TransitionMode>,
+    ) -> Self {
+        Self {
+            loop_behavior,
+            segment,
+            transition_mode,
+            ..self
+        }
     }
 }
 

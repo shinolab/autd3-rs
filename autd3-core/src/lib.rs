@@ -141,10 +141,11 @@ pub mod derive {
     #[cfg(any(feature = "gain", feature = "modulation"))]
     mod common {
         pub use crate::{
-            datagram::{DatagramOption, Segment, TransitionMode},
+            datagram::{DatagramOption, Inspectable, InspectionResult, Segment, TransitionMode},
             geometry::Geometry,
         };
         pub use tracing;
+        pub use tynm;
     }
     #[cfg(any(feature = "gain", feature = "modulation"))]
     pub use common::*;
@@ -155,7 +156,7 @@ pub mod derive {
             datagram::DatagramS,
             gain::{
                 BitVec, Drive, EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator,
-                GainError, GainOperationGenerator, Phase,
+                GainError, GainInspectionResult, GainOperationGenerator, Phase,
             },
             geometry::{Device, Transducer},
         };
@@ -166,8 +167,10 @@ pub mod derive {
 
     #[cfg(feature = "modulation")]
     mod modulation {
-        pub use crate::datagram::{DatagramL, LoopBehavior};
-        pub use crate::modulation::{Modulation, ModulationError, ModulationOperationGenerator};
+        pub use crate::datagram::{Datagram, DatagramL, LoopBehavior};
+        pub use crate::modulation::{
+            Modulation, ModulationError, ModulationInspectionResult, ModulationOperationGenerator,
+        };
         pub use crate::sampling_config::{SamplingConfig, SamplingConfigError};
         pub use autd3_derive::Modulation;
         pub use std::{collections::HashMap, sync::Arc};

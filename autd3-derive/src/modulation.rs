@@ -51,10 +51,41 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         }
     };
 
+    let lifetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let inspect = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)* > Inspectable for #name #ty_generics #where_clause {
+            type Result = ModulationInspectionResult;
+
+            fn inspect(self, geometry: &mut Geometry) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
+                let sampling_config = self.sampling_config();
+                sampling_config.divide()?;
+                let data = self.calc()?;
+                let loop_behavior = LoopBehavior::Infinite;
+                let segment = Segment::S0;
+                let transition_mode = None;
+                Ok(InspectionResult::new(
+                    geometry,
+                    |_| ModulationInspectionResult {
+                            name: tynm::type_name::<Self>().to_string(),
+                            data: data.clone(),
+                            config: sampling_config,
+                            loop_behavior,
+                            segment,
+                            transition_mode,
+                    }
+                ))
+            }
+        }
+    };
+
     let generator = quote! {
         #datagram
 
         #ext
+
+        #inspect
     };
     generator.into()
 }

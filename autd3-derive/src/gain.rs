@@ -32,8 +32,40 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         }
     };
 
+    let lifetimes = generics.lifetimes();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let type_params = generics.type_params();
+    let inspect = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)*> Inspectable for #name #ty_generics #where_clause {
+            type Result = GainInspectionResult;
+
+            fn inspect(
+                self,
+                geometry: &mut Geometry,
+            ) -> Result<InspectionResult<Self::Result>, Self::Error> {
+                let mut g = self.init(geometry, None)?;
+                let segment = Segment::S0;
+                let transition_mode = None;
+                Ok(InspectionResult::new(
+                    geometry,
+                    |dev| GainInspectionResult {
+                            name: tynm::type_name::<Self>().to_string(),
+                            data: {
+                                let d = g.generate(dev);
+                                dev.iter().map(|tr| d.calc(tr)).collect::<Vec<_>>()
+                            },
+                            segment,
+                            transition_mode,
+                    }
+                ))
+            }
+        }
+    };
+
     let generator = quote! {
         #datagram
+
+        #inspect
     };
     generator.into()
 }

@@ -2,7 +2,10 @@ mod sender;
 
 use crate::{error::AUTDError, gain::Null, modulation::Static};
 
-use autd3_core::link::{Link, MsgId};
+use autd3_core::{
+    datagram::{Inspectable, InspectionResult},
+    link::{Link, MsgId},
+};
 use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
     error::AUTDDriverError,
@@ -108,6 +111,14 @@ impl<L: Link> Controller<L> {
     {
         self.sender(self.default_sender_option, SpinSleeper::default())
             .send(s)
+    }
+
+    /// Returns the inspection result.
+    pub fn inspect<I: Inspectable>(
+        &mut self,
+        s: I,
+    ) -> Result<InspectionResult<I::Result>, I::Error> {
+        s.inspect(&mut self.geometry)
     }
 
     pub(crate) fn open_impl<S: Sleep>(

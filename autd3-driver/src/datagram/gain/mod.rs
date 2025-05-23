@@ -1,12 +1,16 @@
 mod boxed;
 
-use autd3_core::gain::{Gain, GainCalculatorGenerator, GainOperationGenerator};
+use autd3_core::gain::{
+    Gain, GainCalculatorGenerator, GainInspectionResult, GainOperationGenerator,
+};
 pub use boxed::{BoxedGain, IntoBoxedGain};
 
 use crate::{
     firmware::operation::{GainOp, NullOp, OperationGenerator},
     geometry::Device,
 };
+
+use super::with_segment::InspectionResultWithSegment;
 
 impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G> {
     type O1 = GainOp<G::Calculator>;
@@ -15,6 +19,20 @@ impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
         let c = self.generator.generate(device);
         Some((Self::O1::new(self.segment, self.transition, c), Self::O2 {}))
+    }
+}
+
+impl InspectionResultWithSegment for GainInspectionResult {
+    fn with_segment(
+        self,
+        segment: autd3_core::derive::Segment,
+        transition_mode: Option<autd3_core::derive::TransitionMode>,
+    ) -> Self {
+        Self {
+            segment,
+            transition_mode,
+            ..self
+        }
     }
 }
 
