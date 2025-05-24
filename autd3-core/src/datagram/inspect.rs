@@ -18,7 +18,7 @@ impl<T> InspectionResult<T> {
         Self {
             result: geometry
                 .iter()
-                .map(move |dev| dev.enable.then_some(f(dev)))
+                .map(move |dev| dev.enable.then(|| f(dev)))
                 .collect(),
         }
     }
