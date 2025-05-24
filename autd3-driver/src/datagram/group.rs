@@ -465,9 +465,11 @@ mod tests {
             type G = NullOperationGenerator;
             type Error = Infallible;
 
+            // GRCOV_EXCL_START
             fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
                 Ok(NullOperationGenerator)
             }
+            // GRCOV_EXCL_STOP
         }
 
         impl Inspectable for TestDatagram {
