@@ -19,50 +19,13 @@ async = []
 async-trait = ["async", "dep:async-trait"]
 datagram = ["common", "geometry", "ethercat"]
 common = ["derive_more", "derive_more/add", "derive_more/mul", "derive_more/debug"]
-derive = ["datagram", "getset", "tracing", "autd3-derive"]
+derive = ["tracing", "autd3-derive", "tynm"]
 ethercat = ["time", "thiserror"]
-gain = [
-    "common",
-    "datagram",
-    "geometry",
-    "thiserror",
-    "bit-vec",
-    "zerocopy",
-    "derive_more",
-    "derive_more/display",
-]
-geometry = [
-    "nalgebra",
-    "bvh",
-    "paste",
-    "getset",
-    "common",
-    "derive_more",
-    "derive_more/add",
-    "derive_more/mul",
-    "derive_more/into_iterator",
-    "derive_more/deref",
-    "derive_more/debug",
-]
+gain = ["common", "datagram", "geometry", "thiserror", "bit-vec", "zerocopy", "derive_more", "derive_more/display"]
+geometry = ["nalgebra", "bvh", "paste", "getset", "common", "derive_more", "derive_more/add", "derive_more/mul", "derive_more/into_iterator", "derive_more/deref", "derive_more/debug"]
 left_handed = []
-link = [
-    "zerocopy",
-    "getset",
-    "ethercat",
-    "datagram",
-    "geometry",
-    "derive_more",
-    "derive_more/display",
-]
-modulation = [
-    "getset",
-    "sampling_config",
-    "utils",
-    "common",
-    "datagram",
-    "derive_more",
-    "derive_more/display",
-]
+link = ["zerocopy", "getset", "ethercat", "datagram", "geometry", "derive_more", "derive_more/display"]
+modulation = ["getset", "sampling_config", "utils", "common", "datagram", "derive_more", "derive_more/display"]
 sampling_config = ["common", "thiserror", "utils"]
 use_meter = []
 utils = ["windows"]
@@ -79,6 +42,7 @@ paste = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
 time = { workspace = true, optional = true, features = ["macros", "std"] }
 tracing = { workspace = true, optional = true }
+tynm = { workspace = true, optional = true }
 zerocopy = { workspace = true, optional = true, features = ["derive"] }
 
 [dev-dependencies]

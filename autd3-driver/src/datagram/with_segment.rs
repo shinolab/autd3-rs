@@ -1,4 +1,7 @@
-use autd3_core::datagram::{Datagram, DatagramOption, DatagramS, Segment, TransitionMode};
+use autd3_core::{
+    datagram::{Datagram, DatagramOption, DatagramS, InspectionResult, Segment, TransitionMode},
+    derive::{Geometry, Inspectable},
+};
 
 use derive_more::Deref;
 
@@ -44,5 +47,29 @@ impl<D: DatagramS> Datagram for WithSegment<D> {
 
     fn option(&self) -> DatagramOption {
         <D as DatagramS>::option(&self.inner)
+    }
+}
+
+#[doc(hidden)]
+pub trait InspectionResultWithSegment {
+    fn with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Self;
+}
+
+impl<D> Inspectable for WithSegment<D>
+where
+    D: Inspectable + DatagramS,
+    D::Result: InspectionResultWithSegment,
+    <D as DatagramS>::Error: From<<D as Datagram>::Error>,
+{
+    type Result = D::Result;
+
+    fn inspect(
+        self,
+        geometry: &mut Geometry,
+    ) -> Result<InspectionResult<Self::Result>, Self::Error> {
+        Ok(self
+            .inner
+            .inspect(geometry)?
+            .modify(|t| t.with_segment(self.segment, self.transition_mode)))
     }
 }

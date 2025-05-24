@@ -84,3 +84,16 @@ impl<G: GainCalculatorGenerator> GainOperationGenerator<G> {
         })
     }
 }
+
+#[derive(Debug, Clone, PartialEq)]
+/// The result of the [`Gain`] inspection.
+pub struct GainInspectionResult {
+    /// The type name of the gain.
+    pub name: String,
+    /// The data of the gain.
+    pub data: Vec<Drive>,
+    /// The segment of the gain.
+    pub segment: Segment,
+    /// The transition mode of the gain.
+    pub transition_mode: Option<TransitionMode>,
+}
