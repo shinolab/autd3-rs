@@ -246,16 +246,7 @@ where
         Ok(InspectionResult {
             result: results
                 .into_iter()
-                .reduce(|a, b| {
-                    a.into_iter()
-                        .zip(b)
-                        .map(|(a, b)| match (a, b) {
-                            (Some(a), _) => Some(a),
-                            (None, Some(b)) => Some(b),
-                            (None, None) => None,
-                        })
-                        .collect()
-                })
+                .reduce(|a, b| a.into_iter().zip(b).map(|(a, b)| a.or(b)).collect())
                 .unwrap(),
         })
     }
@@ -461,6 +452,52 @@ mod tests {
             .operation_generator(&mut geometry)
             .err()
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect() -> anyhow::Result<()> {
+        #[derive(Debug)]
+        pub struct TestDatagram {}
+
+        impl Datagram for TestDatagram {
+            type G = NullOperationGenerator;
+            type Error = Infallible;
+
+            fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+                Ok(NullOperationGenerator)
+            }
+        }
+
+        impl Inspectable for TestDatagram {
+            type Result = ();
+
+            fn inspect(
+                self,
+                geometry: &mut Geometry,
+            ) -> Result<InspectionResult<Self::Result>, Self::Error> {
+                Ok(InspectionResult::new(geometry, |_| ()))
+            }
+        }
+
+        let mut geometry = create_geometry(4, 1);
+
+        geometry[3].enable = false;
+
+        let r = Group::new(
+            |dev| match dev.idx() {
+                1 => None,
+                _ => Some(()),
+            },
+            HashMap::from([((), TestDatagram {})]),
+        )
+        .inspect(&mut geometry)?;
+
+        assert!(r[0].is_some());
+        assert!(r[1].is_none());
+        assert!(r[2].is_some());
+        assert!(r[3].is_none());
 
         Ok(())
     }

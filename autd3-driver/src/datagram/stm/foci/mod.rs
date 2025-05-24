@@ -237,3 +237,177 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Debug> 
         }))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::{datagram::tests::create_geometry, firmware::fpga::SamplingConfig};
+    use autd3_core::{
+        derive::Inspectable,
+        gain::{EmitIntensity, Phase},
+        geometry::Point3,
+    };
+
+    #[test]
+    fn inspect() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+        let r = FociSTM {
+            foci: vec![
+                ControlPoint {
+                    point: Point3::origin(),
+                    phase_offset: Phase::ZERO,
+                },
+                ControlPoint {
+                    point: Point3::new(1., 2., 3.),
+                    phase_offset: Phase::PI,
+                },
+            ],
+            config: SamplingConfig::FREQ_4K,
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(FociSTMInspectionResult {
+                name: "FociSTM".to_string(),
+                data: vec![
+                    ControlPoints {
+                        points: [ControlPoint {
+                            point: Point3::origin(),
+                            phase_offset: Phase::ZERO,
+                        }],
+                        intensity: EmitIntensity::MAX
+                    },
+                    ControlPoints {
+                        points: [ControlPoint {
+                            point: Point3::new(1., 2., 3.),
+                            phase_offset: Phase::PI,
+                        }],
+                        intensity: EmitIntensity::MAX
+                    },
+                ],
+                config: SamplingConfig::FREQ_4K,
+                loop_behavior: LoopBehavior::Infinite,
+                segment: Segment::S0,
+                transition_mode: None
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect_with_segment() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+        let r = WithSegment {
+            inner: FociSTM {
+                foci: vec![
+                    ControlPoint {
+                        point: Point3::origin(),
+                        phase_offset: Phase::ZERO,
+                    },
+                    ControlPoint {
+                        point: Point3::new(1., 2., 3.),
+                        phase_offset: Phase::PI,
+                    },
+                ],
+                config: SamplingConfig::FREQ_4K,
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(FociSTMInspectionResult {
+                name: "FociSTM".to_string(),
+                data: vec![
+                    ControlPoints {
+                        points: [ControlPoint {
+                            point: Point3::origin(),
+                            phase_offset: Phase::ZERO,
+                        }],
+                        intensity: EmitIntensity::MAX
+                    },
+                    ControlPoints {
+                        points: [ControlPoint {
+                            point: Point3::new(1., 2., 3.),
+                            phase_offset: Phase::PI,
+                        }],
+                        intensity: EmitIntensity::MAX
+                    },
+                ],
+                config: SamplingConfig::FREQ_4K,
+                loop_behavior: LoopBehavior::Infinite,
+                segment: Segment::S1,
+                transition_mode: Some(TransitionMode::Immediate),
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect_with_loop_behavior() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+        let r = WithLoopBehavior {
+            inner: FociSTM {
+                foci: vec![
+                    ControlPoint {
+                        point: Point3::origin(),
+                        phase_offset: Phase::ZERO,
+                    },
+                    ControlPoint {
+                        point: Point3::new(1., 2., 3.),
+                        phase_offset: Phase::PI,
+                    },
+                ],
+                config: SamplingConfig::FREQ_4K,
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+            loop_behavior: LoopBehavior::ONCE,
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(FociSTMInspectionResult {
+                name: "FociSTM".to_string(),
+                data: vec![
+                    ControlPoints {
+                        points: [ControlPoint {
+                            point: Point3::origin(),
+                            phase_offset: Phase::ZERO,
+                        }],
+                        intensity: EmitIntensity::MAX
+                    },
+                    ControlPoints {
+                        points: [ControlPoint {
+                            point: Point3::new(1., 2., 3.),
+                            phase_offset: Phase::PI,
+                        }],
+                        intensity: EmitIntensity::MAX
+                    },
+                ],
+                config: SamplingConfig::FREQ_4K,
+                loop_behavior: LoopBehavior::ONCE,
+                segment: Segment::S1,
+                transition_mode: Some(TransitionMode::Immediate),
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
+    }
+}

@@ -42,7 +42,10 @@ pub mod tests {
 
     use autd3_core::derive::*;
 
-    use crate::firmware::fpga::{Drive, EmitIntensity, Phase};
+    use crate::{
+        datagram::tests::create_geometry,
+        firmware::fpga::{Drive, EmitIntensity, Phase},
+    };
 
     #[derive(Gain, Clone, Debug)]
     pub struct TestGain {
@@ -161,6 +164,84 @@ pub mod tests {
                 })
                 .collect()
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+
+        let r = TestGain::new(
+            |_dev| {
+                |_| Drive {
+                    phase: Phase(0xFF),
+                    intensity: EmitIntensity(0xFF),
+                }
+            },
+            &geometry,
+        )
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(GainInspectionResult {
+                name: "TestGain".to_string(),
+                data: vec![
+                    Drive {
+                        phase: Phase(0xFF),
+                        intensity: EmitIntensity(0xFF),
+                    };
+                    1
+                ],
+                segment: Segment::S0,
+                transition_mode: None
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect_with_segment() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+
+        let r = crate::datagram::WithSegment {
+            inner: TestGain::new(
+                |_dev| {
+                    |_| Drive {
+                        phase: Phase(0xFF),
+                        intensity: EmitIntensity(0xFF),
+                    }
+                },
+                &geometry,
+            ),
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(GainInspectionResult {
+                name: "TestGain".to_string(),
+                data: vec![
+                    Drive {
+                        phase: Phase(0xFF),
+                        intensity: EmitIntensity(0xFF),
+                    };
+                    1
+                ],
+                segment: Segment::S1,
+                transition_mode: Some(TransitionMode::Immediate),
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
 
         Ok(())
     }

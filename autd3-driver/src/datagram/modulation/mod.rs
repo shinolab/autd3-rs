@@ -65,6 +65,8 @@ impl InspectionResultWithLoopBehavior for ModulationInspectionResult {
 pub mod tests {
     use autd3_core::derive::*;
 
+    use crate::datagram::tests::create_geometry;
+
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
         pub sampling_config: SamplingConfig,
@@ -78,5 +80,95 @@ pub mod tests {
         fn sampling_config(&self) -> SamplingConfig {
             self.sampling_config
         }
+    }
+
+    #[test]
+    fn inspect() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+
+        let r = TestModulation {
+            sampling_config: SamplingConfig::FREQ_4K,
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(ModulationInspectionResult {
+                name: "TestModulation".to_string(),
+                data: vec![0, 0],
+                config: SamplingConfig::FREQ_4K,
+                loop_behavior: LoopBehavior::Infinite,
+                segment: Segment::S0,
+                transition_mode: None,
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect_with_segment() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+
+        let r = crate::datagram::WithSegment {
+            inner: TestModulation {
+                sampling_config: SamplingConfig::FREQ_4K,
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(ModulationInspectionResult {
+                name: "TestModulation".to_string(),
+                data: vec![0, 0],
+                config: SamplingConfig::FREQ_4K,
+                loop_behavior: LoopBehavior::Infinite,
+                segment: Segment::S1,
+                transition_mode: Some(TransitionMode::Immediate),
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect_with_loop_behavior() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+
+        let r = crate::datagram::WithLoopBehavior {
+            inner: TestModulation {
+                sampling_config: SamplingConfig::FREQ_4K,
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+            loop_behavior: LoopBehavior::ONCE,
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(ModulationInspectionResult {
+                name: "TestModulation".to_string(),
+                data: vec![0, 0],
+                config: SamplingConfig::FREQ_4K,
+                loop_behavior: LoopBehavior::ONCE,
+                segment: Segment::S1,
+                transition_mode: Some(TransitionMode::Immediate),
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
     }
 }

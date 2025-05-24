@@ -259,6 +259,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy + Debug> Inspectable for Gai
                 name: tynm::type_name::<Self>().to_string(),
                 data: {
                     use autd3_core::gain::GainCalculator;
+                    dbg!(dev.idx());
                     let mut d = g.generate(dev);
                     let mut data = Vec::with_capacity(n);
                     while let Some(g) = d.next() {
@@ -273,5 +274,175 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy + Debug> Inspectable for Gai
                 transition_mode,
             }
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::{
+        datagram::{GainSTMOption, gain::tests::TestGain, tests::create_geometry},
+        firmware::fpga::SamplingConfig,
+    };
+    use autd3_core::{
+        derive::Inspectable,
+        gain::{Drive, EmitIntensity, Phase},
+    };
+
+    #[test]
+    fn inspect() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+        let r = GainSTM {
+            gains: vec![
+                TestGain::new(|_dev| |_| Drive::NULL, &geometry),
+                TestGain::new(
+                    |_dev| {
+                        |_| Drive {
+                            phase: Phase(0xFF),
+                            intensity: EmitIntensity(0xFF),
+                        }
+                    },
+                    &geometry,
+                ),
+            ],
+            config: SamplingConfig::FREQ_4K,
+            option: GainSTMOption::default(),
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(GainSTMInspectionResult {
+                name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
+                data: vec![
+                    vec![Drive::NULL; 1],
+                    vec![
+                        Drive {
+                            phase: Phase(0xFF),
+                            intensity: EmitIntensity(0xFF),
+                        };
+                        1
+                    ],
+                ],
+                config: SamplingConfig::FREQ_4K,
+                mode: GainSTMMode::PhaseIntensityFull,
+                loop_behavior: LoopBehavior::Infinite,
+                segment: Segment::S0,
+                transition_mode: None
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect_with_segment() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+        let r = WithSegment {
+            inner: GainSTM {
+                gains: vec![
+                    TestGain::new(|_dev| |_| Drive::NULL, &geometry),
+                    TestGain::new(
+                        |_dev| {
+                            |_| Drive {
+                                phase: Phase(0xFF),
+                                intensity: EmitIntensity(0xFF),
+                            }
+                        },
+                        &geometry,
+                    ),
+                ],
+                config: SamplingConfig::FREQ_4K,
+                option: GainSTMOption::default(),
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(GainSTMInspectionResult {
+                name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
+                data: vec![
+                    vec![Drive::NULL; 1],
+                    vec![
+                        Drive {
+                            phase: Phase(0xFF),
+                            intensity: EmitIntensity(0xFF),
+                        };
+                        1
+                    ],
+                ],
+                config: SamplingConfig::FREQ_4K,
+                mode: GainSTMMode::PhaseIntensityFull,
+                loop_behavior: LoopBehavior::Infinite,
+                segment: Segment::S1,
+                transition_mode: Some(TransitionMode::Immediate),
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect_with_loop_behavior() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+        let r = WithLoopBehavior {
+            inner: GainSTM {
+                gains: vec![
+                    TestGain::new(|_dev| |_| Drive::NULL, &geometry),
+                    TestGain::new(
+                        |_dev| {
+                            |_| Drive {
+                                phase: Phase(0xFF),
+                                intensity: EmitIntensity(0xFF),
+                            }
+                        },
+                        &geometry,
+                    ),
+                ],
+                config: SamplingConfig::FREQ_4K,
+                option: GainSTMOption::default(),
+            },
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+            loop_behavior: LoopBehavior::ONCE,
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(GainSTMInspectionResult {
+                name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
+                data: vec![
+                    vec![Drive::NULL; 1],
+                    vec![
+                        Drive {
+                            phase: Phase(0xFF),
+                            intensity: EmitIntensity(0xFF),
+                        };
+                        1
+                    ],
+                ],
+                config: SamplingConfig::FREQ_4K,
+                mode: GainSTMMode::PhaseIntensityFull,
+                loop_behavior: LoopBehavior::ONCE,
+                segment: Segment::S1,
+                transition_mode: Some(TransitionMode::Immediate),
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
     }
 }

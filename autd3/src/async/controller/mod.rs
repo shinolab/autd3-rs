@@ -439,6 +439,35 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn inspect() -> anyhow::Result<()> {
+        use crate::core::derive::ModulationInspectionResult;
+        use crate::prelude::LoopBehavior;
+
+        let mut autd = create_controller(2).await?;
+
+        autd[1].enable = false;
+
+        let r = autd.inspect(Static::default())?;
+        assert_eq!(autd.geometry.len(), r.len());
+        assert_eq!(
+            Some(ModulationInspectionResult {
+                name: "Static".to_string(),
+                data: vec![0xFF, 0xFF],
+                config: Static::default().sampling_config(),
+                loop_behavior: LoopBehavior::Infinite,
+                segment: Segment::S0,
+                transition_mode: None
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        autd.close().await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn firmware_version() -> anyhow::Result<()> {
         use autd3_driver::firmware::version::{CPUVersion, FPGAVersion};
 
