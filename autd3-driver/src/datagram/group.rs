@@ -2,7 +2,11 @@ use std::{collections::HashMap, fmt::Debug, hash::Hash, time::Duration};
 
 use crate::datagram::*;
 
-use autd3_core::{datagram::DatagramOption, gain::BitVec};
+use autd3_core::{
+    datagram::DatagramOption,
+    derive::{Inspectable, InspectionResult},
+    gain::BitVec,
+};
 use derive_more::Debug as DeriveDebug;
 use itertools::Itertools;
 
@@ -62,6 +66,21 @@ where
             datagram_map,
         }
     }
+
+    fn generate_filter(key_map: F, geometry: &Geometry) -> HashMap<K, BitVec> {
+        let num_devices = geometry.iter().len();
+        let mut filters: HashMap<K, BitVec> = HashMap::new();
+        geometry.devices().for_each(|dev| {
+            if let Some(key) = key_map(dev) {
+                if let Some(v) = filters.get_mut(&key) {
+                    v.set(dev.idx(), true);
+                } else {
+                    filters.insert(key, BitVec::from_fn(num_devices, |i| i == dev.idx()));
+                }
+            }
+        });
+        filters
+    }
 }
 
 pub struct GroupOpGenerator<D>
@@ -108,20 +127,7 @@ where
             mut datagram_map,
         } = self;
 
-        let filters = {
-            let num_devices = geometry.iter().len();
-            let mut filters: HashMap<K, BitVec> = HashMap::new();
-            geometry.devices().for_each(|dev| {
-                if let Some(key) = key_map(dev) {
-                    if let Some(v) = filters.get_mut(&key) {
-                        v.set(dev.idx(), true);
-                    } else {
-                        filters.insert(key, BitVec::from_fn(num_devices, |i| i == dev.idx()));
-                    }
-                }
-            });
-            filters
-        };
+        let filters = Self::generate_filter(key_map, geometry);
 
         let enable_store = geometry.iter().map(|dev| dev.enable).collect::<Vec<_>>();
 
@@ -182,6 +188,67 @@ where
             },
             DatagramOption::merge,
         )
+    }
+}
+
+impl<K, D, F> Inspectable for Group<K, D, F>
+where
+    K: Hash + Eq + Debug,
+    D: Datagram + Inspectable,
+    F: Fn(&Device) -> Option<K>,
+    D::G: OperationGenerator,
+    AUTDDriverError: From<<D as Datagram>::Error>,
+{
+    type Result = D::Result;
+
+    fn inspect(
+        self,
+        geometry: &mut Geometry,
+    ) -> Result<InspectionResult<Self::Result>, AUTDDriverError> {
+        let Self {
+            key_map,
+            mut datagram_map,
+        } = self;
+
+        let filters = Self::generate_filter(key_map, geometry);
+
+        let enable_store = geometry.iter().map(|dev| dev.enable).collect::<Vec<_>>();
+
+        let results = filters
+            .into_iter()
+            .map(
+                |(k, filter)| -> Result<Vec<Option<Self::Result>>, AUTDDriverError> {
+                    {
+                        let datagram = datagram_map
+                            .remove(&k)
+                            .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
+
+                        geometry.devices_mut().for_each(|dev| {
+                            dev.enable = filter[dev.idx()];
+                        });
+
+                        let r = datagram.inspect(geometry).map_err(AUTDDriverError::from)?;
+
+                        // restore enable flag
+                        geometry
+                            .iter_mut()
+                            .zip(enable_store.iter())
+                            .for_each(|(dev, &enable)| {
+                                dev.enable = enable;
+                            });
+
+                        Ok(r.result)
+                    }
+                },
+            )
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(InspectionResult {
+            result: results
+                .into_iter()
+                .reduce(|a, b| a.into_iter().zip(b).map(|(a, b)| a.or(b)).collect())
+                .unwrap(),
+        })
     }
 }
 
@@ -385,6 +452,54 @@ mod tests {
             .operation_generator(&mut geometry)
             .err()
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect() -> anyhow::Result<()> {
+        #[derive(Debug)]
+        pub struct TestDatagram {}
+
+        impl Datagram for TestDatagram {
+            type G = NullOperationGenerator;
+            type Error = Infallible;
+
+            // GRCOV_EXCL_START
+            fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+                Ok(NullOperationGenerator)
+            }
+            // GRCOV_EXCL_STOP
+        }
+
+        impl Inspectable for TestDatagram {
+            type Result = ();
+
+            fn inspect(
+                self,
+                geometry: &mut Geometry,
+            ) -> Result<InspectionResult<Self::Result>, Self::Error> {
+                Ok(InspectionResult::new(geometry, |_| ()))
+            }
+        }
+
+        let mut geometry = create_geometry(4, 1);
+
+        geometry[3].enable = false;
+
+        let r = Group::new(
+            |dev| match dev.idx() {
+                1 => None,
+                _ => Some(()),
+            },
+            HashMap::from([((), TestDatagram {})]),
+        )
+        .inspect(&mut geometry)?;
+
+        assert!(r[0].is_some());
+        assert!(r[1].is_none());
+        assert!(r[2].is_some());
+        assert!(r[3].is_none());
 
         Ok(())
     }

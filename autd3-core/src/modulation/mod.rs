@@ -30,3 +30,20 @@ pub struct ModulationOperationGenerator {
     pub segment: Segment,
     pub transition_mode: Option<TransitionMode>,
 }
+
+#[derive(Debug, Clone, PartialEq)]
+/// The result of the [`Modulation`] inspection.
+pub struct ModulationInspectionResult {
+    /// The type name of the modulation.
+    pub name: String,
+    /// The data of the modulation.
+    pub data: Vec<u8>,
+    /// The sampling configuration.
+    pub config: SamplingConfig,
+    /// The loop behavior.
+    pub loop_behavior: LoopBehavior,
+    /// The segment of the modulation.
+    pub segment: Segment,
+    /// The transition mode of the modulation.
+    pub transition_mode: Option<TransitionMode>,
+}

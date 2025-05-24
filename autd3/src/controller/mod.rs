@@ -2,7 +2,10 @@ mod sender;
 
 use crate::{error::AUTDError, gain::Null, modulation::Static};
 
-use autd3_core::link::{Link, MsgId};
+use autd3_core::{
+    datagram::{Inspectable, InspectionResult},
+    link::{Link, MsgId},
+};
 use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
     error::AUTDDriverError,
@@ -108,6 +111,14 @@ impl<L: Link> Controller<L> {
     {
         self.sender(self.default_sender_option, SpinSleeper::default())
             .send(s)
+    }
+
+    /// Returns the inspection result.
+    pub fn inspect<I: Inspectable>(
+        &mut self,
+        s: I,
+    ) -> Result<InspectionResult<I::Result>, I::Error> {
+        s.inspect(&mut self.geometry)
     }
 
     pub(crate) fn open_impl<S: Sleep>(
@@ -402,6 +413,32 @@ pub(crate) mod tests {
             );
             anyhow::Ok(())
         })?;
+
+        autd.close()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect() -> anyhow::Result<()> {
+        let mut autd = create_controller(2)?;
+
+        autd[1].enable = false;
+
+        let r = autd.inspect(Static::default())?;
+        assert_eq!(autd.geometry.len(), r.len());
+        assert_eq!(
+            Some(ModulationInspectionResult {
+                name: "Static".to_string(),
+                data: vec![0xFF, 0xFF],
+                config: Static::default().sampling_config(),
+                loop_behavior: LoopBehavior::Infinite,
+                segment: Segment::S0,
+                transition_mode: None
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
 
         autd.close()?;
 

@@ -1,4 +1,5 @@
 mod gpio;
+mod inspect;
 mod loop_behavior;
 mod operation;
 mod segment;
@@ -6,6 +7,7 @@ mod transition_mode;
 mod tuple;
 
 pub use gpio::{GPIOIn, GPIOOut};
+pub use inspect::{Inspectable, InspectionResult};
 pub use loop_behavior::LoopBehavior;
 pub use operation::{NullOp, Operation};
 pub use segment::Segment;

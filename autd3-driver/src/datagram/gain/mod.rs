@@ -1,12 +1,16 @@
 mod boxed;
 
-use autd3_core::gain::{Gain, GainCalculatorGenerator, GainOperationGenerator};
+use autd3_core::gain::{
+    Gain, GainCalculatorGenerator, GainInspectionResult, GainOperationGenerator,
+};
 pub use boxed::{BoxedGain, IntoBoxedGain};
 
 use crate::{
     firmware::operation::{GainOp, NullOp, OperationGenerator},
     geometry::Device,
 };
+
+use super::with_segment::InspectionResultWithSegment;
 
 impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G> {
     type O1 = GainOp<G::Calculator>;
@@ -18,13 +22,30 @@ impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G
     }
 }
 
+impl InspectionResultWithSegment for GainInspectionResult {
+    fn with_segment(
+        self,
+        segment: autd3_core::derive::Segment,
+        transition_mode: Option<autd3_core::derive::TransitionMode>,
+    ) -> Self {
+        Self {
+            segment,
+            transition_mode,
+            ..self
+        }
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use std::collections::HashMap;
 
     use autd3_core::derive::*;
 
-    use crate::firmware::fpga::{Drive, EmitIntensity, Phase};
+    use crate::{
+        datagram::tests::create_geometry,
+        firmware::fpga::{Drive, EmitIntensity, Phase},
+    };
 
     #[derive(Gain, Clone, Debug)]
     pub struct TestGain {
@@ -143,6 +164,84 @@ pub mod tests {
                 })
                 .collect()
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+
+        let r = TestGain::new(
+            |_dev| {
+                |_| Drive {
+                    phase: Phase(0xFF),
+                    intensity: EmitIntensity(0xFF),
+                }
+            },
+            &geometry,
+        )
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(GainInspectionResult {
+                name: "TestGain".to_string(),
+                data: vec![
+                    Drive {
+                        phase: Phase(0xFF),
+                        intensity: EmitIntensity(0xFF),
+                    };
+                    1
+                ],
+                segment: Segment::S0,
+                transition_mode: None
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
+
+        Ok(())
+    }
+
+    #[test]
+    fn inspect_with_segment() -> anyhow::Result<()> {
+        let mut geometry = create_geometry(2, 1);
+
+        geometry[1].enable = false;
+
+        let r = crate::datagram::WithSegment {
+            inner: TestGain::new(
+                |_dev| {
+                    |_| Drive {
+                        phase: Phase(0xFF),
+                        intensity: EmitIntensity(0xFF),
+                    }
+                },
+                &geometry,
+            ),
+            segment: Segment::S1,
+            transition_mode: Some(TransitionMode::Immediate),
+        }
+        .inspect(&mut geometry)?;
+
+        assert_eq!(
+            Some(GainInspectionResult {
+                name: "TestGain".to_string(),
+                data: vec![
+                    Drive {
+                        phase: Phase(0xFF),
+                        intensity: EmitIntensity(0xFF),
+                    };
+                    1
+                ],
+                segment: Segment::S1,
+                transition_mode: Some(TransitionMode::Immediate),
+            }),
+            r[0]
+        );
+        assert_eq!(None, r[1]);
 
         Ok(())
     }
