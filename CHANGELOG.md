@@ -1,3 +1,40 @@
+# 33.0.0 (2025-05-25)
+
+## 🚀 Features
+
+- Make `SenderOption` used in `Controller::send` configurable (#250)
+- Enhance `Greedy` algorithm with customizable objective function (#253)
+- Remove `Controller::group_send`, add `datagram::Group` instead (#257)
+- Make `GPIOOutputType` optional
+- Add `BoxedGain::new`, `BoxedModulation::new` and `BoxedDatagram::new`
+- Add `Controller::inspect` (#261)
+
+## 🐛 Bug Fixes
+
+- No need to check the response of disabled devices (#247)
+
+## ⬆️ Update Dependencies
+
+- Update bitfield-struct requirement from 0.10.1 to 0.11.0
+- Update criterion requirement from 0.5.1 to 0.6.0
+
+## 🚜 Refactor
+
+- Rename from `division` to `divide` in sampling config
+- Rename from `Greedy::phase_div` to `Greedy::phase_quantization_levels`
+- Rename from `defined` module to `common`
+- Stop using `tonic::Status` in `AUTDProtoBufError::Status` to avoid `clippy::result_large_err`
+
+## ⚡ Performance
+
+- Transfer management of tx buffer from `Controller` to `Link` (#251)
+
+## ⚙️ Miscellaneous Tasks
+
+- Modify error message
+- Correct various typos
+
+
 # 32.1.1 (2025-04-21)
 
 ## 🐛 Bug Fixes
