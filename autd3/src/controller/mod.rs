@@ -148,7 +148,8 @@ impl<L: Link> Controller<L> {
             return Ok(());
         }
 
-        self.geometry.iter_mut().for_each(|dev| dev.enable = true);
+        self.geometry
+            .lock_version(|geometry| geometry.iter_mut().for_each(|dev| dev.enable = true));
 
         let mut sender = self.sender(option, sleeper);
 
