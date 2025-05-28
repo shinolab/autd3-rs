@@ -9,7 +9,7 @@ import "gain.proto";
 import "modulation.proto";
 import "datagram.proto";
 
-message Datagram {
+message RawDatagram {
   oneof datagram {
     Clear clear = 1;
     Synchronize synchronize = 2;
@@ -27,8 +27,20 @@ message Datagram {
 }
 
 message DatagramTuple {
-  Datagram first = 1;
-  optional Datagram second = 2;
+  RawDatagram first = 1;
+  optional RawDatagram second = 2;
+}
+
+message Group {
+  repeated int32 keys = 1;
+  repeated DatagramTuple datagrams = 2;
+}
+
+message Datagram {
+  oneof datagram {
+    DatagramTuple tuple = 1;
+    Group group = 2;
+  }
 }
 
 enum ParallelMode {
@@ -70,7 +82,7 @@ message SenderOption {
 }
 
 message SendRequestLightweight {
-  DatagramTuple datagram = 1;
+  Datagram datagram = 1;
   optional SenderOption sender_option = 2;
   optional Sleeper sleeper = 3;
 }

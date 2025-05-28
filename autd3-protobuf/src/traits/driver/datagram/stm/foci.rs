@@ -8,11 +8,11 @@ impl<const N: usize, C: Into<STMConfig> + Copy> DatagramLightweight
     fn into_datagram_lightweight(
         self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
         let sampling_config = self.sampling_config()?.into();
         let autd3_driver::datagram::FociSTM { foci, .. } = self;
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::FociStm(FociStm {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::FociStm(FociStm {
                 foci: foci.into_iter().map(|p| p.into()).collect(),
                 sampling_config: Some(sampling_config),
             })),

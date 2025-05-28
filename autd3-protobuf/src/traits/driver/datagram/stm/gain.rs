@@ -38,11 +38,11 @@ impl<C: Into<STMConfig> + Copy> DatagramLightweight
     fn into_datagram_lightweight(
         self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
         let sampling_config = self.sampling_config()?.into();
         let autd3_driver::datagram::GainSTM { gains, option, .. } = self;
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::GainStm(GainStm {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::GainStm(GainStm {
                 gains: gains.into_iter().collect(),
                 option: Some(GainStmOption::from(option) as _),
                 sampling_config: Some(sampling_config),

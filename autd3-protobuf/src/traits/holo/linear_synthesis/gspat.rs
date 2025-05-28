@@ -119,7 +119,7 @@ mod tests {
         };
         let msg = holo.into_datagram_lightweight(None).unwrap();
         match msg.datagram {
-            Some(datagram::Datagram::Gain(Gain {
+            Some(raw_datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Gspat(g)),
                 ..
             })) => {
