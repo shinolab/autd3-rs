@@ -129,6 +129,14 @@ impl Geometry {
         self.assign_idx();
         self.version += 1;
     }
+
+    #[doc(hidden)]
+    pub fn lock_version<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
+        let version = self.version;
+        let r = f(self);
+        self.version = version;
+        r
+    }
 }
 
 impl<'a> IntoIterator for &'a mut Geometry {
