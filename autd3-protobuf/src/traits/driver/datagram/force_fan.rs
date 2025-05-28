@@ -10,9 +10,9 @@ impl<F: Fn(&Device) -> bool> DatagramLightweight for autd3_driver::datagram::For
     fn into_datagram_lightweight(
         self,
         geometry: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::ForceFan(ForceFan {
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::ForceFan(ForceFan {
                 value: geometry
                     .unwrap()
                     .iter()

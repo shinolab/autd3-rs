@@ -1627,15 +1627,15 @@ impl GainStmMode {
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct Datagram {
+pub struct RawDatagram {
     #[prost(
-        oneof = "datagram::Datagram",
+        oneof = "raw_datagram::Datagram",
         tags = "1, 2, 3, 4, 5, 6, 10, 30, 40, 50, 60, 61"
     )]
-    pub datagram: ::core::option::Option<datagram::Datagram>,
+    pub datagram: ::core::option::Option<raw_datagram::Datagram>,
 }
-/// Nested message and enum types in `Datagram`.
-pub mod datagram {
+/// Nested message and enum types in `RawDatagram`.
+pub mod raw_datagram {
     #[non_exhaustive]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Datagram {
@@ -1668,9 +1668,32 @@ pub mod datagram {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DatagramTuple {
     #[prost(message, optional, tag = "1")]
-    pub first: ::core::option::Option<Datagram>,
+    pub first: ::core::option::Option<RawDatagram>,
     #[prost(message, optional, tag = "2")]
-    pub second: ::core::option::Option<Datagram>,
+    pub second: ::core::option::Option<RawDatagram>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Group {
+    #[prost(int32, repeated, tag = "1")]
+    pub keys: ::prost::alloc::vec::Vec<i32>,
+    #[prost(message, repeated, tag = "2")]
+    pub datagrams: ::prost::alloc::vec::Vec<DatagramTuple>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Datagram {
+    #[prost(oneof = "datagram::Datagram", tags = "1, 2")]
+    pub datagram: ::core::option::Option<datagram::Datagram>,
+}
+/// Nested message and enum types in `Datagram`.
+pub mod datagram {
+    #[non_exhaustive]
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Datagram {
+        #[prost(message, tag = "1")]
+        Tuple(super::DatagramTuple),
+        #[prost(message, tag = "2")]
+        Group(super::Group),
+    }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct StdSleeper {
@@ -1725,7 +1748,7 @@ pub struct SenderOption {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SendRequestLightweight {
     #[prost(message, optional, tag = "1")]
-    pub datagram: ::core::option::Option<DatagramTuple>,
+    pub datagram: ::core::option::Option<Datagram>,
     #[prost(message, optional, tag = "2")]
     pub sender_option: ::core::option::Option<SenderOption>,
     #[prost(message, optional, tag = "3")]

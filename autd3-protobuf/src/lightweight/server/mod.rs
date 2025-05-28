@@ -17,20 +17,14 @@ use tonic::{Request, Response, Status};
 #[doc(hidden)]
 pub struct LightweightServer<
     L: autd3_core::link::AsyncLink + 'static,
-    F: Fn() -> Result<L, LinkError> + Send + Sync + 'static,
-> where
-    L: Sync,
-{
+    F: Fn() -> Result<L, LinkError> + Send + 'static,
+> {
     autd: RwLock<Option<autd3::r#async::Controller<L>>>,
     link: F,
 }
 
-impl<
-    L: autd3_core::link::AsyncLink + 'static,
-    F: Fn() -> Result<L, LinkError> + Send + Sync + 'static,
-> LightweightServer<L, F>
-where
-    L: Sync,
+impl<L: autd3_core::link::AsyncLink + 'static, F: Fn() -> Result<L, LinkError> + Send + 'static>
+    LightweightServer<L, F>
 {
     #[must_use]
     pub fn new(f: F) -> Self {
@@ -41,20 +35,24 @@ where
     }
 }
 
-fn into_boxed_datagram(datagram: datagram::Datagram) -> Result<BoxedDatagram, AUTDProtoBufError> {
+fn into_boxed_datagram(
+    datagram: raw_datagram::Datagram,
+) -> Result<BoxedDatagram, AUTDProtoBufError> {
     use autd3_driver::datagram::*;
     match datagram {
-        datagram::Datagram::Clear(msg) => Clear::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
-        datagram::Datagram::Synchronize(msg) => {
+        raw_datagram::Datagram::Clear(msg) => {
+            Clear::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
+        }
+        raw_datagram::Datagram::Synchronize(msg) => {
             Synchronize::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
         }
-        datagram::Datagram::ForceFan(msg) => {
+        raw_datagram::Datagram::ForceFan(msg) => {
             ForceFan::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
         }
-        datagram::Datagram::ReadsFpgaState(msg) => {
+        raw_datagram::Datagram::ReadsFpgaState(msg) => {
             ReadsFPGAState::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
         }
-        datagram::Datagram::Silencer(msg) => {
+        raw_datagram::Datagram::Silencer(msg) => {
             use autd3::driver::datagram::*;
             use silencer::Config;
             let config = msg.config.ok_or(AUTDProtoBufError::DataParseError)?;
@@ -73,33 +71,32 @@ fn into_boxed_datagram(datagram: datagram::Datagram) -> Result<BoxedDatagram, AU
                 .into_boxed(),
             })
         }
-        datagram::Datagram::SwapSegment(msg) => {
+        raw_datagram::Datagram::SwapSegment(msg) => {
             SwapSegment::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
         }
-        datagram::Datagram::Modulation(msg) => {
+        raw_datagram::Datagram::Modulation(msg) => {
             modulation_into_boxed(msg).map(IntoBoxedDatagram::into_boxed)
         }
-        datagram::Datagram::Gain(msg) => gain_into_boxed(msg).map(IntoBoxedDatagram::into_boxed),
-        datagram::Datagram::FociStm(msg) => {
+        raw_datagram::Datagram::Gain(msg) => {
+            gain_into_boxed(msg).map(IntoBoxedDatagram::into_boxed)
+        }
+        raw_datagram::Datagram::FociStm(msg) => {
             if msg.foci.is_empty() {
                 return Err(AUTDProtoBufError::DataParseError);
             }
-            match msg.foci[0].points.len() {
-                1 => FociSTM::<1, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
-                2 => FociSTM::<2, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
-                3 => FociSTM::<3, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
-                4 => FociSTM::<4, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
-                5 => FociSTM::<5, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
-                6 => FociSTM::<6, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
-                7 => FociSTM::<7, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
-                8 => FociSTM::<8, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
-                _ => Err(AUTDProtoBufError::DataParseError),
-            }
+            seq_macro::seq!(N in 0..8 {
+                match msg.foci[0].points.len() {
+                    #(
+                        N => FociSTM::<N, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
+                    )*
+                    _ => Err(AUTDProtoBufError::DataParseError),
+                }
+            })
         }
-        datagram::Datagram::GainStm(msg) => {
+        raw_datagram::Datagram::GainStm(msg) => {
             autd3_driver::datagram::GainSTM::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
         }
-        datagram::Datagram::WithSegment(msg) => {
+        raw_datagram::Datagram::WithSegment(msg) => {
             let segment = autd3::driver::firmware::fpga::Segment::from_msg(msg.segment)?;
             let transition_mode = msg
                 .transition_mode
@@ -127,57 +124,19 @@ fn into_boxed_datagram(datagram: datagram::Datagram) -> Result<BoxedDatagram, AU
                     if msg.foci.is_empty() {
                         return Err(AUTDProtoBufError::DataParseError);
                     }
-                    Ok(match msg.foci[0].points.len() {
-                        1 => WithSegment {
-                            inner: FociSTM::<1, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
+                    Ok(seq_macro::seq!(N in 0..8 {
+                        match msg.foci[0].points.len() {
+                            #(
+                                N => WithSegment {
+                                    inner: FociSTM::<N, _, _>::from_msg(msg)?,
+                                    segment,
+                                    transition_mode,
+                                }
+                                .into_boxed(),
+                            )*
+                            _ => return Err(AUTDProtoBufError::DataParseError),
                         }
-                        .into_boxed(),
-                        2 => WithSegment {
-                            inner: FociSTM::<2, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                        }
-                        .into_boxed(),
-                        3 => WithSegment {
-                            inner: FociSTM::<3, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                        }
-                        .into_boxed(),
-                        4 => WithSegment {
-                            inner: FociSTM::<4, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                        }
-                        .into_boxed(),
-                        5 => WithSegment {
-                            inner: FociSTM::<5, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                        }
-                        .into_boxed(),
-                        6 => WithSegment {
-                            inner: FociSTM::<6, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                        }
-                        .into_boxed(),
-                        7 => WithSegment {
-                            inner: FociSTM::<7, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                        }
-                        .into_boxed(),
-                        8 => WithSegment {
-                            inner: FociSTM::<8, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                        }
-                        .into_boxed(),
-                        _ => return Err(AUTDProtoBufError::DataParseError),
-                    })
+                    }))
                 }
                 with_segment::Inner::GainStm(msg) => autd3_driver::datagram::GainSTM::from_msg(msg)
                     .map(|stm| {
@@ -190,7 +149,7 @@ fn into_boxed_datagram(datagram: datagram::Datagram) -> Result<BoxedDatagram, AU
                     }),
             }
         }
-        datagram::Datagram::WithLoopBehavior(msg) => {
+        raw_datagram::Datagram::WithLoopBehavior(msg) => {
             let segment = autd3::driver::firmware::fpga::Segment::from_msg(msg.segment)?;
             let transition_mode = msg
                 .transition_mode
@@ -214,65 +173,20 @@ fn into_boxed_datagram(datagram: datagram::Datagram) -> Result<BoxedDatagram, AU
                     if msg.foci.is_empty() {
                         return Err(AUTDProtoBufError::DataParseError);
                     }
-                    Ok(match msg.foci[0].points.len() {
-                        1 => WithLoopBehavior {
-                            inner: FociSTM::<1, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                            loop_behavior,
+                    Ok(seq_macro::seq!(N in 0..8 {
+                        match msg.foci[0].points.len() {
+                            #(
+                                N => WithLoopBehavior {
+                                    inner: FociSTM::<N, _, _>::from_msg(msg)?,
+                                    segment,
+                                    transition_mode,
+                                                                loop_behavior,
+                                }
+                                .into_boxed(),
+                            )*
+                            _ => return Err(AUTDProtoBufError::DataParseError),
                         }
-                        .into_boxed(),
-                        2 => WithLoopBehavior {
-                            inner: FociSTM::<2, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                            loop_behavior,
-                        }
-                        .into_boxed(),
-                        3 => WithLoopBehavior {
-                            inner: FociSTM::<3, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                            loop_behavior,
-                        }
-                        .into_boxed(),
-                        4 => WithLoopBehavior {
-                            inner: FociSTM::<4, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                            loop_behavior,
-                        }
-                        .into_boxed(),
-                        5 => WithLoopBehavior {
-                            inner: FociSTM::<5, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                            loop_behavior,
-                        }
-                        .into_boxed(),
-                        6 => WithLoopBehavior {
-                            inner: FociSTM::<6, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                            loop_behavior,
-                        }
-                        .into_boxed(),
-                        7 => WithLoopBehavior {
-                            inner: FociSTM::<7, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                            loop_behavior,
-                        }
-                        .into_boxed(),
-                        8 => WithLoopBehavior {
-                            inner: FociSTM::<8, _, _>::from_msg(msg)?,
-                            segment,
-                            transition_mode,
-                            loop_behavior,
-                        }
-                        .into_boxed(),
-                        _ => return Err(AUTDProtoBufError::DataParseError),
-                    })
+                    }))
                 }
                 with_loop_behavior::Inner::GainStm(msg) => {
                     autd3_driver::datagram::GainSTM::from_msg(msg).map(|stm| {
@@ -448,8 +362,8 @@ where
             let option = req.sender_option;
             let sleeper = req.sleeper;
             let datagram = req.datagram.ok_or(AUTDProtoBufError::DataParseError)?;
-            let d = into_datagram_tuple(datagram)?;
-            let res = match option {
+
+            let (option, sleeper) = match option {
                 Some(option) => {
                     let option = autd3::controller::SenderOption::from_msg(option)?;
                     let sleeper = sleeper
@@ -458,9 +372,44 @@ where
                         )
                         .transpose()?
                         .unwrap_or_else(|| Box::new(autd3::r#async::AsyncSleeper::default()));
-                    autd.sender(option, sleeper).send(d).await
+                    (option, sleeper)
                 }
-                None => autd.send(d).await,
+                None => (
+                    autd.default_sender_option,
+                    Box::new(autd3::r#async::AsyncSleeper::default()) as _,
+                ),
+            };
+
+            let num_devices = autd.num_devices();
+            let mut sender = autd.sender(option, sleeper);
+            let res = match datagram.datagram.ok_or(AUTDProtoBufError::DataParseError)? {
+                datagram::Datagram::Tuple(datagram_tuple) => {
+                    sender.send(into_datagram_tuple(datagram_tuple)?).await
+                }
+                datagram::Datagram::Group(group) => {
+                    let keys = group.keys;
+                    if keys.len() != num_devices {
+                        return Ok(Response::new(SendResponseLightweight {
+                            err: true,
+                            msg: "Length of keys must be the same as the number of devices"
+                                .to_string(),
+                        }));
+                    }
+                    let datagrams = group
+                        .datagrams
+                        .into_iter()
+                        .map(into_datagram_tuple)
+                        .collect::<Result<Vec<_>, _>>()?;
+                    sender
+                        .send(autd3_driver::datagram::Group::new(
+                            |dev| {
+                                let key = keys[dev.idx()];
+                                if key < 0 { None } else { Some(key as usize) }
+                            },
+                            std::collections::HashMap::from_iter(datagrams.into_iter().enumerate()),
+                        ))
+                        .await
+                }
             };
             match res {
                 Ok(_) => Ok(Response::new(SendResponseLightweight {

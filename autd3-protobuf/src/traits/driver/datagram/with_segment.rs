@@ -7,7 +7,7 @@ where
     fn into_datagram_lightweight(
         self,
         geometry: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
         let autd3_driver::datagram::WithSegment {
             inner,
             segment,
@@ -15,29 +15,29 @@ where
         } = self;
         let datagram = <T as DatagramLightweight>::into_datagram_lightweight(inner, geometry)?;
         Ok(match datagram.datagram {
-            Some(datagram::Datagram::Gain(g)) => Datagram {
-                datagram: Some(datagram::Datagram::WithSegment(WithSegment {
+            Some(raw_datagram::Datagram::Gain(g)) => RawDatagram {
+                datagram: Some(raw_datagram::Datagram::WithSegment(WithSegment {
                     inner: Some(with_segment::Inner::Gain(g)),
                     segment: segment as u8 as _,
                     transition_mode: transition_mode.map(|mode| mode.into()),
                 })),
             },
-            Some(datagram::Datagram::Modulation(m)) => Datagram {
-                datagram: Some(datagram::Datagram::WithSegment(WithSegment {
+            Some(raw_datagram::Datagram::Modulation(m)) => RawDatagram {
+                datagram: Some(raw_datagram::Datagram::WithSegment(WithSegment {
                     inner: Some(with_segment::Inner::Modulation(m)),
                     segment: segment as u8 as _,
                     transition_mode: transition_mode.map(|mode| mode.into()),
                 })),
             },
-            Some(datagram::Datagram::FociStm(stm)) => Datagram {
-                datagram: Some(datagram::Datagram::WithSegment(WithSegment {
+            Some(raw_datagram::Datagram::FociStm(stm)) => RawDatagram {
+                datagram: Some(raw_datagram::Datagram::WithSegment(WithSegment {
                     inner: Some(with_segment::Inner::FociStm(stm)),
                     segment: segment as u8 as _,
                     transition_mode: transition_mode.map(|mode| mode.into()),
                 })),
             },
-            Some(datagram::Datagram::GainStm(stm)) => Datagram {
-                datagram: Some(datagram::Datagram::WithSegment(WithSegment {
+            Some(raw_datagram::Datagram::GainStm(stm)) => RawDatagram {
+                datagram: Some(raw_datagram::Datagram::WithSegment(WithSegment {
                     inner: Some(with_segment::Inner::GainStm(stm)),
                     segment: segment as u8 as _,
                     transition_mode: transition_mode.map(|mode| mode.into()),

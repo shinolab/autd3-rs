@@ -47,6 +47,32 @@ async fn main() -> anyhow::Result<()> {
         autd.send(stm).await?;
     }
 
+    {
+        // `Group` requires `autd3_protobuf::lightweight::Datagram::into_lightweight()` when using different types
+        use autd3_protobuf::lightweight::Datagram;
+        autd.send(Group::new(
+            |dev| Some(dev.idx()),
+            std::collections::HashMap::from([
+                (0, Null {}.into_lightweight()),
+                (
+                    1,
+                    (
+                        Sine {
+                            freq: 150. * Hz,
+                            option: Default::default(),
+                        },
+                        Focus {
+                            pos: center,
+                            option: Default::default(),
+                        },
+                    )
+                        .into_lightweight(),
+                ),
+            ]),
+        ))
+        .await?;
+    }
+
     println!("Press enter to exit...");
     let mut _s = String::new();
     std::io::stdin().read_line(&mut _s)?;

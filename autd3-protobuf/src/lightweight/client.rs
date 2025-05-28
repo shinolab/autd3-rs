@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{fmt::Debug, hash::Hash, net::SocketAddr};
 
 use autd3_core::geometry::{Device, Geometry};
 
@@ -27,31 +27,130 @@ where
     pub(crate) sleeper: S,
 }
 
+pub struct LightweightDatagram {
+    #[allow(clippy::type_complexity)]
+    g: Box<dyn FnOnce(&Geometry) -> Result<crate::Datagram, crate::error::AUTDProtoBufError>>,
+}
+
+impl std::fmt::Debug for LightweightDatagram {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LightweightDatagram").finish()
+    }
+}
+
 pub trait Datagram {
-    fn into_lightweight(self) -> crate::DatagramTuple;
+    fn into_lightweight(self) -> LightweightDatagram;
+}
+
+pub struct NullOperationGenerator;
+
+impl autd3_driver::firmware::operation::OperationGenerator for NullOperationGenerator {
+    type O1 = autd3_core::datagram::NullOp;
+    type O2 = autd3_core::datagram::NullOp;
+
+    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
+        Some((Self::O1 {}, Self::O2 {}))
+    }
+}
+
+impl autd3_core::datagram::Datagram for LightweightDatagram {
+    type G = NullOperationGenerator;
+    type Error = std::convert::Infallible;
+
+    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+        unimplemented!("`LightweightDatagram` does not support normal `Controller`");
+    }
+}
+
+impl Datagram for LightweightDatagram {
+    fn into_lightweight(self) -> LightweightDatagram {
+        self
+    }
 }
 
 impl<T> Datagram for T
 where
-    T: DatagramLightweight,
+    T: DatagramLightweight + 'static,
 {
-    fn into_lightweight(self) -> crate::DatagramTuple {
-        crate::DatagramTuple {
-            first: Some(self.into_datagram_lightweight(None).unwrap()),
-            second: None,
+    fn into_lightweight(self) -> LightweightDatagram {
+        LightweightDatagram {
+            g: Box::new(move |geometry| {
+                Ok(crate::Datagram {
+                    datagram: Some(crate::datagram::Datagram::Tuple(crate::DatagramTuple {
+                        first: Some(self.into_datagram_lightweight(Some(geometry)).unwrap()),
+                        second: None,
+                    })),
+                })
+            }),
+        }
+    }
+}
+
+impl<K, D, F> Datagram for autd3_driver::datagram::Group<K, D, F>
+where
+    K: Hash + Eq + Debug + 'static,
+    D: autd3_driver::datagram::Datagram + Datagram + 'static,
+    F: Fn(&Device) -> Option<K> + 'static,
+    D::G: autd3_driver::firmware::operation::OperationGenerator,
+    autd3::prelude::AUTDDriverError: From<<D as autd3_driver::datagram::Datagram>::Error>,
+{
+    fn into_lightweight(self) -> LightweightDatagram {
+        LightweightDatagram {
+            g: Box::new(move |geometry| {
+                let (datagram_key, datagrams): (Vec<_>, Vec<_>) =
+                    self.datagram_map.into_iter().collect();
+                let keys = geometry
+                    .iter()
+                    .map(|dev| {
+                        if !dev.enable {
+                            return -1;
+                        }
+                        if let Some(key) = (self.key_map)(dev) {
+                            datagram_key
+                                .iter()
+                                .position(|k| k == &key)
+                                .map(|i| i as i32)
+                                .unwrap_or(-1)
+                        } else {
+                            -1
+                        }
+                    })
+                    .collect();
+                let datagrams = datagrams
+                    .into_iter()
+                    .map(|d| match (d.into_lightweight().g)(geometry)?.datagram {
+                        Some(crate::datagram::Datagram::Tuple(tuple)) => Ok(tuple),
+                        _ => Err(crate::error::AUTDProtoBufError::SendError(
+                            "Nested `Group` is not supported ".to_string(),
+                        )),
+                    })
+                    .collect::<Result<_, _>>()?;
+                Ok(crate::Datagram {
+                    datagram: Some(crate::datagram::Datagram::Group(crate::Group {
+                        keys,
+                        datagrams,
+                    })),
+                })
+            }),
         }
     }
 }
 
 impl<T1, T2> Datagram for (T1, T2)
 where
-    T1: DatagramLightweight,
-    T2: DatagramLightweight,
+    T1: DatagramLightweight + 'static,
+    T2: DatagramLightweight + 'static,
 {
-    fn into_lightweight(self) -> crate::DatagramTuple {
-        crate::DatagramTuple {
-            first: Some(self.0.into_datagram_lightweight(None).unwrap()),
-            second: Some(self.1.into_datagram_lightweight(None).unwrap()),
+    fn into_lightweight(self) -> LightweightDatagram {
+        LightweightDatagram {
+            g: Box::new(move |geometry| {
+                Ok(crate::Datagram {
+                    datagram: Some(crate::datagram::Datagram::Tuple(crate::DatagramTuple {
+                        first: Some(self.0.into_datagram_lightweight(Some(geometry)).unwrap()),
+                        second: Some(self.1.into_datagram_lightweight(Some(geometry)).unwrap()),
+                    })),
+                })
+            }),
         }
     }
 }
@@ -165,7 +264,7 @@ impl Controller {
         let res = self
             .client
             .send(tonic::Request::new(crate::SendRequestLightweight {
-                datagram: Some(datagram.into_lightweight()),
+                datagram: Some((datagram.into_lightweight().g)(&self.geometry)?),
                 sender_option: Some(self.default_sender_option.into()),
                 sleeper: None,
             }))
@@ -215,7 +314,7 @@ where
             .controller
             .client
             .send(tonic::Request::new(crate::SendRequestLightweight {
-                datagram: Some(datagram.into_lightweight()),
+                datagram: Some((datagram.into_lightweight().g)(&self.controller.geometry)?),
                 sender_option: Some(self.option.into()),
                 sleeper: Some((&self.sleeper).into()),
             }))

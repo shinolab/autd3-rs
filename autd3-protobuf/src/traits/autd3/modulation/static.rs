@@ -8,9 +8,9 @@ impl DatagramLightweight for autd3::modulation::Static {
     fn into_datagram_lightweight(
         self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::Modulation(Modulation {
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(Static {
                     intensity: Some(self.intensity as _),
                 })),
@@ -45,7 +45,7 @@ mod tests {
         };
         let msg = m.into_datagram_lightweight(None).unwrap();
         match msg.datagram {
-            Some(datagram::Datagram::Modulation(Modulation {
+            Some(raw_datagram::Datagram::Modulation(Modulation {
                 modulation: Some(modulation::Modulation::Static(modulation)),
                 ..
             })) => {
