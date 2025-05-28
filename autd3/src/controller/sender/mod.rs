@@ -12,7 +12,6 @@ use std::{
 };
 
 use autd3_core::{
-    common::DEFAULT_TIMEOUT,
     datagram::Datagram,
     geometry::Geometry,
     link::{Link, MsgId},
@@ -73,7 +72,7 @@ impl Default for SenderOption {
         Self {
             send_interval: Duration::from_millis(1),
             receive_interval: Duration::from_millis(1),
-            timeout: Some(DEFAULT_TIMEOUT),
+            timeout: None,
             parallel: ParallelMode::Auto,
         }
     }
