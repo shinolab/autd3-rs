@@ -7,7 +7,7 @@ use autd3_core::{
     link::{AsyncLink, MsgId},
 };
 use autd3_driver::{
-    datagram::{Clear, Datagram, FixedCompletionSteps, ForceFan, Silencer, Synchronize},
+    datagram::{Clear, Datagram, FixedCompletionSteps, ReadsFPGAState, Silencer, Synchronize},
     error::AUTDDriverError,
     firmware::{
         cpu::{RxMessage, check_if_msg_is_processed},
@@ -128,8 +128,8 @@ impl<L: AsyncLink> Controller<L> {
         let mut sender = self.sender(option, sleeper);
 
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
-        // Therefore, send a meaningless data (here, we use `ForceFan` because it is the lightest).
-        let _ = sender.send(ForceFan::new(|_| false)).await;
+        // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
+        let _ = sender.send(ReadsFPGAState::new(|_| false)).await;
 
         sender.send((Clear::new(), Synchronize::new())).await?;
         Ok(self)
