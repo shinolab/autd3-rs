@@ -8,9 +8,9 @@ impl DatagramLightweight for autd3_driver::datagram::SwapSegment {
     fn into_datagram_lightweight(
         self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::SwapSegment(SwapSegment {
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::SwapSegment(SwapSegment {
                 variant: Some(match self {
                     autd3_driver::datagram::SwapSegment::Gain(segment, transition) => {
                         swap_segment::Variant::Gain(swap_segment::Gain {

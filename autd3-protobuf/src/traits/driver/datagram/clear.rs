@@ -8,9 +8,9 @@ impl DatagramLightweight for autd3_driver::datagram::Clear {
     fn into_datagram_lightweight(
         self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::Clear(Clear {})),
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::Clear(Clear {})),
         })
     }
 }

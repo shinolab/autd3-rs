@@ -12,9 +12,9 @@ impl DatagramLightweight
     fn into_datagram_lightweight(
         self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::Silencer(Silencer {
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedUpdateRate(
                     silencer::FixedUpdateRate {
                         value_intensity: self.config.intensity.get() as _,
@@ -32,9 +32,9 @@ impl DatagramLightweight
     fn into_datagram_lightweight(
         self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::Silencer(Silencer {
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedCompletionSteps(
                     silencer::FixedCompletionSteps {
                         value_intensity: Some(self.config.intensity.get() as _),
@@ -53,9 +53,9 @@ impl DatagramLightweight
     fn into_datagram_lightweight(
         self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, AUTDProtoBufError> {
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::Silencer(Silencer {
+    ) -> Result<RawDatagram, AUTDProtoBufError> {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::Silencer(Silencer {
                 config: Some(silencer::Config::FixedCompletionTime(
                     silencer::FixedCompletionTime {
                         value_intensity: Some(self.config.intensity.as_micros() as _),

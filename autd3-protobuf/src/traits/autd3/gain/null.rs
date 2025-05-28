@@ -29,7 +29,7 @@ mod tests {
         let g = autd3::gain::Null {};
         let msg = g.into_datagram_lightweight(None).unwrap();
         match msg.datagram {
-            Some(datagram::Datagram::Gain(Gain {
+            Some(raw_datagram::Datagram::Gain(Gain {
                 gain: Some(gain::Gain::Null(gain)),
                 ..
             })) => {

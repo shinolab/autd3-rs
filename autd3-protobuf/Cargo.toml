@@ -14,9 +14,9 @@ features = ["lightweight", "async-trait"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
+lightweight = ["tokio", "derive_more", "autd3", "autd3-gain-holo", "autd3-driver/lightweight", "async-trait", "seq-macro"]
 default = []
 tonic-build = ["dep:tonic-build"]
-lightweight = ["tokio", "derive_more", "autd3", "autd3-gain-holo", "autd3-driver/lightweight", "async-trait"]
 async-trait = ["autd3-core/async-trait", "autd3/async-trait"]
 
 [dependencies]
@@ -26,6 +26,7 @@ autd3-driver = { workspace = true }
 autd3-gain-holo = { workspace = true, optional = true }
 derive_more = { workspace = true, optional = true, features = ["deref"] }
 prost = { workspace = true, features = ["derive"] }
+seq-macro = { workspace = true, optional = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, optional = true }
 tonic = { workspace = true, features = ["channel", "codegen", "prost", "server"] }

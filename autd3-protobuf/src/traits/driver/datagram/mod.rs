@@ -1,6 +1,7 @@
 mod clear;
 mod force_fan;
 pub(crate) mod gain;
+mod group;
 mod reads_fpga_state;
 mod segment;
 mod silencer;

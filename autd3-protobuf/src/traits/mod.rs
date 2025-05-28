@@ -11,7 +11,7 @@ pub trait DatagramLightweight {
     fn into_datagram_lightweight(
         self,
         geometry: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<crate::Datagram, AUTDProtoBufError>;
+    ) -> Result<crate::RawDatagram, AUTDProtoBufError>;
 }
 
 pub trait FromMessage<T>
