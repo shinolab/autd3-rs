@@ -132,44 +132,46 @@ where
         let enable_store = geometry.iter().map(|dev| dev.enable).collect::<Vec<_>>();
 
         let mut operations: Vec<_> = geometry.iter().map(|_| None).collect();
+        geometry.lock_version(|geometry| {
+            filters
+                .into_iter()
+                .try_for_each(|(k, filter)| -> Result<(), AUTDDriverError> {
+                    {
+                        let datagram = datagram_map
+                            .remove(&k)
+                            .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
 
-        filters
-            .into_iter()
-            .try_for_each(|(k, filter)| -> Result<(), AUTDDriverError> {
-                {
-                    let datagram = datagram_map
-                        .remove(&k)
-                        .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
-
-                    // set enable flag for each device
-                    // This is not required for the operation except `Gain`s which cannot be calculated independently for each device, such as `autd3-gain-holo`.
-                    geometry.devices_mut().for_each(|dev| {
-                        dev.enable = filter[dev.idx()];
-                    });
-
-                    let mut generator = datagram
-                        .operation_generator(geometry)
-                        .map_err(AUTDDriverError::from)?;
-
-                    // restore enable flag
-                    geometry
-                        .iter_mut()
-                        .zip(enable_store.iter())
-                        .for_each(|(dev, &enable)| {
-                            dev.enable = enable;
+                        // set enable flag for each device
+                        // This is not required for the operation except `Gain`s which cannot be calculated independently for each device, such as `autd3-gain-holo`.
+                        geometry.devices_mut().for_each(|dev| {
+                            dev.enable = filter[dev.idx()];
                         });
 
-                    operations
-                        .iter_mut()
-                        .zip(geometry.iter())
-                        .filter(|(_, dev)| dev.enable && filter[dev.idx()])
-                        .for_each(|(op, dev)| {
-                            tracing::debug!("Generate operation for device {}", dev.idx());
-                            *op = generator.generate(dev);
-                        });
-                    Ok(())
-                }
-            })?;
+                        let mut generator = datagram
+                            .operation_generator(geometry)
+                            .map_err(AUTDDriverError::from)?;
+
+                        // restore enable flag
+                        geometry
+                            .iter_mut()
+                            .zip(enable_store.iter())
+                            .for_each(|(dev, &enable)| {
+                                dev.enable = enable;
+                            });
+
+                        operations
+                            .iter_mut()
+                            .zip(geometry.iter())
+                            .filter(|(_, dev)| dev.enable && filter[dev.idx()])
+                            .for_each(|(op, dev)| {
+                                tracing::debug!("Generate operation for device {}", dev.idx());
+                                *op = generator.generate(dev);
+                            });
+
+                        Ok(())
+                    }
+                })
+        })?;
 
         if !datagram_map.is_empty() {
             return Err(AUTDDriverError::UnusedKey(
