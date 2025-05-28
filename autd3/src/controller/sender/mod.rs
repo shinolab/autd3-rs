@@ -166,6 +166,8 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
                 return Err(AUTDDriverError::LinkClosed);
             }
             self.link.receive(self.rx)?;
+            tracing::trace!("send msg id: {}", self.msg_id.get());
+            tracing::trace!("sent flags: {}", self.sent_flags.iter().join(", "));
             tracing::trace!("recv: {}", self.rx.iter().join(", "));
 
             if check_if_msg_is_processed(*self.msg_id, self.rx)
@@ -186,11 +188,11 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
             .try_fold((), |_, r| {
                 autd3_driver::firmware::cpu::check_firmware_err(r)
             })
-            .and_then(|e| {
+            .and_then(|_| {
                 if timeout == Duration::ZERO {
                     Ok(())
                 } else {
-                    tracing::error!("Failed to confirm the response from the device: {:?}", e);
+                    tracing::error!("Failed to confirm the response from the devices");
                     Err(AUTDDriverError::ConfirmResponseFailed)
                 }
             })
