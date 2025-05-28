@@ -5,7 +5,7 @@ use autd3_core::{
     geometry::Geometry,
 };
 
-use crate::{Datagram, DatagramLightweight, Gain, datagram};
+use crate::{DatagramLightweight, Gain, RawDatagram, raw_datagram};
 
 #[allow(clippy::wrong_self_convention)]
 pub trait IntoLightweightGain {
@@ -16,9 +16,9 @@ impl<T: IntoLightweightGain> DatagramLightweight for T {
     fn into_datagram_lightweight(
         self,
         _: Option<&autd3_core::geometry::Geometry>,
-    ) -> Result<Datagram, crate::AUTDProtoBufError> {
-        Ok(Datagram {
-            datagram: Some(datagram::Datagram::Gain(self.into_lightweight())),
+    ) -> Result<RawDatagram, crate::AUTDProtoBufError> {
+        Ok(RawDatagram {
+            datagram: Some(raw_datagram::Datagram::Gain(self.into_lightweight())),
         })
     }
 }
