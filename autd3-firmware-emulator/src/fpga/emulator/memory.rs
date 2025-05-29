@@ -1,6 +1,6 @@
 use std::{
-    cell::{LazyCell, RefCell},
     collections::HashMap,
+    sync::{LazyLock, RwLock},
 };
 
 use crate::FPGAEmulator;
@@ -13,15 +13,15 @@ use super::super::params::*;
 #[derive(Getters, MutGetters)]
 pub struct Memory {
     pub(crate) num_transducers: usize,
-    pub(crate) controller_bram: LazyCell<RefCell<Vec<u16>>>,
+    pub(crate) controller_bram: LazyLock<RwLock<Vec<u16>>>,
     #[getset(get = "pub", get_mut = "pub")]
-    pub(crate) phase_corr_bram: LazyCell<RefCell<Vec<u16>>>,
-    pub(crate) modulation_bram: LazyCell<RefCell<HashMap<Segment, Vec<u16>>>>,
-    pub(crate) stm_bram: LazyCell<RefCell<HashMap<Segment, Vec<u16>>>>,
-    pub(crate) duty_table_bram: LazyCell<RefCell<Vec<u16>>>,
-    pub(crate) tr_pos: LazyCell<Vec<u64>>,
-    pub(crate) sin_table: LazyCell<Vec<u8>>,
-    pub(crate) atan_table: LazyCell<Vec<u8>>,
+    pub(crate) phase_corr_bram: LazyLock<RwLock<Vec<u16>>>,
+    pub(crate) modulation_bram: LazyLock<RwLock<HashMap<Segment, Vec<u16>>>>,
+    pub(crate) stm_bram: LazyLock<RwLock<HashMap<Segment, Vec<u16>>>>,
+    pub(crate) duty_table_bram: LazyLock<RwLock<Vec<u16>>>,
+    pub(crate) tr_pos: LazyLock<Vec<u64>>,
+    pub(crate) sin_table: LazyLock<Vec<u8>>,
+    pub(crate) atan_table: LazyLock<Vec<u8>>,
 }
 
 impl Memory {
@@ -29,18 +29,18 @@ impl Memory {
     pub fn new(num_transducers: usize) -> Self {
         Self {
             num_transducers,
-            controller_bram: LazyCell::new(|| {
+            controller_bram: LazyLock::new(|| {
                 let mut v = vec![0x0000; 256];
                 v[ADDR_VERSION_NUM_MAJOR] =
                     ((ENABLED_FEATURES_BITS as u16) << 8) | VERSION_NUM_MAJOR as u16;
                 v[ADDR_VERSION_NUM_MINOR] = VERSION_NUM_MINOR as u16;
-                RefCell::new(v)
+                RwLock::new(v)
             }),
-            phase_corr_bram: LazyCell::new(|| {
-                RefCell::new(vec![0x0000; 256 / std::mem::size_of::<u16>()])
+            phase_corr_bram: LazyLock::new(|| {
+                RwLock::new(vec![0x0000; 256 / std::mem::size_of::<u16>()])
             }),
-            modulation_bram: LazyCell::new(|| {
-                RefCell::new(
+            modulation_bram: LazyLock::new(|| {
+                RwLock::new(
                     [
                         (
                             Segment::S0,
@@ -55,14 +55,14 @@ impl Memory {
                     .collect(),
                 )
             }),
-            duty_table_bram: LazyCell::new(|| {
+            duty_table_bram: LazyLock::new(|| {
                 let pwe_init_data: &[u8; 512] = include_bytes!("asin.dat");
-                RefCell::new(Vec::from_iter((0..256).map(|i| {
+                RwLock::new(Vec::from_iter((0..256).map(|i| {
                     u16::from_le_bytes([pwe_init_data[(i << 1) + 1], pwe_init_data[i << 1]])
                 })))
             }),
-            stm_bram: LazyCell::new(|| {
-                RefCell::new(
+            stm_bram: LazyLock::new(|| {
+                RwLock::new(
                     [
                         (Segment::S0, vec![0x0000; 1024 * 256]),
                         (Segment::S1, vec![0x0000; 1024 * 256]),
@@ -71,7 +71,7 @@ impl Memory {
                     .collect(),
                 )
             }),
-            tr_pos: LazyCell::new(|| {
+            tr_pos: LazyLock::new(|| {
                 vec![
                     0x00000000, 0x01960000, 0x032d0000, 0x04c30000, 0x065a0000, 0x07f00000,
                     0x09860000, 0x0b1d0000, 0x0cb30000, 0x0e4a0000, 0x0fe00000, 0x11760000,
@@ -118,8 +118,8 @@ impl Memory {
                     0x00000000, 0x00000000, 0x00000000, 0x00000000,
                 ]
             }),
-            sin_table: LazyCell::new(|| include_bytes!("sin.dat").to_vec()),
-            atan_table: LazyCell::new(|| include_bytes!("atan.dat").to_vec()),
+            sin_table: LazyLock::new(|| include_bytes!("sin.dat").to_vec()),
+            atan_table: LazyLock::new(|| include_bytes!("atan.dat").to_vec()),
         }
     }
 
@@ -133,35 +133,40 @@ impl Memory {
         let addr = (addr & 0x3FFF) as usize;
         match select {
             BRAM_SELECT_CONTROLLER => match addr >> 8 {
-                BRAM_CNT_SEL_MAIN => self.controller_bram.borrow_mut()[addr] = data,
-                BRAM_CNT_SEL_PHASE_CORR => self.phase_corr_bram.borrow_mut()[addr & 0xFF] = data,
+                BRAM_CNT_SEL_MAIN => self.controller_bram.write().unwrap()[addr] = data,
+                BRAM_CNT_SEL_PHASE_CORR => {
+                    self.phase_corr_bram.write().unwrap()[addr & 0xFF] = data
+                }
                 _ => unreachable!(),
             },
             BRAM_SELECT_MOD => {
-                let segment = match self.controller_bram.borrow()[ADDR_MOD_MEM_WR_SEGMENT] {
+                let segment = match self.controller_bram.read().unwrap()[ADDR_MOD_MEM_WR_SEGMENT] {
                     0 => Segment::S0,
                     1 => Segment::S1,
                     _ => unreachable!(),
                 };
-                self.modulation_bram.borrow_mut().get_mut(&segment).unwrap()[((self
-                    .controller_bram
-                    .borrow()[ADDR_MOD_MEM_WR_PAGE]
-                    as usize)
+                self.modulation_bram
+                    .write()
+                    .unwrap()
+                    .get_mut(&segment)
+                    .unwrap()[((self.controller_bram.read().unwrap()
+                    [ADDR_MOD_MEM_WR_PAGE] as usize)
                     << 14)
                     | addr] = data;
             }
             BRAM_SELECT_PWE_TABLE => {
-                self.duty_table_bram.borrow_mut()[addr] = data;
+                self.duty_table_bram.write().unwrap()[addr] = data;
             }
             BRAM_SELECT_STM => {
-                let segment = match self.controller_bram.borrow()[ADDR_STM_MEM_WR_SEGMENT] {
+                let segment = match self.controller_bram.read().unwrap()[ADDR_STM_MEM_WR_SEGMENT] {
                     0 => Segment::S0,
                     1 => Segment::S1,
                     _ => unreachable!(),
                 };
-                self.stm_bram.borrow_mut().get_mut(&segment).unwrap()[((self
+                self.stm_bram.write().unwrap().get_mut(&segment).unwrap()[((self
                     .controller_bram
-                    .borrow()[ADDR_STM_MEM_WR_PAGE]
+                    .read()
+                    .unwrap()[ADDR_STM_MEM_WR_PAGE]
                     as usize)
                     << 14)
                     | addr] = data;
@@ -171,7 +176,7 @@ impl Memory {
     }
 
     pub fn update(&mut self, fpga_state: u16) {
-        self.controller_bram.borrow_mut()[ADDR_FPGA_STATE] = fpga_state;
+        self.controller_bram.write().unwrap()[ADDR_FPGA_STATE] = fpga_state;
     }
 }
 
@@ -181,7 +186,7 @@ impl FPGAEmulator {
         let select = ((addr >> 14) & 0x0003) as u8;
         let addr = (addr & 0x3FFF) as usize;
         match select {
-            BRAM_SELECT_CONTROLLER => self.mem.controller_bram.borrow()[addr],
+            BRAM_SELECT_CONTROLLER => self.mem.controller_bram.read().unwrap()[addr],
             _ => unreachable!(),
         }
     }

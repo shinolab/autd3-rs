@@ -148,10 +148,10 @@ impl FPGAEmulator {
         unsafe {
             FixedUpdateRate {
                 intensity: NonZeroU16::new_unchecked(
-                    self.mem.controller_bram.borrow()[ADDR_SILENCER_UPDATE_RATE_INTENSITY],
+                    self.mem.controller_bram.read().unwrap()[ADDR_SILENCER_UPDATE_RATE_INTENSITY],
                 ),
                 phase: NonZeroU16::new_unchecked(
-                    self.mem.controller_bram.borrow()[ADDR_SILENCER_UPDATE_RATE_PHASE],
+                    self.mem.controller_bram.read().unwrap()[ADDR_SILENCER_UPDATE_RATE_PHASE],
                 ),
             }
         }
@@ -161,11 +161,11 @@ impl FPGAEmulator {
     pub fn silencer_completion_steps(&self) -> FixedCompletionSteps {
         FixedCompletionSteps {
             intensity: NonZeroU16::new(
-                self.mem.controller_bram.borrow()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY],
+                self.mem.controller_bram.read().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY],
             )
             .unwrap(),
             phase: NonZeroU16::new(
-                self.mem.controller_bram.borrow()[ADDR_SILENCER_COMPLETION_STEPS_PHASE],
+                self.mem.controller_bram.read().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_PHASE],
             )
             .unwrap(),
             strict_mode: true,
@@ -174,7 +174,7 @@ impl FPGAEmulator {
 
     #[must_use]
     pub fn silencer_fixed_update_rate_mode(&self) -> bool {
-        (self.mem.controller_bram.borrow()[ADDR_SILENCER_FLAG]
+        (self.mem.controller_bram.read().unwrap()[ADDR_SILENCER_FLAG]
             & SILENCER_FLAG_FIXED_UPDATE_RATE_MODE)
             == SILENCER_FLAG_FIXED_UPDATE_RATE_MODE
     }
@@ -301,10 +301,10 @@ mod tests {
         #[case] input: Vec<u8>,
     ) {
         let fpga = FPGAEmulator::new(249);
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_FLAG] =
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_FLAG] =
             SILENCER_FLAG_FIXED_UPDATE_RATE_MODE;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_UPDATE_RATE_PHASE] = value;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = value;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_UPDATE_RATE_PHASE] = value;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = value;
         if phase {
             let mut silencer = fpga.silencer_emulator_phase(initial);
             assert_eq!(
@@ -360,8 +360,9 @@ mod tests {
         #[case] input: Vec<u8>,
     ) {
         let fpga = FPGAEmulator::new(249);
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = value as _;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] =
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] =
+            value as _;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] =
             value as _;
         if phase {
             let mut silencer = fpga.silencer_emulator_phase(initial);
@@ -387,8 +388,8 @@ mod tests {
     #[test]
     fn silencer_emulator_phase_continue_with() {
         let fpga = FPGAEmulator::new(249);
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x01;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x01;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x01;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x01;
 
         let mut silencer = fpga.silencer_emulator_phase(0);
         _ = silencer.apply(0xFF);
@@ -403,8 +404,8 @@ mod tests {
             _phantom,
         } = silencer;
 
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x02;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x02;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x02;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x02;
         let silencer = fpga.silencer_emulator_phase_continue_with(silencer);
 
         assert_eq!(current, silencer.current);
@@ -424,9 +425,9 @@ mod tests {
             _phantom,
         } = silencer;
 
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_UPDATE_RATE_PHASE] = 0x03;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = 0x03;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_FLAG] =
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_UPDATE_RATE_PHASE] = 0x03;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = 0x03;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_FLAG] =
             1 << SILENCER_FLAG_BIT_FIXED_UPDATE_RATE_MODE;
 
         let silencer = fpga.silencer_emulator_phase_continue_with(silencer);
@@ -442,8 +443,8 @@ mod tests {
     #[test]
     fn silencer_emulator_intensity_continue_with() {
         let fpga = FPGAEmulator::new(249);
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x01;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x01;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x01;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x01;
 
         let mut silencer = fpga.silencer_emulator_intensity(0);
         _ = silencer.apply(0xFF);
@@ -458,8 +459,8 @@ mod tests {
             _phantom,
         } = silencer;
 
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x02;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x02;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_PHASE] = 0x02;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_COMPLETION_STEPS_INTENSITY] = 0x02;
         let silencer = fpga.silencer_emulator_intensity_continue_with(silencer);
 
         assert_eq!(current, silencer.current);
@@ -479,9 +480,9 @@ mod tests {
             _phantom,
         } = silencer;
 
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_UPDATE_RATE_PHASE] = 0x03;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = 0x03;
-        fpga.mem.controller_bram.borrow_mut()[ADDR_SILENCER_FLAG] =
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_UPDATE_RATE_PHASE] = 0x03;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_UPDATE_RATE_INTENSITY] = 0x03;
+        fpga.mem.controller_bram.write().unwrap()[ADDR_SILENCER_FLAG] =
             1 << SILENCER_FLAG_BIT_FIXED_UPDATE_RATE_MODE;
 
         let silencer = fpga.silencer_emulator_intensity_continue_with(silencer);

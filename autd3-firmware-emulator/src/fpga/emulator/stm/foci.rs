@@ -19,16 +19,16 @@ struct STMFocus {
 impl FPGAEmulator {
     #[must_use]
     pub fn sound_speed(&self, segment: Segment) -> u16 {
-        self.mem.controller_bram.borrow()[ADDR_STM_SOUND_SPEED0 + segment as usize]
+        self.mem.controller_bram.read().unwrap()[ADDR_STM_SOUND_SPEED0 + segment as usize]
     }
 
     #[must_use]
     pub fn num_foci(&self, segment: Segment) -> u8 {
-        self.mem.controller_bram.borrow()[ADDR_STM_NUM_FOCI0 + segment as usize] as u8
+        self.mem.controller_bram.read().unwrap()[ADDR_STM_NUM_FOCI0 + segment as usize] as u8
     }
 
     pub(crate) fn foci_stm_drives_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
-        let bram = &self.mem.stm_bram.borrow()[&segment];
+        let bram = &self.mem.stm_bram.read().unwrap()[&segment];
         let sound_speed = self.sound_speed(segment);
         let num_foci = self.num_foci(segment) as usize;
 
