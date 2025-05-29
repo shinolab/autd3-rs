@@ -13,6 +13,7 @@ pub use cache::Cache;
 pub use custom::Custom;
 pub use focus::{Focus, FocusOption};
 pub use group::Group;
+pub use group::Group as GainGroup;
 pub use null::Null;
 pub use plane::{Plane, PlaneOption};
 pub use uniform::Uniform;
