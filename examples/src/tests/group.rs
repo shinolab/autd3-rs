@@ -3,8 +3,6 @@ use std::collections::HashMap;
 use autd3::{core::link::Link, prelude::*};
 
 pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    use autd3::datagram::IntoBoxedDatagram;
-
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
     autd.send(Group {
@@ -14,14 +12,13 @@ pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
             _ => None,
         },
         datagram_map: HashMap::from([
-            ("null", Null {}.into_boxed()),
+            ("null", BoxedDatagram::new(Null {})),
             (
                 "focus",
-                Focus {
+                BoxedDatagram::new(Focus {
                     pos: center,
                     option: Default::default(),
-                }
-                .into_boxed(),
+                }),
             ),
         ]),
     })?;
@@ -30,11 +27,9 @@ pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
 }
 
 pub fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
-    use autd3::gain::IntoBoxedGain;
-
     let pos = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
-    let g = gain::Group {
+    let g = GainGroup {
         key_map: move |dev| {
             let cx = dev.center().x;
             move |tr| {
@@ -48,13 +43,12 @@ pub fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Result<b
         gain_map: HashMap::from([
             (
                 "focus",
-                Focus {
+                BoxedGain::new(Focus {
                     pos,
                     option: Default::default(),
-                }
-                .into_boxed(),
+                }),
             ),
-            ("null", Null {}.into_boxed()),
+            ("null", BoxedGain::new(Null {})),
         ]),
     };
 

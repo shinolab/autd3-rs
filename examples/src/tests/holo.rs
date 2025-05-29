@@ -1,8 +1,4 @@
-use autd3::{
-    core::link::Link,
-    driver::datagram::{BoxedGain, IntoBoxedGain},
-    prelude::*,
-};
+use autd3::{core::link::Link, prelude::*};
 use autd3_gain_holo::*;
 
 use std::io::{self, Write};
@@ -19,47 +15,42 @@ pub fn holo(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
     let mut gains: Vec<(&str, BoxedGain)> = vec![
         (
             "GS",
-            GS {
+            BoxedGain::new(GS {
                 foci: foci.to_vec(),
                 option: Default::default(),
                 backend: backend.clone(),
-            }
-            .into_boxed(),
+            }),
         ),
         (
             "GSPAT",
-            GSPAT {
+            BoxedGain::new(GSPAT {
                 foci: foci.to_vec(),
                 option: Default::default(),
                 backend: backend.clone(),
-            }
-            .into_boxed(),
+            }),
         ),
         (
             "Naive",
-            Naive {
+            BoxedGain::new(Naive {
                 foci: foci.to_vec(),
                 option: Default::default(),
                 backend: backend.clone(),
-            }
-            .into_boxed(),
+            }),
         ),
         (
             "LM",
-            LM {
+            BoxedGain::new(LM {
                 foci: foci.to_vec(),
                 option: Default::default(),
                 backend: backend.clone(),
-            }
-            .into_boxed(),
+            }),
         ),
         (
             "Greedy",
-            Greedy {
+            BoxedGain::new(Greedy {
                 foci: foci.to_vec(),
                 option: Default::default(),
-            }
-            .into_boxed(),
+            }),
         ),
     ];
 
