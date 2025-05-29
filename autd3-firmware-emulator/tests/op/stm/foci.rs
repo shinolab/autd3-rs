@@ -126,7 +126,7 @@ fn test_send_foci_stm_unsafe(
         let drives = cpu.fpga().drives_at(segment, focus_idx);
         assert_eq!(cpu.num_transducers(), drives.len());
         drives.iter().enumerate().for_each(|(tr_idx, &drive)| {
-            let tr = cpu.fpga().local_tr_pos(tr_idx);
+            let tr = cpu.fpga().local_tr_pos_at(tr_idx);
             let tx = ((tr >> 16) & 0xFFFF) as i32;
             let ty = (tr & 0xFFFF) as i16 as i32;
             let tz = 0;
@@ -485,7 +485,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
                 .iter()
                 .enumerate()
                 .for_each(|(tr_idx, &drive)| {
-                    let tr = cpu.fpga().local_tr_pos(tr_idx);
+                    let tr = cpu.fpga().local_tr_pos_at(tr_idx);
                     let tx = ((tr >> 16) & 0xFFFF) as i32;
                     let ty = (tr & 0xFFFF) as i16 as i32;
                     let tz = 0;

@@ -82,8 +82,15 @@ impl FPGAEmulator {
             });
     }
 
+    // GRCOV_EXCL_START
     #[must_use]
-    pub fn local_tr_pos(&self, idx: usize) -> u64 {
+    pub fn local_tr_pos(&self) -> &[u64] {
+        self.mem.tr_pos.mem.as_slice()
+    }
+    // GRCOV_EXCL_STOP
+
+    #[must_use]
+    pub fn local_tr_pos_at(&self, idx: usize) -> u64 {
         self.mem.tr_pos[idx]
     }
 }
