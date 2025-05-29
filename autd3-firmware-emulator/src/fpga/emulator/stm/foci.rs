@@ -19,16 +19,20 @@ struct STMFocus {
 impl FPGAEmulator {
     #[must_use]
     pub fn sound_speed(&self, segment: Segment) -> u16 {
-        self.mem.controller_bram.borrow()[ADDR_STM_SOUND_SPEED0 + segment as usize]
+        self.mem
+            .controller_bram
+            .read(ADDR_STM_SOUND_SPEED0 + segment as usize)
     }
 
     #[must_use]
     pub fn num_foci(&self, segment: Segment) -> u8 {
-        self.mem.controller_bram.borrow()[ADDR_STM_NUM_FOCI0 + segment as usize] as u8
+        self.mem
+            .controller_bram
+            .read(ADDR_STM_NUM_FOCI0 + segment as usize) as u8
     }
 
     pub(crate) fn foci_stm_drives_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
-        let bram = &self.mem.stm_bram.borrow()[&segment];
+        let bram = &self.mem.stm_bram[&segment];
         let sound_speed = self.sound_speed(segment);
         let num_foci = self.num_foci(segment) as usize;
 
@@ -44,11 +48,9 @@ impl FPGAEmulator {
                 let tr_y = (tr & 0xFFFF) as i16 as i32;
                 let mut intensity = 0x00;
                 let (sin, cos) = (0..num_foci).fold((0, 0), |acc, i| {
-                    let f = unsafe {
-                        (bram[size_of::<STMFocus>() / size_of::<u16>() * (idx * num_foci + i)..]
-                            .as_ptr() as *const STMFocus)
-                            .read_unaligned()
-                    };
+                    let f = bram.read_bram_as::<STMFocus>(
+                        size_of::<STMFocus>() / size_of::<u16>() * (idx * num_foci + i),
+                    );
                     let x = f.x();
                     let y = f.y();
                     let z = f.z();
@@ -80,8 +82,15 @@ impl FPGAEmulator {
             });
     }
 
+    // GRCOV_EXCL_START
     #[must_use]
     pub fn local_tr_pos(&self) -> &[u64] {
-        &self.mem.tr_pos
+        self.mem.tr_pos.mem.as_slice()
+    }
+    // GRCOV_EXCL_STOP
+
+    #[must_use]
+    pub fn local_tr_pos_at(&self, idx: usize) -> u64 {
+        self.mem.tr_pos[idx]
     }
 }
