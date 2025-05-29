@@ -4,7 +4,8 @@ use crate::FPGAEmulator;
 
 impl FPGAEmulator {
     pub(crate) fn gain_stm_drives_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
-        self.mem.stm_bram.read().unwrap()[&segment]
+        self.mem.stm_bram[&segment]
+            .mem()
             .iter()
             .skip(256 * idx)
             .zip(self.phase_correction().iter())

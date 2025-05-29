@@ -105,26 +105,31 @@ impl FPGAEmulator {
 
     #[must_use]
     pub fn fpga_state(&self) -> u16 {
-        self.mem.controller_bram.read().unwrap()[ADDR_FPGA_STATE]
+        self.mem.controller_bram.read(ADDR_FPGA_STATE)
     }
 
     pub fn assert_thermal_sensor(&mut self) {
-        self.mem.controller_bram.write().unwrap()[ADDR_FPGA_STATE] |= 1 << 0;
+        let state = self.mem.controller_bram.read(ADDR_FPGA_STATE);
+        self.mem
+            .controller_bram
+            .write(ADDR_FPGA_STATE, state | (1 << 0));
     }
 
     pub fn deassert_thermal_sensor(&mut self) {
-        self.mem.controller_bram.write().unwrap()[ADDR_FPGA_STATE] &= !(1 << 0);
+        let state = self.mem.controller_bram.read(ADDR_FPGA_STATE);
+        self.mem
+            .controller_bram
+            .write(ADDR_FPGA_STATE, state & !(1 << 0));
     }
 
     #[must_use]
     pub fn is_thermo_asserted(&self) -> bool {
-        (self.mem.controller_bram.read().unwrap()[ADDR_FPGA_STATE] & (1 << 0)) != 0
+        (self.mem.controller_bram.read(ADDR_FPGA_STATE) & (1 << 0)) != 0
     }
 
     #[must_use]
     pub fn is_force_fan(&self) -> bool {
-        (self.mem.controller_bram.read().unwrap()[ADDR_CTL_FLAG] & (1 << CTL_FLAG_FORCE_FAN_BIT))
-            != 0
+        (self.mem.controller_bram.read(ADDR_CTL_FLAG) & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
     }
 }
 

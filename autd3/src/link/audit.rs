@@ -63,8 +63,6 @@ impl Link for Audit {
                     cpu.fpga_mut()
                         .mem_mut()
                         .phase_corr_bram_mut()
-                        .write()
-                        .unwrap()
                         .fill(u16::from_le_bytes([initial_phase_corr, initial_phase_corr]));
                 }
                 cpu

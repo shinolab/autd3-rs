@@ -5,7 +5,7 @@ use super::FPGAEmulator;
 impl FPGAEmulator {
     #[must_use]
     pub fn pulse_width_encoder_table_at(&self, idx: usize) -> PulseWidth<u16, 9> {
-        PulseWidth::new(self.mem.duty_table_bram.read().unwrap()[idx]).unwrap()
+        PulseWidth::new(self.mem.duty_table_bram.read(idx)).unwrap()
     }
 
     #[must_use]

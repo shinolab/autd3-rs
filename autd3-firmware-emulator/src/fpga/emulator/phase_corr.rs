@@ -5,7 +5,7 @@ use super::FPGAEmulator;
 impl FPGAEmulator {
     #[must_use]
     fn _phase_corr(&self, idx: usize) -> Phase {
-        let p = &self.mem.phase_corr_bram.read().unwrap()[idx >> 1];
+        let p = &self.mem.phase_corr_bram.read(idx >> 1);
         let p = if idx % 2 == 0 { p & 0xFF } else { p >> 8 };
         Phase(p as _)
     }
@@ -29,8 +29,8 @@ mod tests {
     #[test]
     fn phase_correction() {
         let fpga = FPGAEmulator::new(249);
-        fpga.mem.phase_corr_bram.write().unwrap()[0] = 0x1234;
-        fpga.mem.phase_corr_bram.write().unwrap()[124] = 0x5678;
+        fpga.mem.phase_corr_bram.write(0, 0x1234);
+        fpga.mem.phase_corr_bram.write(124, 0x5678);
         assert_eq!(
             [
                 vec![Phase(0x34), Phase(0x12)],
