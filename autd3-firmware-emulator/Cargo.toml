@@ -11,6 +11,7 @@ repository = { workspace = true }
 
 [features]
 default = []
+thread-safe = []
 
 [dependencies]
 autd3-driver = { workspace = true }
