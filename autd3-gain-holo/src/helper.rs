@@ -128,7 +128,7 @@ pub(crate) fn generate_result<T>(
     >,
     max_coefficient: f32,
     constraint: EmissionConstraint,
-    filter: Option<&HashMap<usize, BitVec>>,
+    filter: Option<&TransducerFilter>,
 ) -> Result<HoloCalculatorGenerator<T>, GainError>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,

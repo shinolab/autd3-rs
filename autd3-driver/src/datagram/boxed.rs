@@ -6,7 +6,7 @@ use crate::{
     firmware::operation::{BoxedOperation, OperationGenerator},
 };
 use autd3_core::{
-    datagram::{DatagramOption, Operation},
+    datagram::{DatagramOption, DeviceFilter, Operation},
     geometry::{Device, Geometry},
 };
 
@@ -48,7 +48,8 @@ where
 pub trait DDatagram: std::fmt::Debug {
     fn dyn_operation_generator(
         &mut self,
-        geometry: &mut Geometry,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
     ) -> Result<DynDOperationGenerator, AUTDDriverError>;
     #[must_use]
     fn dyn_option(&self) -> DatagramOption;
@@ -66,12 +67,13 @@ where
 {
     fn dyn_operation_generator(
         &mut self,
-        geometry: &mut Geometry,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
     ) -> Result<DynDOperationGenerator, AUTDDriverError> {
         let mut tmp = MaybeUninit::<T>::uninit();
         std::mem::swap(&mut tmp, self);
         let d = unsafe { tmp.assume_init() };
-        Ok(Box::new(d.operation_generator(geometry)?))
+        Ok(Box::new(d.operation_generator(geometry, filter)?))
     }
 
     fn dyn_option(&self) -> DatagramOption {
@@ -123,10 +125,14 @@ impl Datagram for BoxedDatagram {
     type G = DynOperationGenerator;
     type Error = AUTDDriverError;
 
-    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(
+        self,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
+    ) -> Result<Self::G, Self::Error> {
         let Self { mut d } = self;
         Ok(DynOperationGenerator {
-            g: d.dyn_operation_generator(geometry)?,
+            g: d.dyn_operation_generator(geometry, filter)?,
         })
     }
 
@@ -195,7 +201,11 @@ mod tests {
         type G = TestOperationGenerator;
         type Error = AUTDDriverError;
 
-        fn operation_generator(self, _geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
+        fn operation_generator(
+            self,
+            _geometry: &Geometry,
+            _: &DeviceFilter,
+        ) -> Result<Self::G, Self::Error> {
             Ok(Self::G {})
         }
 
@@ -212,7 +222,7 @@ mod tests {
 
     #[test]
     fn boxed_datagram() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(1, 1);
+        let geometry = create_geometry(1, 1);
 
         let d = TestDatagram {
             option: Default::default(),
@@ -221,7 +231,7 @@ mod tests {
 
         assert_eq!(d.option(), bd.option());
 
-        let mut g = Datagram::operation_generator(bd, &mut geometry)?;
+        let mut g = Datagram::operation_generator(bd, &geometry, &DeviceFilter::all_enabled())?;
         let (mut op1, mut op2) = g.generate(&geometry[0]).unwrap();
         assert_eq!(1, op1.required_size(&geometry[0]));
         assert_eq!(2, op1.pack(&geometry[0], &mut [])?);

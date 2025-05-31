@@ -44,13 +44,13 @@ impl<G: Gain> Cache<G> {
     pub fn init(
         &self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
+        filter: Option<&TransducerFilter>,
     ) -> Result<(), GainError> {
         if let Some(gain) = self.gain.take() {
             let mut f = gain.init(geometry, filter)?;
             geometry
-                .devices()
-                .filter(|dev| !self.cache.borrow().contains_key(&dev.idx()))
+                .iter()
+                .filter(|dev| filter.is_none_or(|f| f.contains_key(&dev.idx())))
                 .for_each(|dev| {
                     tracing::debug!("Initializing cache for device {}", dev.idx());
                     let f = f.generate(dev);
@@ -61,10 +61,17 @@ impl<G: Gain> Cache<G> {
                 });
         }
 
-        if self.cache.borrow().len() != geometry.devices().count()
-            || geometry
-                .devices()
-                .any(|dev| !self.cache.borrow().contains_key(&dev.idx()))
+        if !filter
+            .map(|filter| {
+                filter
+                    .keys()
+                    .all(|idx| self.cache.borrow().contains_key(idx))
+            })
+            .unwrap_or(
+                geometry
+                    .iter()
+                    .all(|dev| self.cache.borrow().contains_key(&dev.idx())),
+            )
         {
             return Err(GainError::new(
                 "Cache is initialized with different geometry",
@@ -96,7 +103,12 @@ impl<G: Gain> GainCalculatorGenerator for Cache<G> {
 
     fn generate(&mut self, device: &Device) -> Self::Calculator {
         Impl {
-            g: self.cache.borrow()[&device.idx()].clone(),
+            g: self
+                .cache
+                .borrow()
+                .get(&device.idx())
+                .unwrap_or(&Arc::new(vec![Drive::NULL; device.len()]))
+                .clone(),
         }
     }
 }
@@ -107,7 +119,7 @@ impl<G: Gain> Gain for Cache<G> {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
+        filter: Option<&TransducerFilter>,
     ) -> Result<Self::G, GainError> {
         Cache::init(&self, geometry, filter)?;
         Ok(self)
@@ -148,7 +160,7 @@ mod tests {
         assert!(cache.cache().borrow().is_empty());
         let mut gg = gain.init(&geometry, None)?;
         let mut gc = cache.init(&geometry, None)?;
-        geometry.devices().try_for_each(|dev| {
+        geometry.iter().try_for_each(|dev| {
             let gf = gg.generate(dev);
             let cf = gc.generate(dev);
             dev.iter().try_for_each(|tr| {
@@ -161,7 +173,7 @@ mod tests {
 
     #[test]
     fn different_geometry() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2);
+        let geometry = create_geometry(2);
 
         let gain = Uniform {
             intensity: EmitIntensity::MIN,
@@ -169,15 +181,50 @@ mod tests {
         };
         let cache = Cache::new(gain);
 
-        cache.clone().init(&geometry, None)?;
-
-        geometry[1].enable = false;
+        autd3_driver::datagram::Group::new(
+            |dev| (dev.idx() == 0).then_some(()),
+            HashMap::from([((), cache.clone())]),
+        )
+        .operation_generator(&geometry, None)?;
 
         assert_eq!(
             Some(GainError::new(
                 "Cache is initialized with different geometry"
             )),
-            cache.init(&geometry, None).err()
+            crate::gain::Group::new(|_| |_| Some(()), HashMap::from([((), cache)]))
+                .operation_generator(&geometry, None)
+                .err()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn different_geometry_by_gain_group() -> anyhow::Result<()> {
+        let geometry = create_geometry(2);
+
+        let gain = Uniform {
+            intensity: EmitIntensity::MIN,
+            phase: Phase::ZERO,
+        };
+        let cache = Cache::new(gain);
+
+        crate::gain::Group::new(
+            |dev| {
+                let dev_idx = dev.idx();
+                move |_| (dev_idx == 0).then_some(())
+            },
+            HashMap::from([((), cache.clone())]),
+        )
+        .init(&geometry, None)?;
+
+        assert_eq!(
+            Some(GainError::new(
+                "Cache is initialized with different geometry"
+            )),
+            crate::gain::Group::new(|_| |_| Some(()), HashMap::from([((), cache)]))
+                .init(&geometry, None)
+                .err()
         );
 
         Ok(())
@@ -207,11 +254,7 @@ mod tests {
     impl Gain for CacheTestGain {
         type G = CacheTestGain;
 
-        fn init(
-            self,
-            _: &Geometry,
-            _: Option<&HashMap<usize, BitVec>>,
-        ) -> Result<Self::G, GainError> {
+        fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
             self.calc_cnt.fetch_add(1, Ordering::Relaxed);
             Ok(self)
         }

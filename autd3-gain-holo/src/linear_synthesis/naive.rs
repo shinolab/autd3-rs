@@ -63,7 +63,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
     fn init(
         self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
+        filter: Option<&TransducerFilter>,
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 

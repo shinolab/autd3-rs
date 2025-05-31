@@ -1,6 +1,6 @@
 mod implement;
 
-use std::{collections::HashMap, fmt::Debug, time::Duration};
+use std::{fmt::Debug, time::Duration};
 
 use super::sampling_config::*;
 pub use crate::firmware::operation::GainSTMIterator;
@@ -20,7 +20,7 @@ use crate::{
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
     datagram::{DatagramL, DatagramOption, Inspectable, InspectionResult},
-    gain::{BitVec, Drive, GainCalculatorGenerator, GainError},
+    gain::{Drive, GainCalculatorGenerator, GainError, TransducerFilter},
 };
 use derive_more::{Deref, DerefMut};
 
@@ -45,11 +45,7 @@ pub trait GainSTMGenerator: std::fmt::Debug {
     type T: GainSTMIteratorGenerator;
 
     /// Initializes and returns the iterator generator.
-    fn init(
-        self,
-        geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::T, GainError>;
+    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::T, GainError>;
     /// Returns the length of the sequence of gains.
     #[must_use]
     fn len(&self) -> usize;
@@ -170,6 +166,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C
     fn operation_generator_with_loop_behavior(
         self,
         geometry: &Geometry,
+        filter: &DeviceFilter,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,
@@ -180,7 +177,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C
         let GainSTMOption { mode } = self.option;
         let gains = self.gains;
         Ok(GainSTMOperationGenerator {
-            g: gains.init(geometry, None)?,
+            g: gains.init(geometry, &TransducerFilter::from(filter))?,
             size,
             sampling_config,
             mode,
@@ -244,22 +241,22 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy + Debug> Inspectable for Gai
 
     fn inspect(
         self,
-        geometry: &mut Geometry,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
     ) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
         let sampling_config = self.sampling_config()?;
         sampling_config.divide()?;
         let n = self.gains.len();
-        let mut g = self.gains.init(geometry, None)?;
+        let mut g = self.gains.init(geometry, &TransducerFilter::from(filter))?;
         let mode = self.option.mode;
         let loop_behavior = LoopBehavior::Infinite;
         let segment = Segment::S0;
         let transition_mode = None;
-        Ok(InspectionResult::new(geometry, |dev| {
+        Ok(InspectionResult::new(geometry, filter, |dev| {
             GainSTMInspectionResult {
                 name: tynm::type_name::<Self>().to_string(),
                 data: {
                     use autd3_core::gain::GainCalculator;
-                    dbg!(dev.idx());
                     let mut d = g.generate(dev);
                     let mut data = Vec::with_capacity(n);
                     while let Some(g) = d.next() {
@@ -292,10 +289,9 @@ mod tests {
 
     #[test]
     fn inspect() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
+        let geometry = create_geometry(2, 1);
 
-        geometry[1].enable = false;
-        let r = GainSTM {
+        GainSTM {
             gains: vec![
                 TestGain::new(|_dev| |_| Drive::NULL, &geometry),
                 TestGain::new(
@@ -311,40 +307,40 @@ mod tests {
             config: SamplingConfig::FREQ_4K,
             option: GainSTMOption::default(),
         }
-        .inspect(&mut geometry)?;
-
-        assert_eq!(
-            Some(GainSTMInspectionResult {
-                name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
-                data: vec![
-                    vec![Drive::NULL; 1],
-                    vec![
-                        Drive {
-                            phase: Phase(0xFF),
-                            intensity: EmitIntensity(0xFF),
-                        };
-                        1
+        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .iter()
+        .for_each(|r| {
+            assert_eq!(
+                &Some(GainSTMInspectionResult {
+                    name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
+                    data: vec![
+                        vec![Drive::NULL; 1],
+                        vec![
+                            Drive {
+                                phase: Phase(0xFF),
+                                intensity: EmitIntensity(0xFF),
+                            };
+                            1
+                        ],
                     ],
-                ],
-                config: SamplingConfig::FREQ_4K,
-                mode: GainSTMMode::PhaseIntensityFull,
-                loop_behavior: LoopBehavior::Infinite,
-                segment: Segment::S0,
-                transition_mode: None
-            }),
-            r[0]
-        );
-        assert_eq!(None, r[1]);
+                    config: SamplingConfig::FREQ_4K,
+                    mode: GainSTMMode::PhaseIntensityFull,
+                    loop_behavior: LoopBehavior::Infinite,
+                    segment: Segment::S0,
+                    transition_mode: None
+                }),
+                r
+            );
+        });
 
         Ok(())
     }
 
     #[test]
     fn inspect_with_segment() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
+        let geometry = create_geometry(2, 1);
 
-        geometry[1].enable = false;
-        let r = WithSegment {
+        WithSegment {
             inner: GainSTM {
                 gains: vec![
                     TestGain::new(|_dev| |_| Drive::NULL, &geometry),
@@ -364,40 +360,40 @@ mod tests {
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
         }
-        .inspect(&mut geometry)?;
-
-        assert_eq!(
-            Some(GainSTMInspectionResult {
-                name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
-                data: vec![
-                    vec![Drive::NULL; 1],
-                    vec![
-                        Drive {
-                            phase: Phase(0xFF),
-                            intensity: EmitIntensity(0xFF),
-                        };
-                        1
+        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .iter()
+        .for_each(|r| {
+            assert_eq!(
+                &Some(GainSTMInspectionResult {
+                    name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
+                    data: vec![
+                        vec![Drive::NULL; 1],
+                        vec![
+                            Drive {
+                                phase: Phase(0xFF),
+                                intensity: EmitIntensity(0xFF),
+                            };
+                            1
+                        ],
                     ],
-                ],
-                config: SamplingConfig::FREQ_4K,
-                mode: GainSTMMode::PhaseIntensityFull,
-                loop_behavior: LoopBehavior::Infinite,
-                segment: Segment::S1,
-                transition_mode: Some(TransitionMode::Immediate),
-            }),
-            r[0]
-        );
-        assert_eq!(None, r[1]);
+                    config: SamplingConfig::FREQ_4K,
+                    mode: GainSTMMode::PhaseIntensityFull,
+                    loop_behavior: LoopBehavior::Infinite,
+                    segment: Segment::S1,
+                    transition_mode: Some(TransitionMode::Immediate),
+                }),
+                r
+            );
+        });
 
         Ok(())
     }
 
     #[test]
     fn inspect_with_loop_behavior() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
+        let geometry = create_geometry(2, 1);
 
-        geometry[1].enable = false;
-        let r = WithLoopBehavior {
+        WithLoopBehavior {
             inner: GainSTM {
                 gains: vec![
                     TestGain::new(|_dev| |_| Drive::NULL, &geometry),
@@ -418,30 +414,31 @@ mod tests {
             transition_mode: Some(TransitionMode::Immediate),
             loop_behavior: LoopBehavior::ONCE,
         }
-        .inspect(&mut geometry)?;
-
-        assert_eq!(
-            Some(GainSTMInspectionResult {
-                name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
-                data: vec![
-                    vec![Drive::NULL; 1],
-                    vec![
-                        Drive {
-                            phase: Phase(0xFF),
-                            intensity: EmitIntensity(0xFF),
-                        };
-                        1
+        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .iter()
+        .for_each(|r| {
+            assert_eq!(
+                &Some(GainSTMInspectionResult {
+                    name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
+                    data: vec![
+                        vec![Drive::NULL; 1],
+                        vec![
+                            Drive {
+                                phase: Phase(0xFF),
+                                intensity: EmitIntensity(0xFF),
+                            };
+                            1
+                        ],
                     ],
-                ],
-                config: SamplingConfig::FREQ_4K,
-                mode: GainSTMMode::PhaseIntensityFull,
-                loop_behavior: LoopBehavior::ONCE,
-                segment: Segment::S1,
-                transition_mode: Some(TransitionMode::Immediate),
-            }),
-            r[0]
-        );
-        assert_eq!(None, r[1]);
+                    config: SamplingConfig::FREQ_4K,
+                    mode: GainSTMMode::PhaseIntensityFull,
+                    loop_behavior: LoopBehavior::ONCE,
+                    segment: Segment::S1,
+                    transition_mode: Some(TransitionMode::Immediate),
+                }),
+                r
+            );
+        });
 
         Ok(())
     }

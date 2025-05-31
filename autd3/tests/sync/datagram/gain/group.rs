@@ -14,21 +14,25 @@ fn only_for_enabled() -> anyhow::Result<()> {
 
     let check = std::sync::Arc::new(std::sync::Mutex::new(vec![false; autd.num_devices()]));
 
-    autd[0].enable = false;
-
-    autd.send(gain::Group {
-        key_map: |dev| {
-            check.lock().unwrap()[dev.idx()] = true;
-            move |_| Some(0)
-        },
-        gain_map: HashMap::from([(
-            0,
-            Uniform {
-                phase: Phase(0x90),
-                intensity: EmitIntensity(0x80),
+    autd.send(autd3_driver::datagram::Group::new(
+        |dev| (dev.idx() == 1).then_some(()),
+        HashMap::from([(
+            (),
+            gain::Group {
+                key_map: |dev| {
+                    check.lock().unwrap()[dev.idx()] = true;
+                    move |_| Some(0)
+                },
+                gain_map: HashMap::from([(
+                    0,
+                    Uniform {
+                        phase: Phase(0x90),
+                        intensity: EmitIntensity(0x80),
+                    },
+                )]),
             },
         )]),
-    })?;
+    ))?;
 
     assert!(!check.lock().unwrap()[0]);
     assert!(check.lock().unwrap()[1]);

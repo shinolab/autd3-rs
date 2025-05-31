@@ -75,34 +75,54 @@ where
     }
 
     #[must_use]
-    fn get_filters(&self, geometry: &Geometry) -> HashMap<K, HashMap<usize, BitVec>> {
-        let mut filters: HashMap<K, HashMap<usize, BitVec>> = HashMap::new();
-        geometry.devices().for_each(|dev| {
-            dev.iter().for_each(|tr| {
-                if let Some(key) = (self.key_map)(dev)(tr) {
-                    if let Some(v) = filters.get_mut(&key) {
-                        match v.entry(dev.idx()) {
-                            Entry::Occupied(mut e) => {
-                                e.get_mut().set(tr.idx(), true);
+    fn get_filters(
+        &self,
+        geometry: &Geometry,
+        device_filter: Option<&TransducerFilter>,
+    ) -> HashMap<K, TransducerFilter> {
+        let mut filters: HashMap<K, HashMap<usize, bit_vec::BitVec<u32>>> = HashMap::new();
+        geometry
+            .iter()
+            .filter(|dev| device_filter.is_none_or(|filter| filter.contains_key(&dev.idx())))
+            .for_each(|dev| {
+                dev.iter().for_each(|tr| {
+                    if let Some(key) = (self.key_map)(dev)(tr) {
+                        if let Some(v) = filters.get_mut(&key) {
+                            match v.entry(dev.idx()) {
+                                Entry::Occupied(mut e) => {
+                                    e.get_mut().set(tr.idx(), true);
+                                }
+                                Entry::Vacant(e) => {
+                                    e.insert(bit_vec::BitVec::from_fn(
+                                        dev.num_transducers(),
+                                        |i| i == tr.idx(),
+                                    ));
+                                }
                             }
-                            Entry::Vacant(e) => {
-                                e.insert(BitVec::from_fn(dev.num_transducers(), |i| i == tr.idx()));
-                            }
+                        } else {
+                            filters.insert(
+                                key,
+                                [(
+                                    dev.idx(),
+                                    bit_vec::BitVec::from_fn(dev.num_transducers(), |i| {
+                                        i == tr.idx()
+                                    }),
+                                )]
+                                .into(),
+                            );
                         }
-                    } else {
-                        filters.insert(
-                            key,
-                            [(
-                                dev.idx(),
-                                BitVec::from_fn(dev.num_transducers(), |i| i == tr.idx()),
-                            )]
-                            .into(),
-                        );
                     }
-                }
-            })
-        });
+                })
+            });
         filters
+            .into_iter()
+            .map(|(k, v)| {
+                (
+                    k,
+                    TransducerFilter(v.into_iter().map(|(idx, bits)| (idx, Some(bits))).collect()),
+                )
+            })
+            .collect()
     }
 }
 
@@ -141,9 +161,9 @@ where
     fn init(
         self,
         geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
+        device_filter: Option<&TransducerFilter>,
     ) -> Result<Self::G, GainError> {
-        let filters = self.get_filters(geometry);
+        let filters = self.get_filters(geometry, device_filter);
 
         let mut gain_map = self.gain_map;
         let gain_calcs = filters
@@ -173,7 +193,8 @@ where
         let f = &self.key_map;
         Ok(Self::G {
             g: geometry
-                .devices()
+                .iter()
+                .filter(|dev| device_filter.is_none_or(|filter| filter.contains_key(&dev.idx())))
                 .map(|dev| {
                     let f = (f)(dev);
                     (
@@ -258,7 +279,7 @@ mod tests {
 
         let mut g = gain.init(&geometry, None)?;
         let drives = geometry
-            .devices()
+            .iter()
             .map(|dev| {
                 let f = g.generate(dev);
                 (

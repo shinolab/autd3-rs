@@ -75,7 +75,7 @@ impl GainCalculatorGenerator for Focus {
 impl Gain for Focus {
     type G = Focus;
 
-    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -115,7 +115,7 @@ mod tests {
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let g = Focus::new(pos, Default::default());
         focus_check(
-            g.init(&geometry, None).unwrap(),
+            g.init(&geometry, &TransducerFilter::all_enabled()).unwrap(),
             pos,
             EmitIntensity::MAX,
             Phase::ZERO,
@@ -133,7 +133,7 @@ mod tests {
             },
         };
         focus_check(
-            g.init(&geometry, None).unwrap(),
+            g.init(&geometry, &TransducerFilter::all_enabled()).unwrap(),
             pos,
             intensity,
             phase_offset,

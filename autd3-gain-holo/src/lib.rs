@@ -7,23 +7,26 @@
 //!
 //! [`Gain`]: autd3_core::gain::Gain
 
+/// Complex number
+pub type Complex = nalgebra::Complex<f32>;
+
 mod amp;
 mod backend;
-mod backend_nalgebra;
+// mod backend_nalgebra;
 mod combinatorial;
 mod constraint;
 mod error;
-mod helper;
-mod linear_synthesis;
-mod nls;
+// mod helper;
+// mod linear_synthesis;
+// mod nls;
 
 pub use backend::*;
-pub use backend_nalgebra::NalgebraBackend;
+// pub use backend_nalgebra::NalgebraBackend;
 pub use combinatorial::*;
 pub use constraint::*;
 pub use error::HoloError;
-pub use linear_synthesis::*;
-pub use nls::*;
+// pub use linear_synthesis::*;
+// pub use nls::*;
 
 pub use amp::{Amplitude, Pa, dB, kPa};
 pub use autd3_core::acoustics::directivity::{Sphere, T4010A1};

@@ -46,7 +46,7 @@ impl autd3_core::gain::Gain for Gain {
     fn init(
         self,
         _: &Geometry,
-        _: Option<&HashMap<usize, BitVec>>,
+        _: &TransducerFilter,
     ) -> Result<Self::G, autd3_core::gain::GainError> {
         unreachable!()
     }

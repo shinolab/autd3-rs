@@ -1,6 +1,8 @@
-use std::{collections::HashMap, iter::Peekable};
+use std::iter::Peekable;
 
-use autd3_core::gain::{BitVec, Gain, GainCalculator, GainCalculatorGenerator, GainError};
+use autd3_core::gain::{
+    Gain, GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter,
+};
 
 use crate::geometry::{Device, Geometry};
 
@@ -37,11 +39,7 @@ impl<G: GainCalculatorGenerator> GainSTMIteratorGenerator for Vec<G> {
 impl<G: Gain> GainSTMGenerator for Vec<G> {
     type T = Vec<G::G>;
 
-    fn init(
-        self,
-        geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::T, GainError> {
+    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::T, GainError> {
         self.into_iter()
             .map(|g| g.init(geometry, filter))
             .collect::<Result<Vec<_>, _>>()

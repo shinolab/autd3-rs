@@ -49,7 +49,7 @@ pub use with_segment::WithSegment;
 
 pub use synchronize::Synchronize;
 
-pub use autd3_core::datagram::Datagram;
+pub use autd3_core::datagram::{Datagram, DeviceFilter};
 
 use crate::{
     firmware::operation::NullOp,

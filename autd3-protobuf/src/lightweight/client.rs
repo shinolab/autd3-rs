@@ -57,7 +57,11 @@ impl autd3_core::datagram::Datagram for LightweightDatagram {
     type G = NullOperationGenerator;
     type Error = std::convert::Infallible;
 
-    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+    ) -> Result<Self::G, Self::Error> {
         unimplemented!("`LightweightDatagram` does not support normal `Controller`");
     }
 }

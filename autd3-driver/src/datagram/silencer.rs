@@ -1,6 +1,7 @@
 use std::{convert::Infallible, num::NonZeroU16};
 
 use crate::{
+    datagram::*,
     firmware::{
         fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
         operation::{
@@ -9,8 +10,6 @@ use crate::{
     },
     geometry::{Device, Geometry},
 };
-
-use super::Datagram;
 
 pub trait SilencerConfig: std::fmt::Debug + Clone + Copy {}
 impl SilencerConfig for () {}
@@ -188,7 +187,7 @@ where
     type G = SilencerOpGenerator<T>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
         Ok(Self::G {
             config: self.config,
         })

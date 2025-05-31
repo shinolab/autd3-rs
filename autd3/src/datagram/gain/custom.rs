@@ -68,7 +68,7 @@ impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) ->
 {
     type G = Custom<'a, FT, F>;
 
-    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -104,7 +104,9 @@ mod tests {
             }
         });
 
-        let mut d = transducer_test.init(&geometry, None).unwrap();
+        let mut d = transducer_test
+            .init(&geometry, &TransducerFilter::all_enabled())
+            .unwrap();
         geometry.iter().for_each(|dev| {
             let d = d.generate(dev);
             dev.iter().enumerate().for_each(|(idx, tr)| {

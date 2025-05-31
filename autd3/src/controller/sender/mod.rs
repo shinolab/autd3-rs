@@ -13,6 +13,7 @@ use std::{
 
 use autd3_core::{
     datagram::Datagram,
+    derive::DeviceFilter,
     geometry::Geometry,
     link::{Link, MsgId},
 };
@@ -96,7 +97,7 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
     /// - greater than 0, this function waits until the sent data is processed by the device or the specified timeout time elapses. If it cannot be confirmed that the sent data has been processed by the device, [`AUTDDriverError::ConfirmResponseFailed`] is returned.
     /// - 0, this function does not check whether the sent data has been processed by the device.
     ///
-    /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of enabled devices is greater than the `parallel_threshold`.
+    /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of devices is greater than the `parallel_threshold`.
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
@@ -112,8 +113,11 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
             .is_parallel(self.geometry.num_devices(), s.option().parallel_threshold);
         tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
-        let g = s.operation_generator(self.geometry)?;
+        let g = s.operation_generator(self.geometry, &DeviceFilter::all_enabled())?;
         let mut operations = OperationHandler::generate(g, self.geometry);
+        operations.iter().enumerate().for_each(|(i, op)| {
+            self.sent_flags[i] = op.is_some();
+        });
 
         self.link.update(self.geometry)?;
 
@@ -128,7 +132,6 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
                 *self.msg_id,
                 &mut operations,
                 self.geometry,
-                self.sent_flags,
                 &mut tx,
                 parallel,
             )?;

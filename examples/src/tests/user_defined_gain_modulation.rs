@@ -35,7 +35,7 @@ impl Gain for MyUniform {
     fn init(
         self,
         _geometry: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
+        _filter: Option<&TransducerFilter>,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }

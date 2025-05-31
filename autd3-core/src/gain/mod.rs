@@ -5,18 +5,42 @@ mod phase;
 
 use std::collections::HashMap;
 
-/// A bit vector type.
-pub type BitVec = bit_vec::BitVec<u32>;
-
 pub use drive::Drive;
 pub use emit_intensity::EmitIntensity;
 pub use error::GainError;
 pub use phase::Phase;
 
 use crate::{
-    datagram::{Segment, TransitionMode},
+    datagram::{DeviceFilter, Segment, TransitionMode},
     geometry::{Device, Geometry, Transducer},
 };
+
+#[derive(Debug)]
+/// A filter that represents which transducers are enabled.
+pub struct TransducerFilter(Option<HashMap<usize, Option<bit_vec::BitVec<u32>>>>);
+
+impl TransducerFilter {
+    /// Returns a new `TransducerFilter` that enables all transducers.
+    pub const fn all_enabled() -> Self {
+        Self(None)
+    }
+}
+
+impl From<&DeviceFilter> for TransducerFilter {
+    fn from(filter: &DeviceFilter) -> Self {
+        if let Some(filter) = filter.0.as_ref() {
+            Self(Some(
+                filter
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(idx, enable)| enable.then_some((idx, None)))
+                    .collect(),
+            ))
+        } else {
+            Self(None)
+        }
+    }
+}
 
 /// A trait to calculate the phase and intensity for [`Gain`].
 ///
@@ -56,11 +80,7 @@ pub trait Gain: std::fmt::Debug + Sized {
     ///
     /// `filter` is a hash map that holds a bit vector representing the indices of the enabled transducers for each device index.
     /// If `filter` is `None`, all transducers are enabled.
-    fn init(
-        self,
-        geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError>;
+    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::G, GainError>;
 }
 
 #[doc(hidden)]
@@ -74,11 +94,12 @@ impl<G: GainCalculatorGenerator> GainOperationGenerator<G> {
     pub fn new<T: Gain<G = G>>(
         gain: T,
         geometry: &Geometry,
+        filter: &DeviceFilter,
         segment: Segment,
         transition: Option<TransitionMode>,
     ) -> Result<Self, GainError> {
         Ok(Self {
-            generator: gain.init(geometry, None)?,
+            generator: gain.init(geometry, &TransducerFilter::from(filter))?,
             segment,
             transition,
         })

@@ -1,14 +1,11 @@
-use std::{
-    collections::HashMap,
-    mem::{ManuallyDrop, MaybeUninit},
-};
+use std::mem::{ManuallyDrop, MaybeUninit};
 
 use autd3_core::{
     acoustics::{
         directivity::{Directivity, Sphere},
         propagate,
     },
-    gain::BitVec,
+    gain::TransducerFilter,
     geometry::{Complex, Geometry, Point3},
 };
 use nalgebra::{ComplexField, Dyn, Normed, U1, VecStorage};
@@ -100,19 +97,22 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         &self,
         geometry: &Geometry,
         foci: &[Point3],
-        filter: Option<&HashMap<usize, BitVec>>,
+        filter: Option<&TransducerFilter>,
     ) -> Result<Self::MatrixXc, HoloError> {
         use rayon::prelude::*;
 
         let num_transducers = [0]
             .into_iter()
             .chain(geometry.iter().scan(0, |state, dev| {
-                *state += if dev.enable {
+                *state += if filter.is_none_or(|filter| filter.contains_key(&dev.idx())) {
                     filter
                         .as_ref()
                         .map(|f| {
                             f.get(&dev.idx())
-                                .map(|f| f.count_ones() as usize)
+                                .map(|f| {
+                                    f.map(|f| f.count_ones() as usize)
+                                        .unwrap_or(dev.num_transducers())
+                                })
                                 .unwrap_or(0)
                         })
                         .unwrap_or(dev.num_transducers())

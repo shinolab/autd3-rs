@@ -1,10 +1,10 @@
-use std::{collections::HashMap, mem::MaybeUninit};
+use std::mem::MaybeUninit;
 
 use super::{Gain, GainCalculatorGenerator};
 
 pub use crate::geometry::{Device, Geometry};
 
-use autd3_core::derive::*;
+use autd3_core::{derive::*, gain::TransducerFilter};
 
 #[cfg(not(feature = "lightweight"))]
 pub trait DGainCalculatorGenerator {
@@ -45,7 +45,7 @@ trait DGain {
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
+        filter: &TransducerFilter,
     ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
@@ -59,7 +59,7 @@ impl<
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
+        filter: &TransducerFilter,
     ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
@@ -113,11 +113,7 @@ impl std::fmt::Debug for BoxedGain {
 impl Gain for BoxedGain {
     type G = DynGainCalculatorGenerator;
 
-    fn init(
-        self,
-        geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::G, GainError> {
         let Self { mut g, .. } = self;
         Ok(DynGainCalculatorGenerator {
             g: g.dyn_init(geometry, filter)?,
@@ -161,7 +157,6 @@ pub mod tests {
             (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
             (1, vec![Drive { phase: Phase(0x02), intensity: EmitIntensity(0x02) }; NUM_TRANSDUCERS])
         ].into_iter().collect(),
-        vec![true; 2],
         2)]
     #[case::parallel(
         [
@@ -171,26 +166,15 @@ pub mod tests {
             (3, vec![Drive { phase: Phase(0x04), intensity: EmitIntensity(0x04) }; NUM_TRANSDUCERS]),
             (4, vec![Drive { phase: Phase(0x05), intensity: EmitIntensity(0x05) }; NUM_TRANSDUCERS]),
         ].into_iter().collect(),
-        vec![true; 5],
         5)]
-    #[case::enabled(
-        [
-            (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
-        ].into_iter().collect(),
-        vec![true, false],
-        2)]
     fn boxed_gain_unsafe(
         #[case] expect: HashMap<usize, Vec<Drive>>,
-        #[case] enabled: Vec<bool>,
         #[case] n: u16,
     ) -> anyhow::Result<()> {
         use crate::datagram::tests::create_geometry;
 
-        let mut geometry = create_geometry(n, NUM_TRANSDUCERS as _);
-        geometry
-            .iter_mut()
-            .zip(enabled.iter())
-            .for_each(|(dev, &e)| dev.enable = e);
+        let geometry = create_geometry(n, NUM_TRANSDUCERS as _);
+
         let g = TestGain::new(
             |dev| {
                 let dev_idx = dev.idx();
@@ -203,11 +187,11 @@ pub mod tests {
         )
         .into_boxed();
 
-        let mut f = g.init(&geometry, None)?;
+        let mut f = g.init(&geometry, &TransducerFilter::all_enabled())?;
         assert_eq!(
             expect,
             geometry
-                .devices()
+                .iter()
                 .map(|dev| {
                     let f = GainCalculatorGenerator::generate(&mut f, dev);
                     (dev.idx(), dev.iter().map(|tr| f.calc(tr)).collect())

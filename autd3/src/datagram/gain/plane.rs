@@ -75,7 +75,7 @@ impl GainCalculatorGenerator for Plane {
 impl Gain for Plane {
     type G = Plane;
 
-    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -129,7 +129,7 @@ mod tests {
             },
         };
         plane_check(
-            g.init(&geometry, None).unwrap(),
+            g.init(&geometry, &TransducerFilter::all_enabled()).unwrap(),
             dir,
             intensity,
             phase_offset,

@@ -15,8 +15,6 @@ pub struct Device {
     #[deref]
     #[into_iterator(ref)]
     pub(crate) transducers: Vec<Transducer>,
-    /// enable flag
-    pub enable: bool,
     /// speed of sound
     pub sound_speed: f32,
     #[getset(get = "pub")]
@@ -77,7 +75,6 @@ impl Device {
         let mut dev = Self {
             idx: 0,
             transducers,
-            enable: true,
             sound_speed: 340.0 * METER,
             rotation: rot,
             center: Point3::origin(),
@@ -103,14 +100,14 @@ impl Device {
         self.transducers.len()
     }
 
-    /// Sets the sound speed of enabled devices from the temperature `t`.
+    /// Sets the sound speed of devices from the temperature `t`.
     ///
     /// This is equivalent to `Self::set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3)`.
     pub fn set_sound_speed_from_temp(&mut self, temp: f32) {
         self.set_sound_speed_from_temp_with(temp, 1.4, 8.314_463, 28.9647e-3);
     }
 
-    /// Sets the sound speed of enabled devices from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
+    /// Sets the sound speed of devices from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
     pub fn set_sound_speed_from_temp_with(&mut self, temp: f32, k: f32, r: f32, m: f32) {
         self.sound_speed = (k * r * (273.15 + temp) / m).sqrt() * METER;
     }
