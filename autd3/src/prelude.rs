@@ -4,11 +4,9 @@ pub use crate::modulation;
 pub use crate::{
     controller::{Controller, ParallelMode, SenderOption, SpinSleeper},
     datagram::{
-        gain::Cache as GainCache,
         gain::{
             Bessel, BesselOption, Focus, FocusOption, GainGroup, Null, Plane, PlaneOption, Uniform,
         },
-        modulation::Cache as ModulationCache,
         modulation::{
             Fir, FourierOption, RadiationPressure, Sine, SineOption, Square, SquareOption, Static,
         },

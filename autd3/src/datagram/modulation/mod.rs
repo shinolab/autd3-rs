@@ -1,4 +1,3 @@
-mod cache;
 mod custom;
 mod fir;
 mod fourier;
@@ -10,7 +9,6 @@ mod square;
 mod r#static;
 
 pub use autd3_driver::datagram::IntoBoxedModulation;
-pub use cache::Cache;
 pub use custom::Custom;
 pub use fir::Fir;
 pub use fourier::{Fourier, FourierOption};
