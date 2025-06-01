@@ -5,7 +5,6 @@ use crate::datagram::*;
 use autd3_core::{
     datagram::DatagramOption,
     derive::{Inspectable, InspectionResult},
-    gain::BitVec,
 };
 use derive_more::Debug as DeriveDebug;
 use itertools::Itertools;
@@ -67,15 +66,17 @@ where
         }
     }
 
-    fn generate_filter(key_map: F, geometry: &Geometry) -> HashMap<K, BitVec> {
-        let num_devices = geometry.iter().len();
-        let mut filters: HashMap<K, BitVec> = HashMap::new();
-        geometry.devices().for_each(|dev| {
+    fn generate_filter(key_map: F, geometry: &Geometry) -> HashMap<K, DeviceFilter> {
+        let mut filters: HashMap<K, DeviceFilter> = HashMap::new();
+        geometry.iter().for_each(|dev| {
             if let Some(key) = key_map(dev) {
                 if let Some(v) = filters.get_mut(&key) {
-                    v.set(dev.idx(), true);
+                    v.set_enable(dev.idx());
                 } else {
-                    filters.insert(key, BitVec::from_fn(num_devices, |i| i == dev.idx()));
+                    filters.insert(
+                        key,
+                        DeviceFilter::from_fn(geometry, |dev_| dev_.idx() == dev.idx()),
+                    );
                 }
             }
         });
@@ -121,7 +122,11 @@ where
     type G = GroupOpGenerator<D>;
     type Error = AUTDDriverError;
 
-    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(
+        self,
+        geometry: &Geometry,
+        _: &DeviceFilter,
+    ) -> Result<Self::G, Self::Error> {
         let Self {
             key_map,
             mut datagram_map,
@@ -129,49 +134,31 @@ where
 
         let filters = Self::generate_filter(key_map, geometry);
 
-        let enable_store = geometry.iter().map(|dev| dev.enable).collect::<Vec<_>>();
-
         let mut operations: Vec<_> = geometry.iter().map(|_| None).collect();
-        geometry.lock_version(|geometry| {
-            filters
-                .into_iter()
-                .try_for_each(|(k, filter)| -> Result<(), AUTDDriverError> {
-                    {
-                        let datagram = datagram_map
-                            .remove(&k)
-                            .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
+        filters
+            .into_iter()
+            .try_for_each(|(k, filter)| -> Result<(), AUTDDriverError> {
+                {
+                    let datagram = datagram_map
+                        .remove(&k)
+                        .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
 
-                        // set enable flag for each device
-                        // This is not required for the operation except `Gain`s which cannot be calculated independently for each device, such as `autd3-gain-holo`.
-                        geometry.devices_mut().for_each(|dev| {
-                            dev.enable = filter[dev.idx()];
+                    let mut generator = datagram
+                        .operation_generator(geometry, &filter)
+                        .map_err(AUTDDriverError::from)?;
+
+                    operations
+                        .iter_mut()
+                        .zip(geometry.iter())
+                        .filter(|(_, dev)| filter.is_enabled(dev))
+                        .for_each(|(op, dev)| {
+                            tracing::debug!("Generate operation for device {}", dev.idx());
+                            *op = generator.generate(dev);
                         });
 
-                        let mut generator = datagram
-                            .operation_generator(geometry)
-                            .map_err(AUTDDriverError::from)?;
-
-                        // restore enable flag
-                        geometry
-                            .iter_mut()
-                            .zip(enable_store.iter())
-                            .for_each(|(dev, &enable)| {
-                                dev.enable = enable;
-                            });
-
-                        operations
-                            .iter_mut()
-                            .zip(geometry.iter())
-                            .filter(|(_, dev)| dev.enable && filter[dev.idx()])
-                            .for_each(|(op, dev)| {
-                                tracing::debug!("Generate operation for device {}", dev.idx());
-                                *op = generator.generate(dev);
-                            });
-
-                        Ok(())
-                    }
-                })
-        })?;
+                    Ok(())
+                }
+            })?;
 
         if !datagram_map.is_empty() {
             return Err(AUTDDriverError::UnusedKey(
@@ -205,7 +192,8 @@ where
 
     fn inspect(
         self,
-        geometry: &mut Geometry,
+        geometry: &Geometry,
+        _: &DeviceFilter,
     ) -> Result<InspectionResult<Self::Result>, AUTDDriverError> {
         let Self {
             key_map,
@@ -213,8 +201,6 @@ where
         } = self;
 
         let filters = Self::generate_filter(key_map, geometry);
-
-        let enable_store = geometry.iter().map(|dev| dev.enable).collect::<Vec<_>>();
 
         let results = filters
             .into_iter()
@@ -225,19 +211,9 @@ where
                             .remove(&k)
                             .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
 
-                        geometry.devices_mut().for_each(|dev| {
-                            dev.enable = filter[dev.idx()];
-                        });
-
-                        let r = datagram.inspect(geometry).map_err(AUTDDriverError::from)?;
-
-                        // restore enable flag
-                        geometry
-                            .iter_mut()
-                            .zip(enable_store.iter())
-                            .for_each(|(dev, &enable)| {
-                                dev.enable = enable;
-                            });
+                        let r = datagram
+                            .inspect(geometry, &filter)
+                            .map_err(AUTDDriverError::from)?;
 
                         Ok(r.result)
                     }
@@ -277,41 +253,7 @@ mod tests {
     }
 
     #[test]
-    fn group() -> anyhow::Result<()> {
-        #[derive(Debug)]
-        pub struct TestDatagram;
-
-        impl Datagram for TestDatagram {
-            type G = NullOperationGenerator;
-            type Error = Infallible;
-
-            fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
-                Ok(NullOperationGenerator)
-            }
-        }
-
-        let mut geometry = create_geometry(3, 1);
-        geometry[0].enable = false;
-
-        let mut g = Group::new(
-            |dev| match dev.idx() {
-                0 => Some(0), // GRCOV_EXCL_LINE
-                1 => Some(1),
-                _ => None,
-            },
-            HashMap::from([(1, TestDatagram)]),
-        )
-        .operation_generator(&mut geometry)?;
-
-        assert!(g.generate(&geometry[0]).is_none());
-        assert!(g.generate(&geometry[1]).is_some());
-        assert!(g.generate(&geometry[2]).is_none());
-
-        Ok(())
-    }
-
-    #[test]
-    fn group_option() -> anyhow::Result<()> {
+    fn test_group_option() -> anyhow::Result<()> {
         #[derive(Debug)]
         pub struct TestDatagram {
             pub option: DatagramOption,
@@ -322,7 +264,11 @@ mod tests {
             type Error = Infallible;
 
             // GRCOV_EXCL_START
-            fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+            fn operation_generator(
+                self,
+                _: &Geometry,
+                _: &DeviceFilter,
+            ) -> Result<Self::G, Self::Error> {
                 Ok(NullOperationGenerator)
             }
             // GRCOV_EXCL_STOP
@@ -357,41 +303,7 @@ mod tests {
     }
 
     #[test]
-    fn test_group_only_for_enabled() -> anyhow::Result<()> {
-        #[derive(Debug)]
-        pub struct TestDatagram;
-
-        impl Datagram for TestDatagram {
-            type G = NullOperationGenerator;
-            type Error = Infallible;
-
-            fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
-                Ok(NullOperationGenerator)
-            }
-        }
-
-        let mut geometry = create_geometry(2, 1);
-
-        geometry[0].enable = false;
-
-        let check = Arc::new(Mutex::new([false; 2]));
-        Group::new(
-            |dev| {
-                check.lock().unwrap()[dev.idx()] = true;
-                Some(())
-            },
-            HashMap::from([((), TestDatagram)]),
-        )
-        .operation_generator(&mut geometry)?;
-
-        assert!(!check.lock().unwrap()[0]);
-        assert!(check.lock().unwrap()[1]);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_group_only_for_set() -> anyhow::Result<()> {
+    fn test_group() -> anyhow::Result<()> {
         #[derive(Debug)]
         pub struct TestDatagram {
             pub test: Arc<Mutex<Vec<bool>>>,
@@ -401,15 +313,19 @@ mod tests {
             type G = NullOperationGenerator;
             type Error = Infallible;
 
-            fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
+            fn operation_generator(
+                self,
+                geometry: &Geometry,
+                filter: &DeviceFilter,
+            ) -> Result<Self::G, Self::Error> {
                 geometry.iter().for_each(|dev| {
-                    self.test.lock().unwrap()[dev.idx()] = dev.enable;
+                    self.test.lock().unwrap()[dev.idx()] = filter.is_enabled(dev);
                 });
                 Ok(NullOperationGenerator)
             }
         }
 
-        let mut geometry = create_geometry(3, 1);
+        let geometry = create_geometry(3, 1);
 
         let test = Arc::new(Mutex::new(vec![false; 3]));
         Group::new(
@@ -419,7 +335,7 @@ mod tests {
             },
             HashMap::from([((), TestDatagram { test: test.clone() })]),
         )
-        .operation_generator(&mut geometry)?;
+        .operation_generator(&geometry, &DeviceFilter::all_enabled())?;
 
         assert!(test.lock().unwrap()[0]);
         assert!(!test.lock().unwrap()[1]);
@@ -430,12 +346,12 @@ mod tests {
 
     #[test]
     fn unknown_key() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
+        let geometry = create_geometry(2, 1);
 
         assert_eq!(
             Some(AUTDDriverError::UnknownKey("1".to_owned())),
             Group::new(|dev| Some(dev.idx()), HashMap::from([(0, Clear {})]))
-                .operation_generator(&mut geometry)
+                .operation_generator(&geometry, &DeviceFilter::all_enabled())
                 .err()
         );
 
@@ -444,14 +360,14 @@ mod tests {
 
     #[test]
     fn unused_key() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
+        let geometry = create_geometry(2, 1);
         assert_eq!(
             Some(AUTDDriverError::UnusedKey("2".to_owned())),
             Group::new(
                 |dev| Some(dev.idx()),
                 HashMap::from([(0, Clear {}), (1, Clear {}), (2, Clear {})])
             )
-            .operation_generator(&mut geometry)
+            .operation_generator(&geometry, &DeviceFilter::all_enabled())
             .err()
         );
 
@@ -468,7 +384,11 @@ mod tests {
             type Error = Infallible;
 
             // GRCOV_EXCL_START
-            fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+            fn operation_generator(
+                self,
+                _: &Geometry,
+                _: &DeviceFilter,
+            ) -> Result<Self::G, Self::Error> {
                 Ok(NullOperationGenerator)
             }
             // GRCOV_EXCL_STOP
@@ -479,16 +399,14 @@ mod tests {
 
             fn inspect(
                 self,
-                geometry: &mut Geometry,
+                geometry: &Geometry,
+                filter: &DeviceFilter,
             ) -> Result<InspectionResult<Self::Result>, Self::Error> {
-                Ok(InspectionResult::new(geometry, |_| ()))
+                Ok(InspectionResult::new(geometry, filter, |_| ()))
             }
         }
 
-        let mut geometry = create_geometry(4, 1);
-
-        geometry[3].enable = false;
-
+        let geometry = create_geometry(4, 1);
         let r = Group::new(
             |dev| match dev.idx() {
                 1 => None,
@@ -496,12 +414,12 @@ mod tests {
             },
             HashMap::from([((), TestDatagram {})]),
         )
-        .inspect(&mut geometry)?;
+        .inspect(&geometry, &DeviceFilter::all_enabled())?;
 
         assert!(r[0].is_some());
         assert!(r[1].is_none());
         assert!(r[2].is_some());
-        assert!(r[3].is_none());
+        assert!(r[3].is_some());
 
         Ok(())
     }

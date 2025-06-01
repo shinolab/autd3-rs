@@ -1,8 +1,8 @@
-use std::{collections::HashMap, f32::consts::PI};
+use std::f32::consts::PI;
 
 use autd3_core::{
     derive::{Device, Geometry},
-    gain::{BitVec, EmitIntensity, GainError, Phase},
+    gain::{EmitIntensity, GainError, Phase, TransducerFilter},
 };
 use autd3_driver::{
     datagram::{
@@ -142,11 +142,7 @@ impl GainSTMGenerator for Circle {
     type T = Self;
 
     // GRCOV_EXCL_START
-    fn init(
-        self,
-        _: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::T, GainError> {
+    fn init(self, _: &Geometry, _filter: &TransducerFilter) -> Result<Self::T, GainError> {
         Ok(self)
     }
     // GRCOV_EXCL_STOP

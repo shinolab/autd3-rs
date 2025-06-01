@@ -37,7 +37,7 @@ impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
     type G = ReadsFPGAStateOpGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
         Ok(ReadsFPGAStateOpGenerator { f: self.f })
     }
 }

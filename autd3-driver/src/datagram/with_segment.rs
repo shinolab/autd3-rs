@@ -1,5 +1,6 @@
+use crate::datagram::*;
 use autd3_core::{
-    datagram::{Datagram, DatagramOption, DatagramS, InspectionResult, Segment, TransitionMode},
+    datagram::{DatagramOption, DatagramS, InspectionResult, Segment, TransitionMode},
     derive::{Geometry, Inspectable},
 };
 
@@ -35,11 +36,13 @@ impl<D: DatagramS> Datagram for WithSegment<D> {
 
     fn operation_generator(
         self,
-        geometry: &mut autd3_core::derive::Geometry,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramS>::operation_generator_with_segment(
             self.inner,
             geometry,
+            filter,
             self.segment,
             self.transition_mode,
         )
@@ -65,11 +68,12 @@ where
 
     fn inspect(
         self,
-        geometry: &mut Geometry,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
         Ok(self
             .inner
-            .inspect(geometry)?
+            .inspect(geometry, filter)?
             .modify(|t| t.with_segment(self.segment, self.transition_mode)))
     }
 }
