@@ -51,8 +51,14 @@ async fn test_retry_with_disabled_device() -> anyhow::Result<()> {
         Err(AUTDDriverError::ConfirmResponseFailed),
         cnt.send(Null {}).await
     );
-    cnt[0].enable = false;
-    assert_eq!(Ok(()), cnt.send(Null {}).await);
+    assert_eq!(
+        Ok(()),
+        cnt.send(autd3_driver::datagram::Group::new(
+            |dev| (dev.idx() != 0).then_some(()),
+            std::collections::HashMap::from([((), Null {})])
+        ))
+        .await
+    );
 
     Ok(())
 }

@@ -1,4 +1,4 @@
-use super::Datagram;
+use super::{Datagram, DeviceFilter};
 use crate::geometry::{Device, Geometry};
 
 use derive_more::Deref;
@@ -14,11 +14,15 @@ pub struct InspectionResult<T> {
 impl<T> InspectionResult<T> {
     #[must_use]
     #[doc(hidden)]
-    pub fn new(geometry: &Geometry, mut f: impl FnMut(&Device) -> T) -> Self {
+    pub fn new(
+        geometry: &Geometry,
+        filter: &DeviceFilter,
+        mut f: impl FnMut(&Device) -> T,
+    ) -> Self {
         Self {
             result: geometry
                 .iter()
-                .map(move |dev| dev.enable.then(|| f(dev)))
+                .map(|dev| filter.is_enabled(dev).then_some(f(dev)))
                 .collect(),
         }
     }
@@ -40,6 +44,7 @@ pub trait Inspectable: Datagram {
     /// Returns the inspection result.
     fn inspect(
         self,
-        geometry: &mut Geometry,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
     ) -> Result<InspectionResult<Self::Result>, Self::Error>;
 }

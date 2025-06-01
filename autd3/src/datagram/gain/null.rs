@@ -30,7 +30,7 @@ impl GainCalculatorGenerator for Null {
 impl Gain for Null {
     type G = Null;
 
-    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

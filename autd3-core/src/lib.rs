@@ -97,7 +97,7 @@ pub use async_trait::async_trait;
 ///     fn init(
 ///         self,
 ///         _geometry: &Geometry,
-///         _filter: Option<&HashMap<usize, BitVec>>,
+///         _filter: &TransducerFilter,
 ///     ) -> Result<Self::G, GainError> {
 ///         Ok(self)
 ///     }
@@ -141,7 +141,10 @@ pub mod derive {
     #[cfg(any(feature = "gain", feature = "modulation"))]
     mod common {
         pub use crate::{
-            datagram::{DatagramOption, Inspectable, InspectionResult, Segment, TransitionMode},
+            datagram::{
+                DatagramOption, DeviceFilter, Inspectable, InspectionResult, Segment,
+                TransitionMode,
+            },
             geometry::Geometry,
         };
         pub use tracing;
@@ -155,8 +158,8 @@ pub mod derive {
         pub use crate::{
             datagram::DatagramS,
             gain::{
-                BitVec, Drive, EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator,
-                GainError, GainInspectionResult, GainOperationGenerator, Phase,
+                Drive, EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator, GainError,
+                GainInspectionResult, GainOperationGenerator, Phase, TransducerFilter,
             },
             geometry::{Device, Transducer},
         };

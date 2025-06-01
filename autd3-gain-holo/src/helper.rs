@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use autd3_core::{
     common::rad,
-    gain::{BitVec, Drive, GainCalculator, GainCalculatorGenerator, GainError, Phase},
+    gain::{Drive, GainCalculator, GainCalculatorGenerator, GainError, Phase, TransducerFilter},
     geometry::{Device, Geometry, Transducer},
 };
 use nalgebra::ComplexField;
@@ -90,7 +90,7 @@ pub struct HoloCalculatorGenerator<T: IntoDrive + Copy + Send + Sync + 'static> 
             nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
         >,
     >,
-    map: Either<HashMap<usize, Option<Vec<Option<usize>>>>, HashMap<usize, usize>>,
+    map: Either<HashMap<usize, Vec<Option<usize>>>, HashMap<usize, usize>>,
     max_coefficient: f32,
     constraint: EmissionConstraint,
 }
@@ -104,7 +104,7 @@ impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculatorGenerator
         match &mut self.map {
             Either::Left(map) => HoloCalculator {
                 q: self.q.clone(),
-                map: Either::Left(map.remove(&device.idx()).unwrap()),
+                map: Either::Left(map.remove(&device.idx())),
                 max_coefficient: self.max_coefficient,
                 constraint: self.constraint,
             },
@@ -128,35 +128,22 @@ pub(crate) fn generate_result<T>(
     >,
     max_coefficient: f32,
     constraint: EmissionConstraint,
-    filter: Option<&HashMap<usize, BitVec>>,
+    filter: &TransducerFilter,
 ) -> Result<HoloCalculatorGenerator<T>, GainError>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,
 {
     let q = std::sync::Arc::new(q);
-    if let Some(filter) = filter {
+    if filter.is_all_enabled() {
         Ok(HoloCalculatorGenerator {
             q,
-            map: Either::Left(
+            map: Either::Right(
                 geometry
-                    .devices()
-                    .scan(0usize, |state, dev| {
-                        Some((
-                            dev.idx(),
-                            filter.get(&dev.idx()).map(|filter| {
-                                dev.iter()
-                                    .map(|tr| {
-                                        if filter[tr.idx()] {
-                                            let r = *state;
-                                            *state += 1;
-                                            Some(r)
-                                        } else {
-                                            None
-                                        }
-                                    })
-                                    .collect::<Vec<_>>()
-                            }),
-                        ))
+                    .iter()
+                    .scan(0, |state, dev| {
+                        let r = *state;
+                        *state += dev.num_transducers();
+                        Some((dev.idx(), r))
                     })
                     .collect(),
             ),
@@ -166,13 +153,24 @@ where
     } else {
         Ok(HoloCalculatorGenerator {
             q,
-            map: Either::Right(
+            map: Either::Left(
                 geometry
-                    .devices()
-                    .scan(0, |state, dev| {
-                        let r = *state;
-                        *state += dev.num_transducers();
-                        Some((dev.idx(), r))
+                    .iter()
+                    .filter(|dev| filter.is_enabled_device(dev))
+                    .scan(0usize, |state, dev| {
+                        Some((dev.idx(), {
+                            dev.iter()
+                                .map(|tr| {
+                                    if filter.is_enabled(tr) {
+                                        let r = *state;
+                                        *state += 1;
+                                        Some(r)
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                        }))
                     })
                     .collect(),
             ),

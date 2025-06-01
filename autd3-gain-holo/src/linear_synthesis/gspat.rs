@@ -1,4 +1,4 @@
-use std::{collections::HashMap, num::NonZeroUsize, sync::Arc};
+use std::{num::NonZeroUsize, sync::Arc};
 
 use crate::{
     Amplitude, Complex, LinAlgBackend, Trans,
@@ -65,11 +65,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
     type G = HoloCalculatorGenerator<Complex>;
 
-    fn init(
-        self,
-        geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
         let g = self
@@ -162,13 +158,14 @@ mod tests {
         );
 
         assert_eq!(
-            g.init(&geometry, None).map(|mut res| {
-                let f = res.generate(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f.calc(tr) != Drive::NULL)
-                    .count()
-            }),
+            g.init(&geometry, &TransducerFilter::all_enabled())
+                .map(|mut res| {
+                    let f = res.generate(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
+                        .count()
+                }),
             Ok(geometry.num_transducers()),
         );
     }
@@ -188,12 +185,15 @@ mod tests {
             },
         };
 
-        let filter = geometry
-            .iter()
-            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
-            .collect::<HashMap<_, _>>();
+        let filter = TransducerFilter::from_fn(&geometry, |dev| {
+            if dev.idx() == 0 {
+                Some(|tr: &Transducer| tr.idx() < 100)
+            } else {
+                None
+            }
+        });
         assert_eq!(
-            g.init(&geometry, Some(&filter)).map(|mut res| {
+            g.init(&geometry, &filter).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()

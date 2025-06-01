@@ -1,6 +1,9 @@
 use std::{fmt::Debug, hash::Hash, net::SocketAddr};
 
-use autd3_core::geometry::{Device, Geometry};
+use autd3_core::{
+    datagram::DeviceFilter,
+    geometry::{Device, Geometry},
+};
 
 use derive_more::Deref;
 
@@ -57,7 +60,7 @@ impl autd3_core::datagram::Datagram for LightweightDatagram {
     type G = NullOperationGenerator;
     type Error = std::convert::Infallible;
 
-    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
         unimplemented!("`LightweightDatagram` does not support normal `Controller`");
     }
 }
@@ -102,9 +105,6 @@ where
                 let keys = geometry
                     .iter()
                     .map(|dev| {
-                        if !dev.enable {
-                            return -1;
-                        }
                         if let Some(key) = (self.key_map)(dev) {
                             datagram_key
                                 .iter()
