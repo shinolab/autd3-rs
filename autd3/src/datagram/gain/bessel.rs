@@ -98,7 +98,7 @@ impl GainCalculatorGenerator for Bessel {
 impl Gain for Bessel {
     type G = Bessel;
 
-    fn init(self, _: &Geometry, _: Option<&HashMap<usize, BitVec>>) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -177,7 +177,7 @@ mod tests {
             },
         };
         bessel_check(
-            g.init(&geometry, None).unwrap(),
+            g.init(&geometry, &TransducerFilter::all_enabled()).unwrap(),
             pos,
             dir,
             theta,

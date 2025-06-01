@@ -46,11 +46,7 @@ impl GainCalculatorGenerator for TestGain {
 impl Gain for TestGain {
     type G = Self;
 
-    fn init(
-        self,
-        _: &Geometry,
-        _filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _filter: &TransducerFilter) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

@@ -1,14 +1,11 @@
-use std::{
-    collections::HashMap,
-    mem::{ManuallyDrop, MaybeUninit},
-};
+use std::mem::{ManuallyDrop, MaybeUninit};
 
 use autd3_core::{
     acoustics::{
         directivity::{Directivity, Sphere},
         propagate,
     },
-    gain::BitVec,
+    gain::TransducerFilter,
     geometry::{Complex, Geometry, Point3},
 };
 use nalgebra::{ComplexField, Dyn, Normed, U1, VecStorage};
@@ -100,53 +97,63 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         &self,
         geometry: &Geometry,
         foci: &[Point3],
-        filter: Option<&HashMap<usize, BitVec>>,
+        filter: &TransducerFilter,
     ) -> Result<Self::MatrixXc, HoloError> {
         use rayon::prelude::*;
 
         let num_transducers = [0]
             .into_iter()
             .chain(geometry.iter().scan(0, |state, dev| {
-                *state += if dev.enable {
-                    filter
-                        .as_ref()
-                        .map(|f| {
-                            f.get(&dev.idx())
-                                .map(|f| f.count_ones() as usize)
-                                .unwrap_or(0)
-                        })
-                        .unwrap_or(dev.num_transducers())
-                } else {
-                    0
-                };
+                *state += filter.num_enabled_transducers(dev);
                 Some(*state)
             }))
             .collect::<Vec<_>>();
         let n = num_transducers.last().copied().unwrap();
 
-        if let Some(filter) = filter {
-            if geometry.num_devices() < foci.len() {
+        let num_devices = filter.num_enabled_devices(geometry);
+        let m = foci.len();
+        let do_parallel_in_col = num_devices < m;
+
+        if filter.is_all_enabled() {
+            if do_parallel_in_col {
+                let columns = par_map!(foci, |f| {
+                    nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
+                    n,
+                    geometry.iter().flat_map(|dev| {
+                        dev.iter().map(move |tr| {
+                            propagate::<D>(tr, dev.wavenumber(), dev.axial_direction(), f)
+                        })
+                    }),
+                )
+                });
+                Ok(MatrixXc::from_rows(&columns))
+            } else {
+                let mut r = uninit_mat(foci.len(), n);
+                let ptr = Ptr(r.as_mut_ptr());
+                par_for_each!(geometry.iter(), move |dev| {
+                    let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
+                    dev.iter().for_each(move |tr| {
+                        foci.iter().for_each(|f| {
+                            ptr.write(propagate::<D>(
+                                tr,
+                                dev.wavenumber(),
+                                dev.axial_direction(),
+                                f,
+                            ));
+                        });
+                    });
+                });
+                Ok(r)
+            }
+        } else {
+            #[allow(clippy::collapsible_else_if)]
+            if do_parallel_in_col {
                 let columns = par_map!(foci, |f| {
                     nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
                         n,
-                        geometry.devices().flat_map(|dev| {
-                            let filter = filter.get(&dev.idx());
+                        geometry.iter().filter(|dev| filter.is_enabled_device(dev)).flat_map(|dev| {
                             dev.iter().filter_map(move |tr| {
-                                filter.and_then(|filter| {
-                                    if filter[tr.idx()] {
-                                        Some(
-                                            propagate::<D>(
-                                                tr,
-                                                dev.wavenumber(),
-                                                dev.axial_direction(),
-                                                f,
-                                            )
-                                        )
-                                    } else {
-                                        None
-                                    }
-                                })
-                            })
+                                filter.is_enabled(tr).then_some(propagate::<D>(tr, dev.wavenumber(), dev.axial_direction(), f))})
                         }),
                     )
                 });
@@ -154,12 +161,12 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
             } else {
                 let mut r = uninit_mat(foci.len(), n);
                 let ptr = Ptr(r.as_mut_ptr());
-                par_for_each!(geometry.devices(), move |dev| {
-                    let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
-                    let filter = filter.get(&dev.idx());
-                    dev.iter().for_each(move |tr| {
-                        if let Some(filter) = filter {
-                            if filter[tr.idx()] {
+                par_for_each!(
+                    geometry.iter().filter(|dev| filter.is_enabled_device(dev)),
+                    move |dev| {
+                        let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
+                        dev.iter().for_each(move |tr| {
+                            if filter.is_enabled(tr) {
                                 foci.iter().for_each(|f| {
                                     ptr.write(propagate::<D>(
                                         tr,
@@ -169,40 +176,11 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                                     ));
                                 });
                             }
-                        }
-                    });
-                });
+                        });
+                    }
+                );
                 Ok(r)
             }
-        } else if geometry.num_devices() < foci.len() {
-            let columns = par_map!(foci, |f| {
-                nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
-                    n,
-                    geometry.devices().flat_map(|dev| {
-                        dev.iter().map(move |tr| {
-                            propagate::<D>(tr, dev.wavenumber(), dev.axial_direction(), f)
-                        })
-                    }),
-                )
-            });
-            Ok(MatrixXc::from_rows(&columns))
-        } else {
-            let mut r = uninit_mat(foci.len(), n);
-            let ptr = Ptr(r.as_mut_ptr());
-            par_for_each!(geometry.devices(), move |dev| {
-                let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
-                dev.iter().for_each(move |tr| {
-                    foci.iter().for_each(|f| {
-                        ptr.write(propagate::<D>(
-                            tr,
-                            dev.wavenumber(),
-                            dev.axial_direction(),
-                            f,
-                        ));
-                    });
-                });
-            });
-            Ok(r)
         }
     }
 
@@ -570,12 +548,13 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
 
 #[cfg(test)]
 mod tests {
-    use std::f32::consts::PI;
+    use std::{collections::HashMap, f32::consts::PI};
 
     use crate::{Amplitude, Pa, Trans, tests::create_geometry};
 
     use super::*;
 
+    use autd3_core::derive::Transducer;
     use rand::Rng;
 
     const N: usize = 10;
@@ -1936,7 +1915,11 @@ mod tests {
         let geometry = create_geometry(dev_num, dev_num);
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, None)?;
+        let g = backend.generate_propagation_matrix(
+            &geometry,
+            &foci,
+            &TransducerFilter::all_enabled(),
+        )?;
         let g = backend.to_host_cm(g)?;
         reference(geometry, foci)
             .iter()
@@ -1958,16 +1941,17 @@ mod tests {
         #[case] foci_num: usize,
         backend: NalgebraBackend<Sphere>,
     ) -> Result<(), HoloError> {
-        let reference = |geometry: Geometry, foci: Vec<Point3>| {
+        let reference = |geometry: Geometry, foci: Vec<Point3>, filter: TransducerFilter| {
             let mut g = MatrixXc::zeros(
                 foci.len(),
                 geometry
-                    .devices()
-                    .map(|dev| dev.num_transducers())
+                    .iter()
+                    .map(|dev| filter.num_enabled_transducers(dev))
                     .sum::<usize>(),
             );
             let transducers = geometry
-                .devices()
+                .iter()
+                .filter(|dev| filter.is_enabled_device(dev))
                 .flat_map(|dev| dev.iter().map(|tr| (dev.idx(), tr)))
                 .collect::<Vec<_>>();
             (0..foci.len()).for_each(|i| {
@@ -1983,13 +1967,16 @@ mod tests {
             g
         };
 
-        let mut geometry = create_geometry(dev_num, dev_num);
-        geometry[0].enable = false;
+        let geometry = create_geometry(dev_num, dev_num);
+        let filter = TransducerFilter::new(HashMap::from_iter(
+            (1..geometry.num_devices()).map(|i| (i, None)),
+        ));
+
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, None)?;
+        let g = backend.generate_propagation_matrix(&geometry, &foci, &filter)?;
         let g = backend.to_host_cm(g)?;
-        reference(geometry, foci)
+        reference(geometry, foci, filter)
             .iter()
             .zip(g.iter())
             .for_each(|(r, g)| {
@@ -2009,19 +1996,11 @@ mod tests {
         #[case] foci_num: usize,
         backend: NalgebraBackend<Sphere>,
     ) -> Result<(), HoloError> {
-        use std::collections::HashMap;
-
-        let filter = |geometry: &Geometry| {
-            geometry
-                .iter()
-                .map(|dev| {
-                    let mut filter = BitVec::new();
-                    dev.iter().for_each(|tr| {
-                        filter.push(tr.idx() > dev.num_transducers() / 2);
-                    });
-                    (dev.idx(), filter)
-                })
-                .collect::<HashMap<_, _>>()
+        let filter = |geometry: &Geometry| -> TransducerFilter {
+            TransducerFilter::from_fn(geometry, |dev| {
+                let num_transducers = dev.num_transducers();
+                Some(move |tr: &Transducer| tr.idx() > num_transducers / 2)
+            })
         };
 
         let reference = |geometry, foci: Vec<Point3>| {
@@ -2030,7 +2009,7 @@ mod tests {
                 .iter()
                 .flat_map(|dev| {
                     dev.iter().filter_map(|tr| {
-                        if filter[&dev.idx()][tr.idx()] {
+                        if filter.is_enabled(tr) {
                             Some((dev.idx(), tr))
                         } else {
                             None
@@ -2057,7 +2036,7 @@ mod tests {
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
         let filter = filter(&geometry);
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, Some(&filter))?;
+        let g = backend.generate_propagation_matrix(&geometry, &foci, &filter)?;
         let g = backend.to_host_cm(g)?;
         assert_eq!(g.nrows(), foci.len());
         assert_eq!(
@@ -2087,28 +2066,30 @@ mod tests {
         #[case] foci_num: usize,
         backend: NalgebraBackend<Sphere>,
     ) -> Result<(), HoloError> {
-        use std::collections::HashMap;
-
         let filter = |geometry: &Geometry| {
-            geometry
-                .iter()
-                .map(|dev| {
-                    let mut filter = BitVec::new();
-                    dev.iter().for_each(|tr| {
-                        filter.push(tr.idx() > dev.num_transducers() / 2);
-                    });
-                    (dev.idx(), filter)
-                })
-                .collect::<HashMap<_, _>>()
+            TransducerFilter::from_fn(geometry, |dev| {
+                if dev.idx() == 0 {
+                    return None;
+                }
+                let num_transducers = dev.num_transducers();
+                Some(move |tr: &Transducer| tr.idx() > num_transducers / 2)
+            })
         };
 
-        let reference = |geometry, foci: Vec<Point3>| {
-            let filter = filter(&geometry);
+        let reference = |geometry: Geometry, foci: Vec<Point3>, filter: TransducerFilter| {
+            let mut g = MatrixXc::zeros(
+                foci.len(),
+                geometry
+                    .iter()
+                    .map(|dev| filter.num_enabled_transducers(dev))
+                    .sum::<usize>(),
+            );
             let transducers = geometry
-                .devices()
+                .iter()
+                .filter(|dev| filter.is_enabled_device(dev))
                 .flat_map(|dev| {
                     dev.iter().filter_map(|tr| {
-                        if filter[&dev.idx()][tr.idx()] {
+                        if filter.is_enabled(tr) {
                             Some((dev.idx(), tr))
                         } else {
                             None
@@ -2116,8 +2097,6 @@ mod tests {
                     })
                 })
                 .collect::<Vec<_>>();
-
-            let mut g = MatrixXc::zeros(foci.len(), transducers.len());
             (0..foci.len()).for_each(|i| {
                 (0..transducers.len()).for_each(|j| {
                     g[(i, j)] = propagate::<Sphere>(
@@ -2131,22 +2110,22 @@ mod tests {
             g
         };
 
-        let mut geometry = create_geometry(dev_num, dev_num);
-        geometry[0].enable = false;
+        let geometry = create_geometry(dev_num, dev_num);
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
         let filter = filter(&geometry);
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, Some(&filter))?;
+        let g = backend.generate_propagation_matrix(&geometry, &foci, &filter)?;
         let g = backend.to_host_cm(g)?;
         assert_eq!(g.nrows(), foci.len());
         assert_eq!(
             g.ncols(),
             geometry
-                .devices()
+                .iter()
+                .filter(|dev| filter.is_enabled_device(dev))
                 .map(|dev| dev.num_transducers() / 2)
                 .sum::<usize>()
         );
-        reference(geometry, foci)
+        reference(geometry, foci, filter)
             .iter()
             .zip(g.iter())
             .for_each(|(r, g)| {
@@ -2169,7 +2148,11 @@ mod tests {
             .sum::<usize>();
         let n = foci.len();
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, None)?;
+        let g = backend.generate_propagation_matrix(
+            &geometry,
+            &foci,
+            &TransducerFilter::all_enabled(),
+        )?;
 
         let b = backend.gen_back_prop(m, n, &g)?;
         let g = backend.to_host_cm(g)?;

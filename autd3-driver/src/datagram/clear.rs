@@ -31,7 +31,7 @@ impl Datagram for Clear {
     type G = ClearOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
         Ok(ClearOpGenerator {})
     }
 }

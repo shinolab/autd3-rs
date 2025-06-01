@@ -62,80 +62,60 @@ impl Geometry {
             });
     }
 
-    /// Gets the number of enabled devices.
+    /// Gets the number of devices.
     #[must_use]
     pub fn num_devices(&self) -> usize {
-        self.devices().count()
+        self.devices.len()
     }
 
-    /// Gets the number of enabled transducers.
+    /// Gets the number of transducers.
     #[must_use]
     pub fn num_transducers(&self) -> usize {
-        self.devices().map(|dev| dev.num_transducers()).sum()
+        self.iter().map(|dev| dev.num_transducers()).sum()
     }
 
-    /// Gets the center of the enabled transducers.
+    /// Gets the center of the transducers.
     #[must_use]
     pub fn center(&self) -> Point3 {
         Point3::from(
-            self.devices().map(|d| d.center().coords).sum::<Vector3>() / self.devices.len() as f32,
+            self.iter().map(|d| d.center().coords).sum::<Vector3>() / self.devices.len() as f32,
         )
     }
 
-    /// Gets the iterator of enabled devices.
-    pub fn devices(&self) -> impl Iterator<Item = &Device> {
-        self.iter().filter(|dev| dev.enable)
-    }
-
-    /// Gets the mutable iterator of enabled devices.
-    pub fn devices_mut(&mut self) -> impl Iterator<Item = &mut Device> {
-        self.iter_mut().filter(|dev| dev.enable)
-    }
-
-    /// Sets the sound speed of enabled devices.
+    /// Sets the sound speed of devices.
     pub fn set_sound_speed(&mut self, c: f32) {
-        self.devices_mut().for_each(|dev| dev.sound_speed = c);
+        self.iter_mut().for_each(|dev| dev.sound_speed = c);
     }
 
-    /// Sets the sound speed of enabled devices from the temperature `t`.
+    /// Sets the sound speed of devices from the temperature `t`.
     ///
     /// This is equivalent to `Self::set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3)`.
     pub fn set_sound_speed_from_temp(&mut self, t: f32) {
         self.set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3);
     }
 
-    /// Sets the sound speed of enabled devices from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
+    /// Sets the sound speed of devices from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
     pub fn set_sound_speed_from_temp_with(&mut self, t: f32, k: f32, r: f32, m: f32) {
-        self.devices_mut()
+        self.iter_mut()
             .for_each(|dev| dev.set_sound_speed_from_temp_with(t, k, r, m));
     }
 
-    /// Axis Aligned Bounding Box of enabled devices.
+    /// Axis Aligned Bounding Box of devices.
     #[must_use]
     pub fn aabb(&self) -> Aabb<f32, 3> {
-        self.devices()
+        self.iter()
             .fold(Aabb::empty(), |aabb, dev| aabb.join(dev.aabb()))
     }
 
     /// Reconfigure the geometry.
     pub fn reconfigure<D: Into<Device>, F: Fn(&Device) -> D>(&mut self, f: F) {
         self.devices.iter_mut().for_each(|dev| {
-            let enable = dev.enable;
             let sound_speed = dev.sound_speed;
             *dev = f(dev).into();
-            dev.enable = enable;
             dev.sound_speed = sound_speed;
         });
         self.assign_idx();
         self.version += 1;
-    }
-
-    #[doc(hidden)]
-    pub fn lock_version<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
-        let version = self.version;
-        let r = f(self);
-        self.version = version;
-        r
     }
 }
 
@@ -291,7 +271,7 @@ pub(crate) mod tests {
         let mut geometry = create_geometry(1, 1);
         assert_eq!(0, geometry.version());
         for dev in &mut geometry {
-            dev.enable = true;
+            dev.sound_speed = 0.;
         }
         assert_eq!(1, geometry.version());
     }

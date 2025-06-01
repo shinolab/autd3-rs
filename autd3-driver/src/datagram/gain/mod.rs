@@ -59,7 +59,7 @@ pub mod tests {
         ) -> Self {
             Self {
                 data: geometry
-                    .devices()
+                    .iter()
                     .map(|dev| (dev.idx(), dev.iter().map(f(dev)).collect()))
                     .collect(),
             }
@@ -95,11 +95,7 @@ pub mod tests {
     impl Gain for TestGain {
         type G = Self;
 
-        fn init(
-            self,
-            _: &Geometry,
-            _: Option<&HashMap<usize, BitVec>>,
-        ) -> Result<Self::G, GainError> {
+        fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
             Ok(self)
         }
     }
@@ -113,7 +109,6 @@ pub mod tests {
             (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
             (1, vec![Drive { phase: Phase(0x02), intensity: EmitIntensity(0x02) }; NUM_TRANSDUCERS])
         ].into_iter().collect(),
-        vec![true; 2],
         2)]
     #[case::parallel(
         [
@@ -123,26 +118,11 @@ pub mod tests {
             (3, vec![Drive { phase: Phase(0x04), intensity: EmitIntensity(0x04) }; NUM_TRANSDUCERS]),
             (4, vec![Drive { phase: Phase(0x05), intensity: EmitIntensity(0x05) }; NUM_TRANSDUCERS]),
         ].into_iter().collect(),
-        vec![true; 5],
         5)]
-    #[case::enabled(
-        [
-            (0, vec![Drive { phase: Phase(0x01), intensity: EmitIntensity(0x01) }; NUM_TRANSDUCERS]),
-        ].into_iter().collect(),
-        vec![true, false],
-        2)]
-    fn gain(
-        #[case] expect: HashMap<usize, Vec<Drive>>,
-        #[case] enabled: Vec<bool>,
-        #[case] n: u16,
-    ) -> anyhow::Result<()> {
+    fn gain(#[case] expect: HashMap<usize, Vec<Drive>>, #[case] n: u16) -> anyhow::Result<()> {
         use crate::datagram::tests::create_geometry;
 
-        let mut geometry = create_geometry(n, NUM_TRANSDUCERS as _);
-        geometry
-            .iter_mut()
-            .zip(enabled.iter())
-            .for_each(|(dev, &e)| dev.enable = e);
+        let geometry = create_geometry(n, NUM_TRANSDUCERS as _);
         let g = TestGain::new(
             |dev| {
                 let dev_idx = dev.idx();
@@ -153,11 +133,11 @@ pub mod tests {
             },
             &geometry,
         );
-        let mut f = g.init(&geometry, None)?;
+        let mut f = g.init(&geometry, &TransducerFilter::all_enabled())?;
         assert_eq!(
             expect,
             geometry
-                .devices()
+                .iter()
                 .map(|dev| {
                     let f = f.generate(dev);
                     (dev.idx(), dev.iter().map(|tr| f.calc(tr)).collect())
@@ -170,11 +150,9 @@ pub mod tests {
 
     #[test]
     fn inspect() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
+        let geometry = create_geometry(2, 1);
 
-        geometry[1].enable = false;
-
-        let r = TestGain::new(
+        TestGain::new(
             |_dev| {
                 |_| Drive {
                     phase: Phase(0xFF),
@@ -183,35 +161,34 @@ pub mod tests {
             },
             &geometry,
         )
-        .inspect(&mut geometry)?;
-
-        assert_eq!(
-            Some(GainInspectionResult {
-                name: "TestGain".to_string(),
-                data: vec![
-                    Drive {
-                        phase: Phase(0xFF),
-                        intensity: EmitIntensity(0xFF),
-                    };
-                    1
-                ],
-                segment: Segment::S0,
-                transition_mode: None
-            }),
-            r[0]
-        );
-        assert_eq!(None, r[1]);
+        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .iter()
+        .for_each(|r| {
+            assert_eq!(
+                &Some(GainInspectionResult {
+                    name: "TestGain".to_string(),
+                    data: vec![
+                        Drive {
+                            phase: Phase(0xFF),
+                            intensity: EmitIntensity(0xFF),
+                        };
+                        1
+                    ],
+                    segment: Segment::S0,
+                    transition_mode: None,
+                }),
+                r
+            );
+        });
 
         Ok(())
     }
 
     #[test]
     fn inspect_with_segment() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
+        let geometry = create_geometry(2, 1);
 
-        geometry[1].enable = false;
-
-        let r = crate::datagram::WithSegment {
+        crate::datagram::WithSegment {
             inner: TestGain::new(
                 |_dev| {
                     |_| Drive {
@@ -224,24 +201,25 @@ pub mod tests {
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
         }
-        .inspect(&mut geometry)?;
-
-        assert_eq!(
-            Some(GainInspectionResult {
-                name: "TestGain".to_string(),
-                data: vec![
-                    Drive {
-                        phase: Phase(0xFF),
-                        intensity: EmitIntensity(0xFF),
-                    };
-                    1
-                ],
-                segment: Segment::S1,
-                transition_mode: Some(TransitionMode::Immediate),
-            }),
-            r[0]
-        );
-        assert_eq!(None, r[1]);
+        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .iter()
+        .for_each(|r| {
+            assert_eq!(
+                &Some(GainInspectionResult {
+                    name: "TestGain".to_string(),
+                    data: vec![
+                        Drive {
+                            phase: Phase(0xFF),
+                            intensity: EmitIntensity(0xFF),
+                        };
+                        1
+                    ],
+                    segment: Segment::S1,
+                    transition_mode: Some(TransitionMode::Immediate),
+                }),
+                r
+            );
+        });
 
         Ok(())
     }

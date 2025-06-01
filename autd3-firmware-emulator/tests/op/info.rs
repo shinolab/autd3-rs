@@ -64,23 +64,17 @@ fn send_firminfo() -> anyhow::Result<()> {
 
 #[test]
 fn invalid_info_type() -> anyhow::Result<()> {
-    let mut geometry = create_geometry(1);
+    let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut sent_flags = vec![false; 1];
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let msg_id = MsgId::new(0);
 
     let d = FirmwareVersionType::CPUMajor;
-    let operations = d.operation_generator(&mut geometry)?.generate(&geometry[0]);
+    let operations = d
+        .operation_generator(&geometry, &DeviceFilter::all_enabled())?
+        .generate(&geometry[0]);
 
-    OperationHandler::pack(
-        msg_id,
-        &mut [operations],
-        &geometry,
-        &mut sent_flags,
-        &mut tx,
-        false,
-    )?;
+    OperationHandler::pack(msg_id, &mut [operations], &geometry, &mut tx, false)?;
     tx[0].payload_mut()[1] = 7;
 
     cpu.send(&tx);

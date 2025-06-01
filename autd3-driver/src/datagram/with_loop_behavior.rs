@@ -1,5 +1,6 @@
+use crate::datagram::*;
 use autd3_core::{
-    datagram::{Datagram, DatagramL, DatagramOption, LoopBehavior, Segment, TransitionMode},
+    datagram::{DatagramL, DatagramOption, LoopBehavior, Segment, TransitionMode},
     derive::{Geometry, Inspectable, InspectionResult},
 };
 
@@ -45,11 +46,13 @@ impl<D: DatagramL> Datagram for WithLoopBehavior<D> {
 
     fn operation_generator(
         self,
-        geometry: &mut autd3_core::derive::Geometry,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramL>::operation_generator_with_loop_behavior(
             self.inner,
             geometry,
+            filter,
             self.segment,
             self.transition_mode,
             self.loop_behavior,
@@ -81,9 +84,10 @@ where
 
     fn inspect(
         self,
-        geometry: &mut Geometry,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
-        Ok(self.inner.inspect(geometry)?.modify(|t| {
+        Ok(self.inner.inspect(geometry, filter)?.modify(|t| {
             t.with_loop_behavior(self.loop_behavior, self.segment, self.transition_mode)
         }))
     }
