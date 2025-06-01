@@ -4,6 +4,7 @@ use crate::{error::AUTDError, gain::Null, modulation::Static};
 
 use autd3_core::{
     datagram::{Inspectable, InspectionResult},
+    derive::DeviceFilter,
     link::{Link, MsgId},
 };
 use autd3_driver::{
@@ -114,11 +115,8 @@ impl<L: Link> Controller<L> {
     }
 
     /// Returns the inspection result.
-    pub fn inspect<I: Inspectable>(
-        &mut self,
-        s: I,
-    ) -> Result<InspectionResult<I::Result>, I::Error> {
-        s.inspect(&mut self.geometry)
+    pub fn inspect<I: Inspectable>(&self, s: I) -> Result<InspectionResult<I::Result>, I::Error> {
+        s.inspect(&self.geometry, &DeviceFilter::all_enabled())
     }
 
     pub(crate) fn open_impl<S: Sleep>(
@@ -147,9 +145,6 @@ impl<L: Link> Controller<L> {
             tracing::warn!("Link is already closed");
             return Ok(());
         }
-
-        self.geometry
-            .lock_version(|geometry| geometry.iter_mut().for_each(|dev| dev.enable = true));
 
         let mut sender = self.sender(option, sleeper);
 
@@ -198,7 +193,7 @@ impl<L: Link> Controller<L> {
 
         Ok(self
             .geometry
-            .devices()
+            .iter()
             .map(|dev| FirmwareVersion {
                 idx: dev.idx(),
                 cpu: CPUVersion {
@@ -396,7 +391,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None)?
+            .init(&autd.geometry, &TransducerFilter::all_enabled())?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -406,7 +401,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None)?
+            .init(&autd.geometry, &TransducerFilter::all_enabled())?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -422,11 +417,12 @@ pub(crate) mod tests {
 
     #[test]
     fn inspect() -> anyhow::Result<()> {
-        let mut autd = create_controller(2)?;
+        let autd = create_controller(2)?;
 
-        autd[1].enable = false;
-
-        let r = autd.inspect(Static::default())?;
+        let r = autd.inspect(autd3_driver::datagram::Group::new(
+            |dev| (dev.idx() == 0).then_some(()),
+            HashMap::from([((), Static::default())]),
+        ))?;
         assert_eq!(autd.geometry.len(), r.len());
         assert_eq!(
             Some(ModulationInspectionResult {
@@ -637,7 +633,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None)?
+            .init(&autd.geometry, &TransducerFilter::all_enabled())?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -647,7 +643,7 @@ pub(crate) mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None)?
+            .init(&autd.geometry, &TransducerFilter::all_enabled())?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

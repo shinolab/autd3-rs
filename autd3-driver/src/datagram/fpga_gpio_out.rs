@@ -62,7 +62,7 @@ impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> Datagram f
     type G = DebugSettingOpGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
         Ok(DebugSettingOpGenerator { f: self.f })
     }
 }

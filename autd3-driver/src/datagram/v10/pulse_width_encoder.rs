@@ -90,7 +90,7 @@ impl<H: Fn(EmitIntensity) -> PulseWidth<u8, 8> + Send + Sync, F: Fn(&Device) -> 
     type G = PulseWidthEncoderOpGenerator<H, F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
         Ok(PulseWidthEncoderOpGenerator { f: self.f })
     }
 

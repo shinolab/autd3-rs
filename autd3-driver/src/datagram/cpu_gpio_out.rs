@@ -54,7 +54,7 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIOOutputs<F>
     type G = CpuGPIOOutOpGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
         Ok(Self::G { f: self.f })
     }
 }

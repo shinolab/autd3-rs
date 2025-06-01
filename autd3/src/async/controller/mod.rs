@@ -3,7 +3,7 @@ mod sender;
 use crate::{controller::SenderOption, error::AUTDError, gain::Null, modulation::Static};
 
 use autd3_core::{
-    datagram::{Inspectable, InspectionResult},
+    datagram::{DeviceFilter, Inspectable, InspectionResult},
     link::{AsyncLink, MsgId},
 };
 use autd3_driver::{
@@ -117,7 +117,7 @@ impl<L: AsyncLink> Controller<L> {
         &mut self,
         s: I,
     ) -> Result<InspectionResult<I::Result>, I::Error> {
-        s.inspect(&mut self.geometry)
+        s.inspect(&self.geometry, &DeviceFilter::all_enabled())
     }
 
     pub(crate) async fn open_impl<S: AsyncSleep>(
@@ -146,9 +146,6 @@ impl<L: AsyncLink> Controller<L> {
             tracing::warn!("Link is already closed");
             return Ok(());
         }
-
-        self.geometry
-            .lock_version(|geometry| geometry.iter_mut().for_each(|dev| dev.enable = true));
 
         let mut sender = self.sender(option, sleeper);
 
@@ -200,7 +197,7 @@ impl<L: AsyncLink> Controller<L> {
 
         Ok(self
             .geometry
-            .devices()
+            .iter()
             .map(|dev| FirmwareVersion {
                 idx: dev.idx(),
                 cpu: CPUVersion {
@@ -331,10 +328,14 @@ impl<L: AsyncLink> Drop for Controller<L> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use autd3_core::{
         common::mm,
         derive::{Modulation, Segment},
-        gain::{EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator, Phase},
+        gain::{
+            EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator, Phase, TransducerFilter,
+        },
         link::LinkError,
     };
     use autd3_driver::{
@@ -415,7 +416,7 @@ mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None)?
+            .init(&autd.geometry, &TransducerFilter::all_enabled())?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -425,7 +426,7 @@ mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None)?
+            .init(&autd.geometry, &TransducerFilter::all_enabled())?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -446,9 +447,10 @@ mod tests {
 
         let mut autd = create_controller(2).await?;
 
-        autd[1].enable = false;
-
-        let r = autd.inspect(Static::default())?;
+        let r = autd.inspect(autd3_driver::datagram::Group::new(
+            |dev| (dev.idx() == 0).then_some(()),
+            HashMap::from([((), Static::default())]),
+        ))?;
         assert_eq!(autd.geometry.len(), r.len());
         assert_eq!(
             Some(ModulationInspectionResult {
@@ -645,7 +647,7 @@ mod tests {
                 intensity: EmitIntensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None)?
+            .init(&autd.geometry, &TransducerFilter::all_enabled())?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -655,7 +657,7 @@ mod tests {
                 intensity: EmitIntensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, None)?
+            .init(&autd.geometry, &TransducerFilter::all_enabled())?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

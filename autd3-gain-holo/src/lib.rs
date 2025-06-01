@@ -7,6 +7,9 @@
 //!
 //! [`Gain`]: autd3_core::gain::Gain
 
+/// Complex number
+pub type Complex = nalgebra::Complex<f32>;
+
 mod amp;
 mod backend;
 mod backend_nalgebra;

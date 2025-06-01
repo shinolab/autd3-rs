@@ -16,7 +16,37 @@ pub use tuple::{CombinedError, CombinedOperationGenerator};
 
 use std::time::Duration;
 
-use crate::{common::DEFAULT_TIMEOUT, geometry::Geometry};
+use crate::{
+    common::DEFAULT_TIMEOUT,
+    geometry::{Device, Geometry},
+};
+
+/// A filter that represents which devices are enabled.
+pub struct DeviceFilter(pub(crate) Option<Vec<bool>>);
+
+impl DeviceFilter {
+    /// Returns a new `DeviceFilter` that enables all devices.
+    pub const fn all_enabled() -> Self {
+        Self(None)
+    }
+
+    /// Creates a `DeviceFilter` where the value at each index is `f(&Device)`
+    pub fn from_fn(geo: &Geometry, f: impl Fn(&Device) -> bool) -> Self {
+        Self(Some(geo.iter().map(f).collect()))
+    }
+
+    /// Returns `true` if the `Device` enabled.
+    pub fn is_enabled(&self, dev: &Device) -> bool {
+        self.0.as_ref().is_none_or(|f| f[dev.idx()])
+    }
+
+    /// Sets the device at `idx` to enabled.
+    pub fn set_enable(&mut self, idx: usize) {
+        if let Some(ref mut filter) = self.0 {
+            filter[idx] = true;
+        }
+    }
+}
 
 /// The option of the datagram.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -57,6 +87,7 @@ pub trait DatagramL: std::fmt::Debug {
     fn operation_generator_with_loop_behavior(
         self,
         geometry: &Geometry,
+        filter: &DeviceFilter,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,
@@ -78,6 +109,7 @@ pub trait DatagramS: std::fmt::Debug {
     fn operation_generator_with_segment(
         self,
         geometry: &Geometry,
+        filter: &DeviceFilter,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, Self::Error>;
@@ -94,11 +126,13 @@ impl<D: DatagramL> DatagramS for D {
     fn operation_generator_with_segment(
         self,
         geometry: &Geometry,
+        filter: &DeviceFilter,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
     ) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_loop_behavior(
             geometry,
+            filter,
             segment,
             transition_mode,
             LoopBehavior::Infinite,
@@ -118,7 +152,11 @@ pub trait Datagram: std::fmt::Debug {
     type Error;
 
     #[doc(hidden)]
-    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error>;
+    fn operation_generator(
+        self,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
+    ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
     #[must_use]
@@ -131,9 +169,14 @@ impl<D: DatagramS> Datagram for D {
     type G = D::G;
     type Error = D::Error;
 
-    fn operation_generator(self, geometry: &mut Geometry) -> Result<Self::G, Self::Error> {
+    fn operation_generator(
+        self,
+        geometry: &Geometry,
+        filter: &DeviceFilter,
+    ) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_segment(
             geometry,
+            filter,
             Segment::S0,
             Some(TransitionMode::Immediate),
         )

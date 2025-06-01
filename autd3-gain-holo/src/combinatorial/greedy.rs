@@ -94,6 +94,33 @@ impl<D: Directivity, F: GreedyObjectiveFn> Greedy<D, F> {
             *r = propagate::<D>(trans, wavenumber, dir, f);
         });
     }
+
+    fn generate_indices(geometry: &Geometry, filter: &TransducerFilter) -> Vec<(usize, usize)> {
+        let mut indices: Vec<_> = if filter.is_all_enabled() {
+            geometry
+                .iter()
+                .flat_map(|dev| dev.iter().map(|tr| (dev.idx(), tr.idx())))
+                .collect()
+        } else {
+            geometry
+                .iter()
+                .flat_map(|dev| {
+                    dev.iter()
+                        .filter_map(|tr| filter.is_enabled(tr).then_some((dev.idx(), tr.idx())))
+                })
+                .collect()
+        };
+        indices.shuffle(&mut rand::rng());
+        indices
+    }
+
+    fn alloc_result(geometry: &Geometry, filter: &TransducerFilter) -> HashMap<usize, Vec<Drive>> {
+        geometry
+            .iter()
+            .filter(|dev| filter.is_enabled_device(dev))
+            .map(|dev| (dev.idx(), vec![Drive::NULL; dev.num_transducers()]))
+            .collect()
+    }
 }
 
 pub struct Impl {
@@ -123,11 +150,7 @@ impl GainCalculatorGenerator for Generator {
 impl<D: Directivity, F: GreedyObjectiveFn> Gain for Greedy<D, F> {
     type G = Generator;
 
-    fn init(
-        self,
-        geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
         let phase_candidates = (0..self.option.phase_quantization_levels.get())
@@ -140,37 +163,9 @@ impl<D: Directivity, F: GreedyObjectiveFn> Gain for Greedy<D, F> {
             })
             .collect::<Vec<_>>();
 
-        let indices = {
-            let mut indices: Vec<_> = if let Some(filter) = filter {
-                geometry
-                    .devices()
-                    .filter_map(|dev| {
-                        filter.get(&dev.idx()).map(|filter| {
-                            dev.iter().filter_map(|tr| {
-                                if filter[tr.idx()] {
-                                    Some((dev.idx(), tr.idx()))
-                                } else {
-                                    None
-                                }
-                            })
-                        })
-                    })
-                    .flatten()
-                    .collect()
-            } else {
-                geometry
-                    .devices()
-                    .flat_map(|dev| dev.iter().map(|tr| (dev.idx(), tr.idx())))
-                    .collect()
-            };
-            indices.shuffle(&mut rand::rng());
-            indices
-        };
+        let indices = Self::generate_indices(geometry, filter);
 
-        let mut g: HashMap<_, _> = geometry
-            .devices()
-            .map(|dev| (dev.idx(), vec![Drive::NULL; dev.num_transducers()]))
-            .collect();
+        let mut g = Self::alloc_result(geometry, filter);
         let mut cache = vec![Complex::new(0., 0.); foci.len()];
         let mut tmp = vec![Complex::new(0., 0.); foci.len()];
         indices.iter().for_each(|&(dev_idx, idx)| {
@@ -215,7 +210,7 @@ mod tests {
     use super::{super::super::Pa, *};
 
     #[test]
-    fn test_greedy_all() {
+    fn test_greedy() {
         let geometry = create_geometry(1, 1);
 
         let g = Greedy::new(
@@ -223,38 +218,47 @@ mod tests {
             GreedyOption::default(),
         );
         assert_eq!(
-            g.init(&geometry, None).map(|mut res| {
-                let f = res.generate(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f.calc(tr) != Drive::NULL)
-                    .count()
-            }),
+            g.init(&geometry, &TransducerFilter::all_enabled())
+                .map(|mut res| {
+                    let f = res.generate(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
+                        .count()
+                }),
             Ok(geometry.num_transducers()),
         );
     }
 
+    #[rstest::rstest]
+    #[case(itertools::iproduct!(0..2, 0..249).collect::<Vec<_>>(), TransducerFilter::all_enabled())]
+    #[case(itertools::iproduct!(1..2, 0..249).collect::<Vec<_>>(), TransducerFilter::new(HashMap::from([(1, None)])))]
     #[test]
-    fn test_greedy_all_disabled() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
-        geometry[0].enable = false;
+    fn test_greedy_indices(
+        #[case] expected: Vec<(usize, usize)>,
+        #[case] filter: TransducerFilter,
+    ) {
+        let geometry = create_geometry(2, 1);
 
-        let g = Greedy {
-            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
-            option: GreedyOption::default(),
-        };
+        let mut indices =
+            Greedy::<Sphere, AbsGreedyObjectiveFn>::generate_indices(&geometry, &filter);
+        indices.sort();
+        assert_eq!(expected, indices);
+    }
 
-        let mut g = g.init(&geometry, None)?;
-        let f = g.generate(&geometry[1]);
+    #[rstest::rstest]
+    #[case(HashMap::from([(0, vec![Drive::NULL; 249]), (1, vec![Drive::NULL; 249])]), TransducerFilter::all_enabled())]
+    #[case(HashMap::from([(1, vec![Drive::NULL; 249])]), TransducerFilter::new(HashMap::from([(1, None)])))]
+    #[test]
+    fn test_greedy_alloc_result(
+        #[case] expected: HashMap<usize, Vec<Drive>>,
+        #[case] filter: TransducerFilter,
+    ) {
+        let geometry = create_geometry(2, 1);
         assert_eq!(
-            geometry[1]
-                .iter()
-                .filter(|tr| f.calc(tr) != Drive::NULL)
-                .count(),
-            geometry[1].num_transducers()
+            expected,
+            Greedy::<Sphere, AbsGreedyObjectiveFn>::alloc_result(&geometry, &filter)
         );
-
-        Ok(())
     }
 
     #[test]
@@ -266,12 +270,19 @@ mod tests {
             option: GreedyOption::default(),
         };
 
-        let filter = geometry
-            .iter()
-            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
-            .collect::<HashMap<_, _>>();
+        let filter = TransducerFilter::new(
+            geometry
+                .iter()
+                .map(|dev| {
+                    (
+                        dev.idx(),
+                        Some(dev.iter().map(|tr| tr.idx() < 100).collect()),
+                    )
+                })
+                .collect::<HashMap<_, _>>(),
+        );
         assert_eq!(
-            g.init(&geometry, Some(&filter)).map(|mut res| {
+            g.init(&geometry, &filter).map(|mut res| {
                 let f = res.generate(&geometry[0]);
                 geometry[0]
                     .iter()
@@ -280,33 +291,5 @@ mod tests {
             }),
             Ok(100),
         )
-    }
-
-    #[test]
-    fn test_greedy_filtered_disabled() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
-        geometry[0].enable = false;
-
-        let g = Greedy {
-            foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
-            option: GreedyOption::default(),
-        };
-
-        let filter = geometry
-            .devices()
-            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
-            .collect::<HashMap<_, _>>();
-
-        let mut g = g.init(&geometry, Some(&filter))?;
-        let f = g.generate(&geometry[1]);
-        assert_eq!(
-            geometry[1]
-                .iter()
-                .filter(|tr| f.calc(tr) != Drive::NULL)
-                .count(),
-            100
-        );
-
-        Ok(())
     }
 }

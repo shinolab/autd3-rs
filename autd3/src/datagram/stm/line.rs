@@ -1,6 +1,6 @@
 use autd3_core::{
     derive::{Device, Geometry},
-    gain::{EmitIntensity, GainError, Phase},
+    gain::{EmitIntensity, GainError, Phase, TransducerFilter},
 };
 use autd3_driver::{
     datagram::{
@@ -126,11 +126,7 @@ impl GainSTMGenerator for Line {
     type T = Self;
 
     // GRCOV_EXCL_START
-    fn init(
-        self,
-        _: &Geometry,
-        _filter: Option<&std::collections::HashMap<usize, bit_vec::BitVec>>,
-    ) -> Result<Self::T, GainError> {
+    fn init(self, _: &Geometry, _filter: &TransducerFilter) -> Result<Self::T, GainError> {
         Ok(self)
     }
     // GRCOV_EXCL_STOP

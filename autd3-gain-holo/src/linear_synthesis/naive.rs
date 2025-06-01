@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use crate::{
     Amplitude, Complex, LinAlgBackend, Trans,
@@ -60,11 +60,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
     type G = HoloCalculatorGenerator<Complex>;
 
-    fn init(
-        self,
-        geometry: &Geometry,
-        filter: Option<&HashMap<usize, BitVec>>,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
         let g = self
@@ -120,21 +116,21 @@ mod tests {
         );
 
         assert_eq!(
-            g.init(&geometry, None).map(|mut res| {
-                let f = res.generate(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f.calc(tr) != Drive::NULL)
-                    .count()
-            }),
+            g.init(&geometry, &TransducerFilter::all_enabled())
+                .map(|mut res| {
+                    let f = res.generate(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
+                        .count()
+                }),
             Ok(geometry.num_transducers()),
         );
     }
 
     #[test]
     fn test_naive_all_disabled() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
-        geometry[0].enable = false;
+        let geometry = create_geometry(2, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = Naive {
@@ -146,7 +142,10 @@ mod tests {
             },
         };
 
-        let mut g = g.init(&geometry, None)?;
+        let mut g = g.init(
+            &geometry,
+            &TransducerFilter::new(HashMap::from([(1, None)])),
+        )?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]
@@ -161,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_naive_filtered() {
-        let geometry = create_geometry(1, 1);
+        let geometry = create_geometry(2, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = Naive {
@@ -173,26 +172,39 @@ mod tests {
             },
         };
 
-        let filter = geometry
-            .iter()
-            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
-            .collect();
+        let filter = TransducerFilter::from_fn(&geometry, |dev| {
+            if dev.idx() == 0 {
+                Some(|tr: &Transducer| tr.idx() < 100)
+            } else {
+                None
+            }
+        });
+        let mut g = g.init(&geometry, &filter).unwrap();
         assert_eq!(
-            g.init(&geometry, Some(&filter)).map(|mut res| {
-                let f = res.generate(&geometry[0]);
+            {
+                let f = g.generate(&geometry[0]);
                 geometry[0]
                     .iter()
                     .filter(|tr| f.calc(tr) != Drive::NULL)
                     .count()
-            }),
-            Ok(100),
-        )
+            },
+            100,
+        );
+        assert_eq!(
+            {
+                let f = g.generate(&geometry[1]);
+                geometry[1]
+                    .iter()
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
+                    .count()
+            },
+            0,
+        );
     }
 
     #[test]
     fn test_naive_filtered_disabled() -> anyhow::Result<()> {
-        let mut geometry = create_geometry(2, 1);
-        geometry[0].enable = false;
+        let geometry = create_geometry(2, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = Naive {
@@ -204,11 +216,14 @@ mod tests {
             },
         };
 
-        let filter = geometry
-            .iter()
-            .map(|dev| (dev.idx(), dev.iter().map(|tr| tr.idx() < 100).collect()))
-            .collect();
-        let mut g = g.init(&geometry, Some(&filter))?;
+        let filter = TransducerFilter::from_fn(&geometry, |dev| {
+            if dev.idx() == 0 {
+                None
+            } else {
+                Some(|tr: &Transducer| tr.idx() < 100)
+            }
+        });
+        let mut g = g.init(&geometry, &filter)?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]
