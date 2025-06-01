@@ -172,7 +172,7 @@ mod tests {
 
     #[test]
     fn test_gspat_filtered() {
-        let geometry = create_geometry(1, 1);
+        let geometry = create_geometry(2, 1);
         let backend = std::sync::Arc::new(NalgebraBackend::default());
 
         let g = GSPAT {
@@ -192,15 +192,26 @@ mod tests {
                 None
             }
         });
+        let mut g = g.init(&geometry, &filter).unwrap();
         assert_eq!(
-            g.init(&geometry, &filter).map(|mut res| {
-                let f = res.generate(&geometry[0]);
+            {
+                let f = g.generate(&geometry[0]);
                 geometry[0]
                     .iter()
                     .filter(|tr| f.calc(tr) != Drive::NULL)
                     .count()
-            }),
-            Ok(100),
-        )
+            },
+            100,
+        );
+        assert_eq!(
+            {
+                let f = g.generate(&geometry[1]);
+                geometry[1]
+                    .iter()
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
+                    .count()
+            },
+            0,
+        );
     }
 }
