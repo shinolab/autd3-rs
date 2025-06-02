@@ -38,7 +38,7 @@ pub struct Controller<L: AsyncLink> {
     #[deref_mut]
     geometry: Geometry,
     msg_id: MsgId,
-    sent_flags: Vec<bool>,
+    sent_flags: smallvec::SmallVec<[bool; 32]>,
     rx_buf: Vec<RxMessage>,
     /// The default sender option used for [`send`](Controller::send).
     pub default_sender_option: SenderOption,
@@ -74,8 +74,7 @@ impl<L: AsyncLink> Controller<L> {
         link.open(&geometry).await?;
         Controller {
             link,
-            // Do not use `num_devices` here because the devices may be disabled.
-            sent_flags: vec![false; geometry.len()],
+            sent_flags: smallvec::smallvec![false; geometry.len()],
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             msg_id: MsgId::new(0),
             geometry,
