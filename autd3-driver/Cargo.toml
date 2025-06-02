@@ -39,5 +39,14 @@ zerocopy = { workspace = true }
 [dev-dependencies]
 anyhow = { workspace = true }
 approx = { workspace = true }
+criterion = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
+
+[lib]
+bench = false
+
+[[bench]]
+name = "autd3-driver-gain"
+path = "benches/gain.rs"
+harness = false
