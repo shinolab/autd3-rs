@@ -5,7 +5,6 @@ mod tuple;
 
 use crate::{error::*, pb::*, traits::*};
 
-use autd3::datagram::IntoBoxedDatagram;
 use autd3_core::link::LinkError;
 use autd3_driver::datagram::BoxedDatagram;
 use gain::gain_into_boxed;
@@ -40,46 +39,37 @@ fn into_boxed_datagram(
 ) -> Result<BoxedDatagram, AUTDProtoBufError> {
     use autd3_driver::datagram::*;
     match datagram {
-        raw_datagram::Datagram::Clear(msg) => {
-            Clear::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
-        }
+        raw_datagram::Datagram::Clear(msg) => Clear::from_msg(msg).map(BoxedDatagram::new),
         raw_datagram::Datagram::Synchronize(msg) => {
-            Synchronize::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
+            Synchronize::from_msg(msg).map(BoxedDatagram::new)
         }
-        raw_datagram::Datagram::ForceFan(msg) => {
-            ForceFan::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
-        }
+        raw_datagram::Datagram::ForceFan(msg) => ForceFan::from_msg(msg).map(BoxedDatagram::new),
         raw_datagram::Datagram::ReadsFpgaState(msg) => {
-            ReadsFPGAState::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
+            ReadsFPGAState::from_msg(msg).map(BoxedDatagram::new)
         }
         raw_datagram::Datagram::Silencer(msg) => {
             use autd3::driver::datagram::*;
             use silencer::Config;
             let config = msg.config.ok_or(AUTDProtoBufError::DataParseError)?;
             Ok(match config {
-                Config::FixedUpdateRate(msg) => Silencer {
+                Config::FixedUpdateRate(msg) => BoxedDatagram::new(Silencer {
                     config: FixedUpdateRate::from_msg(msg)?,
-                }
-                .into_boxed(),
-                Config::FixedCompletionTime(msg) => Silencer {
+                }),
+                Config::FixedCompletionTime(msg) => BoxedDatagram::new(Silencer {
                     config: FixedCompletionTime::from_msg(msg)?,
-                }
-                .into_boxed(),
-                Config::FixedCompletionSteps(msg) => Silencer {
+                }),
+                Config::FixedCompletionSteps(msg) => BoxedDatagram::new(Silencer {
                     config: FixedCompletionSteps::from_msg(msg)?,
-                }
-                .into_boxed(),
+                }),
             })
         }
         raw_datagram::Datagram::SwapSegment(msg) => {
-            SwapSegment::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
+            SwapSegment::from_msg(msg).map(BoxedDatagram::new)
         }
         raw_datagram::Datagram::Modulation(msg) => {
-            modulation_into_boxed(msg).map(IntoBoxedDatagram::into_boxed)
+            modulation_into_boxed(msg).map(BoxedDatagram::new)
         }
-        raw_datagram::Datagram::Gain(msg) => {
-            gain_into_boxed(msg).map(IntoBoxedDatagram::into_boxed)
-        }
+        raw_datagram::Datagram::Gain(msg) => gain_into_boxed(msg).map(BoxedDatagram::new),
         raw_datagram::Datagram::FociStm(msg) => {
             if msg.foci.is_empty() {
                 return Err(AUTDProtoBufError::DataParseError);
@@ -87,14 +77,14 @@ fn into_boxed_datagram(
             seq_macro::seq!(N in 0..8 {
                 match msg.foci[0].points.len() {
                     #(
-                        N => FociSTM::<N, _, _>::from_msg(msg).map(IntoBoxedDatagram::into_boxed),
+                        N => FociSTM::<N, _, _>::from_msg(msg).map(BoxedDatagram::new),
                     )*
                     _ => Err(AUTDProtoBufError::DataParseError),
                 }
             })
         }
         raw_datagram::Datagram::GainStm(msg) => {
-            autd3_driver::datagram::GainSTM::from_msg(msg).map(IntoBoxedDatagram::into_boxed)
+            autd3_driver::datagram::GainSTM::from_msg(msg).map(BoxedDatagram::new)
         }
         raw_datagram::Datagram::WithSegment(msg) => {
             let segment = autd3::driver::firmware::fpga::Segment::from_msg(msg.segment)?;
@@ -105,20 +95,18 @@ fn into_boxed_datagram(
             let inner = msg.inner.ok_or(AUTDProtoBufError::DataParseError)?;
             match inner {
                 with_segment::Inner::Gain(msg) => gain_into_boxed(msg).map(|gain| {
-                    WithSegment {
+                    BoxedDatagram::new(WithSegment {
                         inner: gain,
                         segment,
                         transition_mode,
-                    }
-                    .into_boxed()
+                    })
                 }),
                 with_segment::Inner::Modulation(msg) => modulation_into_boxed(msg).map(|m| {
-                    WithSegment {
+                    BoxedDatagram::new(WithSegment {
                         inner: m,
                         segment,
                         transition_mode,
-                    }
-                    .into_boxed()
+                    })
                 }),
                 with_segment::Inner::FociStm(msg) => {
                     if msg.foci.is_empty() {
@@ -127,12 +115,11 @@ fn into_boxed_datagram(
                     Ok(seq_macro::seq!(N in 0..8 {
                         match msg.foci[0].points.len() {
                             #(
-                                N => WithSegment {
+                                N => BoxedDatagram::new(WithSegment {
                                     inner: FociSTM::<N, _, _>::from_msg(msg)?,
                                     segment,
                                     transition_mode,
-                                }
-                                .into_boxed(),
+                                }),
                             )*
                             _ => return Err(AUTDProtoBufError::DataParseError),
                         }
@@ -140,12 +127,11 @@ fn into_boxed_datagram(
                 }
                 with_segment::Inner::GainStm(msg) => autd3_driver::datagram::GainSTM::from_msg(msg)
                     .map(|stm| {
-                        WithSegment {
+                        BoxedDatagram::new(WithSegment {
                             inner: stm,
                             segment,
                             transition_mode,
-                        }
-                        .into_boxed()
+                        })
                     }),
             }
         }
@@ -161,13 +147,12 @@ fn into_boxed_datagram(
             let inner = msg.inner.ok_or(AUTDProtoBufError::DataParseError)?;
             match inner {
                 with_loop_behavior::Inner::Modulation(msg) => modulation_into_boxed(msg).map(|m| {
-                    WithLoopBehavior {
+                    BoxedDatagram::new(WithLoopBehavior {
                         inner: m,
                         segment,
                         transition_mode,
                         loop_behavior,
-                    }
-                    .into_boxed()
+                    })
                 }),
                 with_loop_behavior::Inner::FociStm(msg) => {
                     if msg.foci.is_empty() {
@@ -176,13 +161,12 @@ fn into_boxed_datagram(
                     Ok(seq_macro::seq!(N in 0..8 {
                         match msg.foci[0].points.len() {
                             #(
-                                N => WithLoopBehavior {
+                                N => BoxedDatagram::new(WithLoopBehavior {
                                     inner: FociSTM::<N, _, _>::from_msg(msg)?,
                                     segment,
                                     transition_mode,
                                                                 loop_behavior,
-                                }
-                                .into_boxed(),
+                                }),
                             )*
                             _ => return Err(AUTDProtoBufError::DataParseError),
                         }
@@ -190,13 +174,12 @@ fn into_boxed_datagram(
                 }
                 with_loop_behavior::Inner::GainStm(msg) => {
                     autd3_driver::datagram::GainSTM::from_msg(msg).map(|stm| {
-                        WithLoopBehavior {
+                        BoxedDatagram::new(WithLoopBehavior {
                             inner: stm,
                             segment,
                             transition_mode,
                             loop_behavior,
-                        }
-                        .into_boxed()
+                        })
                     })
                 }
             }
@@ -212,7 +195,7 @@ fn into_datagram_tuple(
     let d2 = if let Some(d2) = tuple.second {
         into_boxed_datagram(d2.datagram.ok_or(AUTDProtoBufError::DataParseError)?)?
     } else {
-        NullDatagram.into_boxed()
+        BoxedDatagram::new(NullDatagram)
     };
     Ok(tuple::BoxedDatagramTuple { d1, d2 })
 }
