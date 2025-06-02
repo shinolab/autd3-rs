@@ -22,7 +22,7 @@ use crate::{
 };
 
 /// A filter that represents which devices are enabled.
-pub struct DeviceFilter(pub(crate) Option<Vec<bool>>);
+pub struct DeviceFilter(pub(crate) Option<smallvec::SmallVec<[bool; 32]>>);
 
 impl DeviceFilter {
     /// Returns a new `DeviceFilter` that enables all devices.

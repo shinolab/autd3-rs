@@ -43,7 +43,7 @@ pub struct Controller<L: Link> {
     #[deref_mut]
     geometry: Geometry,
     msg_id: MsgId,
-    sent_flags: Vec<bool>,
+    sent_flags: smallvec::SmallVec<[bool; 32]>,
     rx_buf: Vec<RxMessage>,
     /// The default sender option used for [`send`](Controller::send).
     pub default_sender_option: SenderOption,
@@ -79,8 +79,7 @@ impl<L: Link> Controller<L> {
         Controller {
             link,
             msg_id: MsgId::new(0),
-            // Do not use `num_devices` here because the devices may be disabled.
-            sent_flags: vec![false; geometry.len()],
+            sent_flags: smallvec::smallvec![false; geometry.len()],
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             geometry,
             default_sender_option: option,
