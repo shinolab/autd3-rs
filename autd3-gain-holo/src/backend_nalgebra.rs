@@ -152,8 +152,9 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                     nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
                         n,
                         geometry.iter().filter(|dev| filter.is_enabled_device(dev)).flat_map(|dev| {
-                            dev.iter().filter_map(move |tr| {
-                                filter.is_enabled(tr).then_some(propagate::<D>(tr, dev.wavenumber(), dev.axial_direction(), f))})
+                            dev.iter().filter(|tr| filter.is_enabled(tr)).map(move |tr| {
+                                propagate::<D>(tr, dev.wavenumber(), dev.axial_direction(), f)
+                            })
                         }),
                     )
                 });
