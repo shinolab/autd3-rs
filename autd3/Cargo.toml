@@ -28,6 +28,7 @@ derive_more = { workspace = true }
 getset = { workspace = true }
 itertools = { workspace = true }
 num = { workspace = true }
+smallvec = { workspace = true }
 spin_sleep = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = true }
