@@ -22,7 +22,7 @@ impl<T> InspectionResult<T> {
         Self {
             result: geometry
                 .iter()
-                .map(|dev| filter.is_enabled(dev).then_some(f(dev)))
+                .map(|dev| filter.is_enabled(dev).then(|| f(dev)))
                 .collect(),
         }
     }
