@@ -8,7 +8,7 @@ mod sine;
 mod square;
 mod r#static;
 
-pub use autd3_driver::datagram::IntoBoxedModulation;
+pub use autd3_driver::datagram::BoxedModulation;
 pub use custom::Custom;
 pub use fir::Fir;
 pub use fourier::{Fourier, FourierOption};

@@ -6,7 +6,7 @@ mod null;
 mod plane;
 mod uniform;
 
-pub use autd3_driver::datagram::IntoBoxedGain;
+pub use autd3_driver::datagram::BoxedGain;
 pub use bessel::{Bessel, BesselOption};
 pub use custom::Custom;
 pub use focus::{Focus, FocusOption};

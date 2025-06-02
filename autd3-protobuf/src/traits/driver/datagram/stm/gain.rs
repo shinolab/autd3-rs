@@ -55,41 +55,41 @@ impl FromMessage<GainStm>
     for autd3_driver::datagram::GainSTM<Vec<autd3_driver::datagram::BoxedGain>, SamplingConfig>
 {
     fn from_msg(msg: GainStm) -> Result<Self, AUTDProtoBufError> {
-        use autd3_driver::datagram::IntoBoxedGain;
+        use autd3_driver::datagram::BoxedGain;
         Ok(autd3_driver::datagram::GainSTM {
             gains: msg
                 .gains
                 .into_iter()
                 .map(|gain| match gain.gain {
                     Some(gain::Gain::Focus(msg)) => {
-                        autd3::prelude::Focus::from_msg(msg).map(|g| g.into_boxed())
+                        autd3::prelude::Focus::from_msg(msg).map(BoxedGain::new)
                     }
                     Some(gain::Gain::Bessel(msg)) => {
-                        autd3::prelude::Bessel::from_msg(msg).map(|g| g.into_boxed())
+                        autd3::prelude::Bessel::from_msg(msg).map(BoxedGain::new)
                     }
                     Some(gain::Gain::Null(msg)) => {
-                        autd3::prelude::Null::from_msg(msg).map(|g| g.into_boxed())
+                        autd3::prelude::Null::from_msg(msg).map(BoxedGain::new)
                     }
                     Some(gain::Gain::Plane(msg)) => {
-                        autd3::prelude::Plane::from_msg(msg).map(|g| g.into_boxed())
+                        autd3::prelude::Plane::from_msg(msg).map(BoxedGain::new)
                     }
                     Some(gain::Gain::Uniform(msg)) => {
-                        autd3::prelude::Uniform::from_msg(msg).map(|g| g.into_boxed())
+                        autd3::prelude::Uniform::from_msg(msg).map(BoxedGain::new)
                     }
                     Some(gain::Gain::Naive(msg)) => {
-                        autd3_gain_holo::Naive::from_msg(msg).map(|g| g.into_boxed())
+                        autd3_gain_holo::Naive::from_msg(msg).map(BoxedGain::new)
                     }
                     Some(gain::Gain::Gs(msg)) => {
-                        autd3_gain_holo::GS::from_msg(msg).map(|g| g.into_boxed())
+                        autd3_gain_holo::GS::from_msg(msg).map(BoxedGain::new)
                     }
                     Some(gain::Gain::Gspat(msg)) => {
-                        autd3_gain_holo::GSPAT::from_msg(msg).map(|g| g.into_boxed())
+                        autd3_gain_holo::GSPAT::from_msg(msg).map(BoxedGain::new)
                     }
                     Some(gain::Gain::Lm(msg)) => {
-                        autd3_gain_holo::LM::from_msg(msg).map(|g| g.into_boxed())
+                        autd3_gain_holo::LM::from_msg(msg).map(BoxedGain::new)
                     }
                     Some(gain::Gain::Greedy(msg)) => {
-                        autd3_gain_holo::Greedy::from_msg(msg).map(|g| g.into_boxed())
+                        autd3_gain_holo::Greedy::from_msg(msg).map(BoxedGain::new)
                     }
                     None => Err(AUTDProtoBufError::DataParseError),
                 })

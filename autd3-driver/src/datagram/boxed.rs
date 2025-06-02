@@ -141,29 +141,6 @@ impl Datagram for BoxedDatagram {
     }
 }
 
-/// Trait to convert [`Datagram`] to [`BoxedDatagram`].
-pub trait IntoBoxedDatagram {
-    /// Convert [`Datagram`] to [`BoxedDatagram`]
-    #[must_use]
-    fn into_boxed(self) -> BoxedDatagram;
-}
-
-impl<
-    E,
-    #[cfg(feature = "lightweight")] G: OperationGenerator + Send + 'static,
-    #[cfg(not(feature = "lightweight"))] G: OperationGenerator + 'static,
-    #[cfg(feature = "lightweight")] D: Datagram<Error = E, G = G> + Send + 'static,
-    #[cfg(not(feature = "lightweight"))] D: Datagram<Error = E, G = G> + 'static,
-> IntoBoxedDatagram for D
-where
-    AUTDDriverError: From<E>,
-    AUTDDriverError: From<<G::O1 as Operation>::Error> + From<<G::O2 as Operation>::Error>,
-{
-    fn into_boxed(self) -> BoxedDatagram {
-        BoxedDatagram::new(self)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::datagram::tests::create_geometry;
@@ -227,7 +204,7 @@ mod tests {
         let d = TestDatagram {
             option: Default::default(),
         };
-        let bd = d.into_boxed();
+        let bd = BoxedDatagram::new(d);
 
         assert_eq!(d.option(), bd.option());
 

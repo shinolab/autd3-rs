@@ -1,7 +1,7 @@
 mod boxed;
 
 use autd3_core::derive::{ModulationInspectionResult, ModulationOperationGenerator};
-pub use boxed::{BoxedModulation, IntoBoxedModulation};
+pub use boxed::BoxedModulation;
 
 use crate::{
     firmware::operation::{ModulationOp, NullOp, OperationGenerator},

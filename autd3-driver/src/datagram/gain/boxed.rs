@@ -121,24 +121,6 @@ impl Gain for BoxedGain {
     }
 }
 
-/// Trait to convert [`Gain`] to [`BoxedGain`].
-pub trait IntoBoxedGain {
-    /// Convert [`Gain`] to [`BoxedGain`].
-    #[must_use]
-    fn into_boxed(self) -> BoxedGain;
-}
-
-impl<
-    #[cfg(feature = "lightweight")] GG: GainCalculatorGenerator + Send + Sync + 'static,
-    #[cfg(not(feature = "lightweight"))] G: Gain + 'static,
-    #[cfg(feature = "lightweight")] G: Gain<G = GG> + Send + Sync + 'static,
-> IntoBoxedGain for G
-{
-    fn into_boxed(self) -> BoxedGain {
-        BoxedGain::new(self)
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
     use autd3_core::gain::Drive;
@@ -175,7 +157,7 @@ pub mod tests {
 
         let geometry = create_geometry(n, NUM_TRANSDUCERS as _);
 
-        let g = TestGain::new(
+        let g = BoxedGain::new(TestGain::new(
             |dev| {
                 let dev_idx = dev.idx();
                 move |_| Drive {
@@ -184,8 +166,7 @@ pub mod tests {
                 }
             },
             &geometry,
-        )
-        .into_boxed();
+        ));
 
         let mut f = g.init(&geometry, &TransducerFilter::all_enabled())?;
         assert_eq!(
@@ -205,6 +186,6 @@ pub mod tests {
     #[test]
     fn boxed_gain_dbg_unsafe() {
         let g = TestGain::null();
-        assert_eq!(format!("{:?}", g), format!("{:?}", g.into_boxed()));
+        assert_eq!(format!("{:?}", g), format!("{:?}", BoxedGain::new(g)));
     }
 }
