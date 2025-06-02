@@ -36,6 +36,7 @@ zerocopy = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+criterion = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
@@ -43,3 +44,11 @@ tokio-test = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = ["Win32_Security"] }
+
+[lib]
+bench = false
+
+[[bench]]
+name = "autd3-group"
+path = "benches/group.rs"
+harness = false
