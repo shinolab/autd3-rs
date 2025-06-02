@@ -179,7 +179,7 @@ where
                     k,
                     geometry
                         .iter()
-                        .map(|dev| g.generate(dev))
+                        .map(|dev| filter.is_enabled_device(dev).then(|| g.generate(dev)))
                         .collect::<Vec<_>>(),
                 ))
             })
@@ -204,7 +204,7 @@ where
                         dev.iter()
                             .map(|tr| {
                                 if let Some(key) = f(tr) {
-                                    gain_calcs[&key][dev.idx()].calc(tr)
+                                    gain_calcs[&key][dev.idx()].as_ref().unwrap().calc(tr)
                                 } else {
                                     Drive::NULL
                                 }
