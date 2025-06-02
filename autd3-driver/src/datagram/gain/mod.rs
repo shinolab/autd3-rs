@@ -3,7 +3,7 @@ mod boxed;
 use autd3_core::gain::{
     Gain, GainCalculatorGenerator, GainInspectionResult, GainOperationGenerator,
 };
-pub use boxed::{BoxedGain, IntoBoxedGain};
+pub use boxed::BoxedGain;
 
 use crate::{
     firmware::operation::{GainOp, NullOp, OperationGenerator},

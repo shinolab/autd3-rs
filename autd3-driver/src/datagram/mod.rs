@@ -25,17 +25,17 @@ mod with_segment;
 pub use super::firmware::operation::SwapSegment;
 #[doc(inline)]
 pub use super::firmware::operation::{ControlPoint, ControlPoints};
-pub use boxed::{BoxedDatagram, IntoBoxedDatagram};
+pub use boxed::BoxedDatagram;
 pub use clear::Clear;
 #[doc(hidden)]
 pub use cpu_gpio_out::{CpuGPIOOutputs, CpuGPIOPort};
 pub use force_fan::ForceFan;
 pub use fpga_gpio_out::GPIOOutputs;
-pub use gain::{BoxedGain, IntoBoxedGain};
+pub use gain::BoxedGain;
 #[doc(hidden)]
 pub use gpio_in::EmulateGPIOIn;
 pub use group::Group;
-pub use modulation::{BoxedModulation, IntoBoxedModulation};
+pub use modulation::BoxedModulation;
 pub use phase_corr::PhaseCorrection;
 pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
