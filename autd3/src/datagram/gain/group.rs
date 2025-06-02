@@ -22,7 +22,7 @@ use derive_more::Debug;
 /// ```
 /// # use std::collections::HashMap;
 /// use autd3::prelude::*;
-/// use autd3::gain::{Group, IntoBoxedGain};
+/// use autd3::gain::Group;
 ///
 /// Group {
 ///     key_map: |dev| {
@@ -35,14 +35,13 @@ use derive_more::Debug;
 ///         }
 ///     },
 ///     gain_map: HashMap::from([
-///         ("null", Null {}.into_boxed()),
+///         ("null", BoxedGain::new(Null {})),
 ///         (
 ///             "focus",
-///             Focus {
+///             BoxedGain::new(Focus {
 ///                 pos: Point3::origin(),
 ///                 option: Default::default(),
-///             }
-///             .into_boxed(),
+///             }),
 ///         ),
 ///     ]),
 /// };
@@ -222,7 +221,7 @@ mod tests {
     use super::*;
 
     use autd3_driver::{
-        datagram::IntoBoxedGain,
+        datagram::BoxedGain,
         firmware::fpga::{EmitIntensity, Phase},
     };
     use rand::Rng;
@@ -259,22 +258,20 @@ mod tests {
                 }
             },
             HashMap::from([
-                ("null", Null {}.into_boxed()),
+                ("null", BoxedGain::new(Null {})),
                 (
                     "test",
-                    Uniform {
+                    BoxedGain::new(Uniform {
                         intensity: d1.intensity,
                         phase: d1.phase,
-                    }
-                    .into_boxed(),
+                    }),
                 ),
                 (
                     "test2",
-                    Uniform {
+                    BoxedGain::new(Uniform {
                         intensity: d2.intensity,
                         phase: d2.phase,
-                    }
-                    .into_boxed(),
+                    }),
                 ),
             ]),
         );

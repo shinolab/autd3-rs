@@ -18,7 +18,6 @@ use itertools::Itertools;
 /// ```
 /// use std::collections::HashMap;
 /// # use autd3_driver::datagram::*;
-/// use autd3_driver::datagram::IntoBoxedDatagram;
 ///
 /// Group {
 ///     key_map: |dev| match dev.idx() {
@@ -27,8 +26,8 @@ use itertools::Itertools;
 ///         _ => None,
 ///     },
 ///     datagram_map: HashMap::from([
-///         ("clear", Clear::default().into_boxed()),
-///         ("force-fan", ForceFan { f: |_| false }.into_boxed()),
+///         ("clear", BoxedDatagram::new(Clear::default())),
+///         ("force-fan", BoxedDatagram::new(ForceFan { f: |_| false })),
 ///     ]),
 /// };
 /// ```

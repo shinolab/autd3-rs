@@ -75,23 +75,6 @@ impl Modulation for BoxedModulation {
     }
 }
 
-/// Trait to convert [`Modulation`] to [`BoxedModulation`].
-pub trait IntoBoxedModulation {
-    /// Convert [`Modulation`] to [`BoxedModulation`]
-    #[must_use]
-    fn into_boxed(self) -> BoxedModulation;
-}
-
-impl<
-    #[cfg(not(feature = "lightweight"))] M: Modulation + 'static,
-    #[cfg(feature = "lightweight")] M: Modulation + Send + Sync + 'static,
-> IntoBoxedModulation for M
-{
-    fn into_boxed(self) -> BoxedModulation {
-        BoxedModulation::new(self)
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -103,7 +86,7 @@ pub mod tests {
             sampling_config: SamplingConfig::FREQ_4K,
         };
 
-        let mb = m.clone().into_boxed();
+        let mb = BoxedModulation::new(m.clone());
 
         assert_eq!(format!("{:?}", m), format!("{:?}", mb));
         assert_eq!(SamplingConfig::FREQ_4K, mb.sampling_config());

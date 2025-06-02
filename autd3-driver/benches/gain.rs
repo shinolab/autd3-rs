@@ -4,7 +4,7 @@ use autd3_core::{derive::*, link::MsgId};
 use autd3_driver::{
     autd3_device::AUTD3,
     common::rad,
-    datagram::{Datagram, IntoBoxedGain},
+    datagram::{BoxedGain, Datagram},
     firmware::{
         cpu::TxMessage,
         fpga::{Drive, EmitIntensity, Phase},
@@ -166,12 +166,11 @@ fn focus_boxed(c: &mut Criterion) {
             |b, geometry| {
                 let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
-                    let g = Box::new(Focus::new(Point3::new(
+                    let g = BoxedGain::new(Focus::new(Point3::new(
                         black_box(90.),
                         black_box(70.),
                         black_box(150.),
-                    )))
-                    .into_boxed();
+                    )));
                     let generator = g
                         .operation_generator(geometry, &DeviceFilter::all_enabled())
                         .unwrap();
