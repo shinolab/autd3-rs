@@ -28,7 +28,7 @@ link = ["zerocopy", "getset", "ethercat", "datagram", "geometry", "derive_more",
 modulation = ["getset", "sampling_config", "utils", "common", "datagram", "derive_more", "derive_more/display"]
 sampling_config = ["common", "thiserror", "utils"]
 use_meter = []
-utils = ["windows"]
+utils = []
 
 [dependencies]
 async-trait = { workspace = true, optional = true }
@@ -52,6 +52,3 @@ approx = { workspace = true }
 itertools = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
-
-[target.'cfg(windows)'.dependencies]
-windows = { workspace = true, optional = true, features = ["Win32_Media", "Win32_System_Threading"] }

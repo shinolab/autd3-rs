@@ -1,8 +1,6 @@
 pub(crate) mod sleep;
 
 use sleep::Sleep;
-#[cfg(target_os = "windows")]
-pub use sleep::WaitableSleeper;
 pub use sleep::{SpinSleeper, StdSleeper};
 pub use spin_sleep::SpinStrategy;
 
@@ -206,8 +204,6 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
 mod tests {
     use autd3_core::link::{LinkError, TxBufferPoolSync};
 
-    #[cfg(target_os = "windows")]
-    use crate::controller::sender::WaitableSleeper;
     use crate::{
         controller::sender::{SpinSleeper, StdSleeper},
         tests::create_geometry,
@@ -302,9 +298,8 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(StdSleeper::default())]
+    #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
-    #[cfg_attr(target_os = "windows", case(WaitableSleeper::new().unwrap()))]
     #[test]
     fn test_send_receive(#[case] sleeper: impl Sleep) {
         let mut link = MockLink::default();
@@ -344,9 +339,8 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(StdSleeper::default())]
+    #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
-    #[cfg_attr(target_os = "windows", case(WaitableSleeper::new().unwrap()))]
     #[test]
     fn test_wait_msg_processed(#[case] sleeper: impl Sleep) {
         let mut link = MockLink::default();

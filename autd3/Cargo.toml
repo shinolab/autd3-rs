@@ -43,9 +43,6 @@ rstest = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
 tokio-test = { workspace = true }
 
-[target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_Security"] }
-
 [lib]
 bench = false
 
