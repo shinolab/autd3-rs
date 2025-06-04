@@ -75,16 +75,27 @@ impl<L: Link> Controller<L> {
         tracing::debug!("Opening a controller with option {:?})", option);
 
         let geometry = Geometry::new(devices.into_iter().map(|d| d.into()).collect());
+
         link.open(&geometry)?;
-        Controller {
+
+        let mut cnt = Controller {
             link,
             msg_id: MsgId::new(0),
             sent_flags: smallvec::smallvec![false; geometry.len()],
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             geometry,
             default_sender_option: option,
-        }
-        .open_impl(option, sleeper)
+        };
+
+        let mut sender = cnt.sender(option, sleeper);
+
+        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
+        // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
+        let _ = sender.send(ReadsFPGAState::new(|_| false));
+
+        sender.send((Clear::new(), Synchronize::new()))?;
+
+        Ok(cnt)
     }
 
     /// Returns the [`Sender`] to send data to the devices.
@@ -118,67 +129,13 @@ impl<L: Link> Controller<L> {
         s.inspect(&self.geometry, &DeviceFilter::all_enabled())
     }
 
-    pub(crate) fn open_impl<S: Sleep>(
-        mut self,
-        option: SenderOption,
-        sleeper: S,
-    ) -> Result<Self, AUTDError> {
-        let mut sender = self.sender(option, sleeper);
-
-        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
-        // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
-        let _ = sender.send(ReadsFPGAState::new(|_| false));
-
-        sender.send((Clear::new(), Synchronize::new()))?;
-        Ok(self)
-    }
-
-    fn close_impl<S: Sleep>(
-        &mut self,
-        option: SenderOption,
-        sleeper: S,
-    ) -> Result<(), AUTDDriverError> {
-        tracing::info!("Closing controller");
-
-        if !self.link.is_open() {
-            tracing::warn!("Link is already closed");
-            return Ok(());
-        }
-
-        let mut sender = self.sender(option, sleeper);
-
-        [
-            sender.send(Silencer {
-                config: FixedCompletionSteps {
-                    strict_mode: false,
-                    ..Default::default()
-                },
-            }),
-            sender.send((Static::default(), Null)),
-            sender.send(Clear {}),
-            Ok(self.link.close()?),
-        ]
-        .into_iter()
-        .try_fold((), |_, x| x)
-    }
-
     /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn close(mut self) -> Result<(), AUTDDriverError> {
         self.close_impl(self.default_sender_option, SpinSleeper::default())
     }
 
-    fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
-        self.send(ty).map_err(|e| {
-            tracing::error!("Fetch firmware info failed: {:?}", e);
-            AUTDError::ReadFirmwareVersionFailed(
-                check_if_msg_is_processed(self.msg_id, &self.rx_buf).collect(),
-            )
-        })?;
-        Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
-    }
-
-    /// Returns  the firmware version of the devices.
+    /// Returns the firmware version of the devices.
     pub fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
         use FirmwareVersionType::*;
         use autd3_driver::firmware::version::{CPUVersion, FPGAVersion, Major, Minor};
@@ -236,6 +193,47 @@ impl<L: Link> Controller<L> {
         }
         self.link.receive(&mut self.rx_buf)?;
         Ok(self.rx_buf.iter().map(FPGAState::from_rx).collect())
+    }
+}
+
+impl<L: Link> Controller<L> {
+    fn close_impl<S: Sleep>(
+        &mut self,
+        option: SenderOption,
+        sleeper: S,
+    ) -> Result<(), AUTDDriverError> {
+        tracing::info!("Closing controller");
+
+        if !self.link.is_open() {
+            tracing::warn!("Link is already closed");
+            return Ok(());
+        }
+
+        let mut sender = self.sender(option, sleeper);
+
+        [
+            sender.send(Silencer {
+                config: FixedCompletionSteps {
+                    strict_mode: false,
+                    ..Default::default()
+                },
+            }),
+            sender.send((Static::default(), Null)),
+            sender.send(Clear {}),
+            Ok(self.link.close()?),
+        ]
+        .into_iter()
+        .try_fold((), |_, x| x)
+    }
+
+    fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
+        self.send(ty).map_err(|e| {
+            tracing::error!("Fetch firmware info failed: {:?}", e);
+            AUTDError::ReadFirmwareVersionFailed(
+                check_if_msg_is_processed(self.msg_id, &self.rx_buf).collect(),
+            )
+        })?;
+        Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
     }
 }
 
