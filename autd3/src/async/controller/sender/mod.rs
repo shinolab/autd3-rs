@@ -150,8 +150,6 @@ mod tests {
     use autd3_core::link::{LinkError, TxBufferPoolSync};
     use spin_sleep::SpinSleeper;
 
-    #[cfg(target_os = "windows")]
-    use crate::controller::WaitableSleeper;
     use crate::{
         controller::{ParallelMode, StdSleeper},
         tests::create_geometry,
@@ -225,10 +223,9 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(StdSleeper::default())]
+    #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
-    #[case(AsyncSleeper::default())]
-    #[cfg_attr(target_os = "windows", case(WaitableSleeper::new().unwrap()))]
+    #[case(AsyncSleeper)]
     #[tokio::test]
     async fn test_send_receive(#[case] sleeper: impl AsyncSleep) {
         let mut link = MockAsyncLink::default();
@@ -271,10 +268,9 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(StdSleeper::default())]
+    #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
-    #[case(AsyncSleeper::default())]
-    #[cfg_attr(target_os = "windows", case(WaitableSleeper::new().unwrap()))]
+    #[case(AsyncSleeper)]
     #[tokio::test]
     async fn test_wait_msg_processed(#[case] sleeper: impl AsyncSleep) {
         let mut link = MockAsyncLink::default();
