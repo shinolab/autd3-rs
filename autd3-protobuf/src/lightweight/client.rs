@@ -164,7 +164,7 @@ impl Controller {
             devices.into_iter().map(|d| d.into()).collect(),
             addr,
             Default::default(),
-            autd3::r#async::AsyncSleeper::default(),
+            autd3::r#async::AsyncSleeper,
         )
         .await
     }

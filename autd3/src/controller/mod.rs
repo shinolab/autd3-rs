@@ -19,8 +19,6 @@ use autd3_driver::{
     geometry::{Device, Geometry},
 };
 
-#[cfg(target_os = "windows")]
-pub use sender::WaitableSleeper;
 pub use sender::{
     ParallelMode, Sender, SenderOption, SpinSleeper, SpinStrategy, StdSleeper, sleep::Sleep,
 };
@@ -587,9 +585,7 @@ pub(crate) mod tests {
             [AUTD3::default()],
             Audit::new(AuditOption::default()),
             SenderOption::default(),
-            StdSleeper {
-                timer_resolution: None,
-            },
+            StdSleeper,
         )?;
 
         let mut autd = autd.into_boxed_link();

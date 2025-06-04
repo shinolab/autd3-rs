@@ -54,7 +54,7 @@ impl<L: AsyncLink> Controller<L> {
             devices,
             link,
             SenderOption::default(),
-            AsyncSleeper::default(),
+            AsyncSleeper,
         )
         .await
     }
@@ -116,7 +116,7 @@ impl<L: AsyncLink> Controller<L> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.sender(self.default_sender_option, AsyncSleeper::default())
+        self.sender(self.default_sender_option, AsyncSleeper)
             .send(s)
             .await
     }
@@ -132,7 +132,7 @@ impl<L: AsyncLink> Controller<L> {
     /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn close(mut self) -> Result<(), AUTDDriverError> {
-        self.close_impl(self.default_sender_option, AsyncSleeper::default())
+        self.close_impl(self.default_sender_option, AsyncSleeper)
             .await
     }
 
@@ -313,7 +313,7 @@ impl<L: AsyncLink> Drop for Controller<L> {
             tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async {
                     let _ = self
-                        .close_impl(self.default_sender_option, AsyncSleeper::default())
+                        .close_impl(self.default_sender_option, AsyncSleeper)
                         .await;
                 });
             }),
@@ -504,7 +504,7 @@ mod tests {
     async fn close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1).await?;
-            autd.close_impl(SenderOption::default(), AsyncSleeper::default())
+            autd.close_impl(SenderOption::default(), AsyncSleeper)
                 .await?;
             autd.close().await?;
         }
