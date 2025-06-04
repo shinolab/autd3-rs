@@ -71,17 +71,27 @@ impl<L: AsyncLink> Controller<L> {
         tracing::debug!("Opening a controller with option {:?})", option);
 
         let geometry = Geometry::new(devices.into_iter().map(|d| d.into()).collect());
+
         link.open(&geometry).await?;
-        Controller {
+
+        let mut cnt = Controller {
             link,
             sent_flags: smallvec::smallvec![false; geometry.len()],
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
             msg_id: MsgId::new(0),
             geometry,
             default_sender_option: option,
-        }
-        .open_impl(option, sleeper)
-        .await
+        };
+
+        let mut sender = cnt.sender(option, sleeper);
+
+        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
+        // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
+        let _ = sender.send(ReadsFPGAState::new(|_| false)).await;
+
+        sender.send((Clear::new(), Synchronize::new())).await?;
+
+        Ok(self)
     }
 
     /// Returns the [`Sender`] to send data to the devices.
@@ -119,52 +129,6 @@ impl<L: AsyncLink> Controller<L> {
         s.inspect(&self.geometry, &DeviceFilter::all_enabled())
     }
 
-    pub(crate) async fn open_impl<S: AsyncSleep>(
-        mut self,
-        option: SenderOption,
-        sleeper: S,
-    ) -> Result<Self, AUTDError> {
-        let mut sender = self.sender(option, sleeper);
-
-        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
-        // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
-        let _ = sender.send(ReadsFPGAState::new(|_| false)).await;
-
-        sender.send((Clear::new(), Synchronize::new())).await?;
-        Ok(self)
-    }
-
-    async fn close_impl<S: AsyncSleep>(
-        &mut self,
-        option: SenderOption,
-        sleeper: S,
-    ) -> Result<(), AUTDDriverError> {
-        tracing::info!("Closing controller");
-
-        if !self.link.is_open() {
-            tracing::warn!("Link is already closed");
-            return Ok(());
-        }
-
-        let mut sender = self.sender(option, sleeper);
-
-        [
-            sender
-                .send(Silencer {
-                    config: FixedCompletionSteps {
-                        strict_mode: false,
-                        ..Default::default()
-                    },
-                })
-                .await,
-            sender.send((Static::default(), Null)).await,
-            sender.send(Clear {}).await,
-            Ok(self.link.close().await?),
-        ]
-        .into_iter()
-        .try_fold((), |_, x| x)
-    }
-
     /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn close(mut self) -> Result<(), AUTDDriverError> {
@@ -172,17 +136,7 @@ impl<L: AsyncLink> Controller<L> {
             .await
     }
 
-    async fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
-        self.send(ty).await.map_err(|e| {
-            tracing::error!("Fetch firmware info failed: {:?}", e);
-            AUTDError::ReadFirmwareVersionFailed(
-                check_if_msg_is_processed(self.msg_id, &self.rx_buf).collect(),
-            )
-        })?;
-        Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
-    }
-
-    /// Returns  the firmware version of the devices.
+    /// Returns the firmware version of the devices.
     pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
         use FirmwareVersionType::*;
         use autd3_driver::firmware::version::{CPUVersion, FPGAVersion, Major, Minor};
@@ -240,6 +194,49 @@ impl<L: AsyncLink> Controller<L> {
         }
         self.link.receive(&mut self.rx_buf).await?;
         Ok(self.rx_buf.iter().map(FPGAState::from_rx).collect())
+    }
+}
+
+impl<L: AsyncLink> Controller<L> {
+    async fn close_impl<S: AsyncSleep>(
+        &mut self,
+        option: SenderOption,
+        sleeper: S,
+    ) -> Result<(), AUTDDriverError> {
+        tracing::info!("Closing controller");
+
+        if !self.link.is_open() {
+            tracing::warn!("Link is already closed");
+            return Ok(());
+        }
+
+        let mut sender = self.sender(option, sleeper);
+
+        [
+            sender
+                .send(Silencer {
+                    config: FixedCompletionSteps {
+                        strict_mode: false,
+                        ..Default::default()
+                    },
+                })
+                .await,
+            sender.send((Static::default(), Null)).await,
+            sender.send(Clear {}).await,
+            Ok(self.link.close().await?),
+        ]
+        .into_iter()
+        .try_fold((), |_, x| x)
+    }
+
+    async fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
+        self.send(ty).await.map_err(|e| {
+            tracing::error!("Fetch firmware info failed: {:?}", e);
+            AUTDError::ReadFirmwareVersionFailed(
+                check_if_msg_is_processed(self.msg_id, &self.rx_buf).collect(),
+            )
+        })?;
+        Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
     }
 }
 
