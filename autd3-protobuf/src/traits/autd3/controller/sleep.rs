@@ -35,6 +35,7 @@ impl FromMessage<Sleeper> for Box<dyn autd3::r#async::controller::AsyncSleep + S
                         spin_sleeper.spin_strategy,
                     )?),
             ),
+            Some(sleeper::Sleeper::SpinWait(_)) => Box::new(autd3::controller::SpinWaitSleeper),
             Some(sleeper::Sleeper::Async(_)) => Box::new(autd3::r#async::controller::AsyncSleeper),
             None => Box::new(autd3::r#async::controller::AsyncSleeper),
         })
@@ -56,6 +57,14 @@ impl From<&autd3::controller::SpinSleeper> for Sleeper {
                 native_accuracy_ns: value.native_accuracy_ns(),
                 spin_strategy: SpinStrategy::from(value.spin_strategy()) as _,
             })),
+        }
+    }
+}
+
+impl From<&autd3::controller::SpinWaitSleeper> for Sleeper {
+    fn from(_: &autd3::controller::SpinWaitSleeper) -> Self {
+        Self {
+            sleeper: Some(sleeper::Sleeper::SpinWait(crate::SpinWaitSleeper {})),
         }
     }
 }
