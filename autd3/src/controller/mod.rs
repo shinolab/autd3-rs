@@ -20,7 +20,8 @@ use autd3_driver::{
 };
 
 pub use sender::{
-    ParallelMode, Sender, SenderOption, SpinSleeper, SpinStrategy, StdSleeper, sleep::Sleep,
+    ParallelMode, Sender, SenderOption, SpinSleeper, SpinStrategy, SpinWaitSleeper, StdSleeper,
+    sleep::Sleep,
 };
 
 use derive_more::{Deref, DerefMut};

@@ -1,7 +1,7 @@
 pub(crate) mod sleep;
 
 use sleep::Sleep;
-pub use sleep::{SpinSleeper, StdSleeper};
+pub use sleep::{SpinSleeper, SpinWaitSleeper, StdSleeper};
 pub use spin_sleep::SpinStrategy;
 
 use std::{
@@ -205,7 +205,7 @@ mod tests {
     use autd3_core::link::{LinkError, TxBufferPoolSync};
 
     use crate::{
-        controller::sender::{SpinSleeper, StdSleeper},
+        controller::sender::{SpinSleeper, SpinWaitSleeper, StdSleeper},
         tests::create_geometry,
     };
 
@@ -300,6 +300,7 @@ mod tests {
     #[rstest::rstest]
     #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
+    #[case(SpinWaitSleeper)]
     #[test]
     fn test_send_receive(#[case] sleeper: impl Sleep) {
         let mut link = MockLink::default();
@@ -341,6 +342,7 @@ mod tests {
     #[rstest::rstest]
     #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
+    #[case(SpinWaitSleeper)]
     #[test]
     fn test_wait_msg_processed(#[case] sleeper: impl Sleep) {
         let mut link = MockLink::default();

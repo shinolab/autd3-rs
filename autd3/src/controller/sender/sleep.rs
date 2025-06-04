@@ -31,3 +31,15 @@ impl Sleep for SpinSleeper {
         self.sleep(deadline - Instant::now());
     }
 }
+
+/// A sleeper that uses a spin loop to wait until the deadline is reached.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct SpinWaitSleeper;
+
+impl Sleep for SpinWaitSleeper {
+    fn sleep_until(&self, deadline: Instant) {
+        while Instant::now() < deadline {
+            std::hint::spin_loop();
+        }
+    }
+}

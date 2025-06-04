@@ -2,7 +2,7 @@ use std::time::Instant;
 
 pub use spin_sleep::SpinSleeper;
 
-use crate::controller::StdSleeper;
+use crate::controller::{SpinWaitSleeper, StdSleeper};
 
 #[cfg(feature = "async-trait")]
 mod internal {
@@ -45,6 +45,15 @@ impl AsyncSleep for StdSleeper {
 impl AsyncSleep for SpinSleeper {
     async fn sleep_until(&self, deadline: Instant) {
         self.sleep(deadline - Instant::now());
+    }
+}
+
+#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
+impl AsyncSleep for SpinWaitSleeper {
+    async fn sleep_until(&self, deadline: Instant) {
+        while Instant::now() < deadline {
+            tokio::task::yield_now().await;
+        }
     }
 }
 

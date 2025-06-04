@@ -1705,10 +1705,12 @@ pub struct SpinSleeper {
     pub spin_strategy: i32,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct SpinWaitSleeper {}
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct AsyncSleeper {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Sleeper {
-    #[prost(oneof = "sleeper::Sleeper", tags = "1, 2, 4")]
+    #[prost(oneof = "sleeper::Sleeper", tags = "1, 2, 4, 5")]
     pub sleeper: ::core::option::Option<sleeper::Sleeper>,
 }
 /// Nested message and enum types in `Sleeper`.
@@ -1722,6 +1724,8 @@ pub mod sleeper {
         Spin(super::SpinSleeper),
         #[prost(message, tag = "4")]
         Async(super::AsyncSleeper),
+        #[prost(message, tag = "5")]
+        SpinWait(super::SpinWaitSleeper),
     }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
