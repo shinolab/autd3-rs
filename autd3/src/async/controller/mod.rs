@@ -91,7 +91,7 @@ impl<L: AsyncLink> Controller<L> {
 
         sender.send((Clear::new(), Synchronize::new())).await?;
 
-        Ok(self)
+        Ok(cnt)
     }
 
     /// Returns the [`Sender`] to send data to the devices.
