@@ -354,12 +354,12 @@ where
                             Box::<dyn autd3::r#async::controller::AsyncSleep + Send + Sync>::from_msg
                         )
                         .transpose()?
-                        .unwrap_or_else(|| Box::new(autd3::r#async::AsyncSleeper::default()));
+                        .unwrap_or_else(|| Box::new(autd3::r#async::AsyncSleeper));
                     (option, sleeper)
                 }
                 None => (
                     autd.default_sender_option,
-                    Box::new(autd3::r#async::AsyncSleeper::default()) as _,
+                    Box::new(autd3::r#async::AsyncSleeper) as _,
                 ),
             };
 

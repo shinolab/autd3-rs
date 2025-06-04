@@ -1696,10 +1696,7 @@ pub mod datagram {
     }
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct StdSleeper {
-    #[prost(uint32, optional, tag = "1")]
-    pub timer_resolution: ::core::option::Option<u32>,
-}
+pub struct StdSleeper {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct SpinSleeper {
     #[prost(uint32, tag = "1")]
@@ -1708,15 +1705,10 @@ pub struct SpinSleeper {
     pub spin_strategy: i32,
 }
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct WaitableSleeper {}
-#[derive(Clone, Copy, PartialEq, ::prost::Message)]
-pub struct AsyncSleeper {
-    #[prost(uint32, optional, tag = "1")]
-    pub timer_resolution: ::core::option::Option<u32>,
-}
+pub struct AsyncSleeper {}
 #[derive(Clone, Copy, PartialEq, ::prost::Message)]
 pub struct Sleeper {
-    #[prost(oneof = "sleeper::Sleeper", tags = "1, 2, 3, 4")]
+    #[prost(oneof = "sleeper::Sleeper", tags = "1, 2, 4")]
     pub sleeper: ::core::option::Option<sleeper::Sleeper>,
 }
 /// Nested message and enum types in `Sleeper`.
@@ -1728,8 +1720,6 @@ pub mod sleeper {
         Std(super::StdSleeper),
         #[prost(message, tag = "2")]
         Spin(super::SpinSleeper),
-        #[prost(message, tag = "3")]
-        Waitable(super::WaitableSleeper),
         #[prost(message, tag = "4")]
         Async(super::AsyncSleeper),
     }
