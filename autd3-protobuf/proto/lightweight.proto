@@ -61,6 +61,8 @@ message SpinSleeper {
   SpinStrategy spin_strategy = 2;
 }
 
+message SpinWaitSleeper {}
+
 message AsyncSleeper {}
 
 message Sleeper {
@@ -68,6 +70,7 @@ message Sleeper {
     StdSleeper std = 1;
     SpinSleeper spin = 2;
     AsyncSleeper async = 4;
+    SpinWaitSleeper spin_wait = 5;
   }
 }
 
