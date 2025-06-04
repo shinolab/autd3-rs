@@ -151,7 +151,7 @@ mod tests {
     use spin_sleep::SpinSleeper;
 
     use crate::{
-        controller::{ParallelMode, StdSleeper},
+        controller::{ParallelMode, SpinWaitSleeper, StdSleeper},
         tests::create_geometry,
     };
 
@@ -225,6 +225,7 @@ mod tests {
     #[rstest::rstest]
     #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
+    #[case(SpinWaitSleeper)]
     #[case(AsyncSleeper)]
     #[tokio::test]
     async fn test_send_receive(#[case] sleeper: impl AsyncSleep) {
@@ -270,6 +271,7 @@ mod tests {
     #[rstest::rstest]
     #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
+    #[case(SpinWaitSleeper)]
     #[case(AsyncSleeper)]
     #[tokio::test]
     async fn test_wait_msg_processed(#[case] sleeper: impl AsyncSleep) {
