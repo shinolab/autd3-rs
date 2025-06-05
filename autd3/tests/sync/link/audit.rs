@@ -5,9 +5,8 @@ use autd3::{
     link::{Audit, AuditOption},
     prelude::*,
 };
-use autd3_core::link::LinkError;
+use autd3_core::{link::LinkError, sleep::SpinSleeper};
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
-use spin_sleep::SpinSleeper;
 
 #[test]
 fn audit_test() -> anyhow::Result<()> {

@@ -1,9 +1,3 @@
-pub(crate) mod sleep;
-
-use sleep::Sleep;
-pub use sleep::{SpinSleeper, SpinWaitSleeper, StdSleeper};
-pub use spin_sleep::SpinStrategy;
-
 use std::{
     fmt::Debug,
     time::{Duration, Instant},
@@ -14,6 +8,7 @@ use autd3_core::{
     derive::DeviceFilter,
     geometry::Geometry,
     link::{Link, MsgId},
+    sleep::Sleep,
 };
 use autd3_driver::{
     error::AUTDDriverError,
@@ -141,7 +136,8 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
             }
 
             send_timing += self.option.send_interval;
-            self.sleeper.sleep_until(send_timing);
+            self.sleeper
+                .sleep(send_timing.saturating_duration_since(Instant::now()));
         }
     }
 
@@ -182,8 +178,10 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
                 break;
             }
             receive_timing += self.option.receive_interval;
-            self.sleeper.sleep_until(receive_timing);
+            self.sleeper
+                .sleep(receive_timing.saturating_duration_since(Instant::now()));
         }
+
         self.rx
             .iter()
             .try_fold((), |_, r| {
@@ -202,12 +200,12 @@ impl<L: Link, S: Sleep> Sender<'_, L, S> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::link::{LinkError, TxBufferPoolSync};
-
-    use crate::{
-        controller::sender::{SpinSleeper, SpinWaitSleeper, StdSleeper},
-        tests::create_geometry,
+    use autd3_core::{
+        link::{LinkError, TxBufferPoolSync},
+        sleep::{Sleep, SpinSleeper, SpinWaitSleeper, StdSleeper},
     };
+
+    use crate::tests::create_geometry;
 
     use super::*;
 

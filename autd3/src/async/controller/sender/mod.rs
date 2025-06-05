@@ -86,7 +86,9 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
             }
 
             send_timing += self.option.send_interval;
-            self.sleeper.sleep_until(send_timing).await;
+            self.sleeper
+                .sleep(send_timing.saturating_duration_since(Instant::now()))
+                .await;
         }
     }
 
@@ -127,7 +129,9 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
                 break;
             }
             receive_timing += self.option.receive_interval;
-            self.sleeper.sleep_until(receive_timing).await;
+            self.sleeper
+                .sleep(receive_timing.saturating_duration_since(Instant::now()))
+                .await;
         }
         self.rx
             .iter()
@@ -147,13 +151,12 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::link::{LinkError, TxBufferPoolSync};
-    use spin_sleep::SpinSleeper;
-
-    use crate::{
-        controller::{ParallelMode, SpinWaitSleeper, StdSleeper},
-        tests::create_geometry,
+    use autd3_core::{
+        link::{LinkError, TxBufferPoolSync},
+        sleep::{SpinSleeper, SpinWaitSleeper, StdSleeper},
     };
+
+    use crate::{controller::ParallelMode, tests::create_geometry};
 
     use super::*;
 

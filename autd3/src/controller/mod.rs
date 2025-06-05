@@ -6,6 +6,7 @@ use autd3_core::{
     datagram::{Inspectable, InspectionResult},
     derive::DeviceFilter,
     link::{Link, MsgId},
+    sleep::{Sleep, SpinSleeper},
 };
 use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ReadsFPGAState, Silencer, Synchronize},
@@ -19,10 +20,7 @@ use autd3_driver::{
     geometry::{Device, Geometry},
 };
 
-pub use sender::{
-    ParallelMode, Sender, SenderOption, SpinSleeper, SpinStrategy, SpinWaitSleeper, StdSleeper,
-    sleep::Sleep,
-};
+pub use sender::{ParallelMode, Sender, SenderOption};
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
@@ -586,7 +584,7 @@ pub(crate) mod tests {
             [AUTD3::default()],
             Audit::new(AuditOption::default()),
             SenderOption::default(),
-            StdSleeper,
+            SpinSleeper::default(),
         )?;
 
         let mut autd = autd.into_boxed_link();
