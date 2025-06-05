@@ -78,6 +78,7 @@ mod tests {
         sleep: Arc<RwLock<Vec<Duration>>>,
     }
 
+    #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
     impl AsyncSleep for DebugSleep {
         async fn sleep(&self, duration: Duration) {
             self.sleep.write().unwrap().push(duration);
