@@ -10,7 +10,7 @@ pub trait TimerStrategy<S: Sleep> {
     /// Returns the initial instant.
     fn initial() -> Self::Instant;
     /// Sleep until the specified time.
-    /// The first call receives the return value of [`TimerStrategy::initialize`] as `old`, and subsequent calls receive the previous return value.
+    /// The first call receives the return value of [`TimerStrategy::initial`] as `old`, and subsequent calls receive the previous return value.
     fn sleep(&self, old: Self::Instant, interval: Duration) -> Self::Instant;
 }
 

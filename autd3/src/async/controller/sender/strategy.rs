@@ -13,7 +13,7 @@ mod internal {
         /// Returns the initial instant.
         fn initial() -> Instant;
         /// Sleep until the specified time.
-        /// The first call receives the return value of [`AsyncTimerStrategy::initialize`] as `old`, and subsequent calls receive the previous return value.
+        /// The first call receives the return value of [`AsyncTimerStrategy::initial`] as `old`, and subsequent calls receive the previous return value.
         async fn sleep(&self, old: Instant, interval: Duration) -> Instant;
     }
 }
@@ -27,7 +27,7 @@ mod internal {
         /// Returns the initial instant.
         fn initial() -> Instant;
         /// Sleep until the specified time.
-        /// The first call receives the return value of [`AsyncTimerStrategy::initialize`] as `old`, and subsequent calls receive the previous return value.
+        /// The first call receives the return value of [`AsyncTimerStrategy::initial`] as `old`, and subsequent calls receive the previous return value.
         fn sleep(
             &self,
             old: Instant,
