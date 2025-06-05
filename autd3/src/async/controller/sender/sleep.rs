@@ -8,12 +8,12 @@ mod internal {
 
     #[doc(hidden)]
     #[autd3_core::async_trait]
-    pub trait AsyncSleep: std::fmt::Debug {
+    pub trait AsyncSleep: std::fmt::Debug + Send + Sync {
         async fn sleep(&self, duration: Duration);
     }
 
     #[autd3_core::async_trait]
-    impl AsyncSleep for Box<dyn AsyncSleep + Send + Sync> {
+    impl AsyncSleep for Box<dyn AsyncSleep> {
         async fn sleep(&self, duration: Duration) {
             self.as_ref().sleep(duration).await;
         }
@@ -22,11 +22,10 @@ mod internal {
 
 #[cfg(not(feature = "async-trait"))]
 mod internal {
-
     use super::*;
 
     #[doc(hidden)]
-    pub trait AsyncSleep: std::fmt::Debug {
+    pub trait AsyncSleep: std::fmt::Debug + Send + Sync {
         fn sleep(&self, duration: Duration) -> impl std::future::Future<Output = ()> + Send;
     }
 }

@@ -14,7 +14,7 @@ features = ["async"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["async"]
+default = []
 async = ["tokio", "autd3-core/async"]
 async-trait = ["async", "autd3-core/async-trait"]
 

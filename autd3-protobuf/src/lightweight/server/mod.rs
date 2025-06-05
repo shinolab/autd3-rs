@@ -350,9 +350,7 @@ where
                 Some(option) => {
                     let option = autd3::controller::SenderOption::from_msg(option)?;
                     let sleeper = sleeper
-                        .map(
-                            Box::<dyn autd3::r#async::controller::AsyncSleep + Send + Sync>::from_msg
-                        )
+                        .map(Box::<dyn autd3::r#async::controller::AsyncSleep>::from_msg)
                         .transpose()?
                         .unwrap_or_else(|| Box::new(autd3::r#async::AsyncSleeper));
                     (option, sleeper)
@@ -364,7 +362,7 @@ where
             };
 
             let num_devices = autd.num_devices();
-            let mut sender = autd.sender(option, sleeper);
+            let mut sender = autd.sender(option, autd3::controller::FixedSchedule(sleeper));
             let res = match datagram.datagram.ok_or(AUTDProtoBufError::DataParseError)? {
                 datagram::Datagram::Tuple(datagram_tuple) => {
                     sender.send(into_datagram_tuple(datagram_tuple)?).await

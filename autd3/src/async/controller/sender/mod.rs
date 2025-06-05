@@ -1,7 +1,8 @@
-pub(crate) mod sleep;
+mod sleep;
+mod strategy;
 
-use sleep::AsyncSleep;
-pub use sleep::AsyncSleeper;
+pub use sleep::{AsyncSleep, AsyncSleeper};
+pub use strategy::AsyncTimerStrategy;
 
 use std::time::{Duration, Instant};
 
@@ -23,17 +24,18 @@ use itertools::Itertools;
 use crate::controller::SenderOption;
 
 /// A struct to send the [`Datagram`] to the devices.
-pub struct Sender<'a, L: AsyncLink, S: AsyncSleep> {
+pub struct Sender<'a, L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> {
     pub(crate) msg_id: &'a mut MsgId,
     pub(crate) link: &'a mut L,
     pub(crate) geometry: &'a mut Geometry,
     pub(crate) sent_flags: &'a mut [bool],
     pub(crate) rx: &'a mut [RxMessage],
     pub(crate) option: SenderOption,
-    pub(crate) sleeper: S,
+    pub(crate) timer_strategy: T,
+    pub(crate) _phantom: std::marker::PhantomData<S>,
 }
 
-impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
+impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender<'_, L, S, T> {
     /// Send the [`Datagram`] to the devices.
     ///
     /// If the `timeout` value is
@@ -64,9 +66,7 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
 
         self.link.update(self.geometry).await?;
 
-        // We prioritize average behavior for the transmission timing. That is, not the interval from the previous transmission, but ensuring that T/`send_interval` transmissions are performed in a sufficiently long time T.
-        // For example, if the `send_interval` is 1ms and it takes 1.5ms to transmit due to some reason, the next transmission will be performed not 1ms later but 0.5ms later.
-        let mut send_timing = Instant::now();
+        let mut send_timing = T::initial();
         loop {
             let mut tx = self.link.alloc_tx_buffer().await?;
 
@@ -85,9 +85,9 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
                 return Ok(());
             }
 
-            send_timing += self.option.send_interval;
-            self.sleeper
-                .sleep(send_timing.saturating_duration_since(Instant::now()))
+            send_timing = self
+                .timer_strategy
+                .sleep(send_timing, self.option.send_interval)
                 .await;
         }
     }
@@ -108,7 +108,7 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
 
     async fn wait_msg_processed(&mut self, timeout: Duration) -> Result<(), AUTDDriverError> {
         let start = Instant::now();
-        let mut receive_timing = start;
+        let mut receive_timing = T::initial();
         loop {
             if !self.link.is_open() {
                 return Err(AUTDDriverError::LinkClosed);
@@ -125,12 +125,14 @@ impl<L: AsyncLink, S: AsyncSleep> Sender<'_, L, S> {
             {
                 return Ok(());
             }
+
             if start.elapsed() > timeout {
                 break;
             }
-            receive_timing += self.option.receive_interval;
-            self.sleeper
-                .sleep(receive_timing.saturating_duration_since(Instant::now()))
+
+            receive_timing = self
+                .timer_strategy
+                .sleep(receive_timing, self.option.receive_interval)
                 .await;
         }
         self.rx
@@ -156,7 +158,10 @@ mod tests {
         sleep::{SpinSleeper, SpinWaitSleeper, StdSleeper},
     };
 
-    use crate::{controller::ParallelMode, tests::create_geometry};
+    use crate::{
+        controller::{FixedSchedule, ParallelMode},
+        tests::create_geometry,
+    };
 
     use super::*;
 
@@ -251,7 +256,8 @@ mod tests {
                 timeout: None,
                 parallel: ParallelMode::Auto,
             },
-            sleeper,
+            timer_strategy: FixedSchedule(sleeper),
+            _phantom: std::marker::PhantomData,
         };
 
         let tx = sender.link.alloc_tx_buffer().await.unwrap();
@@ -297,7 +303,8 @@ mod tests {
                 timeout: None,
                 parallel: ParallelMode::Auto,
             },
-            sleeper,
+            timer_strategy: FixedSchedule(sleeper),
+            _phantom: std::marker::PhantomData,
         };
 
         assert_eq!(

@@ -2,7 +2,7 @@ pub use crate::gain;
 pub use crate::modulation;
 
 pub use crate::{
-    controller::{Controller, ParallelMode, SenderOption},
+    controller::{Controller, FixedSchedule, ParallelMode, SenderOption},
     datagram::{
         gain::{
             Bessel, BesselOption, Focus, FocusOption, GainGroup, Null, Plane, PlaneOption, Uniform,
