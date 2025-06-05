@@ -2,7 +2,7 @@ pub use crate::gain;
 pub use crate::modulation;
 
 pub use crate::{
-    controller::{Controller, ParallelMode, SenderOption, SpinSleeper},
+    controller::{Controller, FixedSchedule, ParallelMode, SenderOption},
     datagram::{
         gain::{
             Bessel, BesselOption, Focus, FocusOption, GainGroup, Null, Plane, PlaneOption, Uniform,
@@ -17,6 +17,7 @@ pub use crate::{
 };
 
 pub use autd3_core::modulation::Modulation;
+pub use autd3_core::sleep::{self, SpinSleeper};
 
 pub use autd3_driver::{
     autd3_device::AUTD3,

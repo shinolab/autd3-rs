@@ -6,6 +6,7 @@ use autd3_core::{
     datagram::{Inspectable, InspectionResult},
     derive::DeviceFilter,
     link::{Link, MsgId},
+    sleep::Sleep,
 };
 use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, ReadsFPGAState, Silencer, Synchronize},
@@ -19,10 +20,7 @@ use autd3_driver::{
     geometry::{Device, Geometry},
 };
 
-pub use sender::{
-    ParallelMode, Sender, SenderOption, SpinSleeper, SpinStrategy, SpinWaitSleeper, StdSleeper,
-    sleep::Sleep,
-};
+pub use sender::{FixedDelay, FixedSchedule, ParallelMode, Sender, SenderOption, TimerStrategy};
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
@@ -49,7 +47,7 @@ pub struct Controller<L: Link> {
 }
 
 impl<L: Link> Controller<L> {
-    /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`] and [`SpinSleeper`].
+    /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`] and [`FixedSchedule`].
     pub fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
         devices: F,
         link: L,
@@ -58,18 +56,23 @@ impl<L: Link> Controller<L> {
             devices,
             link,
             SenderOption::default(),
-            SpinSleeper::default(),
+            FixedSchedule::default(),
         )
     }
 
     /// Opens a controller with a [`SenderOption`].
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    pub fn open_with_option<D: Into<Device>, F: IntoIterator<Item = D>, S: Sleep>(
+    pub fn open_with_option<
+        D: Into<Device>,
+        F: IntoIterator<Item = D>,
+        S: Sleep,
+        T: TimerStrategy<S>,
+    >(
         devices: F,
         mut link: L,
         option: SenderOption,
-        sleeper: S,
+        timer_strategy: T,
     ) -> Result<Self, AUTDError> {
         tracing::debug!("Opening a controller with option {:?})", option);
 
@@ -86,7 +89,7 @@ impl<L: Link> Controller<L> {
             default_sender_option: option,
         };
 
-        let mut sender = cnt.sender(option, sleeper);
+        let mut sender = cnt.sender(option, timer_strategy);
 
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
         // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
@@ -98,7 +101,11 @@ impl<L: Link> Controller<L> {
     }
 
     /// Returns the [`Sender`] to send data to the devices.
-    pub fn sender<S: Sleep>(&mut self, option: SenderOption, sleeper: S) -> Sender<'_, L, S> {
+    pub fn sender<S: Sleep, T: TimerStrategy<S>>(
+        &mut self,
+        option: SenderOption,
+        timer_strategy: T,
+    ) -> Sender<'_, L, S, T> {
         Sender {
             msg_id: &mut self.msg_id,
             link: &mut self.link,
@@ -106,7 +113,8 @@ impl<L: Link> Controller<L> {
             sent_flags: &mut self.sent_flags,
             rx: &mut self.rx_buf,
             option,
-            sleeper,
+            timer_strategy,
+            _phantom: std::marker::PhantomData,
         }
     }
 
@@ -119,7 +127,7 @@ impl<L: Link> Controller<L> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.sender(self.default_sender_option, SpinSleeper::default())
+        self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
     }
 
@@ -131,7 +139,7 @@ impl<L: Link> Controller<L> {
     /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
     pub fn close(mut self) -> Result<(), AUTDDriverError> {
-        self.close_impl(self.default_sender_option, SpinSleeper::default())
+        self.close_impl(self.default_sender_option, FixedSchedule::default())
     }
 
     /// Returns the firmware version of the devices.
@@ -196,10 +204,10 @@ impl<L: Link> Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
-    fn close_impl<S: Sleep>(
+    fn close_impl<S: Sleep, T: TimerStrategy<S>>(
         &mut self,
         option: SenderOption,
-        sleeper: S,
+        timer_strategy: T,
     ) -> Result<(), AUTDDriverError> {
         tracing::info!("Closing controller");
 
@@ -208,7 +216,7 @@ impl<L: Link> Controller<L> {
             return Ok(());
         }
 
-        let mut sender = self.sender(option, sleeper);
+        let mut sender = self.sender(option, timer_strategy);
 
         [
             sender.send(Silencer {
@@ -303,7 +311,7 @@ impl<L: Link> Drop for Controller<L> {
         if !self.link.is_open() {
             return;
         }
-        let _ = self.close_impl(self.default_sender_option, SpinSleeper::default());
+        let _ = self.close_impl(self.default_sender_option, FixedSchedule::default());
     }
 }
 
@@ -476,7 +484,7 @@ pub(crate) mod tests {
     fn close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1)?;
-            autd.close_impl(SenderOption::default(), SpinSleeper::default())?;
+            autd.close_impl(SenderOption::default(), FixedSchedule::default())?;
             autd.close()?;
         }
 
@@ -586,7 +594,7 @@ pub(crate) mod tests {
             [AUTD3::default()],
             Audit::new(AuditOption::default()),
             SenderOption::default(),
-            StdSleeper,
+            FixedSchedule::default(),
         )?;
 
         let mut autd = autd.into_boxed_link();
