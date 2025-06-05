@@ -1,13 +1,12 @@
 use std::time::Duration;
 
 use autd3::{
-    controller::SenderOption,
+    controller::{FixedSchedule, SenderOption},
     link::{Audit, AuditOption},
     prelude::*,
 };
 use autd3_core::link::LinkError;
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
-use spin_sleep::SpinSleeper;
 
 #[test]
 fn audit_test() -> anyhow::Result<()> {
@@ -18,7 +17,7 @@ fn audit_test() -> anyhow::Result<()> {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()
         },
-        SpinSleeper::default(),
+        FixedSchedule::default(),
     )?;
     assert_eq!(0, autd.link()[0].idx());
 
@@ -28,7 +27,7 @@ fn audit_test() -> anyhow::Result<()> {
                 timeout: Some(Duration::from_millis(20)),
                 ..Default::default()
             },
-            SpinSleeper::default(),
+            FixedSchedule::default(),
         )
         .send(Null {})?;
     }

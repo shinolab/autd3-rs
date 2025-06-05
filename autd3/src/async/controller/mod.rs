@@ -1,6 +1,11 @@
 mod sender;
 
-use crate::{controller::SenderOption, error::AUTDError, gain::Null, modulation::Static};
+use crate::{
+    controller::{FixedSchedule, SenderOption},
+    error::AUTDError,
+    gain::Null,
+    modulation::Static,
+};
 
 use autd3_core::{
     datagram::{DeviceFilter, Inspectable, InspectionResult},
@@ -18,7 +23,7 @@ use autd3_driver::{
     geometry::{Device, Geometry},
 };
 
-pub use sender::{AsyncSleeper, Sender, sleep::AsyncSleep};
+pub use sender::{AsyncSleep, AsyncSleeper, AsyncTimerStrategy, Sender};
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
@@ -50,11 +55,11 @@ impl<L: AsyncLink> Controller<L> {
         devices: F,
         link: L,
     ) -> Result<Controller<L>, AUTDError> {
-        Self::open_with_option::<D, F, AsyncSleeper>(
+        Self::open_with_option(
             devices,
             link,
             SenderOption::default(),
-            AsyncSleeper,
+            FixedSchedule(AsyncSleeper),
         )
         .await
     }
@@ -62,11 +67,16 @@ impl<L: AsyncLink> Controller<L> {
     /// Opens a controller with a timeout.
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    pub async fn open_with_option<D: Into<Device>, F: IntoIterator<Item = D>, S: AsyncSleep>(
+    pub async fn open_with_option<
+        D: Into<Device>,
+        F: IntoIterator<Item = D>,
+        S: AsyncSleep,
+        T: AsyncTimerStrategy<S>,
+    >(
         devices: F,
         mut link: L,
         option: SenderOption,
-        sleeper: S,
+        timer_strategy: T,
     ) -> Result<Self, AUTDError> {
         tracing::debug!("Opening a controller with option {:?})", option);
 
@@ -83,7 +93,7 @@ impl<L: AsyncLink> Controller<L> {
             default_sender_option: option,
         };
 
-        let mut sender = cnt.sender(option, sleeper);
+        let mut sender = cnt.sender(option, timer_strategy);
 
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
         // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
@@ -95,7 +105,11 @@ impl<L: AsyncLink> Controller<L> {
     }
 
     /// Returns the [`Sender`] to send data to the devices.
-    pub fn sender<S: AsyncSleep>(&mut self, option: SenderOption, sleeper: S) -> Sender<'_, L, S> {
+    pub fn sender<S: AsyncSleep, T: AsyncTimerStrategy<S>>(
+        &mut self,
+        option: SenderOption,
+        timer_strategy: T,
+    ) -> Sender<'_, L, S, T> {
         Sender {
             msg_id: &mut self.msg_id,
             link: &mut self.link,
@@ -103,7 +117,8 @@ impl<L: AsyncLink> Controller<L> {
             sent_flags: &mut self.sent_flags,
             rx: &mut self.rx_buf,
             option,
-            sleeper,
+            timer_strategy,
+            _phantom: std::marker::PhantomData,
         }
     }
 
@@ -116,7 +131,7 @@ impl<L: AsyncLink> Controller<L> {
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.sender(self.default_sender_option, AsyncSleeper)
+        self.sender(self.default_sender_option, FixedSchedule(AsyncSleeper))
             .send(s)
             .await
     }
@@ -132,7 +147,7 @@ impl<L: AsyncLink> Controller<L> {
     /// Closes the controller.
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn close(mut self) -> Result<(), AUTDDriverError> {
-        self.close_impl(self.default_sender_option, AsyncSleeper)
+        self.close_impl(self.default_sender_option, FixedSchedule(AsyncSleeper))
             .await
     }
 
@@ -198,10 +213,10 @@ impl<L: AsyncLink> Controller<L> {
 }
 
 impl<L: AsyncLink> Controller<L> {
-    async fn close_impl<S: AsyncSleep>(
+    async fn close_impl<S: AsyncSleep, T: AsyncTimerStrategy<S>>(
         &mut self,
         option: SenderOption,
-        sleeper: S,
+        timer_strategy: T,
     ) -> Result<(), AUTDDriverError> {
         tracing::info!("Closing controller");
 
@@ -210,7 +225,7 @@ impl<L: AsyncLink> Controller<L> {
             return Ok(());
         }
 
-        let mut sender = self.sender(option, sleeper);
+        let mut sender = self.sender(option, timer_strategy);
 
         [
             sender
@@ -313,7 +328,7 @@ impl<L: AsyncLink> Drop for Controller<L> {
             tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async {
                     let _ = self
-                        .close_impl(self.default_sender_option, AsyncSleeper)
+                        .close_impl(self.default_sender_option, FixedSchedule(AsyncSleeper))
                         .await;
                 });
             }),
@@ -504,7 +519,7 @@ mod tests {
     async fn close() -> anyhow::Result<()> {
         {
             let mut autd = create_controller(1).await?;
-            autd.close_impl(SenderOption::default(), AsyncSleeper)
+            autd.close_impl(SenderOption::default(), FixedSchedule(AsyncSleeper))
                 .await?;
             autd.close().await?;
         }

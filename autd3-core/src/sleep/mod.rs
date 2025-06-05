@@ -1,17 +1,17 @@
-use std::time::Instant;
+use std::time::Duration;
 
-pub use spin_sleep::SpinSleeper;
+pub use spin_sleep::{SpinSleeper, SpinStrategy};
 
 /// A trait for sleep operations.
 pub trait Sleep: std::fmt::Debug {
     /// Sleep until the specified deadline.
-    fn sleep_until(&self, deadline: Instant);
+    fn sleep(&self, duration: Duration);
 }
 
 // GRCOV_EXCL_START
 impl Sleep for Box<dyn Sleep> {
-    fn sleep_until(&self, deadline: Instant) {
-        self.as_ref().sleep_until(deadline);
+    fn sleep(&self, duration: Duration) {
+        self.as_ref().sleep(duration);
     }
 }
 // GRCOV_EXCL_STOP
@@ -21,14 +21,14 @@ impl Sleep for Box<dyn Sleep> {
 pub struct StdSleeper;
 
 impl Sleep for StdSleeper {
-    fn sleep_until(&self, deadline: Instant) {
-        std::thread::sleep(deadline - Instant::now());
+    fn sleep(&self, duration: Duration) {
+        std::thread::sleep(duration);
     }
 }
 
 impl Sleep for SpinSleeper {
-    fn sleep_until(&self, deadline: Instant) {
-        self.sleep(deadline - Instant::now());
+    fn sleep(&self, duration: Duration) {
+        SpinSleeper::sleep(*self, duration);
     }
 }
 
@@ -37,7 +37,10 @@ impl Sleep for SpinSleeper {
 pub struct SpinWaitSleeper;
 
 impl Sleep for SpinWaitSleeper {
-    fn sleep_until(&self, deadline: Instant) {
+    fn sleep(&self, duration: Duration) {
+        use std::time::Instant;
+
+        let deadline = Instant::now() + duration;
         while Instant::now() < deadline {
             std::hint::spin_loop();
         }

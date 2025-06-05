@@ -31,7 +31,7 @@ fn main() -> Result<()> {
             timeout: Some(Duration::from_millis(200)),
             ..Default::default()
         },
-        SpinSleeper::default(),
+        FixedSchedule::default(),
     )?;
 
     tests::run(autd)
