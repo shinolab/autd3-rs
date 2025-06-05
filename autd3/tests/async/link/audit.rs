@@ -17,7 +17,7 @@ async fn audit_test() -> anyhow::Result<()> {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()
         },
-        AsyncSleeper,
+        FixedSchedule(AsyncSleeper),
     )
     .await?;
     assert_eq!(0, autd.link()[0].idx());
@@ -28,7 +28,7 @@ async fn audit_test() -> anyhow::Result<()> {
                 timeout: Some(Duration::from_millis(20)),
                 ..Default::default()
             },
-            AsyncSleeper,
+            FixedSchedule(AsyncSleeper),
         )
         .send(Null {})
         .await?;

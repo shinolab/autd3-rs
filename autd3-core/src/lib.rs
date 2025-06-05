@@ -41,6 +41,10 @@ pub mod modulation;
 #[cfg(feature = "sampling_config")]
 #[doc(hidden)]
 pub mod sampling_config;
+#[cfg_attr(docsrs, doc(cfg(feature = "sleep")))]
+#[cfg(feature = "sleep")]
+#[doc(hidden)]
+pub mod sleep;
 #[cfg_attr(docsrs, doc(cfg(feature = "utils")))]
 #[cfg(feature = "utils")]
 #[doc(hidden)]

@@ -19,7 +19,7 @@ async = ["tokio", "autd3-core/async"]
 async-trait = ["async", "autd3-core/async-trait"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["link", "derive", "gain", "modulation"] }
+autd3-core = { workspace = true, features = ["link", "derive", "gain", "modulation", "sleep"] }
 autd3-derive = { workspace = true }
 autd3-driver = { workspace = true }
 autd3-firmware-emulator = { workspace = true }
@@ -29,7 +29,6 @@ getset = { workspace = true }
 itertools = { workspace = true }
 num = { workspace = true }
 smallvec = { workspace = true }
-spin_sleep = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = true }
 tracing = { workspace = true }
