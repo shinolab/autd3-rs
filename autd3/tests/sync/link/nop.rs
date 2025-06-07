@@ -1,5 +1,5 @@
 use autd3::prelude::*;
-use autd3_core::link::Link;
+use autd3_core::link::{Link, LinkError};
 
 #[test]
 fn nop_test() -> anyhow::Result<()> {
@@ -10,7 +10,7 @@ fn nop_test() -> anyhow::Result<()> {
     assert!(autd.link_mut().close().is_ok());
 
     assert_eq!(
-        Err(AUTDDriverError::LinkClosed),
+        Err(AUTDDriverError::Link(LinkError::closed())),
         autd.send(Static::default())
     );
 
