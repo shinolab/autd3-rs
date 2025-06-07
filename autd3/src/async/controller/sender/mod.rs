@@ -259,7 +259,7 @@ mod tests {
         sender.link.is_open = false;
         let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
-            Err(AUTDDriverError::LinkClosed),
+            Err(AUTDDriverError::Link(LinkError::closed())),
             sender.send_receive(tx, Duration::ZERO).await,
         );
     }
@@ -302,7 +302,7 @@ mod tests {
         sender.link.recv_cnt = 0;
         sender.link.is_open = false;
         assert_eq!(
-            Err(AUTDDriverError::LinkClosed),
+            Err(AUTDDriverError::Link(LinkError::closed())),
             sender.wait_msg_processed(Duration::from_millis(10)).await
         );
 

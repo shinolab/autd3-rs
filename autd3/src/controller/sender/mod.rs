@@ -325,8 +325,8 @@ mod tests {
         sender.link.is_open = false;
         let tx = sender.link.alloc_tx_buffer().unwrap();
         assert_eq!(
+            Err(AUTDDriverError::Link(LinkError::closed())),
             sender.send_receive(tx, Duration::ZERO),
-            Err(AUTDDriverError::LinkClosed)
         );
     }
 
@@ -364,7 +364,7 @@ mod tests {
         sender.link.recv_cnt = 0;
         sender.link.is_open = false;
         assert_eq!(
-            Err(AUTDDriverError::LinkClosed),
+            Err(AUTDDriverError::Link(LinkError::closed())),
             sender.wait_msg_processed(Duration::from_millis(10))
         );
 

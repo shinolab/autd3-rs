@@ -1,4 +1,8 @@
-use autd3::{r#async::Controller, core::link::AsyncLink, prelude::*};
+use autd3::{
+    r#async::Controller,
+    core::link::{AsyncLink, LinkError},
+    prelude::*,
+};
 
 #[tokio::test]
 async fn nop_test() -> anyhow::Result<()> {
@@ -9,7 +13,7 @@ async fn nop_test() -> anyhow::Result<()> {
     assert!(autd.link_mut().close().await.is_ok());
 
     assert_eq!(
-        Err(AUTDDriverError::LinkClosed),
+        Err(AUTDDriverError::Link(LinkError::closed())),
         autd.send(Static::default()).await
     );
 
