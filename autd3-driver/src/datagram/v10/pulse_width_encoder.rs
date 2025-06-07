@@ -97,7 +97,7 @@ impl<H: Fn(EmitIntensity) -> PulseWidth<u8, 8> + Send + Sync, F: Fn(&Device) -> 
     fn option(&self) -> DatagramOption {
         DatagramOption {
             timeout: DEFAULT_TIMEOUT,
-            parallel_threshold: 4,
+            parallel_threshold: num_cpus::get(),
         }
     }
 }
