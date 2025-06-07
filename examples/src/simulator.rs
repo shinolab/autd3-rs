@@ -8,13 +8,6 @@ use autd3::prelude::*;
 use autd3_link_simulator::Simulator;
 
 fn main() -> Result<()> {
-    // use tracing_subscriber::{EnvFilter, fmt, prelude::*};
-
-    // tracing_subscriber::registry()
-    //     .with(fmt::layer())
-    //     .with(EnvFilter::new("autd3=debug"))
-    //     .init();
-
     let autd = Controller::open_with_option(
         [
             AUTD3 {

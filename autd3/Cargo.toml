@@ -31,7 +31,6 @@ num = { workspace = true }
 smallvec = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = true }
-tracing = { workspace = true }
 zerocopy = { workspace = true }
 
 [dev-dependencies]

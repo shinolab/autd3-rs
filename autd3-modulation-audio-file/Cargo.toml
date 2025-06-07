@@ -19,7 +19,6 @@ autd3-derive = { workspace = true }
 csv = { workspace = true }
 hound = { workspace = true }
 thiserror = { workspace = true }
-tracing = { workspace = true, features = ["attributes"] }
 
 [dev-dependencies]
 anyhow = { workspace = true }

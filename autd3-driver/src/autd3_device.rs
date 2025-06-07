@@ -68,7 +68,6 @@ impl<R: Into<UnitQuaternion> + Debug> AUTD3<R> {
 
 impl<R: Into<UnitQuaternion> + Debug> From<AUTD3<R>> for Device {
     fn from(autd3: AUTD3<R>) -> Self {
-        tracing::debug!("Configure device: {:?}", &autd3);
         let rot = autd3.rot.into();
         let isometry = Isometry {
             rotation: rot,
