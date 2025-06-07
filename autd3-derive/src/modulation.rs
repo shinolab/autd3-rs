@@ -16,7 +16,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             fn operation_generator_with_loop_behavior(self, _: &Geometry, _: &DeviceFilter, segment: Segment, transition_mode: Option<TransitionMode>, loop_behavior: LoopBehavior) -> Result<Self::G, Self::Error> {
                 let config = <Self as Modulation>::sampling_config(&self);
                 let g = self.calc()?;
-                tracing::trace!("Modulation buffer: {:?}", g);
                 Ok(Self::G {
                     g: std::sync::Arc::new(g),
                     config,

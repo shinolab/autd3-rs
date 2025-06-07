@@ -4,8 +4,8 @@ use autd3_driver::{
     firmware::fpga::Drive,
     geometry::{Device, Transducer},
 };
-use itertools::Itertools;
 
+use itertools::Itertools;
 use std::{
     collections::{HashMap, hash_map::Entry},
     hash::Hash,

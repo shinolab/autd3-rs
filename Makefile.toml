@@ -85,7 +85,7 @@ args = [
     "-t",
     "${@}",
     "--excl-line",
-    "GRCOV_EXCL_LINE|^\\s*\\.await\\??[,;]?$|#\\[derive|#\\[error|#\\[bitfield_struct|unreachable!|unimplemented!|tracing::(debug|trace|info|warn|error)!\\([\\s\\S]*\\);",
+    "GRCOV_EXCL_LINE|^\\s*\\.await\\??[,;]?$|#\\[derive|#\\[error|#\\[bitfield_struct|unreachable!|unimplemented!",
     "--keep-only",
     "autd3/src/**/*.rs",
     "--keep-only",
