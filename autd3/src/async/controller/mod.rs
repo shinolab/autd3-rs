@@ -237,7 +237,7 @@ impl<L: AsyncLink> Controller<L> {
     }
 
     async fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
-        self.send(ty).await.map_err(|e| {
+        self.send(ty).await.map_err(|_| {
             AUTDError::ReadFirmwareVersionFailed(
                 check_if_msg_is_processed(self.msg_id, &self.rx_buf).collect(),
             )
