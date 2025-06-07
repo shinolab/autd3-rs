@@ -158,7 +158,7 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Debug> Datagra
     fn option(&self) -> DatagramOption {
         DatagramOption {
             parallel_threshold: if self.foci.len() * N >= 4000 {
-                4
+                num_cpus::get()
             } else {
                 usize::MAX
             },
