@@ -27,6 +27,15 @@ pub trait Link: Send {
     /// Checks if the link is open.
     #[must_use]
     fn is_open(&self) -> bool;
+
+    /// Ensures that the link is open, returning an error if it is not.
+    fn ensure_is_open(&self) -> Result<(), LinkError> {
+        if self.is_open() {
+            Ok(())
+        } else {
+            Err(LinkError::closed())
+        }
+    }
 }
 
 impl Link for Box<dyn Link> {
