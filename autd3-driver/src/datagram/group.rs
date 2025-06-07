@@ -151,7 +151,6 @@ where
                         .zip(geometry.iter())
                         .filter(|(_, dev)| filter.is_enabled(dev))
                         .for_each(|(op, dev)| {
-                            tracing::debug!("Generate operation for device {}", dev.idx());
                             *op = generator.generate(dev);
                         });
 

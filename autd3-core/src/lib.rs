@@ -151,7 +151,6 @@ pub mod derive {
             },
             geometry::Geometry,
         };
-        pub use tracing;
         pub use tynm;
     }
     #[cfg(any(feature = "gain", feature = "modulation"))]

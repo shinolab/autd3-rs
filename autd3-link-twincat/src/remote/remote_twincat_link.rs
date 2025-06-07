@@ -54,8 +54,6 @@ impl RemoteTwinCAT {
 
 impl Link for RemoteTwinCAT {
     fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
-        tracing::info!("Connecting to TwinCAT3");
-
         let RemoteTwinCATOption {
             server_ip,
             client_ams_net_id,
@@ -77,7 +75,6 @@ impl Link for RemoteTwinCAT {
         } else {
             server_ip.to_owned()
         };
-        tracing::info!("Server IP: {}", ip);
 
         if !client_ams_net_id.is_empty() {
             let local_octets = client_ams_net_id
@@ -99,7 +96,6 @@ impl Link for RemoteTwinCAT {
                     local_octets[5],
                 ],
             };
-            tracing::info!("Setting local AMS Net ID: {:?}", local_addr);
             unsafe {
                 AdsCSetLocalAddress(local_addr);
             }
@@ -111,7 +107,6 @@ impl Link for RemoteTwinCAT {
             ],
         };
 
-        tracing::info!("Setting remote AMS Net ID: {:?}", net_id);
         let ip = CString::new(ip.clone()).map_err(|_| AdsError::InvalidIp(ip.clone()))?;
         let res = unsafe { AdsCAddRoute(net_id, ip.as_c_str().as_ptr()) };
         if res != 0 {

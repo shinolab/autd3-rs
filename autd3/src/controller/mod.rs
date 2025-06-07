@@ -24,7 +24,6 @@ pub use sender::{FixedDelay, FixedSchedule, ParallelMode, Sender, SenderOption, 
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
-use tracing;
 
 /// A controller for the AUTD devices.
 ///
@@ -74,8 +73,6 @@ impl<L: Link> Controller<L> {
         option: SenderOption,
         timer_strategy: T,
     ) -> Result<Self, AUTDError> {
-        tracing::debug!("Opening a controller with option {:?})", option);
-
         let geometry = Geometry::new(devices.into_iter().map(|d| d.into()).collect());
 
         link.open(&geometry)?;
@@ -119,7 +116,6 @@ impl<L: Link> Controller<L> {
     }
 
     /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
-    #[tracing::instrument(level = "debug", skip(self))]
     pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
@@ -137,7 +133,6 @@ impl<L: Link> Controller<L> {
     }
 
     /// Closes the controller.
-    #[tracing::instrument(level = "debug", skip(self))]
     pub fn close(mut self) -> Result<(), AUTDDriverError> {
         self.close_impl(self.default_sender_option, FixedSchedule::default())
     }
@@ -209,10 +204,7 @@ impl<L: Link> Controller<L> {
         option: SenderOption,
         timer_strategy: T,
     ) -> Result<(), AUTDDriverError> {
-        tracing::info!("Closing controller");
-
         if !self.link.is_open() {
-            tracing::warn!("Link is already closed");
             return Ok(());
         }
 
@@ -234,8 +226,7 @@ impl<L: Link> Controller<L> {
     }
 
     fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
-        self.send(ty).map_err(|e| {
-            tracing::error!("Fetch firmware info failed: {:?}", e);
+        self.send(ty).map_err(|_| {
             AUTDError::ReadFirmwareVersionFailed(
                 check_if_msg_is_processed(self.msg_id, &self.rx_buf).collect(),
             )

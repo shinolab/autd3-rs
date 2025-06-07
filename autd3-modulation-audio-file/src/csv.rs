@@ -47,7 +47,6 @@ where
         }
     }
 
-    #[tracing::instrument]
     fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
         let f = File::open(&self.path)?;
         let mut rdr = csv::ReaderBuilder::new()
@@ -79,9 +78,7 @@ where
     Config: Into<SamplingConfig> + Debug + Copy,
 {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        let buffer = self.read_buf()?;
-        tracing::debug!("Read buffer: {:?}", buffer);
-        Ok(buffer)
+        Ok(self.read_buf()?)
     }
 
     fn sampling_config(&self) -> SamplingConfig {

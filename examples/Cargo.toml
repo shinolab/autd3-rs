@@ -10,7 +10,7 @@ repository = { workspace = true }
 default = []
 nop = []
 async = ["autd3/async", "tokio"]
-simulator = ["autd3-link-simulator", "tracing-subscriber/env-filter"]
+simulator = ["autd3-link-simulator"]
 twincat = ["autd3-link-twincat/local"]
 remote_twincat = ["autd3-link-twincat/remote"]
 lightweight = ["autd3-protobuf/lightweight", "autd3-protobuf/async-trait", "tokio"]
@@ -28,8 +28,6 @@ autd3-protobuf = { workspace = true, optional = true }
 color-print = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"], optional = true }
 tonic = { workspace = true, features = ["router"], optional = true }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true, features = ["fmt"] }
 
 [[bin]]
 name = "nop"

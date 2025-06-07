@@ -19,7 +19,6 @@ impl Wav {
         let path = path.as_ref().to_path_buf();
         let mut reader = hound::WavReader::open(&path)?;
         let spec = reader.spec();
-        tracing::debug!("wav spec: {:?}", spec);
         if spec.channels != 1 {
             return Err(AudioFileError::Wav(hound::Error::Unsupported));
         }
