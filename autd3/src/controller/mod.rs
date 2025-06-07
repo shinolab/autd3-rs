@@ -188,11 +188,7 @@ impl<L: Link> Controller<L> {
     ///
     /// [`ReadsFPGAState`]: autd3_driver::datagram::ReadsFPGAState
     pub fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
-        if !self.link.is_open() {
-            return Err(AUTDError::Driver(
-                autd3_driver::error::AUTDDriverError::LinkClosed,
-            ));
-        }
+        self.link.ensure_is_open()?;
         self.link.receive(&mut self.rx_buf)?;
         Ok(self.rx_buf.iter().map(FPGAState::from_rx).collect())
     }

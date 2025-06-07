@@ -60,6 +60,7 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
             self.sent_flags[i] = op.is_some();
         });
 
+        self.link.ensure_is_open()?;
         self.link.update(self.geometry).await?;
 
         let mut send_timing = T::initial();
@@ -93,10 +94,7 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
         tx: Vec<TxMessage>,
         timeout: Duration,
     ) -> Result<(), AUTDDriverError> {
-        if !self.link.is_open() {
-            return Err(AUTDDriverError::LinkClosed);
-        }
-
+        self.link.ensure_is_open()?;
         self.link.send(tx).await?;
         self.wait_msg_processed(timeout).await
     }
@@ -105,9 +103,7 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
         let start = Instant::now();
         let mut receive_timing = T::initial();
         loop {
-            if !self.link.is_open() {
-                return Err(AUTDDriverError::LinkClosed);
-            }
+            self.link.ensure_is_open()?;
             self.link.receive(self.rx).await?;
 
             if check_if_msg_is_processed(*self.msg_id, self.rx)
@@ -263,7 +259,7 @@ mod tests {
         sender.link.is_open = false;
         let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
-            Err(AUTDDriverError::LinkClosed),
+            Err(AUTDDriverError::Link(LinkError::closed())),
             sender.send_receive(tx, Duration::ZERO).await,
         );
     }
@@ -306,7 +302,7 @@ mod tests {
         sender.link.recv_cnt = 0;
         sender.link.is_open = false;
         assert_eq!(
-            Err(AUTDDriverError::LinkClosed),
+            Err(AUTDDriverError::Link(LinkError::closed())),
             sender.wait_msg_processed(Duration::from_millis(10)).await
         );
 

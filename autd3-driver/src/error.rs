@@ -88,9 +88,6 @@ pub enum AUTDDriverError {
     #[error("Unused group key({0})")]
     UnusedKey(String),
 
-    /// Link is closed.
-    #[error("Link is closed")]
-    LinkClosed,
     /// Failed to confirm the response from the device.
     #[error("Failed to confirm the response from the device")]
     ConfirmResponseFailed,

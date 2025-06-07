@@ -197,11 +197,7 @@ impl<L: AsyncLink> Controller<L> {
     ///
     /// [`ReadsFPGAState`]: autd3_driver::datagram::ReadsFPGAState
     pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
-        if !self.link.is_open() {
-            return Err(AUTDError::Driver(
-                autd3_driver::error::AUTDDriverError::LinkClosed,
-            ));
-        }
+        self.link.ensure_is_open()?;
         self.link.receive(&mut self.rx_buf).await?;
         Ok(self.rx_buf.iter().map(FPGAState::from_rx).collect())
     }
