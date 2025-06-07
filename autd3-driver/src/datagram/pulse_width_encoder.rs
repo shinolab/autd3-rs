@@ -117,7 +117,7 @@ impl<
     fn option(&self) -> DatagramOption {
         DatagramOption {
             timeout: DEFAULT_TIMEOUT,
-            parallel_threshold: 4,
+            parallel_threshold: num_cpus::get(),
         }
     }
 }

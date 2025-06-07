@@ -49,16 +49,23 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
-        let parallel = self
-            .option
-            .parallel
-            .is_parallel(self.geometry.num_devices(), s.option().parallel_threshold);
+        let parallel_threshold = s.option().parallel_threshold;
 
         let g = s.operation_generator(self.geometry, &DeviceFilter::all_enabled())?;
         let mut operations = OperationHandler::generate(g, self.geometry);
-        operations.iter().enumerate().for_each(|(i, op)| {
-            self.sent_flags[i] = op.is_some();
-        });
+
+        operations
+            .iter()
+            .zip(self.sent_flags.iter_mut())
+            .for_each(|(op, flag)| {
+                *flag = op.is_some();
+            });
+
+        let num_enabled = self.sent_flags.iter().filter(|x| **x).count();
+        let parallel = self
+            .option
+            .parallel
+            .is_parallel(num_enabled, parallel_threshold);
 
         self.link.ensure_is_open()?;
         self.link.update(self.geometry).await?;

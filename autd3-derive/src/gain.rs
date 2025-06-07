@@ -27,7 +27,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
             fn option(&self) -> DatagramOption {
                 DatagramOption {
                     timeout: std::time::Duration::from_millis(20),
-                    parallel_threshold: 4,
+                    parallel_threshold: num_cpus::get(),
                 }
             }
         }

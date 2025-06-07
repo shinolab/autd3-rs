@@ -151,6 +151,7 @@ pub mod derive {
             },
             geometry::Geometry,
         };
+        pub use num_cpus;
         pub use tynm;
     }
     #[cfg(any(feature = "gain", feature = "modulation"))]

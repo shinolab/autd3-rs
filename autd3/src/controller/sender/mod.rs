@@ -1,3 +1,4 @@
+mod parallel_mode;
 mod strategy;
 
 use std::{
@@ -20,31 +21,8 @@ use autd3_driver::{
     },
 };
 
+pub use parallel_mode::ParallelMode;
 pub use strategy::{FixedDelay, FixedSchedule, TimerStrategy};
-
-/// The parallel processing mode.
-#[repr(u8)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ParallelMode {
-    /// Automatically select the processing mode. If the number of devices is greater than the parallel threshold of the [`Datagram::option`], the parallel processing is used.
-    #[default]
-    Auto = 0,
-    /// Force to use the parallel processing.
-    On = 1,
-    /// Force to use the serial processing.
-    Off = 2,
-}
-
-impl ParallelMode {
-    #[must_use]
-    pub(crate) const fn is_parallel(self, num_devices: usize, parallel_threshold: usize) -> bool {
-        match self {
-            ParallelMode::On => true,
-            ParallelMode::Off => false,
-            ParallelMode::Auto => num_devices > parallel_threshold,
-        }
-    }
-}
 
 /// The option of [`Sender`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -102,16 +80,23 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
-        let parallel = self
-            .option
-            .parallel
-            .is_parallel(self.geometry.num_devices(), s.option().parallel_threshold);
+        let parallel_threshold = s.option().parallel_threshold;
 
         let g = s.operation_generator(self.geometry, &DeviceFilter::all_enabled())?;
         let mut operations = OperationHandler::generate(g, self.geometry);
-        operations.iter().enumerate().for_each(|(i, op)| {
-            self.sent_flags[i] = op.is_some();
-        });
+
+        operations
+            .iter()
+            .zip(self.sent_flags.iter_mut())
+            .for_each(|(op, flag)| {
+                *flag = op.is_some();
+            });
+
+        let num_enabled = self.sent_flags.iter().filter(|x| **x).count();
+        let parallel = self
+            .option
+            .parallel
+            .is_parallel(num_enabled, parallel_threshold);
 
         self.link.ensure_is_open()?;
         self.link.update(self.geometry)?;
@@ -200,26 +185,6 @@ mod tests {
     use crate::tests::create_geometry;
 
     use super::*;
-
-    #[rstest::rstest]
-    #[case(true, ParallelMode::On, 1, 1)]
-    #[case(true, ParallelMode::On, 2, 1)]
-    #[case(true, ParallelMode::On, 1, 2)]
-    #[case(false, ParallelMode::Off, 1, 1)]
-    #[case(false, ParallelMode::Off, 2, 1)]
-    #[case(false, ParallelMode::Off, 1, 2)]
-    #[case(false, ParallelMode::Auto, 1, 1)]
-    #[case(true, ParallelMode::Auto, 2, 1)]
-    #[case(false, ParallelMode::Auto, 1, 2)]
-    #[test]
-    fn parallel_mode(
-        #[case] expect: bool,
-        #[case] mode: ParallelMode,
-        #[case] num_devices: usize,
-        #[case] threshold: usize,
-    ) {
-        assert_eq!(expect, mode.is_parallel(num_devices, threshold));
-    }
 
     #[derive(Default)]
     struct MockLink {
