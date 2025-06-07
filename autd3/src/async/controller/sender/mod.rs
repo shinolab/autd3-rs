@@ -19,8 +19,6 @@ use autd3_driver::{
     },
 };
 
-use itertools::Itertools;
-
 use crate::controller::SenderOption;
 
 /// A struct to send the [`Datagram`] to the devices.
@@ -43,7 +41,6 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
     /// - 0, this function does not check whether the sent data has been processed by the device.
     ///
     /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of devices is greater than the `parallel_threshold`.
-    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
@@ -56,7 +53,6 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
             .option
             .parallel
             .is_parallel(self.geometry.num_devices(), s.option().parallel_threshold);
-        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
         let g = s.operation_generator(self.geometry, &DeviceFilter::all_enabled())?;
         let mut operations = OperationHandler::generate(g, self.geometry);
@@ -101,7 +97,6 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
             return Err(AUTDDriverError::LinkClosed);
         }
 
-        tracing::trace!("send: {}", tx.iter().join(", "));
         self.link.send(tx).await?;
         self.wait_msg_processed(timeout).await
     }
@@ -114,9 +109,6 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
                 return Err(AUTDDriverError::LinkClosed);
             }
             self.link.receive(self.rx).await?;
-            tracing::trace!("send msg id: {}", self.msg_id.get());
-            tracing::trace!("sent flags: {}", self.sent_flags.iter().join(", "));
-            tracing::trace!("recv: {}", self.rx.iter().join(", "));
 
             if check_if_msg_is_processed(*self.msg_id, self.rx)
                 .zip(self.sent_flags.iter())
@@ -144,7 +136,6 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
                 if timeout == Duration::ZERO {
                     Ok(())
                 } else {
-                    tracing::error!("Failed to confirm the response from the devices");
                     Err(AUTDDriverError::ConfirmResponseFailed)
                 }
             })

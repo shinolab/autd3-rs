@@ -32,7 +32,6 @@ rayon = { workspace = true }
 seq-macro = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["macros", "std"] }
-tracing = { workspace = true, features = ["attributes"] }
 tynm = { workspace = true }
 zerocopy = { workspace = true }
 

@@ -67,7 +67,7 @@ impl<S: Into<SamplingMode> + Clone + Copy + Debug> Modulation for Fourier<S> {
                 },
             })
             .collect::<Vec<_>>();
-        tracing::trace!("Fourier components: {:?}", components);
+
         if components
             .iter()
             .skip(1)

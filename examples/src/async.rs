@@ -5,10 +5,6 @@ use autd3::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .init();
-
     let mut autd = Controller::open(
         [AUTD3 {
             pos: Point3::origin(),

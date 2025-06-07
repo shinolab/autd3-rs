@@ -20,8 +20,6 @@ use autd3_driver::{
     },
 };
 
-use itertools::Itertools;
-
 pub use strategy::{FixedDelay, FixedSchedule, TimerStrategy};
 
 /// The parallel processing mode.
@@ -96,7 +94,6 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
     /// - 0, this function does not check whether the sent data has been processed by the device.
     ///
     /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of devices is greater than the `parallel_threshold`.
-    #[tracing::instrument(level = "debug", skip(self))]
     pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
@@ -109,7 +106,6 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
             .option
             .parallel
             .is_parallel(self.geometry.num_devices(), s.option().parallel_threshold);
-        tracing::debug!("timeout: {:?}, parallel: {:?}", timeout, parallel);
 
         let g = s.operation_generator(self.geometry, &DeviceFilter::all_enabled())?;
         let mut operations = OperationHandler::generate(g, self.geometry);
@@ -153,7 +149,6 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
             return Err(AUTDDriverError::LinkClosed);
         }
 
-        tracing::trace!("send: {}", tx.iter().join(", "));
         self.link.send(tx)?;
         self.wait_msg_processed(timeout)
     }
@@ -166,9 +161,6 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
                 return Err(AUTDDriverError::LinkClosed);
             }
             self.link.receive(self.rx)?;
-            tracing::trace!("send msg id: {}", self.msg_id.get());
-            tracing::trace!("sent flags: {}", self.sent_flags.iter().join(", "));
-            tracing::trace!("recv: {}", self.rx.iter().join(", "));
 
             if check_if_msg_is_processed(*self.msg_id, self.rx)
                 .zip(self.sent_flags.iter())
@@ -196,7 +188,6 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
                 if timeout == Duration::ZERO {
                     Ok(())
                 } else {
-                    tracing::error!("Failed to confirm the response from the devices");
                     Err(AUTDDriverError::ConfirmResponseFailed)
                 }
             })
