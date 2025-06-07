@@ -189,8 +189,8 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C
 
     fn option(&self) -> DatagramOption {
         DatagramOption {
-            parallel_threshold: 4,
             timeout: DEFAULT_TIMEOUT,
+            parallel_threshold: num_cpus::get(),
         }
     }
 }
