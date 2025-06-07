@@ -3,6 +3,8 @@
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParallelMode {
     /// Automatically select the processing mode. If the number of devices is greater than the parallel threshold of the [`Datagram::option`], the parallel processing is used.
+    ///
+    /// [`Datagram::option`]: autd3_core::datagram::Datagram::option
     #[default]
     Auto = 0,
     /// Force to use the parallel processing.
