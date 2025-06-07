@@ -70,11 +70,13 @@ async fn audit_test() -> anyhow::Result<()> {
         use autd3_core::link::AsyncLink;
         assert!(autd.link_mut().close().await.is_ok());
         assert_eq!(
-            Err(AUTDDriverError::LinkClosed),
+            Err(AUTDDriverError::Link(LinkError::closed())),
             autd.send(Static::default()).await
         );
         assert_eq!(
-            Err(AUTDError::Driver(AUTDDriverError::LinkClosed)),
+            Err(AUTDError::Driver(
+                AUTDDriverError::Link(LinkError::closed())
+            )),
             autd.fpga_state().await
         );
     }
