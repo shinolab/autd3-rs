@@ -10,17 +10,17 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = []
+features = ["async"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-async = []
+async = ["autd3-core/async"]
 async-trait = ["autd3-core/async-trait"]
 default = []
 lightweight = []
 
 [dependencies]
-autd3-core = { workspace = true, features = ["gain", "common", "geometry", "derive", "link", "ethercat", "modulation", "sampling_config"] }
+autd3-core = { workspace = true, features = ["gain", "common", "geometry", "derive", "link", "ethercat", "modulation", "sampling_config", "sleep"] }
 autd3-derive = { workspace = true }
 bit-vec = { workspace = true }
 bitfield-struct = { workspace = true }

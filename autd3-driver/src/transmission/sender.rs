@@ -31,11 +31,9 @@ pub struct SenderOption {
     pub receive_interval: Duration,
     /// If `None`, [`Datagram::option`] is used.
     ///
-    /// [`Datagram`]: autd3_driver::datagram::Datagram
+    /// [`Datagram`]: crate::datagram::Datagram
     pub timeout: Option<Duration>,
     /// The parallel processing mode.
-    ///
-    /// [`Datagram`]: autd3_driver::datagram::Datagram
     pub parallel: ParallelMode,
 }
 

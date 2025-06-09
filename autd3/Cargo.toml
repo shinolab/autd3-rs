@@ -19,7 +19,7 @@ async = ["tokio", "autd3-core/async", "autd3-driver/async"]
 async-trait = ["async", "autd3-core/async-trait", "autd3-driver/async-trait"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["link", "derive", "gain", "modulation", "sleep"] }
+autd3-core = { workspace = true, features = ["link", "derive", "gain", "modulation"] }
 autd3-derive = { workspace = true }
 autd3-driver = { workspace = true }
 autd3-firmware-emulator = { workspace = true }

@@ -45,7 +45,7 @@ smallvec = { workspace = true, optional = true }
 spin_sleep = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
 time = { workspace = true, optional = true, features = ["macros", "std"] }
-tokio = { workspace = true, optional = true, features = ["time"] }
+tokio = { workspace = true, optional = true, features = ["time", "rt"] }
 tynm = { workspace = true, optional = true }
 zerocopy = { workspace = true, optional = true, features = ["derive"] }
 
