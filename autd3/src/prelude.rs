@@ -12,7 +12,6 @@ pub use crate::{
         },
         stm::{Circle, Line},
     },
-    error::AUTDError,
     link::Nop,
 };
 

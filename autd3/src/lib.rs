@@ -18,8 +18,6 @@ pub mod controller;
 /// [`GainSTM`]: autd3_driver::datagram::GainSTM
 /// [`FociSTM`]: autd3_driver::datagram::FociSTM
 pub mod datagram;
-/// Error module.
-pub mod error;
 /// Primitive [`Link`].
 ///
 /// [`Link`]: autd3_core::link::Link

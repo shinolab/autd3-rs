@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
-use super::sleep::AsyncSleep;
-use crate::controller::{FixedDelay, FixedSchedule};
+use crate::transmission::{FixedDelay, FixedSchedule};
+use autd3_core::sleep::r#async::AsyncSleep;
 
 #[cfg(feature = "async-trait")]
 mod internal {

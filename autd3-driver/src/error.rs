@@ -92,6 +92,10 @@ pub enum AUTDDriverError {
     #[error("Failed to confirm the response from the device")]
     ConfirmResponseFailed,
 
+    /// Failed to read firmware version.
+    #[error("Read firmware info failed: {}", .0.iter().enumerate().filter(|&(_, &b)| !b).map(|(i, _)| i.to_string()).collect::<Vec<_>>().join(", "))]
+    ReadFirmwareVersionFailed(Vec<bool>),
+
     /// Invalid date time.
     #[error("The input data is invalid.")]
     InvalidDateTime,
