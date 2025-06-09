@@ -10,15 +10,17 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = []
+features = ["async"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
+async = ["autd3-core/async"]
+async-trait = ["autd3-core/async-trait"]
 default = []
 lightweight = []
 
 [dependencies]
-autd3-core = { workspace = true, features = ["gain", "common", "geometry", "derive", "link", "ethercat", "modulation", "sampling_config"] }
+autd3-core = { workspace = true, features = ["gain", "common", "geometry", "derive", "link", "ethercat", "modulation", "sampling_config", "sleep"] }
 autd3-derive = { workspace = true }
 bit-vec = { workspace = true }
 bitfield-struct = { workspace = true }
@@ -42,6 +44,8 @@ approx = { workspace = true }
 criterion = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
+tokio = { workspace = true, features = ["macros"] }
+tokio-test = { version = "0.4.4", default-features = false }
 
 [lib]
 bench = false
