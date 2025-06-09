@@ -15,8 +15,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
-async = ["tokio", "autd3-core/async"]
-async-trait = ["async", "autd3-core/async-trait"]
+async = ["tokio", "autd3-core/async", "autd3-driver/async"]
+async-trait = ["async", "autd3-core/async-trait", "autd3-driver/async-trait"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["link", "derive", "gain", "modulation", "sleep"] }

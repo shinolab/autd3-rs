@@ -1,18 +1,18 @@
 use std::time::Duration;
 
-use autd3_core::sleep::{SpinSleeper, SpinWaitSleeper, StdSleeper};
+use super::{SpinSleeper, SpinWaitSleeper, StdSleeper};
 
 #[cfg(feature = "async-trait")]
 mod internal {
     use super::*;
 
     #[doc(hidden)]
-    #[autd3_core::async_trait]
+    #[async_trait::async_trait]
     pub trait AsyncSleep: std::fmt::Debug + Send + Sync {
         async fn sleep(&self, duration: Duration);
     }
 
-    #[autd3_core::async_trait]
+    #[async_trait::async_trait]
     impl AsyncSleep for Box<dyn AsyncSleep> {
         async fn sleep(&self, duration: Duration) {
             self.as_ref().sleep(duration).await;
@@ -32,21 +32,21 @@ mod internal {
 
 pub use internal::*;
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
+#[cfg_attr(feature = "async-trait", async_trait::async_trait)]
 impl AsyncSleep for StdSleeper {
     async fn sleep(&self, duration: Duration) {
         std::thread::sleep(duration);
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
+#[cfg_attr(feature = "async-trait", async_trait::async_trait)]
 impl AsyncSleep for SpinSleeper {
     async fn sleep(&self, duration: Duration) {
         SpinSleeper::sleep(*self, duration);
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
+#[cfg_attr(feature = "async-trait", async_trait::async_trait)]
 impl AsyncSleep for SpinWaitSleeper {
     async fn sleep(&self, duration: Duration) {
         use std::time::Instant;
@@ -62,7 +62,7 @@ impl AsyncSleep for SpinWaitSleeper {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct AsyncSleeper;
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
+#[cfg_attr(feature = "async-trait", async_trait::async_trait)]
 impl AsyncSleep for AsyncSleeper {
     async fn sleep(&self, duration: Duration) {
         tokio::time::sleep(duration).await;
