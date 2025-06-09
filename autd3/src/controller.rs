@@ -1,38 +1,35 @@
-mod sender;
-
-use crate::{
-    controller::{FixedSchedule, SenderOption},
-    error::AUTDError,
-    gain::Null,
-    modulation::Static,
-};
+use crate::{gain::Null, modulation::Static};
 
 use autd3_core::{
-    datagram::{DeviceFilter, Inspectable, InspectionResult},
-    link::{AsyncLink, MsgId},
+    datagram::{Inspectable, InspectionResult},
+    derive::DeviceFilter,
+    link::{Link, MsgId},
+    sleep::Sleep,
 };
 use autd3_driver::{
-    datagram::{Clear, Datagram, FixedCompletionSteps, ReadsFPGAState, Silencer, Synchronize},
+    datagram::{Clear, Datagram, FixedCompletionSteps, Silencer},
     error::AUTDDriverError,
     firmware::{
-        cpu::{RxMessage, check_if_msg_is_processed},
+        cpu::RxMessage,
         fpga::FPGAState,
-        operation::{FirmwareVersionType, Operation, OperationGenerator},
+        operation::{Operation, OperationGenerator},
         version::FirmwareVersion,
     },
     geometry::{Device, Geometry},
 };
 
-pub use sender::{AsyncSleep, AsyncSleeper, AsyncTimerStrategy, Sender};
+pub use autd3_driver::transmission::{
+    FixedDelay, FixedSchedule, ParallelMode, Sender, SenderOption, TimerStrategy,
+};
 
 use derive_more::{Deref, DerefMut};
 use getset::{Getters, MutGetters};
 
-/// An asynchronous controller for the AUTD devices.
+/// A controller for the AUTD devices.
 ///
 /// All operations to the devices are done through this struct.
 #[derive(Deref, DerefMut, Getters, MutGetters)]
-pub struct Controller<L: AsyncLink> {
+pub struct Controller<L: Link> {
     /// The link to the devices.
     #[getset(get = "pub", get_mut = "pub")]
     link: L,
@@ -48,132 +45,95 @@ pub struct Controller<L: AsyncLink> {
     pub default_sender_option: SenderOption,
 }
 
-impl<L: AsyncLink> Controller<L> {
-    /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`] and [`AsyncSleeper`].
-    pub async fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
+impl<L: Link> Controller<L> {
+    /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`] and [`FixedSchedule`].
+    pub fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
         devices: F,
         link: L,
-    ) -> Result<Controller<L>, AUTDError> {
+    ) -> Result<Self, AUTDDriverError> {
         Self::open_with_option(
             devices,
             link,
             SenderOption::default(),
-            FixedSchedule(AsyncSleeper),
+            FixedSchedule::default(),
         )
-        .await
     }
 
-    /// Opens a controller with a timeout.
+    /// Opens a controller with a [`SenderOption`].
     ///
     /// Opens link, and then initialize and synchronize the devices. The `timeout` is used to send data for initialization and synchronization.
-    pub async fn open_with_option<
+    pub fn open_with_option<
         D: Into<Device>,
         F: IntoIterator<Item = D>,
-        S: AsyncSleep,
-        T: AsyncTimerStrategy<S>,
+        S: Sleep,
+        T: TimerStrategy<S>,
     >(
         devices: F,
         mut link: L,
         option: SenderOption,
         timer_strategy: T,
-    ) -> Result<Self, AUTDError> {
+    ) -> Result<Self, AUTDDriverError> {
         let geometry = Geometry::new(devices.into_iter().map(|d| d.into()).collect());
 
-        link.open(&geometry).await?;
+        link.open(&geometry)?;
 
         let mut cnt = Controller {
             link,
+            msg_id: MsgId::new(0),
             sent_flags: smallvec::smallvec![false; geometry.len()],
             rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
-            msg_id: MsgId::new(0),
             geometry,
             default_sender_option: option,
         };
 
-        let mut sender = cnt.sender(option, timer_strategy);
-
-        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
-        // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
-        let _ = sender.send(ReadsFPGAState::new(|_| false)).await;
-
-        sender.send((Clear::new(), Synchronize::new())).await?;
+        cnt.sender(option, timer_strategy).initialize_devices()?;
 
         Ok(cnt)
     }
 
     /// Returns the [`Sender`] to send data to the devices.
-    pub fn sender<S: AsyncSleep, T: AsyncTimerStrategy<S>>(
+    pub fn sender<S: Sleep, T: TimerStrategy<S>>(
         &mut self,
         option: SenderOption,
         timer_strategy: T,
     ) -> Sender<'_, L, S, T> {
-        Sender {
-            msg_id: &mut self.msg_id,
-            link: &mut self.link,
-            geometry: &mut self.geometry,
-            sent_flags: &mut self.sent_flags,
-            rx: &mut self.rx_buf,
+        Sender::new(
+            &mut self.msg_id,
+            &mut self.link,
+            &mut self.geometry,
+            &mut self.sent_flags,
+            &mut self.rx_buf,
             option,
             timer_strategy,
-            _phantom: std::marker::PhantomData,
-        }
+        )
     }
 
     /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
-    pub async fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
         D::G: OperationGenerator,
         AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
             + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
     {
-        self.sender(self.default_sender_option, FixedSchedule(AsyncSleeper))
+        self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
-            .await
     }
 
     /// Returns the inspection result.
-    pub fn inspect<I: Inspectable>(
-        &mut self,
-        s: I,
-    ) -> Result<InspectionResult<I::Result>, I::Error> {
+    pub fn inspect<I: Inspectable>(&self, s: I) -> Result<InspectionResult<I::Result>, I::Error> {
         s.inspect(&self.geometry, &DeviceFilter::all_enabled())
     }
 
     /// Closes the controller.
-    pub async fn close(mut self) -> Result<(), AUTDDriverError> {
-        self.close_impl(self.default_sender_option, FixedSchedule(AsyncSleeper))
-            .await
+    pub fn close(mut self) -> Result<(), AUTDDriverError> {
+        self.close_impl(self.default_sender_option, FixedSchedule::default())
     }
 
     /// Returns the firmware version of the devices.
-    pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDError> {
-        use FirmwareVersionType::*;
-        use autd3_driver::firmware::version::{CPUVersion, FPGAVersion, Major, Minor};
-
-        let cpu_major = self.fetch_firminfo(CPUMajor).await?;
-        let cpu_minor = self.fetch_firminfo(CPUMinor).await?;
-        let fpga_major = self.fetch_firminfo(FPGAMajor).await?;
-        let fpga_minor = self.fetch_firminfo(FPGAMinor).await?;
-        let fpga_functions = self.fetch_firminfo(FPGAFunctions).await?;
-        self.fetch_firminfo(Clear).await?;
-
-        Ok(self
-            .geometry
-            .iter()
-            .map(|dev| FirmwareVersion {
-                idx: dev.idx(),
-                cpu: CPUVersion {
-                    major: Major(cpu_major[dev.idx()]),
-                    minor: Minor(cpu_minor[dev.idx()]),
-                },
-                fpga: FPGAVersion {
-                    major: Major(fpga_major[dev.idx()]),
-                    minor: Minor(fpga_minor[dev.idx()]),
-                    function_bits: fpga_functions[dev.idx()],
-                },
-            })
-            .collect())
+    pub fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDDriverError> {
+        self.sender(self.default_sender_option, FixedSchedule::default())
+            .firmware_version()
     }
 
     /// Returns the FPGA state of the devices.
@@ -185,7 +145,7 @@ impl<L: AsyncLink> Controller<L> {
     ///
     /// ```
     /// # use autd3::prelude::*;
-    /// # fn main() -> Result<(), AUTDError> {
+    /// # fn main() -> Result<(), AUTDDriverError> {
     /// let mut autd = Controller::open([AUTD3::default()], Nop::new())?;
     ///
     /// autd.send(ReadsFPGAState::new(|_| true))?;
@@ -196,15 +156,15 @@ impl<L: AsyncLink> Controller<L> {
     /// ```
     ///
     /// [`ReadsFPGAState`]: autd3_driver::datagram::ReadsFPGAState
-    pub async fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDError> {
+    pub fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDDriverError> {
         self.link.ensure_is_open()?;
-        self.link.receive(&mut self.rx_buf).await?;
+        self.link.receive(&mut self.rx_buf)?;
         Ok(self.rx_buf.iter().map(FPGAState::from_rx).collect())
     }
 }
 
-impl<L: AsyncLink> Controller<L> {
-    async fn close_impl<S: AsyncSleep, T: AsyncTimerStrategy<S>>(
+impl<L: Link> Controller<L> {
+    fn close_impl<S: Sleep, T: TimerStrategy<S>>(
         &mut self,
         option: SenderOption,
         timer_strategy: T,
@@ -216,33 +176,22 @@ impl<L: AsyncLink> Controller<L> {
         let mut sender = self.sender(option, timer_strategy);
 
         [
-            sender
-                .send(Silencer {
-                    config: FixedCompletionSteps {
-                        strict_mode: false,
-                        ..Default::default()
-                    },
-                })
-                .await,
-            sender.send((Static::default(), Null)).await,
-            sender.send(Clear {}).await,
-            Ok(self.link.close().await?),
+            sender.send(Silencer {
+                config: FixedCompletionSteps {
+                    strict_mode: false,
+                    ..Default::default()
+                },
+            }),
+            sender.send((Static::default(), Null)),
+            sender.send(Clear {}),
+            Ok(self.link.close()?),
         ]
         .into_iter()
         .try_fold((), |_, x| x)
     }
-
-    async fn fetch_firminfo(&mut self, ty: FirmwareVersionType) -> Result<Vec<u8>, AUTDError> {
-        self.send(ty).await.map_err(|_| {
-            AUTDError::ReadFirmwareVersionFailed(
-                check_if_msg_is_processed(self.msg_id, &self.rx_buf).collect(),
-            )
-        })?;
-        Ok(self.rx_buf.iter().map(|rx| rx.data()).collect())
-    }
 }
 
-impl<'a, L: AsyncLink> IntoIterator for &'a Controller<L> {
+impl<'a, L: Link> IntoIterator for &'a Controller<L> {
     type Item = &'a Device;
     type IntoIter = std::slice::Iter<'a, Device>;
 
@@ -251,7 +200,7 @@ impl<'a, L: AsyncLink> IntoIterator for &'a Controller<L> {
     }
 }
 
-impl<'a, L: AsyncLink> IntoIterator for &'a mut Controller<L> {
+impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
     type Item = &'a mut Device;
     type IntoIter = std::slice::IterMut<'a, Device>;
 
@@ -260,10 +209,9 @@ impl<'a, L: AsyncLink> IntoIterator for &'a mut Controller<L> {
     }
 }
 
-#[cfg(feature = "async-trait")]
-impl<L: AsyncLink + 'static> Controller<L> {
+impl<L: Link + 'static> Controller<L> {
     /// Converts `Controller<L>` into a `Controller<Box<dyn Link>>`.
-    pub fn into_boxed_link(self) -> Controller<Box<dyn AsyncLink>> {
+    pub fn into_boxed_link(self) -> Controller<Box<dyn Link>> {
         let cnt = std::mem::ManuallyDrop::new(self);
         let msg_id = unsafe { std::ptr::read(&cnt.msg_id) };
         let link = unsafe { std::ptr::read(&cnt.link) };
@@ -286,7 +234,7 @@ impl<L: AsyncLink + 'static> Controller<L> {
     /// # Safety
     ///
     /// This function must be used only when converting an instance created by [`Controller::into_boxed_link`] back to the original [`Controller<L>`].
-    pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn AsyncLink>>) -> Controller<L> {
+    pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn Link>>) -> Controller<L> {
         let cnt = std::mem::ManuallyDrop::new(cnt);
         let msg_id = unsafe { std::ptr::read(&cnt.msg_id) };
         let link = unsafe { std::ptr::read(&cnt.link) };
@@ -305,44 +253,29 @@ impl<L: AsyncLink + 'static> Controller<L> {
     }
 }
 
-impl<L: AsyncLink> Drop for Controller<L> {
+impl<L: Link> Drop for Controller<L> {
     fn drop(&mut self) {
         if !self.link.is_open() {
             return;
         }
-        match tokio::runtime::Handle::current().runtime_flavor() {
-            tokio::runtime::RuntimeFlavor::CurrentThread => {}
-            tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
-                tokio::runtime::Handle::current().block_on(async {
-                    let _ = self
-                        .close_impl(self.default_sender_option, FixedSchedule(AsyncSleeper))
-                        .await;
-                });
-            }),
-            _ => unimplemented!(),
-        }
+        let _ = self.close_impl(self.default_sender_option, FixedSchedule::default());
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use std::collections::HashMap;
-
-    use autd3_core::{
-        common::mm,
-        derive::{Modulation, Segment},
-        gain::{
-            EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator, Phase, TransducerFilter,
-        },
-        link::LinkError,
-    };
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        common::Hz,
-        datagram::{GainSTM, ReadsFPGAState},
-    };
-
+pub(crate) mod tests {
     use crate::{
+        core::{
+            common::mm,
+            derive::*,
+            gain::{Gain, GainCalculator, GainCalculatorGenerator},
+            link::LinkError,
+        },
+        driver::{
+            autd3_device::AUTD3,
+            common::Hz,
+            datagram::{GainSTM, ReadsFPGAState},
+        },
         gain::Uniform,
         link::{Audit, AuditOption},
         modulation::Sine,
@@ -350,20 +283,17 @@ mod tests {
 
     use super::*;
 
-    // GRCOV_EXCL_START
-    pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
+    pub fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
         Ok(Controller::open(
             (0..dev_num).map(|_| AUTD3::default()),
             Audit::new(AuditOption::default()),
-        )
-        .await?)
+        )?)
     }
-    // GRCOV_EXCL_STOP
 
-    #[tokio::test]
-    async fn open_failed() {
+    #[test]
+    fn open_failed() {
         assert_eq!(
-            Some(AUTDError::Driver(LinkError::new("broken").into())),
+            Some(AUTDDriverError::Link(LinkError::new("broken"))),
             Controller::open(
                 [AUTD3::default()],
                 Audit::new(AuditOption {
@@ -371,14 +301,13 @@ mod tests {
                     ..Default::default()
                 })
             )
-            .await
             .err()
         );
     }
 
-    #[tokio::test]
-    async fn send() -> anyhow::Result<()> {
-        let mut autd = create_controller(1).await?;
+    #[test]
+    fn send() -> anyhow::Result<()> {
+        let mut autd = create_controller(1)?;
         autd.send((
             Sine {
                 freq: 150. * Hz,
@@ -398,8 +327,7 @@ mod tests {
                 config: 1. * Hz,
                 option: Default::default(),
             },
-        ))
-        .await?;
+        ))?;
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
@@ -433,17 +361,14 @@ mod tests {
             anyhow::Ok(())
         })?;
 
-        autd.close().await?;
+        autd.close()?;
 
         Ok(())
     }
 
-    #[tokio::test]
-    async fn inspect() -> anyhow::Result<()> {
-        use crate::core::derive::ModulationInspectionResult;
-        use crate::prelude::LoopBehavior;
-
-        let mut autd = create_controller(2).await?;
+    #[test]
+    fn inspect() -> anyhow::Result<()> {
+        let autd = create_controller(2)?;
 
         let r = autd.inspect(autd3_driver::datagram::Group::new(
             |dev| (dev.idx() == 0).then_some(()),
@@ -463,16 +388,16 @@ mod tests {
         );
         assert_eq!(None, r[1]);
 
-        autd.close().await?;
+        autd.close()?;
 
         Ok(())
     }
 
-    #[tokio::test]
-    async fn firmware_version() -> anyhow::Result<()> {
+    #[test]
+    fn firmware_version() -> anyhow::Result<()> {
         use autd3_driver::firmware::version::{CPUVersion, FPGAVersion};
 
-        let mut autd = create_controller(1).await?;
+        let mut autd = create_controller(1)?;
         assert_eq!(
             vec![FirmwareVersion {
                 idx: 0,
@@ -486,60 +411,56 @@ mod tests {
                     function_bits: FPGAVersion::ENABLED_EMULATOR_BIT
                 }
             }],
-            autd.firmware_version().await?
+            autd.firmware_version()?
         );
         Ok(())
     }
 
-    #[tokio::test]
-    async fn firmware_version_err() -> anyhow::Result<()> {
-        let mut autd = create_controller(2).await?;
+    #[test]
+    fn firmware_version_err() -> anyhow::Result<()> {
+        let mut autd = create_controller(2)?;
         autd.link_mut().break_down();
         assert_eq!(
-            Err(AUTDError::ReadFirmwareVersionFailed(vec![false, false])),
-            autd.firmware_version().await
+            Err(AUTDDriverError::ReadFirmwareVersionFailed(vec![
+                false, false
+            ])),
+            autd.firmware_version()
         );
         Ok(())
     }
 
-    #[tokio::test(flavor = "multi_thread")]
-    async fn close() -> anyhow::Result<()> {
+    #[test]
+    fn close() -> anyhow::Result<()> {
         {
-            let mut autd = create_controller(1).await?;
-            autd.close_impl(SenderOption::default(), FixedSchedule(AsyncSleeper))
-                .await?;
-            autd.close().await?;
+            let mut autd = create_controller(1)?;
+            autd.close_impl(SenderOption::default(), FixedSchedule::default())?;
+            autd.close()?;
         }
 
         {
-            let mut autd = create_controller(1).await?;
+            let mut autd = create_controller(1)?;
             autd.link_mut().break_down();
             assert_eq!(
                 Err(AUTDDriverError::Link(LinkError::new("broken"))),
-                autd.close().await
+                autd.close()
             );
-        }
-
-        {
-            _ = create_controller(1).await?;
         }
 
         Ok(())
     }
 
-    #[tokio::test]
-    async fn fpga_state() -> anyhow::Result<()> {
+    #[test]
+    fn fpga_state() -> anyhow::Result<()> {
         let mut autd = Controller::open(
             [AUTD3::default(), AUTD3::default()],
             Audit::new(AuditOption::default()),
-        )
-        .await?;
+        )?;
 
-        autd.send(ReadsFPGAState::new(|_| true)).await?;
+        autd.send(ReadsFPGAState::new(|_| true))?;
         {
             autd.link_mut()[0].fpga_mut().assert_thermal_sensor();
 
-            let states = autd.fpga_state().await?;
+            let states = autd.fpga_state()?;
             assert_eq!(2, states.len());
             assert!(
                 states[0]
@@ -557,7 +478,7 @@ mod tests {
             autd.link_mut()[0].fpga_mut().deassert_thermal_sensor();
             autd.link_mut()[1].fpga_mut().assert_thermal_sensor();
 
-            let states = autd.fpga_state().await?;
+            let states = autd.fpga_state()?;
             assert_eq!(2, states.len());
             assert!(
                 !states[0]
@@ -571,9 +492,9 @@ mod tests {
             );
         }
 
-        autd.send(ReadsFPGAState::new(|dev| dev.idx() == 1)).await?;
+        autd.send(ReadsFPGAState::new(|dev| dev.idx() == 1))?;
         {
-            let states = autd.fpga_state().await?;
+            let states = autd.fpga_state()?;
             assert_eq!(2, states.len());
             assert!(states[0].is_none());
             assert!(
@@ -586,9 +507,9 @@ mod tests {
         Ok(())
     }
 
-    #[tokio::test]
-    async fn into_iter() -> anyhow::Result<()> {
-        let mut autd = create_controller(1).await?;
+    #[test]
+    fn into_iter() -> anyhow::Result<()> {
+        let mut autd = create_controller(1)?;
 
         for dev in &mut autd {
             dev.sound_speed = 300e3 * mm;
@@ -601,10 +522,29 @@ mod tests {
         Ok(())
     }
 
-    #[cfg(feature = "async-trait")]
-    #[tokio::test]
-    async fn into_boxed_link() -> anyhow::Result<()> {
-        let autd = create_controller(1).await?;
+    #[test]
+    fn with_boxed_link() -> anyhow::Result<()> {
+        let link: Box<dyn Link> = Box::new(Audit::new(AuditOption::default()));
+        let mut autd = Controller::open([AUTD3::default()], link)?;
+
+        autd.send(Sine {
+            freq: 150. * Hz,
+            option: Default::default(),
+        })?;
+
+        autd.close()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn into_boxed_link_unsafe() -> anyhow::Result<()> {
+        let autd = Controller::open_with_option(
+            [AUTD3::default()],
+            Audit::new(AuditOption::default()),
+            SenderOption::default(),
+            FixedSchedule::default(),
+        )?;
 
         let mut autd = autd.into_boxed_link();
 
@@ -627,8 +567,7 @@ mod tests {
                 config: 1. * Hz,
                 option: Default::default(),
             },
-        ))
-        .await?;
+        ))?;
 
         let autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
 
@@ -664,18 +603,17 @@ mod tests {
             anyhow::Ok(())
         })?;
 
-        autd.close().await?;
+        autd.close()?;
 
         Ok(())
     }
 
-    #[cfg(feature = "async-trait")]
-    #[tokio::test]
-    async fn into_boxed_link_close() -> anyhow::Result<()> {
-        let autd = create_controller(1).await?;
+    #[test]
+    fn into_boxed_link_close() -> anyhow::Result<()> {
+        let autd = create_controller(1)?;
         let autd = autd.into_boxed_link();
 
-        autd.close().await?;
+        autd.close()?;
 
         Ok(())
     }

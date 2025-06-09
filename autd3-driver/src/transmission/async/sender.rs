@@ -1,59 +1,26 @@
-mod parallel_mode;
-mod strategy;
+use std::time::{Duration, Instant};
 
-use std::{
-    fmt::Debug,
-    time::{Duration, Instant},
-};
-
-use autd3_core::{
-    datagram::Datagram,
-    derive::DeviceFilter,
-    geometry::Geometry,
-    link::{Link, MsgId},
-    sleep::Sleep,
-};
-use autd3_driver::{
+use crate::{
     error::AUTDDriverError,
     firmware::{
         cpu::{RxMessage, TxMessage, check_if_msg_is_processed},
         operation::{Operation, OperationGenerator, OperationHandler},
+        version::FirmwareVersion,
     },
+    transmission::SenderOption,
 };
 
-pub use parallel_mode::ParallelMode;
-pub use strategy::{FixedDelay, FixedSchedule, TimerStrategy};
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter},
+    geometry::Geometry,
+    link::{AsyncLink, MsgId},
+    sleep::r#async::AsyncSleep,
+};
 
-/// The option of [`Sender`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SenderOption {
-    /// The duration between sending operations.
-    pub send_interval: Duration,
-    /// The duration between receiving operations.
-    pub receive_interval: Duration,
-    /// If `None`, [`Datagram::option`] is used.
-    ///
-    /// [`Datagram`]: autd3_driver::datagram::Datagram
-    pub timeout: Option<Duration>,
-    /// The parallel processing mode.
-    ///
-    /// [`Datagram`]: autd3_driver::datagram::Datagram
-    pub parallel: ParallelMode,
-}
-
-impl Default for SenderOption {
-    fn default() -> Self {
-        Self {
-            send_interval: Duration::from_millis(1),
-            receive_interval: Duration::from_millis(1),
-            timeout: None,
-            parallel: ParallelMode::Auto,
-        }
-    }
-}
+use super::strategy::AsyncTimerStrategy;
 
 /// A struct to send the [`Datagram`] to the devices.
-pub struct Sender<'a, L: Link, S: Sleep, T: TimerStrategy<S>> {
+pub struct Sender<'a, L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> {
     pub(crate) msg_id: &'a mut MsgId,
     pub(crate) link: &'a mut L,
     pub(crate) geometry: &'a mut Geometry,
@@ -64,7 +31,44 @@ pub struct Sender<'a, L: Link, S: Sleep, T: TimerStrategy<S>> {
     pub(crate) _phantom: std::marker::PhantomData<S>,
 }
 
-impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
+impl<'a, L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender<'a, L, S, T> {
+    #[doc(hidden)]
+    pub fn new(
+        msg_id: &'a mut MsgId,
+        link: &'a mut L,
+        geometry: &'a mut Geometry,
+        sent_flags: &'a mut [bool],
+        rx: &'a mut [RxMessage],
+        option: SenderOption,
+        timer_strategy: T,
+    ) -> Self {
+        Self {
+            msg_id,
+            link,
+            geometry,
+            sent_flags,
+            rx,
+            option,
+            timer_strategy,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    #[doc(hidden)]
+    pub async fn initialize_devices(&mut self) -> Result<(), AUTDDriverError> {
+        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
+        // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
+        let _ = self
+            .send(crate::datagram::ReadsFPGAState::new(|_| false))
+            .await;
+
+        self.send((
+            crate::datagram::Clear::new(),
+            crate::datagram::Synchronize::new(),
+        ))
+        .await
+    }
+
     /// Send the [`Datagram`] to the devices.
     ///
     /// If the `timeout` value is
@@ -72,7 +76,7 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
     /// - 0, this function does not check whether the sent data has been processed by the device.
     ///
     /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of devices is greater than the `parallel_threshold`.
-    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    pub async fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
         D::G: OperationGenerator,
@@ -99,11 +103,11 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
             .is_parallel(num_enabled, parallel_threshold);
 
         self.link.ensure_is_open()?;
-        self.link.update(self.geometry)?;
+        self.link.update(self.geometry).await?;
 
         let mut send_timing = T::initial();
         loop {
-            let mut tx = self.link.alloc_tx_buffer()?;
+            let mut tx = self.link.alloc_tx_buffer().await?;
 
             self.msg_id.increment();
             OperationHandler::pack(
@@ -114,7 +118,7 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
                 parallel,
             )?;
 
-            self.send_receive(tx, timeout)?;
+            self.send_receive(tx, timeout).await?;
 
             if OperationHandler::is_done(&operations) {
                 return Ok(());
@@ -122,26 +126,61 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
 
             send_timing = self
                 .timer_strategy
-                .sleep(send_timing, self.option.send_interval);
+                .sleep(send_timing, self.option.send_interval)
+                .await;
         }
     }
 
-    fn send_receive(
+    #[doc(hidden)]
+    pub async fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDDriverError> {
+        use crate::firmware::{
+            operation::FirmwareVersionType::*,
+            version::{CPUVersion, FPGAVersion, Major, Minor},
+        };
+
+        let cpu_major = self.fetch_firminfo(CPUMajor).await?;
+        let cpu_minor = self.fetch_firminfo(CPUMinor).await?;
+        let fpga_major = self.fetch_firminfo(FPGAMajor).await?;
+        let fpga_minor = self.fetch_firminfo(FPGAMinor).await?;
+        let fpga_functions = self.fetch_firminfo(FPGAFunctions).await?;
+        self.fetch_firminfo(Clear).await?;
+
+        Ok(self
+            .geometry
+            .iter()
+            .map(|dev| FirmwareVersion {
+                idx: dev.idx(),
+                cpu: CPUVersion {
+                    major: Major(cpu_major[dev.idx()]),
+                    minor: Minor(cpu_minor[dev.idx()]),
+                },
+                fpga: FPGAVersion {
+                    major: Major(fpga_major[dev.idx()]),
+                    minor: Minor(fpga_minor[dev.idx()]),
+                    function_bits: fpga_functions[dev.idx()],
+                },
+            })
+            .collect())
+    }
+}
+
+impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender<'_, L, S, T> {
+    async fn send_receive(
         &mut self,
         tx: Vec<TxMessage>,
         timeout: Duration,
     ) -> Result<(), AUTDDriverError> {
         self.link.ensure_is_open()?;
-        self.link.send(tx)?;
-        self.wait_msg_processed(timeout)
+        self.link.send(tx).await?;
+        self.wait_msg_processed(timeout).await
     }
 
-    fn wait_msg_processed(&mut self, timeout: Duration) -> Result<(), AUTDDriverError> {
+    async fn wait_msg_processed(&mut self, timeout: Duration) -> Result<(), AUTDDriverError> {
         let start = Instant::now();
         let mut receive_timing = T::initial();
         loop {
             self.link.ensure_is_open()?;
-            self.link.receive(self.rx)?;
+            self.link.receive(self.rx).await?;
 
             if check_if_msg_is_processed(*self.msg_id, self.rx)
                 .zip(self.sent_flags.iter())
@@ -157,14 +196,12 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
 
             receive_timing = self
                 .timer_strategy
-                .sleep(receive_timing, self.option.receive_interval);
+                .sleep(receive_timing, self.option.receive_interval)
+                .await;
         }
-
         self.rx
             .iter()
-            .try_fold((), |_, r| {
-                autd3_driver::firmware::cpu::check_firmware_err(r)
-            })
+            .try_fold((), |_, r| crate::firmware::cpu::check_firmware_err(r))
             .and_then(|_| {
                 if timeout == Duration::ZERO {
                     Ok(())
@@ -173,21 +210,37 @@ impl<L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'_, L, S, T> {
                 }
             })
     }
+
+    async fn fetch_firminfo(
+        &mut self,
+        ty: crate::firmware::operation::FirmwareVersionType,
+    ) -> Result<Vec<u8>, AUTDDriverError> {
+        self.send(ty).await.map_err(|_| {
+            AUTDDriverError::ReadFirmwareVersionFailed(
+                crate::firmware::cpu::check_if_msg_is_processed(*self.msg_id, self.rx).collect(),
+            )
+        })?;
+        Ok(self.rx.iter().map(|rx| rx.data()).collect())
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use autd3_core::{
         link::{LinkError, TxBufferPoolSync},
-        sleep::{Sleep, SpinSleeper, SpinWaitSleeper, StdSleeper},
+        sleep::{
+            SpinSleeper, SpinWaitSleeper, StdSleeper,
+            r#async::{AsyncSleep, AsyncSleeper},
+        },
     };
 
-    use crate::tests::create_geometry;
+    use crate::datagram::tests::create_geometry;
+    use crate::transmission::{FixedSchedule, ParallelMode};
 
     use super::*;
 
     #[derive(Default)]
-    struct MockLink {
+    struct MockAsyncLink {
         pub is_open: bool,
         pub send_cnt: usize,
         pub recv_cnt: usize,
@@ -195,23 +248,24 @@ mod tests {
         pub buffer_pool: TxBufferPoolSync,
     }
 
-    impl Link for MockLink {
-        fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+    #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
+    impl AsyncLink for MockAsyncLink {
+        async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
             self.is_open = true;
             self.buffer_pool.init(geometry);
             Ok(())
         }
 
-        fn close(&mut self) -> Result<(), LinkError> {
+        async fn close(&mut self) -> Result<(), LinkError> {
             self.is_open = false;
             Ok(())
         }
 
-        fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
             Ok(self.buffer_pool.borrow())
         }
 
-        fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
+        async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
             if !self.down {
                 self.send_cnt += 1;
             }
@@ -219,17 +273,15 @@ mod tests {
             Ok(())
         }
 
-        fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
+        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
             if self.recv_cnt > 10 {
                 return Err(LinkError::new("too many"));
             }
-
             if !self.down {
                 self.recv_cnt += 1;
             }
             rx.iter_mut()
                 .for_each(|r| *r = RxMessage::new(r.data(), self.recv_cnt as u8));
-
             Ok(())
         }
 
@@ -238,14 +290,14 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_close() -> anyhow::Result<()> {
-        let mut link = MockLink::default();
-        link.open(&Geometry::new(Vec::new()))?;
+    #[tokio::test]
+    async fn test_close() -> anyhow::Result<()> {
+        let mut link = MockAsyncLink::default();
+        link.open(&Geometry::new(Vec::new())).await?;
 
         assert!(link.is_open());
 
-        link.close()?;
+        link.close().await?;
 
         assert!(!link.is_open());
 
@@ -256,15 +308,16 @@ mod tests {
     #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
     #[case(SpinWaitSleeper)]
-    #[test]
-    fn test_send_receive(#[case] sleeper: impl Sleep) {
-        let mut link = MockLink::default();
-        let mut geometry = create_geometry(1);
+    #[case(AsyncSleeper)]
+    #[tokio::test]
+    async fn test_send_receive(#[case] sleeper: impl AsyncSleep) {
+        let mut link = MockAsyncLink::default();
+        let mut geometry = create_geometry(1, 1);
         let mut sent_flags = vec![false; 1];
         let mut rx = Vec::new();
         let mut msg_id = MsgId::new(0);
 
-        assert!(link.open(&geometry).is_ok());
+        assert!(link.open(&geometry).await.is_ok());
         let mut sender = Sender {
             msg_id: &mut msg_id,
             link: &mut link,
@@ -281,17 +334,20 @@ mod tests {
             _phantom: std::marker::PhantomData,
         };
 
-        let tx = sender.link.alloc_tx_buffer().unwrap();
-        assert_eq!(Ok(()), sender.send_receive(tx, Duration::ZERO));
+        let tx = sender.link.alloc_tx_buffer().await.unwrap();
+        assert_eq!(Ok(()), sender.send_receive(tx, Duration::ZERO).await);
 
-        let tx = sender.link.alloc_tx_buffer().unwrap();
-        assert_eq!(Ok(()), sender.send_receive(tx, Duration::from_millis(1)));
+        let tx = sender.link.alloc_tx_buffer().await.unwrap();
+        assert_eq!(
+            Ok(()),
+            sender.send_receive(tx, Duration::from_millis(1)).await
+        );
 
         sender.link.is_open = false;
-        let tx = sender.link.alloc_tx_buffer().unwrap();
+        let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::closed())),
-            sender.send_receive(tx, Duration::ZERO),
+            sender.send_receive(tx, Duration::ZERO).await,
         );
     }
 
@@ -299,15 +355,16 @@ mod tests {
     #[case(StdSleeper)]
     #[case(SpinSleeper::default())]
     #[case(SpinWaitSleeper)]
-    #[test]
-    fn test_wait_msg_processed(#[case] sleeper: impl Sleep) {
-        let mut link = MockLink::default();
-        let mut geometry = create_geometry(1);
+    #[case(AsyncSleeper)]
+    #[tokio::test]
+    async fn test_wait_msg_processed(#[case] sleeper: impl AsyncSleep) {
+        let mut link = MockAsyncLink::default();
+        let mut geometry = create_geometry(1, 1);
         let mut sent_flags = vec![true; 1];
         let mut rx = vec![RxMessage::new(0, 0)];
         let mut msg_id = MsgId::new(1);
 
-        assert!(link.open(&geometry).is_ok());
+        assert!(link.open(&geometry).await.is_ok());
         let mut sender = Sender {
             msg_id: &mut msg_id,
             link: &mut link,
@@ -324,13 +381,16 @@ mod tests {
             _phantom: std::marker::PhantomData,
         };
 
-        assert_eq!(Ok(()), sender.wait_msg_processed(Duration::from_millis(10)));
+        assert_eq!(
+            Ok(()),
+            sender.wait_msg_processed(Duration::from_millis(10)).await,
+        );
 
         sender.link.recv_cnt = 0;
         sender.link.is_open = false;
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::closed())),
-            sender.wait_msg_processed(Duration::from_millis(10))
+            sender.wait_msg_processed(Duration::from_millis(10)).await
         );
 
         sender.link.recv_cnt = 0;
@@ -338,20 +398,20 @@ mod tests {
         sender.link.down = true;
         assert_eq!(
             Err(AUTDDriverError::ConfirmResponseFailed),
-            sender.wait_msg_processed(Duration::from_millis(10)),
+            sender.wait_msg_processed(Duration::from_millis(10)).await,
         );
 
         sender.link.recv_cnt = 0;
         sender.link.is_open = true;
         sender.link.down = true;
-        assert_eq!(Ok(()), sender.wait_msg_processed(Duration::ZERO));
+        assert_eq!(Ok(()), sender.wait_msg_processed(Duration::ZERO).await);
 
         sender.link.down = false;
         sender.link.recv_cnt = 0;
         *sender.msg_id = MsgId::new(20);
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::new("too many"))),
-            sender.wait_msg_processed(Duration::from_secs(10))
+            sender.wait_msg_processed(Duration::from_secs(10)).await
         );
     }
 }

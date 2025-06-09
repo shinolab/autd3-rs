@@ -15,7 +15,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 acoustics = ["common", "geometry"]
-async = []
+async = ["tokio"]
 async-trait = ["async", "dep:async-trait"]
 datagram = ["common", "geometry", "ethercat", "smallvec"]
 common = ["derive_more", "derive_more/add", "derive_more/mul", "derive_more/debug"]
@@ -45,6 +45,7 @@ smallvec = { workspace = true, optional = true }
 spin_sleep = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
 time = { workspace = true, optional = true, features = ["macros", "std"] }
+tokio = { workspace = true, optional = true, features = ["time", "rt"] }
 tynm = { workspace = true, optional = true }
 zerocopy = { workspace = true, optional = true, features = ["derive"] }
 
