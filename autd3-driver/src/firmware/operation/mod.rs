@@ -7,6 +7,7 @@ mod gain;
 mod gpio_in;
 mod info;
 mod modulation;
+mod nop;
 mod phase_corr;
 mod pulse_width_encoder;
 mod reads_fpga_state;
@@ -16,8 +17,9 @@ mod stm;
 mod sync;
 pub(crate) mod v10;
 
-pub(crate) use autd3_core::datagram::NullOp;
 use autd3_core::link::MsgId;
+
+pub(crate) use autd3_core::datagram::NullOp;
 pub use boxed::BoxedOperation;
 pub(crate) use clear::*;
 pub(crate) use cpu_gpio_out::*;
@@ -28,6 +30,7 @@ pub(crate) use gpio_in::*;
 pub use info::FirmwareVersionType;
 pub(crate) use info::*;
 pub(crate) use modulation::*;
+pub(crate) use nop::NopOp;
 pub(crate) use phase_corr::*;
 pub(crate) use pulse_width_encoder::*;
 pub(crate) use reads_fpga_state::*;
@@ -51,6 +54,7 @@ use rayon::prelude::*;
 #[repr(u8)]
 #[non_exhaustive]
 pub(crate) enum TypeTag {
+    Nop = 0x00,
     Clear = 0x01,
     Sync = 0x02,
     FirmwareVersion = 0x03,

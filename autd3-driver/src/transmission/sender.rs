@@ -86,8 +86,8 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     #[doc(hidden)]
     pub fn initialize_devices(&mut self) -> Result<(), AUTDDriverError> {
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
-        // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
-        let _ = self.send(crate::datagram::ReadsFPGAState::new(|_| false));
+        // Therefore, send a meaningless data.
+        let _ = self.send(crate::datagram::Nop);
 
         self.send((
             crate::datagram::Clear::new(),
