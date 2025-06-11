@@ -33,6 +33,8 @@ pub enum GPIOOutputType<'a> {
     IsStmMode,
     /// High during the specified system time.
     SysTimeEq(DcSysTime),
+    /// High during the system time correction.
+    SyncDiff,
     #[debug("PwmOut({})", _0.idx())]
     /// PWM output of the specified transducer.
     PwmOut(&'a Transducer),
@@ -61,10 +63,10 @@ impl From<Option<GPIOOutputType<'_>>> for DebugValue {
                 | Some(GPIOOutputType::Sync)
                 | Some(GPIOOutputType::ModSegment)
                 | Some(GPIOOutputType::StmSegment)
-                | Some(GPIOOutputType::IsStmMode) => 0,
+                | Some(GPIOOutputType::IsStmMode)
+                | Some(GPIOOutputType::SyncDiff) => 0,
                 Some(GPIOOutputType::PwmOut(tr)) => tr.idx() as _,
-                Some(GPIOOutputType::ModIdx(idx)) => *idx as _,
-                Some(GPIOOutputType::StmIdx(idx)) => *idx as _,
+                Some(GPIOOutputType::ModIdx(idx)) | Some(GPIOOutputType::StmIdx(idx)) => *idx as _,
                 Some(GPIOOutputType::SysTimeEq(time)) => ec_time_to_sys_time(time) >> 9,
                 Some(GPIOOutputType::Direct(v)) => *v as _,
             })
@@ -80,6 +82,7 @@ impl From<Option<GPIOOutputType<'_>>> for DebugValue {
                 Some(GPIOOutputType::StmIdx(_)) => 0x51,
                 Some(GPIOOutputType::IsStmMode) => 0x52,
                 Some(GPIOOutputType::SysTimeEq(_)) => 0x60,
+                Some(GPIOOutputType::SyncDiff) => 0x70,
                 Some(GPIOOutputType::PwmOut(_)) => 0xE0,
                 Some(GPIOOutputType::Direct(_)) => 0xF0,
             })
