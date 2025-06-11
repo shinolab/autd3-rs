@@ -187,11 +187,15 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
                 .filter_map(|(r, sent)| sent.then_some(r))
                 .all(std::convert::identity)
             {
-                return Ok(());
+                break;
             }
 
             if start.elapsed() > timeout {
-                break;
+                return if timeout == Duration::ZERO {
+                    Ok(())
+                } else {
+                    Err(AUTDDriverError::ConfirmResponseFailed)
+                };
             }
 
             receive_timing = self
@@ -199,16 +203,10 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
                 .sleep(receive_timing, self.option.receive_interval)
                 .await;
         }
+
         self.rx
             .iter()
-            .try_fold((), |_, r| crate::firmware::cpu::check_firmware_err(r))
-            .and_then(|_| {
-                if timeout == Duration::ZERO {
-                    Ok(())
-                } else {
-                    Err(AUTDDriverError::ConfirmResponseFailed)
-                }
-            })
+            .try_fold((), |_, r| AUTDDriverError::check_firmware_err(r.ack()))
     }
 
     async fn fetch_firminfo(
@@ -227,7 +225,7 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
 #[cfg(test)]
 mod tests {
     use autd3_core::{
-        link::{LinkError, TxBufferPoolSync},
+        link::{Ack, LinkError, TxBufferPoolSync},
         sleep::{
             SpinSleeper, SpinWaitSleeper, StdSleeper,
             r#async::{AsyncSleep, AsyncSleeper},
@@ -280,8 +278,9 @@ mod tests {
             if !self.down {
                 self.recv_cnt += 1;
             }
-            rx.iter_mut()
-                .for_each(|r| *r = RxMessage::new(r.data(), self.recv_cnt as u8));
+            rx.iter_mut().for_each(|r| {
+                *r = RxMessage::new(r.data(), Ack::new().with_msg_id(self.recv_cnt as u8))
+            });
             Ok(())
         }
 
@@ -361,7 +360,7 @@ mod tests {
         let mut link = MockAsyncLink::default();
         let mut geometry = create_geometry(1, 1);
         let mut sent_flags = vec![true; 1];
-        let mut rx = vec![RxMessage::new(0, 0)];
+        let mut rx = vec![RxMessage::new(0, Ack::new())];
         let mut msg_id = MsgId::new(1);
 
         assert!(link.open(&geometry).await.is_ok());

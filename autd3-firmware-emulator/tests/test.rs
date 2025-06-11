@@ -9,7 +9,7 @@ use autd3_driver::{
     },
     geometry::{Geometry, Point3},
 };
-use autd3_firmware_emulator::{CPUEmulator, cpu::params::ERR_BIT};
+use autd3_firmware_emulator::CPUEmulator;
 use zerocopy::FromZeros;
 
 mod op;
@@ -53,10 +53,8 @@ where
         msg_id.increment();
         OperationHandler::pack(*msg_id, &mut op, geometry, tx, parallel)?;
         cpu.send(tx);
-        if (cpu.rx().ack() & ERR_BIT) == ERR_BIT {
-            return Err(AUTDDriverError::firmware_err(cpu.rx().ack()));
-        }
-        assert_eq!(tx[0].header.msg_id.get(), cpu.rx().ack());
+        AUTDDriverError::check_firmware_err(cpu.rx().ack())?;
+        assert_eq!(tx[0].header.msg_id.get(), cpu.rx().ack().msg_id());
     }
     Ok(())
 }
@@ -73,7 +71,7 @@ fn send_invalid_tag() {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::NotSupportedTag),
-        autd3_driver::firmware::cpu::check_firmware_err(&cpu.rx())
+        AUTDDriverError::check_firmware_err(cpu.rx().ack())
     );
 }
 
@@ -88,7 +86,7 @@ fn send_invalid_msg_id() {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::InvalidMessageID),
-        autd3_driver::firmware::cpu::check_firmware_err(&cpu.rx())
+        AUTDDriverError::check_firmware_err(cpu.rx().ack())
     );
 }
 
@@ -97,14 +95,14 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
-    let msg_id = MsgId::new(0x10);
+    let msg_id = MsgId::new(0x0A);
 
     let d = Clear::new();
     let generator = d.operation_generator(&geometry, &DeviceFilter::all_enabled())?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
     cpu.send(&tx);
-    assert_eq!(cpu.rx().ack(), tx[0].header.msg_id.get());
+    assert_eq!(cpu.rx().ack().msg_id(), tx[0].header.msg_id.get());
 
     let d = Synchronize::new();
     let generator = d.operation_generator(&geometry, &DeviceFilter::all_enabled())?;
@@ -122,7 +120,7 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
-    let msg_id = MsgId::new(0x12);
+    let msg_id = MsgId::new(0x0E);
 
     let d = (Clear::new(), Synchronize::new());
     let generator = d.operation_generator(&geometry, &DeviceFilter::all_enabled())?;
@@ -131,7 +129,7 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
 
     assert!(!cpu.synchronized());
     cpu.send(&tx);
-    assert_eq!(cpu.rx().ack(), tx[0].header.msg_id.get());
+    assert_eq!(cpu.rx().ack().msg_id(), tx[0].header.msg_id.get());
     assert!(cpu.synchronized());
 
     Ok(())
@@ -155,7 +153,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::NotSupportedTag),
-        autd3_driver::firmware::cpu::check_firmware_err(&cpu.rx())
+        AUTDDriverError::check_firmware_err(cpu.rx().ack())
     );
 
     Ok(())

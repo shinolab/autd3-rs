@@ -119,6 +119,7 @@ pub const SILENCER_FLAG_BIT_FIXED_UPDATE_RATE_MODE: u8 = 0;
 pub const SILENCER_FLAG_FIXED_UPDATE_RATE_MODE: u8 = 1 << SILENCER_FLAG_BIT_FIXED_UPDATE_RATE_MODE;
 pub const SILENCER_FLAG_STRICT_MODE: u8 = 1 << 2;
 
+pub const TAG_NOP: u8 = 0x00;
 pub const TAG_CLEAR: u8 = 0x01;
 pub const TAG_SYNC: u8 = 0x02;
 pub const TAG_FIRM_INFO: u8 = 0x03;
@@ -176,15 +177,12 @@ pub const GPIO_IN_FLAG_2: u8 = 1 << 2;
 pub const GPIO_IN_FLAG_3: u8 = 1 << 3;
 
 pub const NO_ERR: u8 = 0x00;
-pub const ERR_BIT: u8 = 0x80;
 #[allow(clippy::identity_op)]
-pub const ERR_NOT_SUPPORTED_TAG: u8 = ERR_BIT | 0x00;
-pub const ERR_INVALID_MSG_ID: u8 = ERR_BIT | 0x01;
-pub const ERR_INVALID_INFO_TYPE: u8 = ERR_BIT | 0x04;
-pub const ERR_INVALID_GAIN_STM_MODE: u8 = ERR_BIT | 0x05;
-pub const ERR_INVALID_MODE: u8 = ERR_BIT | 0x07;
-pub const ERR_INVALID_SEGMENT_TRANSITION: u8 = ERR_BIT | 0x08;
-pub const ERR_MISS_TRANSITION_TIME: u8 = ERR_BIT | 0x0B;
-pub const ERR_CLK_INCOMPLETE_DATA: u8 = ERR_BIT | 0x0D;
-pub const ERR_INVALID_SILENCER_SETTING: u8 = ERR_BIT | 0x0E;
-pub const ERR_INVALID_TRANSITION_MODE: u8 = ERR_BIT | 0x0F;
+pub const ERR_NOT_SUPPORTED_TAG: u8 = 0x01;
+pub const ERR_INVALID_MSG_ID: u8 = 0x02;
+pub const ERR_INVALID_INFO_TYPE: u8 = 0x03;
+pub const ERR_INVALID_GAIN_STM_MODE: u8 = 0x04;
+pub const ERR_INVALID_SEGMENT_TRANSITION: u8 = 0x05;
+pub const ERR_MISS_TRANSITION_TIME: u8 = 0x06;
+pub const ERR_INVALID_SILENCER_SETTING: u8 = 0x07;
+pub const ERR_INVALID_TRANSITION_MODE: u8 = 0x08;

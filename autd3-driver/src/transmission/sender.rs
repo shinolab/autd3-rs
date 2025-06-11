@@ -212,11 +212,15 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
                 .filter_map(|(r, sent)| sent.then_some(r))
                 .all(std::convert::identity)
             {
-                return Ok(());
+                break;
             }
 
             if start.elapsed() > timeout {
-                break;
+                return if timeout == Duration::ZERO {
+                    Ok(())
+                } else {
+                    Err(AUTDDriverError::ConfirmResponseFailed)
+                };
             }
 
             receive_timing = self
@@ -226,14 +230,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
 
         self.rx
             .iter()
-            .try_fold((), |_, r| crate::firmware::cpu::check_firmware_err(r))
-            .and_then(|_| {
-                if timeout == Duration::ZERO {
-                    Ok(())
-                } else {
-                    Err(AUTDDriverError::ConfirmResponseFailed)
-                }
-            })
+            .try_fold((), |_, r| AUTDDriverError::check_firmware_err(r.ack()))
     }
 
     fn fetch_firminfo(
@@ -252,7 +249,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
 #[cfg(test)]
 mod tests {
     use autd3_core::{
-        link::{LinkError, TxBufferPoolSync},
+        link::{Ack, LinkError, TxBufferPoolSync},
         sleep::{Sleep, SpinSleeper, SpinWaitSleeper, StdSleeper},
     };
 
@@ -301,8 +298,9 @@ mod tests {
             if !self.down {
                 self.recv_cnt += 1;
             }
-            rx.iter_mut()
-                .for_each(|r| *r = RxMessage::new(r.data(), self.recv_cnt as u8));
+            rx.iter_mut().for_each(|r| {
+                *r = RxMessage::new(r.data(), Ack::new().with_msg_id(self.recv_cnt as u8))
+            });
 
             Ok(())
         }
@@ -378,7 +376,7 @@ mod tests {
         let mut link = MockLink::default();
         let mut geometry = create_geometry(1, 1);
         let mut sent_flags = vec![true; 1];
-        let mut rx = vec![RxMessage::new(0, 0)];
+        let mut rx = vec![RxMessage::new(0, Ack::new())];
         let mut msg_id = MsgId::new(1);
 
         assert!(link.open(&geometry).is_ok());
