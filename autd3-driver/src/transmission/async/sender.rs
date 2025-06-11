@@ -83,6 +83,7 @@ impl<'a, L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Se
     {
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
         let parallel_threshold = s.option().parallel_threshold;
+        let strict = self.option.strict;
 
         let g = s.operation_generator(self.geometry, &DeviceFilter::all_enabled())?;
         let mut operations = OperationHandler::generate(g, self.geometry);
@@ -116,7 +117,7 @@ impl<'a, L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Se
                 parallel,
             )?;
 
-            self.send_receive(tx, timeout).await?;
+            self.send_receive(tx, timeout, strict).await?;
 
             if OperationHandler::is_done(&operations) {
                 return Ok(());
@@ -167,13 +168,18 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
         &mut self,
         tx: Vec<TxMessage>,
         timeout: Duration,
+        strict: bool,
     ) -> Result<(), AUTDDriverError> {
         self.link.ensure_is_open()?;
         self.link.send(tx).await?;
-        self.wait_msg_processed(timeout).await
+        self.wait_msg_processed(timeout, strict).await
     }
 
-    async fn wait_msg_processed(&mut self, timeout: Duration) -> Result<(), AUTDDriverError> {
+    async fn wait_msg_processed(
+        &mut self,
+        timeout: Duration,
+        strict: bool,
+    ) -> Result<(), AUTDDriverError> {
         let start = Instant::now();
         let mut receive_timing = T::initial();
         loop {
@@ -189,7 +195,7 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
             }
 
             if start.elapsed() > timeout {
-                return if timeout == Duration::ZERO {
+                return if !strict && timeout == Duration::ZERO {
                     Ok(())
                 } else {
                     Err(AUTDDriverError::ConfirmResponseFailed)
@@ -326,25 +332,28 @@ mod tests {
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel: ParallelMode::Auto,
+                strict: true,
             },
             timer_strategy: FixedSchedule(sleeper),
             _phantom: std::marker::PhantomData,
         };
 
         let tx = sender.link.alloc_tx_buffer().await.unwrap();
-        assert_eq!(Ok(()), sender.send_receive(tx, Duration::ZERO).await);
+        assert_eq!(Ok(()), sender.send_receive(tx, Duration::ZERO, true).await);
 
         let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
             Ok(()),
-            sender.send_receive(tx, Duration::from_millis(1)).await
+            sender
+                .send_receive(tx, Duration::from_millis(1), true)
+                .await
         );
 
         sender.link.is_open = false;
         let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::closed())),
-            sender.send_receive(tx, Duration::ZERO).await,
+            sender.send_receive(tx, Duration::ZERO, true).await,
         );
     }
 
@@ -373,6 +382,7 @@ mod tests {
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel: ParallelMode::Auto,
+                strict: true,
             },
             timer_strategy: FixedSchedule(sleeper),
             _phantom: std::marker::PhantomData,
@@ -380,14 +390,18 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            sender.wait_msg_processed(Duration::from_millis(10)).await,
+            sender
+                .wait_msg_processed(Duration::from_millis(10), true)
+                .await,
         );
 
         sender.link.recv_cnt = 0;
         sender.link.is_open = false;
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::closed())),
-            sender.wait_msg_processed(Duration::from_millis(10)).await
+            sender
+                .wait_msg_processed(Duration::from_millis(10), true)
+                .await
         );
 
         sender.link.recv_cnt = 0;
@@ -395,20 +409,35 @@ mod tests {
         sender.link.down = true;
         assert_eq!(
             Err(AUTDDriverError::ConfirmResponseFailed),
-            sender.wait_msg_processed(Duration::from_millis(10)).await,
+            sender
+                .wait_msg_processed(Duration::from_millis(10), true)
+                .await,
         );
 
         sender.link.recv_cnt = 0;
         sender.link.is_open = true;
         sender.link.down = true;
-        assert_eq!(Ok(()), sender.wait_msg_processed(Duration::ZERO).await);
+        assert_eq!(
+            Err(AUTDDriverError::ConfirmResponseFailed),
+            sender.wait_msg_processed(Duration::ZERO, true).await
+        );
+
+        sender.link.recv_cnt = 0;
+        sender.link.is_open = true;
+        sender.link.down = true;
+        assert_eq!(
+            Ok(()),
+            sender.wait_msg_processed(Duration::ZERO, false).await
+        );
 
         sender.link.down = false;
         sender.link.recv_cnt = 0;
         *sender.msg_id = MsgId::new(20);
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::new("too many"))),
-            sender.wait_msg_processed(Duration::from_secs(10)).await
+            sender
+                .wait_msg_processed(Duration::from_secs(10), true)
+                .await
         );
     }
 }

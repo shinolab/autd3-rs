@@ -1738,6 +1738,8 @@ pub struct SenderOption {
     pub timeout_ns: ::core::option::Option<u64>,
     #[prost(enumeration = "ParallelMode", tag = "4")]
     pub parallel: i32,
+    #[prost(bool, tag = "5")]
+    pub strict: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SendRequestLightweight {
