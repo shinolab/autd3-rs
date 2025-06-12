@@ -57,10 +57,8 @@ impl<'a, L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Se
     #[doc(hidden)]
     pub async fn initialize_devices(&mut self) -> Result<(), AUTDDriverError> {
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
-        // Therefore, send a meaningless data (here, we use `ReadsFPGAState` because it is the lightest).
-        let _ = self
-            .send(crate::datagram::ReadsFPGAState::new(|_| false))
-            .await;
+        // Therefore, send a meaningless data.
+        let _ = self.send(crate::datagram::Nop).await;
 
         self.send((
             crate::datagram::Clear::new(),
@@ -85,6 +83,7 @@ impl<'a, L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Se
     {
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
         let parallel_threshold = s.option().parallel_threshold;
+        let strict = self.option.strict;
 
         let g = s.operation_generator(self.geometry, &DeviceFilter::all_enabled())?;
         let mut operations = OperationHandler::generate(g, self.geometry);
@@ -118,7 +117,7 @@ impl<'a, L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Se
                 parallel,
             )?;
 
-            self.send_receive(tx, timeout).await?;
+            self.send_receive(tx, timeout, strict).await?;
 
             if OperationHandler::is_done(&operations) {
                 return Ok(());
@@ -169,13 +168,18 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
         &mut self,
         tx: Vec<TxMessage>,
         timeout: Duration,
+        strict: bool,
     ) -> Result<(), AUTDDriverError> {
         self.link.ensure_is_open()?;
         self.link.send(tx).await?;
-        self.wait_msg_processed(timeout).await
+        self.wait_msg_processed(timeout, strict).await
     }
 
-    async fn wait_msg_processed(&mut self, timeout: Duration) -> Result<(), AUTDDriverError> {
+    async fn wait_msg_processed(
+        &mut self,
+        timeout: Duration,
+        strict: bool,
+    ) -> Result<(), AUTDDriverError> {
         let start = Instant::now();
         let mut receive_timing = T::initial();
         loop {
@@ -187,11 +191,15 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
                 .filter_map(|(r, sent)| sent.then_some(r))
                 .all(std::convert::identity)
             {
-                return Ok(());
+                break;
             }
 
             if start.elapsed() > timeout {
-                break;
+                return if !strict && timeout == Duration::ZERO {
+                    Ok(())
+                } else {
+                    Err(AUTDDriverError::ConfirmResponseFailed)
+                };
             }
 
             receive_timing = self
@@ -199,16 +207,10 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
                 .sleep(receive_timing, self.option.receive_interval)
                 .await;
         }
+
         self.rx
             .iter()
-            .try_fold((), |_, r| crate::firmware::cpu::check_firmware_err(r))
-            .and_then(|_| {
-                if timeout == Duration::ZERO {
-                    Ok(())
-                } else {
-                    Err(AUTDDriverError::ConfirmResponseFailed)
-                }
-            })
+            .try_fold((), |_, r| AUTDDriverError::check_firmware_err(r.ack()))
     }
 
     async fn fetch_firminfo(
@@ -227,7 +229,7 @@ impl<L: AsyncLink, S: AsyncSleep + Send + Sync, T: AsyncTimerStrategy<S>> Sender
 #[cfg(test)]
 mod tests {
     use autd3_core::{
-        link::{LinkError, TxBufferPoolSync},
+        link::{Ack, LinkError, TxBufferPoolSync},
         sleep::{
             SpinSleeper, SpinWaitSleeper, StdSleeper,
             r#async::{AsyncSleep, AsyncSleeper},
@@ -280,8 +282,9 @@ mod tests {
             if !self.down {
                 self.recv_cnt += 1;
             }
-            rx.iter_mut()
-                .for_each(|r| *r = RxMessage::new(r.data(), self.recv_cnt as u8));
+            rx.iter_mut().for_each(|r| {
+                *r = RxMessage::new(r.data(), Ack::new().with_msg_id(self.recv_cnt as u8))
+            });
             Ok(())
         }
 
@@ -329,25 +332,28 @@ mod tests {
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel: ParallelMode::Auto,
+                strict: true,
             },
             timer_strategy: FixedSchedule(sleeper),
             _phantom: std::marker::PhantomData,
         };
 
         let tx = sender.link.alloc_tx_buffer().await.unwrap();
-        assert_eq!(Ok(()), sender.send_receive(tx, Duration::ZERO).await);
+        assert_eq!(Ok(()), sender.send_receive(tx, Duration::ZERO, true).await);
 
         let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
             Ok(()),
-            sender.send_receive(tx, Duration::from_millis(1)).await
+            sender
+                .send_receive(tx, Duration::from_millis(1), true)
+                .await
         );
 
         sender.link.is_open = false;
         let tx = sender.link.alloc_tx_buffer().await.unwrap();
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::closed())),
-            sender.send_receive(tx, Duration::ZERO).await,
+            sender.send_receive(tx, Duration::ZERO, true).await,
         );
     }
 
@@ -361,7 +367,7 @@ mod tests {
         let mut link = MockAsyncLink::default();
         let mut geometry = create_geometry(1, 1);
         let mut sent_flags = vec![true; 1];
-        let mut rx = vec![RxMessage::new(0, 0)];
+        let mut rx = vec![RxMessage::new(0, Ack::new())];
         let mut msg_id = MsgId::new(1);
 
         assert!(link.open(&geometry).await.is_ok());
@@ -376,6 +382,7 @@ mod tests {
                 receive_interval: Duration::from_millis(1),
                 timeout: None,
                 parallel: ParallelMode::Auto,
+                strict: true,
             },
             timer_strategy: FixedSchedule(sleeper),
             _phantom: std::marker::PhantomData,
@@ -383,14 +390,18 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            sender.wait_msg_processed(Duration::from_millis(10)).await,
+            sender
+                .wait_msg_processed(Duration::from_millis(10), true)
+                .await,
         );
 
         sender.link.recv_cnt = 0;
         sender.link.is_open = false;
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::closed())),
-            sender.wait_msg_processed(Duration::from_millis(10)).await
+            sender
+                .wait_msg_processed(Duration::from_millis(10), true)
+                .await
         );
 
         sender.link.recv_cnt = 0;
@@ -398,20 +409,35 @@ mod tests {
         sender.link.down = true;
         assert_eq!(
             Err(AUTDDriverError::ConfirmResponseFailed),
-            sender.wait_msg_processed(Duration::from_millis(10)).await,
+            sender
+                .wait_msg_processed(Duration::from_millis(10), true)
+                .await,
         );
 
         sender.link.recv_cnt = 0;
         sender.link.is_open = true;
         sender.link.down = true;
-        assert_eq!(Ok(()), sender.wait_msg_processed(Duration::ZERO).await);
+        assert_eq!(
+            Err(AUTDDriverError::ConfirmResponseFailed),
+            sender.wait_msg_processed(Duration::ZERO, true).await
+        );
+
+        sender.link.recv_cnt = 0;
+        sender.link.is_open = true;
+        sender.link.down = true;
+        assert_eq!(
+            Ok(()),
+            sender.wait_msg_processed(Duration::ZERO, false).await
+        );
 
         sender.link.down = false;
         sender.link.recv_cnt = 0;
         *sender.msg_id = MsgId::new(20);
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::new("too many"))),
-            sender.wait_msg_processed(Duration::from_secs(10)).await
+            sender
+                .wait_msg_processed(Duration::from_secs(10), true)
+                .await
         );
     }
 }

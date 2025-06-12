@@ -8,10 +8,10 @@ use super::params::{
 
 mod clear;
 mod cpu_gpio_out;
-mod debug;
 mod force_fan;
 mod gain;
 mod gpio_in;
+mod gpio_out;
 mod info;
 mod modulation;
 mod phase_corr;

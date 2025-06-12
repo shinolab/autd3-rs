@@ -69,7 +69,7 @@ mod tests {
     #[case(0b00100000, true, false)]
     #[case(0b10000000, false, true)]
     #[case(0b00000000, false, false)]
-    fn debug_op(#[case] expect: u8, #[case] pa5: bool, #[case] pa7: bool) {
+    fn cpu_gpio_out_op(#[case] expect: u8, #[case] pa5: bool, #[case] pa7: bool) {
         const FRAME_SIZE: usize = size_of::<CpuGPIOOut>();
 
         let device = create_device(NUM_TRANS_IN_UNIT);

@@ -559,7 +559,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::InvalidGainSTMMode),
-        autd3_driver::firmware::cpu::check_firmware_err(&cpu.rx())
+        AUTDDriverError::check_firmware_err(cpu.rx().ack())
     );
 
     Ok(())

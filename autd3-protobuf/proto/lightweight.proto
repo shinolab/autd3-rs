@@ -79,6 +79,7 @@ message SenderOption {
   uint64 receive_interval_ns = 2;
   optional uint64 timeout_ns = 3;
   ParallelMode parallel = 4;
+  bool strict = 5;
 }
 
 message SendRequestLightweight {

@@ -2,11 +2,11 @@ use zerocopy::{FromZeros, Immutable, IntoBytes};
 
 #[doc(hidden)]
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, IntoBytes, Immutable, FromZeros)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, IntoBytes, Immutable, FromZeros)]
 pub struct MsgId(u8);
 
 impl MsgId {
-    pub const MAX: Self = MsgId(0x7F);
+    pub const MAX: Self = MsgId(0x0F);
 
     pub const fn new(id: u8) -> Self {
         MsgId(id)

@@ -10,7 +10,7 @@ pub use autd3_core::{
 };
 
 pub use fpga_state::FPGAState;
-pub(crate) use gpio_out::DebugValue;
+pub(crate) use gpio_out::GPIOOutValue;
 pub use gpio_out::GPIOOutputType;
 pub use pulse_width::PulseWidth;
 pub(crate) use stm_focus::STMFocus;
