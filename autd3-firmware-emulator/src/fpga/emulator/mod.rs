@@ -1,4 +1,4 @@
-mod debug;
+mod gpio_out;
 mod memory;
 mod modulation;
 mod phase_corr;

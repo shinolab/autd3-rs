@@ -5,7 +5,7 @@ use autd3::{
     link::{Audit, AuditOption},
     prelude::*,
 };
-use autd3_core::link::LinkError;
+use autd3_core::link::{Ack, LinkError};
 use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
 
 #[tokio::test]
@@ -39,13 +39,13 @@ async fn audit_test() -> anyhow::Result<()> {
         assert!(autd.send(ReadsFPGAState::new(|_| true)).await.is_ok());
         autd.link_mut()[0].update();
         assert_eq!(
-            vec![FPGAState::from_rx(&RxMessage::new(0x88, 0x00))],
+            vec![FPGAState::from_rx(&RxMessage::new(0x88, Ack::new()))],
             autd.fpga_state().await?
         );
         autd.link_mut()[0].fpga_mut().assert_thermal_sensor();
         autd.link_mut()[0].update();
         assert_eq!(
-            vec![FPGAState::from_rx(&RxMessage::new(0x89, 0x00))],
+            vec![FPGAState::from_rx(&RxMessage::new(0x89, Ack::new()))],
             autd.fpga_state().await?
         );
     }

@@ -5,5 +5,5 @@ mod tx;
 
 pub use header::Header;
 pub use msg_id::MsgId;
-pub use rx::RxMessage;
+pub use rx::{Ack, RxMessage};
 pub use tx::TxMessage;

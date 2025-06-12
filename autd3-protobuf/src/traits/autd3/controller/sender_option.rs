@@ -35,6 +35,7 @@ impl From<autd3::controller::SenderOption> for SenderOption {
             receive_interval_ns: value.receive_interval.as_nanos() as _,
             timeout_ns: value.timeout.map(|t| t.as_nanos() as _),
             parallel: ParallelMode::from(value.parallel) as _,
+            strict: value.strict,
         }
     }
 }
@@ -45,11 +46,13 @@ impl FromMessage<SenderOption> for autd3::controller::SenderOption {
         let receive_interval = Duration::from_nanos(msg.receive_interval_ns);
         let timeout = msg.timeout_ns.map(Duration::from_nanos);
         let parallel = autd3::controller::ParallelMode::from_msg(msg.parallel)?;
+        let strict = msg.strict;
         Ok(autd3::controller::SenderOption {
             send_interval,
             receive_interval,
             timeout,
             parallel,
+            strict,
         })
     }
 }

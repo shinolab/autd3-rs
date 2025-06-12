@@ -24,7 +24,7 @@ ethercat = ["time", "thiserror"]
 gain = ["common", "datagram", "geometry", "thiserror", "bit-vec", "zerocopy", "derive_more", "derive_more/display"]
 geometry = ["nalgebra", "bvh", "paste", "getset", "common", "derive_more", "derive_more/add", "derive_more/mul", "derive_more/into_iterator", "derive_more/deref", "derive_more/debug"]
 left_handed = []
-link = ["zerocopy", "getset", "ethercat", "datagram", "geometry", "derive_more", "derive_more/display"]
+link = ["bitfield-struct", "zerocopy", "getset", "ethercat", "datagram", "geometry", "derive_more", "derive_more/display"]
 modulation = ["getset", "sampling_config", "utils", "common", "datagram", "derive_more", "derive_more/display"]
 sampling_config = ["common", "thiserror", "utils"]
 use_meter = []
@@ -35,6 +35,7 @@ sleep = ["spin_sleep"]
 async-trait = { workspace = true, optional = true }
 autd3-derive = { workspace = true, optional = true }
 bit-vec = { workspace = true, optional = true }
+bitfield-struct = { workspace = true, optional = true }
 bvh = { workspace = true, optional = true }
 derive_more = { workspace = true, optional = true }
 getset = { workspace = true, optional = true }
