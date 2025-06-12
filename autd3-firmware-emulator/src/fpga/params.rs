@@ -1,4 +1,4 @@
-pub const VERSION_NUM_MAJOR: u8 = 0xA3;
+pub const VERSION_NUM_MAJOR: u8 = 0xA4;
 pub const VERSION_NUM_MINOR: u8 = 0x00;
 
 pub const BRAM_SELECT_CONTROLLER: u8 = 0x0;
@@ -101,16 +101,17 @@ pub const CTL_FLAG_FORCE_FAN_BIT: u8 = 13;
 pub const ENABLED_EMULATOR_BIT: u8 = 0x80;
 pub const ENABLED_FEATURES_BITS: u8 = ENABLED_EMULATOR_BIT;
 
-pub const DBG_NONE: u8 = 0x00;
-pub const DBG_BASE_SIG: u8 = 0x01;
-pub const DBG_THERMO: u8 = 0x02;
-pub const DBG_FORCE_FAN: u8 = 0x03;
-pub const DBG_SYNC: u8 = 0x10;
-pub const DBG_MOD_SEGMENT: u8 = 0x20;
-pub const DBG_MOD_IDX: u8 = 0x21;
-pub const DBG_STM_SEGMENT: u8 = 0x50;
-pub const DBG_STM_IDX: u8 = 0x51;
-pub const DBG_IS_STM_MODE: u8 = 0x52;
-pub const DBG_SYS_TIME_EQ: u8 = 0x60;
-pub const DBG_PWM_OUT: u8 = 0xE0;
-pub const DBG_DIRECT: u8 = 0xF0;
+pub const GPIO_O_TYPE_NONE: u8 = 0x00;
+pub const GPIO_O_TYPE_BASE_SIG: u8 = 0x01;
+pub const GPIO_O_TYPE_THERMO: u8 = 0x02;
+pub const GPIO_O_TYPE_FORCE_FAN: u8 = 0x03;
+pub const GPIO_O_TYPE_SYNC: u8 = 0x10;
+pub const GPIO_O_TYPE_MOD_SEGMENT: u8 = 0x20;
+pub const GPIO_O_TYPE_MOD_IDX: u8 = 0x21;
+pub const GPIO_O_TYPE_STM_SEGMENT: u8 = 0x50;
+pub const GPIO_O_TYPE_STM_IDX: u8 = 0x51;
+pub const GPIO_O_TYPE_IS_STM_MODE: u8 = 0x52;
+pub const GPIO_O_TYPE_SYS_TIME_EQ: u8 = 0x60;
+pub const GPIO_O_TYPE_SYNC_DIFF: u8 = 0x70;
+pub const GPIO_O_TYPE_PWM_OUT: u8 = 0xE0;
+pub const GPIO_O_TYPE_DIRECT: u8 = 0xF0;

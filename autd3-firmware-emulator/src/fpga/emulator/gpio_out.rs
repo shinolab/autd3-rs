@@ -12,7 +12,7 @@ impl FPGAEmulator {
     }
 
     #[must_use]
-    pub fn debug_types(&self) -> [u8; 4] {
+    pub fn gpio_out_types(&self) -> [u8; 4] {
         [
             (self.mem.controller_bram.read(ADDR_DEBUG_VALUE0_3) >> 8) as _,
             (self.mem.controller_bram.read(ADDR_DEBUG_VALUE1_3) >> 8) as _,
@@ -22,7 +22,7 @@ impl FPGAEmulator {
     }
 
     #[must_use]
-    pub fn debug_values(&self) -> [u64; 4] {
+    pub fn gpio_out_values(&self) -> [u64; 4] {
         [
             self.mem
                 .controller_bram

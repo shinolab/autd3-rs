@@ -1,7 +1,10 @@
 use std::{convert::Infallible, time::Duration};
 
 use autd3_core::{
-    datagram::CombinedError, derive::SamplingConfigError, gain::GainError, link::LinkError,
+    datagram::CombinedError,
+    derive::SamplingConfigError,
+    gain::GainError,
+    link::{Ack, LinkError},
     modulation::ModulationError,
 };
 use thiserror::Error;
@@ -135,18 +138,18 @@ pub enum AUTDDriverError {
 
 impl AUTDDriverError {
     #[doc(hidden)]
-    #[must_use]
-    pub const fn firmware_err(ack: u8) -> Self {
-        match ack {
-            0x80 => AUTDDriverError::NotSupportedTag,
-            0x81 => AUTDDriverError::InvalidMessageID,
-            0x84 => AUTDDriverError::InvalidInfoType,
-            0x85 => AUTDDriverError::InvalidGainSTMMode,
-            0x88 => AUTDDriverError::InvalidSegmentTransition,
-            0x8B => AUTDDriverError::MissTransitionTime,
-            0x8E => AUTDDriverError::InvalidSilencerSettings,
-            0x8F => AUTDDriverError::InvalidTransitionMode,
-            _ => AUTDDriverError::UnknownFirmwareError(ack),
+    pub const fn check_firmware_err(ack: Ack) -> Result<(), Self> {
+        match ack.err() {
+            0x00 => Ok(()),
+            0x01 => Err(AUTDDriverError::NotSupportedTag),
+            0x02 => Err(AUTDDriverError::InvalidMessageID),
+            0x03 => Err(AUTDDriverError::InvalidInfoType),
+            0x04 => Err(AUTDDriverError::InvalidGainSTMMode),
+            0x05 => Err(AUTDDriverError::InvalidSegmentTransition),
+            0x06 => Err(AUTDDriverError::MissTransitionTime),
+            0x07 => Err(AUTDDriverError::InvalidSilencerSettings),
+            0x08 => Err(AUTDDriverError::InvalidTransitionMode),
+            _ => Err(AUTDDriverError::UnknownFirmwareError(ack.err())),
         }
     }
 }
@@ -179,10 +182,12 @@ mod tests {
     use std::error::Error;
 
     #[test]
-    fn test_unknown_firmware_err() {
-        let err = AUTDDriverError::firmware_err(0xFF);
+    fn unknown_firmware_err() {
+        let err = AUTDDriverError::check_firmware_err(Ack::new().with_err(0x0F))
+            .err()
+            .unwrap();
         assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "Unknown firmware error: 255");
-        assert_eq!(format!("{:?}", err), "UnknownFirmwareError(255)");
+        assert_eq!(format!("{}", err), "Unknown firmware error: 15");
+        assert_eq!(format!("{:?}", err), "UnknownFirmwareError(15)");
     }
 }

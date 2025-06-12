@@ -2,7 +2,7 @@ use std::{convert::Infallible, mem::size_of};
 
 use crate::{
     firmware::{
-        fpga::DebugValue,
+        fpga::GPIOOutValue,
         operation::{Operation, TypeTag},
     },
     geometry::Device,
@@ -12,19 +12,19 @@ use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
 #[derive(IntoBytes, Immutable)]
-struct DebugSetting {
+struct GPIOOutput {
     tag: TypeTag,
     __: [u8; 7],
-    value: [DebugValue; 4],
+    value: [GPIOOutValue; 4],
 }
 
-pub struct DebugSettingOp {
+pub struct GPIOOutputOp {
     is_done: bool,
-    value: [DebugValue; 4],
+    value: [GPIOOutValue; 4],
 }
 
-impl DebugSettingOp {
-    pub(crate) const fn new(value: [DebugValue; 4]) -> Self {
+impl GPIOOutputOp {
+    pub(crate) const fn new(value: [GPIOOutValue; 4]) -> Self {
         Self {
             is_done: false,
             value,
@@ -32,13 +32,13 @@ impl DebugSettingOp {
     }
 }
 
-impl Operation for DebugSettingOp {
+impl Operation for GPIOOutputOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         super::write_to_tx(
             tx,
-            DebugSetting {
+            GPIOOutput {
                 tag: TypeTag::Debug,
                 __: [0; 7],
                 value: self.value,
@@ -46,11 +46,11 @@ impl Operation for DebugSettingOp {
         );
 
         self.is_done = true;
-        Ok(size_of::<DebugSetting>())
+        Ok(size_of::<GPIOOutput>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        size_of::<DebugSetting>()
+        size_of::<GPIOOutput>()
     }
 
     fn is_done(&self) -> bool {
@@ -67,29 +67,29 @@ mod tests {
     const NUM_TRANS_IN_UNIT: u8 = 249;
 
     #[test]
-    fn debug_op() {
-        const FRAME_SIZE: usize = size_of::<DebugSetting>();
+    fn gpio_output_op() {
+        const FRAME_SIZE: usize = size_of::<GPIOOutput>();
 
         let device = create_device(NUM_TRANS_IN_UNIT);
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut op = DebugSettingOp::new([
-            DebugValue::new()
+        let mut op = GPIOOutputOp::new([
+            GPIOOutValue::new()
                 .with_tag(0x01)
                 .with_value(0x02030405060708),
-            DebugValue::new()
+            GPIOOutValue::new()
                 .with_tag(0x11)
                 .with_value(0x12131415161718),
-            DebugValue::new()
+            GPIOOutValue::new()
                 .with_tag(0x10)
                 .with_value(0x20304050607080),
-            DebugValue::new()
+            GPIOOutValue::new()
                 .with_tag(0x11)
                 .with_value(0x21314151617181),
         ]);
 
-        assert_eq!(size_of::<DebugSetting>(), op.required_size(&device));
-        assert_eq!(Ok(size_of::<DebugSetting>()), op.pack(&device, &mut tx));
+        assert_eq!(size_of::<GPIOOutput>(), op.required_size(&device));
+        assert_eq!(Ok(size_of::<GPIOOutput>()), op.pack(&device, &mut tx));
         assert!(op.is_done());
         assert_eq!(TypeTag::Debug as u8, tx[0]);
         assert_eq!(0x08, tx[8]);

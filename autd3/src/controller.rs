@@ -3,7 +3,7 @@ use crate::{gain::Null, modulation::Static};
 use autd3_core::{
     datagram::{Inspectable, InspectionResult},
     derive::DeviceFilter,
-    link::{Link, MsgId},
+    link::{Ack, Link, MsgId},
     sleep::Sleep,
 };
 use autd3_driver::{
@@ -81,7 +81,7 @@ impl<L: Link> Controller<L> {
             link,
             msg_id: MsgId::new(0),
             sent_flags: smallvec::smallvec![false; geometry.len()],
-            rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
+            rx_buf: vec![RxMessage::new(0, Ack::new()); geometry.len()],
             geometry,
             default_sender_option: option,
         };

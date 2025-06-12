@@ -1,7 +1,7 @@
 use autd3_driver::{
     ethercat::{DcSysTime, EC_OUTPUT_FRAME_SIZE},
     firmware::cpu::{Header, RxMessage, TxMessage},
-    link::MsgId,
+    link::{Ack, MsgId},
 };
 
 use getset::{CopyGetters, Getters, MutGetters};
@@ -14,7 +14,7 @@ use super::params::*;
 pub struct CPUEmulator {
     #[getset(get_copy = "pub")]
     pub(crate) idx: usize,
-    pub(crate) ack: u8,
+    pub(crate) err: u8,
     pub(crate) last_msg_id: MsgId,
     pub(crate) rx_data: u8,
     #[getset(get_copy = "pub")]
@@ -60,7 +60,7 @@ impl CPUEmulator {
     pub fn new(id: usize, num_transducers: usize) -> Self {
         let mut s = Self {
             idx: id,
-            ack: 0x00,
+            err: 0x00,
             last_msg_id: MsgId::new(0xFF),
             rx_data: 0x00,
             reads_fpga_state: false,
@@ -107,7 +107,12 @@ impl CPUEmulator {
 
     #[must_use]
     pub const fn rx(&self) -> RxMessage {
-        RxMessage::new(self.rx_data, self.ack)
+        RxMessage::new(
+            self.rx_data,
+            Ack::new()
+                .with_err(self.err)
+                .with_msg_id(self.last_msg_id.get() & 0x0F),
+        )
     }
 
     pub fn send(&mut self, tx: &[TxMessage]) {
@@ -141,7 +146,6 @@ impl CPUEmulator {
 
     pub fn set_last_msg_id(&mut self, msg_id: MsgId) {
         self.last_msg_id = msg_id;
-        self.ack = msg_id.get();
     }
 }
 
@@ -208,6 +212,7 @@ impl CPUEmulator {
     fn handle_payload(&mut self, data: &[u8]) -> u8 {
         unsafe {
             match data[0] {
+                TAG_NOP => NO_ERR,
                 TAG_CLEAR => self.clear(data),
                 TAG_SYNC => self.synchronize(data),
                 TAG_FIRM_INFO => self.firm_info(data),
@@ -223,7 +228,7 @@ impl CPUEmulator {
                 TAG_FORCE_FAN => self.configure_force_fan(data),
                 TAG_READS_FPGA_STATE => self.configure_reads_fpga_state(data),
                 TAG_CONFIG_PULSE_WIDTH_ENCODER => self.config_pwe(data),
-                TAG_DEBUG => self.config_debug(data),
+                TAG_DEBUG => self.config_gpio_output(data),
                 TAG_EMULATE_GPIO_IN => self.emulate_gpio_in(data),
                 TAG_CPU_GPIO_OUT => self.cpu_gpio_out(data),
                 TAG_PHASE_CORRECTION => self.phase_corr(data),
@@ -244,21 +249,21 @@ impl CPUEmulator {
 
         self.read_fpga_state();
 
-        if (header.msg_id.get() & 0x80) != 0 {
-            self.ack = ERR_INVALID_MSG_ID;
+        if header.msg_id > MsgId::MAX {
+            self.err = ERR_INVALID_MSG_ID;
             return;
         }
 
-        self.ack = self.handle_payload(&data[std::mem::size_of::<Header>()..]);
-        if (self.ack & ERR_BIT) != 0 {
+        self.err = self.handle_payload(&data[std::mem::size_of::<Header>()..]);
+        if self.err != NO_ERR {
             return;
         }
 
         if header.slot_2_offset != 0 {
-            self.ack = self.handle_payload(
+            self.err = self.handle_payload(
                 &data[std::mem::size_of::<Header>() + header.slot_2_offset as usize..],
             );
-            if (self.ack & ERR_BIT) != 0 {
+            if self.err != NO_ERR {
                 return;
             }
         }
@@ -268,8 +273,6 @@ impl CPUEmulator {
             ADDR_CTL_FLAG,
             self.fpga_flags_internal,
         );
-
-        self.ack = header.msg_id.get();
     }
 }
 

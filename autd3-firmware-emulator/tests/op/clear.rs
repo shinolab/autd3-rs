@@ -183,8 +183,8 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
         cpu.fpga().pulse_width_encoder_table()
     );
 
-    assert_eq!([0, 0, 0, 0], cpu.fpga().debug_types());
-    assert_eq!([0, 0, 0, 0], cpu.fpga().debug_values());
+    assert_eq!([0, 0, 0, 0], cpu.fpga().gpio_out_types());
+    assert_eq!([0, 0, 0, 0], cpu.fpga().gpio_out_values());
 
     Ok(())
 }

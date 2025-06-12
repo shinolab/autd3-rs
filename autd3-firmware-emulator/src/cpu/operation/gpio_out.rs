@@ -1,7 +1,7 @@
 use crate::{CPUEmulator, cpu::params::*};
 
 #[repr(C, align(2))]
-struct DebugOutIdx {
+struct GPIOOutput {
     tag: u8,
     __: [u8; 7],
     value: [u64; 4],
@@ -9,8 +9,8 @@ struct DebugOutIdx {
 
 impl CPUEmulator {
     #[must_use]
-    pub(crate) fn config_debug(&mut self, data: &[u8]) -> u8 {
-        let d = Self::cast::<DebugOutIdx>(data);
+    pub(crate) fn config_gpio_output(&mut self, data: &[u8]) -> u8 {
+        let d = Self::cast::<GPIOOutput>(data);
         self.bram_cpy(
             BRAM_SELECT_CONTROLLER,
             ADDR_DEBUG_VALUE0_0,
@@ -29,9 +29,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn debug_out_idx_memory_layout() {
-        assert_eq!(40, std::mem::size_of::<DebugOutIdx>());
-        assert_eq!(0, std::mem::offset_of!(DebugOutIdx, tag));
-        assert_eq!(8, std::mem::offset_of!(DebugOutIdx, value));
+    fn gpio_output_memory_layout() {
+        assert_eq!(40, std::mem::size_of::<GPIOOutput>());
+        assert_eq!(0, std::mem::offset_of!(GPIOOutput, tag));
+        assert_eq!(8, std::mem::offset_of!(GPIOOutput, value));
     }
 }

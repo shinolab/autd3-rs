@@ -6,7 +6,7 @@ use crate::{
 
 use autd3_core::{
     datagram::{DeviceFilter, Inspectable, InspectionResult},
-    link::{AsyncLink, MsgId},
+    link::{Ack, AsyncLink, MsgId},
 };
 use autd3_driver::{
     datagram::{Clear, Datagram, FixedCompletionSteps, Silencer},
@@ -82,7 +82,7 @@ impl<L: AsyncLink> Controller<L> {
         let mut cnt = Controller {
             link,
             sent_flags: smallvec::smallvec![false; geometry.len()],
-            rx_buf: vec![RxMessage::new(0, 0); geometry.len()],
+            rx_buf: vec![RxMessage::new(0, Ack::new()); geometry.len()],
             msg_id: MsgId::new(0),
             geometry,
             default_sender_option: option,

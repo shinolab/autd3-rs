@@ -2,6 +2,16 @@ use derive_more::Display;
 use getset::CopyGetters;
 use zerocopy::{FromBytes, Immutable, IntoBytes};
 
+/// Acknowledgement structure for received messages
+#[bitfield_struct::bitfield(u8)]
+#[derive(IntoBytes, Immutable, FromBytes, PartialEq, Eq, Display)]
+pub struct Ack {
+    #[bits(4)]
+    pub msg_id: u8,
+    #[bits(4)]
+    pub err: u8,
+}
+
 /// PDO input data representation
 #[derive(
     Clone, Copy, PartialEq, Eq, Debug, CopyGetters, IntoBytes, Immutable, FromBytes, Display,
@@ -14,13 +24,13 @@ pub struct RxMessage {
     data: u8,
     #[getset(get_copy = "pub")]
     /// Acknowledgement
-    ack: u8,
+    ack: Ack,
 }
 
 impl RxMessage {
     /// Creates a new [`RxMessage`].
     #[must_use]
-    pub const fn new(data: u8, ack: u8) -> Self {
+    pub const fn new(data: u8, ack: Ack) -> Self {
         Self { data, ack }
     }
 }
@@ -33,7 +43,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_message_size() {
+    fn rx_size() {
         assert_eq!(2, size_of::<RxMessage>());
         assert_eq!(0, offset_of!(RxMessage, data));
         assert_eq!(1, offset_of!(RxMessage, ack));

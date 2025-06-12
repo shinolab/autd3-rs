@@ -27,6 +27,7 @@ fn version_map(major: Major, minor: Minor) -> String {
         0xA0..=0xA1 => format!("v9.{}.{}", major - 0xA0, minor),
         0xA2..=0xA2 => format!("v10.{}.{}", major - 0xA2, minor),
         0xA3..=0xA3 => format!("v11.{}.{}", major - 0xA3, minor),
+        0xA4..=0xA4 => format!("v12.{}.{}", major - 0xA4, minor),
         _ => format!("unknown ({major})"),
     }
 }
@@ -97,7 +98,7 @@ pub struct FirmwareVersion {
 
 impl FirmwareVersion {
     #[doc(hidden)]
-    pub const LATEST_VERSION_NUM_MAJOR: Major = Major(0xA3);
+    pub const LATEST_VERSION_NUM_MAJOR: Major = Major(0xA4);
     #[doc(hidden)]
     pub const LATEST_VERSION_NUM_MINOR: Minor = Minor(0x00);
 
@@ -168,6 +169,7 @@ mod tests {
     #[case("v9.1.0", 161)]
     #[case("v10.0.0", 162)]
     #[case("v11.0.0", 163)]
+    #[case("v12.0.0", 164)]
     #[case("unknown (147)", 147)]
     fn version(#[case] expected: &str, #[case] num: u8) {
         let info = FirmwareVersion {
@@ -188,7 +190,7 @@ mod tests {
 
     #[test]
     fn latest() {
-        assert_eq!("v11.0.0", FirmwareVersion::latest());
+        assert_eq!("v12.0.0", FirmwareVersion::latest());
     }
 
     #[rstest::rstest]

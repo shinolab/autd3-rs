@@ -2,13 +2,13 @@ use std::convert::Infallible;
 
 use crate::firmware::{
     fpga::{GPIOOut, GPIOOutputType},
-    operation::DebugSettingOp,
+    operation::GPIOOutputOp,
 };
 
 use crate::datagram::*;
 use derive_more::Debug;
 
-/// [`Datagram`] to configure GPIO Out pins for debugging.
+/// [`Datagram`] to configure GPIO Out pins.
 ///
 /// # Example
 ///
@@ -44,7 +44,7 @@ pub struct DebugSettingOpGenerator<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputT
 impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator
     for DebugSettingOpGenerator<F>
 {
-    type O1 = DebugSettingOp;
+    type O1 = GPIOOutputOp;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
