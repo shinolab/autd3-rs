@@ -45,14 +45,14 @@ pub enum GPIOOutputType<'a> {
 
 #[bitfield_struct::bitfield(u64)]
 #[derive(IntoBytes, Immutable)]
-pub(crate) struct DebugValue {
+pub(crate) struct GPIOOutValue {
     #[bits(56)]
     pub(crate) value: u64,
     #[bits(8)]
     pub(crate) tag: u8,
 }
 
-impl From<Option<GPIOOutputType<'_>>> for DebugValue {
+impl From<Option<GPIOOutputType<'_>>> for GPIOOutValue {
     fn from(ty: Option<GPIOOutputType<'_>>) -> Self {
         Self::new()
             .with_value(match &ty {

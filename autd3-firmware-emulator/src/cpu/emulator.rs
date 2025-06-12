@@ -228,7 +228,7 @@ impl CPUEmulator {
                 TAG_FORCE_FAN => self.configure_force_fan(data),
                 TAG_READS_FPGA_STATE => self.configure_reads_fpga_state(data),
                 TAG_CONFIG_PULSE_WIDTH_ENCODER => self.config_pwe(data),
-                TAG_DEBUG => self.config_debug(data),
+                TAG_DEBUG => self.config_gpio_output(data),
                 TAG_EMULATE_GPIO_IN => self.emulate_gpio_in(data),
                 TAG_CPU_GPIO_OUT => self.cpu_gpio_out(data),
                 TAG_PHASE_CORRECTION => self.phase_corr(data),
