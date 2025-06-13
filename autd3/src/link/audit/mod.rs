@@ -1,14 +1,16 @@
+#[doc(hidden)]
+pub mod version;
+
 use autd3_core::{
     geometry::Geometry,
     link::{Link, LinkError, MsgId, TxBufferPoolSync},
 };
 
 use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
-use autd3_firmware_emulator::CPUEmulator;
 
 use derive_more::{Deref, DerefMut};
 
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 #[doc(hidden)]
 pub struct AuditOption {
     pub initial_msg_id: Option<MsgId>,
@@ -18,17 +20,23 @@ pub struct AuditOption {
 
 #[doc(hidden)]
 #[derive(Deref, DerefMut)]
-pub struct Audit {
+pub struct Audit<E: version::Emulator> {
     option: AuditOption,
     is_open: bool,
     #[deref]
     #[deref_mut]
-    cpus: Vec<CPUEmulator>,
+    cpus: Vec<E>,
     broken: bool,
     buffer_pool: TxBufferPoolSync,
 }
 
-impl Audit {
+impl Audit<version::Latest> {
+    pub fn latest(option: AuditOption) -> Self {
+        Self::new(option)
+    }
+}
+
+impl<E: version::Emulator> Audit<E> {
     pub const fn new(option: AuditOption) -> Self {
         Self {
             option,
@@ -48,25 +56,13 @@ impl Audit {
     }
 }
 
-impl Link for Audit {
+impl<E: version::Emulator> Link for Audit<E> {
     fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
         self.is_open = true;
         self.cpus = geometry
             .iter()
             .enumerate()
-            .map(|(i, dev)| {
-                let mut cpu = CPUEmulator::new(i, dev.num_transducers());
-                if let Some(msg_id) = self.option.initial_msg_id {
-                    cpu.set_last_msg_id(msg_id);
-                }
-                if let Some(initial_phase_corr) = self.option.initial_phase_corr {
-                    cpu.fpga_mut()
-                        .mem_mut()
-                        .phase_corr_bram_mut()
-                        .fill(u16::from_le_bytes([initial_phase_corr, initial_phase_corr]));
-                }
-                cpu
-            })
+            .map(|(i, dev)| E::new(i, dev.num_transducers(), self.option))
             .collect();
         self.broken = self.option.broken;
         self.buffer_pool.init(geometry);

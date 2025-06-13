@@ -136,19 +136,29 @@ pub enum AUTDDriverError {
     InvalidSilencerSettings,
 }
 
+#[doc(hidden)]
 impl AUTDDriverError {
-    #[doc(hidden)]
+    pub const NO_ERROR: u8 = 0x00;
+    pub const NOT_SUPPORTED_TAG: u8 = 0x01;
+    pub const INVALID_MESSAGE_ID: u8 = 0x02;
+    pub const INVALID_INFO_TYPE: u8 = 0x03;
+    pub const INVALID_GAIN_STM_MODE: u8 = 0x04;
+    pub const INVALID_SEGMENT_TRANSITION: u8 = 0x05;
+    pub const MISS_TRANSITION_TIME: u8 = 0x06;
+    pub const INVALID_SILENCER_SETTINGS: u8 = 0x07;
+    pub const INVALID_TRANSITION_MODE: u8 = 0x08;
+
     pub const fn check_firmware_err(ack: Ack) -> Result<(), Self> {
         match ack.err() {
-            0x00 => Ok(()),
-            0x01 => Err(AUTDDriverError::NotSupportedTag),
-            0x02 => Err(AUTDDriverError::InvalidMessageID),
-            0x03 => Err(AUTDDriverError::InvalidInfoType),
-            0x04 => Err(AUTDDriverError::InvalidGainSTMMode),
-            0x05 => Err(AUTDDriverError::InvalidSegmentTransition),
-            0x06 => Err(AUTDDriverError::MissTransitionTime),
-            0x07 => Err(AUTDDriverError::InvalidSilencerSettings),
-            0x08 => Err(AUTDDriverError::InvalidTransitionMode),
+            Self::NO_ERROR => Ok(()),
+            Self::NOT_SUPPORTED_TAG => Err(AUTDDriverError::NotSupportedTag),
+            Self::INVALID_MESSAGE_ID => Err(AUTDDriverError::InvalidMessageID),
+            Self::INVALID_INFO_TYPE => Err(AUTDDriverError::InvalidInfoType),
+            Self::INVALID_GAIN_STM_MODE => Err(AUTDDriverError::InvalidGainSTMMode),
+            Self::INVALID_SEGMENT_TRANSITION => Err(AUTDDriverError::InvalidSegmentTransition),
+            Self::MISS_TRANSITION_TIME => Err(AUTDDriverError::MissTransitionTime),
+            Self::INVALID_SILENCER_SETTINGS => Err(AUTDDriverError::InvalidSilencerSettings),
+            Self::INVALID_TRANSITION_MODE => Err(AUTDDriverError::InvalidTransitionMode),
             _ => Err(AUTDDriverError::UnknownFirmwareError(ack.err())),
         }
     }

@@ -315,7 +315,7 @@ mod tests {
     pub async fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
         Ok(Controller::open(
             (0..dev_num).map(|_| AUTD3::default()),
-            Audit::new(AuditOption::default()),
+            Audit::latest(AuditOption::default()),
         )
         .await?)
     }
@@ -327,7 +327,7 @@ mod tests {
             Some(AUTDDriverError::Link(LinkError::new("broken"))),
             Controller::open(
                 [AUTD3::default()],
-                Audit::new(AuditOption {
+                Audit::latest(AuditOption {
                     broken: true,
                     ..Default::default()
                 })
@@ -494,7 +494,7 @@ mod tests {
     async fn fpga_state() -> anyhow::Result<()> {
         let mut autd = Controller::open(
             [AUTD3::default(), AUTD3::default()],
-            Audit::new(AuditOption::default()),
+            Audit::latest(AuditOption::default()),
         )
         .await?;
 

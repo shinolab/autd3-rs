@@ -277,16 +277,16 @@ pub(crate) mod tests {
             datagram::{GainSTM, ReadsFPGAState},
         },
         gain::Uniform,
-        link::{Audit, AuditOption},
+        link::{Audit, AuditOption, audit::version},
         modulation::Sine,
     };
 
     use super::*;
 
-    pub fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
+    pub fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit<version::Latest>>> {
         Ok(Controller::open(
             (0..dev_num).map(|_| AUTD3::default()),
-            Audit::new(AuditOption::default()),
+            Audit::latest(AuditOption::default()),
         )?)
     }
 
@@ -296,7 +296,7 @@ pub(crate) mod tests {
             Some(AUTDDriverError::Link(LinkError::new("broken"))),
             Controller::open(
                 [AUTD3::default()],
-                Audit::new(AuditOption {
+                Audit::latest(AuditOption {
                     broken: true,
                     ..Default::default()
                 })
@@ -453,7 +453,7 @@ pub(crate) mod tests {
     fn fpga_state() -> anyhow::Result<()> {
         let mut autd = Controller::open(
             [AUTD3::default(), AUTD3::default()],
-            Audit::new(AuditOption::default()),
+            Audit::latest(AuditOption::default()),
         )?;
 
         autd.send(ReadsFPGAState::new(|_| true))?;
@@ -524,7 +524,7 @@ pub(crate) mod tests {
 
     #[test]
     fn with_boxed_link() -> anyhow::Result<()> {
-        let link: Box<dyn Link> = Box::new(Audit::new(AuditOption::default()));
+        let link: Box<dyn Link> = Box::new(Audit::latest(AuditOption::default()));
         let mut autd = Controller::open([AUTD3::default()], link)?;
 
         autd.send(Sine {
@@ -541,7 +541,7 @@ pub(crate) mod tests {
     fn into_boxed_link_unsafe() -> anyhow::Result<()> {
         let autd = Controller::open_with_option(
             [AUTD3::default()],
-            Audit::new(AuditOption::default()),
+            Audit::latest(AuditOption::default()),
             SenderOption::default(),
             FixedSchedule::default(),
         )?;
@@ -569,7 +569,7 @@ pub(crate) mod tests {
             },
         ))?;
 
-        let autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
+        let autd = unsafe { Controller::<Audit<version::Latest>>::from_boxed_link(autd) };
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(

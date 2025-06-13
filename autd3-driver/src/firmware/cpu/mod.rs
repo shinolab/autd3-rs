@@ -4,9 +4,13 @@ use autd3_core::link::MsgId;
 pub use autd3_core::link::{Header, RxMessage, TxMessage};
 pub use gain_stm_mode::*;
 
+use crate::error::AUTDDriverError;
+
 #[doc(hidden)]
 pub fn check_if_msg_is_processed(msg_id: MsgId, rx: &[RxMessage]) -> impl Iterator<Item = bool> {
-    rx.iter().map(move |r| msg_id.get() == r.ack().msg_id())
+    rx.iter().map(move |r| {
+        msg_id.get() == r.ack().msg_id() || r.ack().err() == AUTDDriverError::INVALID_MESSAGE_ID
+    })
 }
 
 #[cfg(test)]
