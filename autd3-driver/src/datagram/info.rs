@@ -1,31 +1,39 @@
 use std::convert::Infallible;
 
-use crate::{
-    datagram::*,
-    firmware::operation::{FirmInfoOp, FirmwareVersionType},
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter},
+    derive::FirmwareLimits,
     geometry::Geometry,
 };
 
-use super::OperationGenerator;
+use zerocopy::{Immutable, IntoBytes};
 
-pub struct FetchFirmwareInfoOpGenerator {
-    inner: FirmwareVersionType,
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, IntoBytes, Immutable)]
+#[doc(hidden)]
+pub enum FirmwareVersionType {
+    CPUMajor = 0x01,
+    CPUMinor = 0x02,
+    FPGAMajor = 0x03,
+    FPGAMinor = 0x04,
+    FPGAFunctions = 0x05,
+    Clear = 0x06,
 }
 
-impl OperationGenerator for FetchFirmwareInfoOpGenerator {
-    type O1 = FirmInfoOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((Self::O1::new(self.inner), Self::O2 {}))
-    }
+pub struct FetchFirmwareInfoOpGenerator {
+    pub(crate) inner: FirmwareVersionType,
 }
 
 impl Datagram for FirmwareVersionType {
     type G = FetchFirmwareInfoOpGenerator;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
         Ok(Self::G { inner: self })
     }
 }

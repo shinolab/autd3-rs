@@ -1,14 +1,16 @@
 use std::hint::black_box;
 
-use autd3_core::{derive::*, link::MsgId};
+use autd3_core::{
+    derive::*,
+    link::{MsgId, TxMessage},
+};
 use autd3_driver::{
     autd3_device::AUTD3,
     common::rad,
-    datagram::{BoxedGain, Datagram},
+    datagram::BoxedGain,
     firmware::{
-        cpu::TxMessage,
-        fpga::{Drive, EmitIntensity, Phase},
-        operation::OperationHandler,
+        driver::Driver,
+        latest::{Latest, operation::OperationHandler},
     },
     geometry::{Device, Geometry, Point3, Transducer},
 };
@@ -107,7 +109,11 @@ fn focus(c: &mut Criterion) {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
                     let generator = g
-                        .operation_generator(geometry, &DeviceFilter::all_enabled())
+                        .operation_generator(
+                            geometry,
+                            &DeviceFilter::all_enabled(),
+                            &Latest.firmware_limits(),
+                        )
                         .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(
@@ -138,7 +144,11 @@ fn focus_parallel(c: &mut Criterion) {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
                     let generator = g
-                        .operation_generator(geometry, &DeviceFilter::all_enabled())
+                        .operation_generator(
+                            geometry,
+                            &DeviceFilter::all_enabled(),
+                            &Latest.firmware_limits(),
+                        )
                         .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(
@@ -172,7 +182,11 @@ fn focus_boxed(c: &mut Criterion) {
                         black_box(150.),
                     )));
                     let generator = g
-                        .operation_generator(geometry, &DeviceFilter::all_enabled())
+                        .operation_generator(
+                            geometry,
+                            &DeviceFilter::all_enabled(),
+                            &Latest.firmware_limits(),
+                        )
                         .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(

@@ -1,17 +1,16 @@
 use std::{num::NonZeroU16, time::Duration};
 
-use autd3_core::{derive::*, link::MsgId};
+use autd3_core::{
+    common::{MOD_BUF_SIZE_MIN, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+    datagram::GPIOIn,
+    derive::*,
+    link::{MsgId, TxMessage},
+};
 use autd3_driver::{
     datagram::{FixedCompletionSteps, Silencer, SwapSegment, WithLoopBehavior, WithSegment},
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::{
-        cpu::TxMessage,
-        fpga::{
-            GPIOIn, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT, TransitionMode,
-        },
-    },
+    firmware::latest::fpga::MOD_BUF_SIZE_MAX,
 };
 use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARGIN};
 
@@ -30,7 +29,7 @@ pub struct TestModulation {
 }
 
 impl Modulation for TestModulation {
-    fn calc(self) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buf.clone())
     }
 
@@ -97,6 +96,8 @@ fn send_mod_unsafe(
     #[case] segment: Segment,
     #[case] transition_mode: Option<TransitionMode>,
 ) -> anyhow::Result<()> {
+    use autd3_core::link::TxMessage;
+
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);

@@ -1,10 +1,6 @@
 use autd3_core::derive::*;
 
-use autd3_driver::{
-    common::rad,
-    firmware::fpga::{EmitIntensity, Phase},
-    geometry::Point3,
-};
+use autd3_driver::{common::rad, geometry::Point3};
 
 /// The option of [`Focus`].
 #[derive(Debug, Clone, Copy, PartialEq)]

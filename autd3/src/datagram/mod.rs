@@ -13,5 +13,3 @@ pub mod modulation;
 /// [`GainSTM`]: autd3_driver::datagram::GainSTM
 /// [`FociSTM`]: autd3_driver::datagram::FociSTM
 pub mod stm;
-
-pub use autd3_driver::datagram::BoxedDatagram;

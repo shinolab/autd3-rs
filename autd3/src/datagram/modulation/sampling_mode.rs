@@ -1,11 +1,8 @@
 use autd3_core::{
-    derive::{ModulationError, SamplingConfig},
+    derive::{FirmwareLimits, ModulationError, SamplingConfig},
     utils::float::is_integer,
 };
-use autd3_driver::{
-    common::{Freq, Hz, ULTRASOUND_FREQ},
-    firmware::fpga::MOD_BUF_SIZE_MAX,
-};
+use autd3_driver::common::{Freq, Hz, ULTRASOUND_FREQ};
 use num::integer::gcd;
 use std::fmt::Debug;
 
@@ -28,11 +25,16 @@ impl SamplingMode {
     pub(crate) fn validate(
         self,
         sampling_config: SamplingConfig,
+        limits: &FirmwareLimits,
     ) -> Result<(u64, u64), ModulationError> {
         match self {
-            SamplingMode::ExactFreq(freq) => Self::validate_exact(freq, sampling_config),
-            SamplingMode::ExactFreqFloat(freq) => Self::validate_exact_f(freq, sampling_config),
-            SamplingMode::NearestFreq(freq) => Self::validate_nearest(freq, sampling_config),
+            SamplingMode::ExactFreq(freq) => Self::validate_exact(freq, sampling_config, limits),
+            SamplingMode::ExactFreqFloat(freq) => {
+                Self::validate_exact_f(freq, sampling_config, limits)
+            }
+            SamplingMode::NearestFreq(freq) => {
+                Self::validate_nearest(freq, sampling_config, limits)
+            }
         }
     }
 }
@@ -41,6 +43,7 @@ impl SamplingMode {
     fn validate_exact(
         freq: Freq<u32>,
         sampling_config: SamplingConfig,
+        _: &FirmwareLimits,
     ) -> Result<(u64, u64), ModulationError> {
         if freq.hz() as f32 >= sampling_config.freq()?.hz() / 2. {
             return Err(ModulationError::new(format!(
@@ -67,6 +70,7 @@ impl SamplingMode {
     fn validate_exact_f(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
+        limits: &FirmwareLimits,
     ) -> Result<(u64, u64), ModulationError> {
         if freq.hz() < 0. || freq.hz().is_nan() {
             return Err(ModulationError::new(format!(
@@ -88,7 +92,7 @@ impl SamplingMode {
         }
         let fd = freq.hz() as f64 * sampling_config.divide()? as f64;
 
-        for n in (ULTRASOUND_FREQ.hz() as f64 / fd).floor() as u32..=MOD_BUF_SIZE_MAX as u32 {
+        for n in (ULTRASOUND_FREQ.hz() as f64 / fd).floor() as u32..=limits.mod_buf_size_max {
             if !is_integer(fd * n as f64) {
                 continue;
             }
@@ -111,8 +115,9 @@ impl SamplingMode {
     fn freq_nearest(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
+        limits: &FirmwareLimits,
     ) -> Result<Freq<f32>, ModulationError> {
-        let freq_min = sampling_config.freq()?.hz() / MOD_BUF_SIZE_MAX as f32;
+        let freq_min = sampling_config.freq()?.hz() / limits.mod_buf_size_max as f32;
         let freq_max = sampling_config.freq()?.hz() / 2.;
         Ok(freq.hz().clamp(freq_min, freq_max) * Hz)
     }
@@ -120,8 +125,9 @@ impl SamplingMode {
     fn validate_nearest(
         freq: Freq<f32>,
         sampling_config: SamplingConfig,
+        limits: &FirmwareLimits,
     ) -> Result<(u64, u64), ModulationError> {
-        let freq = Self::freq_nearest(freq, sampling_config)?;
+        let freq = Self::freq_nearest(freq, sampling_config, limits)?;
         if freq.hz().is_nan() {
             return Err(ModulationError::new(format!(
                 "Frequency ({:?}) must be valid value",
@@ -152,8 +158,10 @@ impl From<Nearest> for SamplingMode {
 
 #[cfg(test)]
 mod tests {
-
-    use autd3_driver::common::Hz;
+    use autd3_driver::{
+        common::Hz,
+        firmware::{driver::Driver, latest::Latest},
+    };
 
     use super::*;
 
@@ -170,7 +178,7 @@ mod tests {
     ) {
         assert_eq!(
             Ok(expect),
-            SamplingMode::freq_nearest(freq, sampling_config)
+            SamplingMode::freq_nearest(freq, sampling_config, &Latest.firmware_limits())
         );
     }
 }

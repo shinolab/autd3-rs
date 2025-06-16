@@ -1,6 +1,6 @@
 use crate::ethercat::DcSysTime;
 
-use super::gpio::GPIOIn;
+use super::fpga_gpio::GPIOIn;
 
 pub(crate) const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub(crate) const TRANSITION_MODE_SYS_TIME: u8 = 0x01;

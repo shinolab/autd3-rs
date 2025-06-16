@@ -1,8 +1,8 @@
-use autd3_core::link::MsgId;
-use autd3_driver::{
-    datagram::PhaseCorrection,
-    firmware::{cpu::TxMessage, fpga::Phase},
+use autd3_core::{
+    gain::Phase,
+    link::{MsgId, TxMessage},
 };
+use autd3_driver::datagram::PhaseCorrection;
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;

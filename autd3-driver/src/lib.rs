@@ -9,14 +9,11 @@
 pub mod autd3_device;
 /// [`Datagram`] implementations.
 ///
-/// [`Datagram`]: crate::datagram::Datagram
+/// [`Datagram`]: autd3_core::datagram::Datagram
 pub mod datagram;
 /// Error module.
 pub mod error;
 /// A module for working with firmware.
 pub mod firmware;
-
-/// A module for tran
-pub mod transmission;
 
 pub use autd3_core::{common, ethercat, geometry, link};

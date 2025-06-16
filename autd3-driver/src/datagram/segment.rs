@@ -1,27 +1,44 @@
 use std::convert::Infallible;
 
-use crate::{datagram::*, firmware::operation::SwapSegmentOp};
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter, Segment, TransitionMode},
+    derive::FirmwareLimits,
+    geometry::Geometry,
+};
 
-use super::OperationGenerator;
-
-pub struct SwapSegmentOpGenerator {
-    segment: SwapSegment,
-}
-
-impl OperationGenerator for SwapSegmentOpGenerator {
-    type O1 = SwapSegmentOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((Self::O1::new(self.segment), Self::O2 {}))
-    }
+/// [`Datagram`] to change the segment.
+///
+/// [`Datagram`]: autd3_core::datagram::Datagram
+#[derive(Debug, Clone, Copy)]
+pub enum SwapSegment {
+    /// Change the [`Gain`] segment.
+    ///
+    /// [`Gain`]: autd3_core::gain::Gain
+    Gain(Segment, TransitionMode),
+    /// Change the [`Modulation`] segment.
+    ///
+    /// [`Modulation`]: autd3_core::modulation::Modulation
+    Modulation(Segment, TransitionMode),
+    /// Change the [`FociSTM`] segment.
+    ///
+    /// [`FociSTM`]: crate::datagram::FociSTM
+    FociSTM(Segment, TransitionMode),
+    /// Change the [`GainSTM`] segment.
+    ///
+    /// [`GainSTM`]: crate::datagram::GainSTM
+    GainSTM(Segment, TransitionMode),
 }
 
 impl Datagram for SwapSegment {
-    type G = SwapSegmentOpGenerator;
+    type G = Self;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
-        Ok(SwapSegmentOpGenerator { segment: self })
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
+        Ok(self)
     }
 }

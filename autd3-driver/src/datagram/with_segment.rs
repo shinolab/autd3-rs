@@ -1,7 +1,10 @@
-use crate::datagram::*;
 use autd3_core::{
-    datagram::{DatagramOption, DatagramS, InspectionResult, Segment, TransitionMode},
-    derive::{Geometry, Inspectable},
+    datagram::{
+        Datagram, DatagramOption, DatagramS, DeviceFilter, Inspectable, InspectionResult, Segment,
+        TransitionMode,
+    },
+    derive::FirmwareLimits,
+    geometry::Geometry,
 };
 
 use derive_more::Deref;
@@ -38,11 +41,13 @@ impl<D: DatagramS> Datagram for WithSegment<D> {
         self,
         geometry: &Geometry,
         filter: &DeviceFilter,
+        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramS>::operation_generator_with_segment(
             self.inner,
             geometry,
             filter,
+            limits,
             self.segment,
             self.transition_mode,
         )
@@ -70,10 +75,11 @@ where
         self,
         geometry: &Geometry,
         filter: &DeviceFilter,
+        limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
         Ok(self
             .inner
-            .inspect(geometry, filter)?
+            .inspect(geometry, filter, limits)?
             .modify(|t| t.with_segment(self.segment, self.transition_mode)))
     }
 }

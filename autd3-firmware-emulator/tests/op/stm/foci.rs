@@ -1,23 +1,21 @@
-use autd3_core::link::MsgId;
 use std::{collections::HashMap, num::NonZeroU16, time::Duration};
 
-use autd3_core::gain::EmitIntensity;
+use autd3_core::{
+    common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+    datagram::{LoopBehavior, Segment, TransitionMode},
+    gain::{Drive, EmitIntensity, Phase},
+    link::{MsgId, TxMessage},
+    sampling_config::SamplingConfig,
+};
 use autd3_driver::{
     common::{METER, mm},
     datagram::{
         ControlPoint, ControlPoints, FixedCompletionSteps, FociSTM, GainSTM, GainSTMOption,
-        Silencer, SwapSegment, WithLoopBehavior, WithSegment,
+        PhaseCorrection, Silencer, SwapSegment, WithLoopBehavior, WithSegment,
     },
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::{
-        cpu::TxMessage,
-        fpga::{
-            Drive, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, LoopBehavior, Phase,
-            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SamplingConfig,
-            Segment, TransitionMode,
-        },
-    },
+    firmware::latest::fpga::{FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT},
     geometry::Point3,
 };
 use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARGIN};
@@ -64,8 +62,6 @@ fn test_send_foci_stm_unsafe(
     #[case] segment: Segment,
     #[case] transition_mode: Option<TransitionMode>,
 ) -> anyhow::Result<()> {
-    use autd3_driver::datagram::PhaseCorrection;
-
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 

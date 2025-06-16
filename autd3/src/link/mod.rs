@@ -1,4 +1,5 @@
-mod audit;
+#[doc(hidden)]
+pub mod audit;
 mod nop;
 
 pub use audit::{Audit, AuditOption};

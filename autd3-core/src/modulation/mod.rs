@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::{
     datagram::{LoopBehavior, Segment, TransitionMode},
+    derive::FirmwareLimits,
     sampling_config::SamplingConfig,
 };
 pub use error::ModulationError;
@@ -15,7 +16,7 @@ pub use error::ModulationError;
 /// [`Modulation`]: autd3_derive::Modulation
 pub trait Modulation: std::fmt::Debug {
     /// Calculate the modulation data.
-    fn calc(self) -> Result<Vec<u8>, ModulationError>;
+    fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError>;
 
     /// The sampling configuration.
     #[must_use]
@@ -26,6 +27,7 @@ pub trait Modulation: std::fmt::Debug {
 pub struct ModulationOperationGenerator {
     pub g: Arc<Vec<u8>>,
     pub config: SamplingConfig,
+    pub limits: FirmwareLimits,
     pub loop_behavior: LoopBehavior,
     pub segment: Segment,
     pub transition_mode: Option<TransitionMode>,

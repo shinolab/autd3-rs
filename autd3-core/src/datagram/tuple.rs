@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::geometry::Geometry;
+use crate::{datagram::FirmwareLimits, geometry::Geometry};
 
 use super::{Datagram, DatagramOption, DeviceFilter};
 
@@ -32,10 +32,11 @@ where
         self,
         geometry: &Geometry,
         filter: &DeviceFilter,
+        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         match (
-            self.0.operation_generator(geometry, filter),
-            self.1.operation_generator(geometry, filter),
+            self.0.operation_generator(geometry, filter, limits),
+            self.1.operation_generator(geometry, filter, limits),
         ) {
             (Ok(g1), Ok(g2)) => Ok(CombinedOperationGenerator { o1: g1, o2: g2 }),
             (Err(e1), _) => Err(Self::Error::E1(e1)),
@@ -68,6 +69,7 @@ mod tests {
             self,
             _: &Geometry,
             _: &DeviceFilter,
+            _: &FirmwareLimits,
         ) -> Result<Self::G, Self::Error> {
             self.result
         }
@@ -101,7 +103,8 @@ mod tests {
             )
                 .operation_generator(
                     &Geometry::new(Default::default()),
-                    &DeviceFilter::all_enabled()
+                    &DeviceFilter::all_enabled(),
+                    &FirmwareLimits::unused()
                 )
         );
     }

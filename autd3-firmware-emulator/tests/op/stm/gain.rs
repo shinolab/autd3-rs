@@ -1,21 +1,25 @@
-use autd3_core::{derive::DeviceFilter, link::MsgId};
 use std::{collections::HashMap, num::NonZeroU16};
 
-use autd3_core::datagram::Datagram;
+use autd3_core::{
+    common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+    datagram::{Datagram, GPIOIn, LoopBehavior, Segment, TransitionMode},
+    derive::DeviceFilter,
+    gain::{Drive, EmitIntensity, Phase},
+    link::{MsgId, TxMessage},
+    sampling_config::SamplingConfig,
+};
 use autd3_driver::{
     datagram::{
-        ControlPoint, FixedCompletionSteps, FociSTM, GainSTM, GainSTMOption, Silencer, SwapSegment,
-        WithLoopBehavior, WithSegment,
+        ControlPoint, FixedCompletionSteps, FociSTM, GainSTM, GainSTMMode, GainSTMOption,
+        PhaseCorrection, Silencer, SwapSegment, WithLoopBehavior, WithSegment,
     },
     error::AUTDDriverError,
     firmware::{
-        cpu::{GainSTMMode, TxMessage},
-        fpga::{
-            Drive, EmitIntensity, GAIN_STM_BUF_SIZE_MAX, GPIOIn, LoopBehavior, Phase,
-            SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, SamplingConfig,
-            Segment, TransitionMode,
+        driver::Driver,
+        latest::{
+            Latest, cpu::check_firmware_err, fpga::GAIN_STM_BUF_SIZE_MAX,
+            operation::OperationHandler,
         },
-        operation::OperationHandler,
     },
     geometry::{Geometry, Point3},
 };
@@ -66,8 +70,6 @@ fn send_gain_stm_phase_intensity_full_unsafe(
     #[case] segment: Segment,
     #[case] transition_mode: Option<TransitionMode>,
 ) -> anyhow::Result<()> {
-    use autd3_driver::datagram::PhaseCorrection;
-
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
@@ -551,7 +553,11 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
         option: GainSTMOption::default(),
     };
 
-    let generator = d.operation_generator(&geometry, &DeviceFilter::all_enabled())?;
+    let generator = d.operation_generator(
+        &geometry,
+        &DeviceFilter::all_enabled(),
+        &Latest.firmware_limits(),
+    )?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
     tx[0].payload_mut()[2] = 3;
@@ -559,7 +565,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::InvalidGainSTMMode),
-        AUTDDriverError::check_firmware_err(cpu.rx().ack())
+        check_firmware_err(cpu.rx().ack())
     );
 
     Ok(())

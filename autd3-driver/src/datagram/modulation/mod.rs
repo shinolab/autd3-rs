@@ -1,42 +1,18 @@
 mod boxed;
 
-use autd3_core::derive::{ModulationInspectionResult, ModulationOperationGenerator};
 pub use boxed::BoxedModulation;
-
-use crate::{
-    firmware::operation::{ModulationOp, NullOp, OperationGenerator},
-    geometry::Device,
-};
 
 use super::{
     with_loop_behavior::InspectionResultWithLoopBehavior, with_segment::InspectionResultWithSegment,
 };
 
-impl OperationGenerator for ModulationOperationGenerator {
-    type O1 = ModulationOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-        let d = self.g.clone();
-        Some((
-            Self::O1::new(
-                d,
-                self.config,
-                self.loop_behavior,
-                self.segment,
-                self.transition_mode,
-            ),
-            Self::O2 {},
-        ))
-    }
-}
+use autd3_core::{
+    datagram::{LoopBehavior, Segment, TransitionMode},
+    modulation::ModulationInspectionResult,
+};
 
 impl InspectionResultWithSegment for ModulationInspectionResult {
-    fn with_segment(
-        self,
-        segment: autd3_core::derive::Segment,
-        transition_mode: Option<autd3_core::derive::TransitionMode>,
-    ) -> Self {
+    fn with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
         Self {
             segment,
             transition_mode,
@@ -48,9 +24,9 @@ impl InspectionResultWithSegment for ModulationInspectionResult {
 impl InspectionResultWithLoopBehavior for ModulationInspectionResult {
     fn with_loop_behavior(
         self,
-        loop_behavior: autd3_core::derive::LoopBehavior,
-        segment: autd3_core::derive::Segment,
-        transition_mode: Option<autd3_core::derive::TransitionMode>,
+        loop_behavior: LoopBehavior,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
             loop_behavior,
@@ -65,15 +41,13 @@ impl InspectionResultWithLoopBehavior for ModulationInspectionResult {
 pub mod tests {
     use autd3_core::derive::*;
 
-    use crate::datagram::tests::create_geometry;
-
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
         pub sampling_config: SamplingConfig,
     }
 
     impl Modulation for TestModulation {
-        fn calc(self) -> Result<Vec<u8>, ModulationError> {
+        fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
             Ok(vec![0; 2])
         }
 
@@ -84,12 +58,16 @@ pub mod tests {
 
     #[test]
     fn inspect() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::autd3_device::tests::create_geometry(2);
 
         TestModulation {
             sampling_config: SamplingConfig::FREQ_4K,
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -110,7 +88,7 @@ pub mod tests {
 
     #[test]
     fn inspect_with_segment() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::autd3_device::tests::create_geometry(2);
 
         crate::datagram::WithSegment {
             inner: TestModulation {
@@ -119,7 +97,11 @@ pub mod tests {
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -140,7 +122,7 @@ pub mod tests {
 
     #[test]
     fn inspect_with_loop_behavior() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::autd3_device::tests::create_geometry(2);
 
         crate::datagram::WithLoopBehavior {
             inner: TestModulation {
@@ -150,7 +132,11 @@ pub mod tests {
             transition_mode: Some(TransitionMode::Immediate),
             loop_behavior: LoopBehavior::ONCE,
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(

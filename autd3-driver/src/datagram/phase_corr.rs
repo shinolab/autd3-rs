@@ -1,9 +1,12 @@
 use std::convert::Infallible;
 
-use crate::{
-    datagram::*,
-    firmware::{fpga::Phase, operation::PhaseCorrectionOp},
-    geometry::{Device, Transducer},
+use crate::geometry::{Device, Transducer};
+
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter},
+    derive::FirmwareLimits,
+    gain::Phase,
+    geometry::Geometry,
 };
 
 use derive_more::Debug;
@@ -16,11 +19,13 @@ use derive_more::Debug;
 ///
 /// ```
 /// # use autd3_driver::datagram::PhaseCorrection;
-/// # use autd3_driver::firmware::fpga::Phase;
+/// # use autd3_core::gain::Phase;
 /// PhaseCorrection::new(|_dev| |_tr| Phase::PI);
 /// ```
 ///
 /// [`Gain`]: autd3_core::gain::Gain
+/// [`FociSTM`]: crate::datagram::FociSTM
+/// [`GainSTM`]: crate::datagram::GainSTM
 #[derive(Debug)]
 pub struct PhaseCorrection<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
     #[debug(ignore)]
@@ -36,28 +41,18 @@ impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseCorrection<FT, F> 
     }
 }
 
-pub struct PhaseCorrectionOpGenerator<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
-    f: F,
-}
-
-impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> OperationGenerator
-    for PhaseCorrectionOpGenerator<FT, F>
-{
-    type O1 = PhaseCorrectionOp<FT>;
-    type O2 = NullOp;
-
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((Self::O1::new((self.f)(device)), Self::O2 {}))
-    }
-}
-
 impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Datagram
     for PhaseCorrection<FT, F>
 {
-    type G = PhaseCorrectionOpGenerator<FT, F>;
+    type G = Self;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
-        Ok(Self::G { f: self.f })
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
+        Ok(self)
     }
 }

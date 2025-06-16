@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
+use autd3_core::datagram::{LoopBehavior, Segment, TransitionMode};
 use autd3_driver::{
     common::{Freq, Hz},
     ethercat::DcSysTime,
-    firmware::fpga::{LoopBehavior, Segment, TransitionMode},
 };
 
 use super::FPGAEmulator;
@@ -202,9 +202,9 @@ impl FPGAEmulator {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::firmware::fpga::GPIOIn;
-
     use super::*;
+
+    use autd3_core::datagram::{GPIOIn, TransitionMode};
 
     const CYCLE_PERIOD: std::time::Duration = std::time::Duration::from_micros(25);
     const FREQ_DIV: u16 = 1;

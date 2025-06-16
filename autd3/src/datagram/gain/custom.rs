@@ -1,8 +1,5 @@
 use autd3_core::derive::*;
-use autd3_driver::{
-    firmware::fpga::Drive,
-    geometry::{Device, Transducer},
-};
+use autd3_driver::geometry::{Device, Transducer};
 
 use derive_more::Debug;
 
@@ -75,7 +72,6 @@ impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) ->
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
 
     use crate::tests::create_geometry;

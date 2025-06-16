@@ -12,29 +12,28 @@ pub use crate::{
         },
         stm::{Circle, Line},
     },
+    firmware,
     link::Nop,
 };
 
-pub use autd3_core::modulation::Modulation;
-pub use autd3_core::sleep::{self, SpinSleeper};
+pub use autd3_core::{
+    datagram::{GPIOIn, GPIOOut, LoopBehavior, PulseWidth, Segment, TransitionMode},
+    gain::{Drive, EmitIntensity, Phase},
+    modulation::Modulation,
+    sampling_config::SamplingConfig,
+    sleep::{self, SpinSleeper},
+};
 
 pub use autd3_driver::{
     autd3_device::AUTD3,
     common::{Hz, PI, ULTRASOUND_FREQ, deg, kHz, mm, rad},
     datagram::{
-        BoxedDatagram, BoxedGain, Clear, ControlPoint, ControlPoints, FixedCompletionTime,
-        FixedUpdateRate, FociSTM, ForceFan, GPIOOutputs, GainSTM, GainSTMOption, Group,
+        BoxedGain, Clear, ControlPoint, ControlPoints, FixedCompletionTime, FixedUpdateRate,
+        FociSTM, ForceFan, GPIOOutputType, GPIOOutputs, GainSTM, GainSTMMode, GainSTMOption, Group,
         PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
-        WithLoopBehavior, WithSegment, v10,
+        WithLoopBehavior, WithSegment,
     },
     error::AUTDDriverError,
     ethercat::DcSysTime,
-    firmware::{
-        cpu::GainSTMMode,
-        fpga::{
-            Drive, EmitIntensity, GPIOIn, GPIOOut, GPIOOutputType, LoopBehavior, Phase, PulseWidth,
-            SamplingConfig, Segment, TransitionMode,
-        },
-    },
     geometry::{EulerAngle, Geometry, Point3, Quaternion, UnitQuaternion, UnitVector3, Vector3},
 };

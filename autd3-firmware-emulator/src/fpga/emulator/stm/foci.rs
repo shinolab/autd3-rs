@@ -1,4 +1,7 @@
-use autd3_driver::firmware::fpga::{Drive, EmitIntensity, Phase, Segment};
+use autd3_core::{
+    datagram::Segment,
+    gain::{Drive, EmitIntensity, Phase},
+};
 
 use super::super::{super::params::*, FPGAEmulator};
 

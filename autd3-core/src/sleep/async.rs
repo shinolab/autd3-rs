@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use super::{SpinSleeper, SpinWaitSleeper, StdSleeper};
+use super::SpinWaitSleeper;
 
 #[cfg(feature = "async-trait")]
 mod internal {
@@ -8,12 +8,12 @@ mod internal {
 
     #[doc(hidden)]
     #[async_trait::async_trait]
-    pub trait AsyncSleep: std::fmt::Debug + Send + Sync {
+    pub trait Sleep: std::fmt::Debug + Send + Sync {
         async fn sleep(&self, duration: Duration);
     }
 
     #[async_trait::async_trait]
-    impl AsyncSleep for Box<dyn AsyncSleep> {
+    impl Sleep for Box<dyn Sleep> {
         async fn sleep(&self, duration: Duration) {
             self.as_ref().sleep(duration).await;
         }
@@ -25,7 +25,7 @@ mod internal {
     use super::*;
 
     #[doc(hidden)]
-    pub trait AsyncSleep: std::fmt::Debug + Send + Sync {
+    pub trait Sleep: std::fmt::Debug + Send + Sync {
         fn sleep(&self, duration: Duration) -> impl std::future::Future<Output = ()> + Send;
     }
 }
@@ -33,21 +33,7 @@ mod internal {
 pub use internal::*;
 
 #[cfg_attr(feature = "async-trait", async_trait::async_trait)]
-impl AsyncSleep for StdSleeper {
-    async fn sleep(&self, duration: Duration) {
-        std::thread::sleep(duration);
-    }
-}
-
-#[cfg_attr(feature = "async-trait", async_trait::async_trait)]
-impl AsyncSleep for SpinSleeper {
-    async fn sleep(&self, duration: Duration) {
-        SpinSleeper::sleep(*self, duration);
-    }
-}
-
-#[cfg_attr(feature = "async-trait", async_trait::async_trait)]
-impl AsyncSleep for SpinWaitSleeper {
+impl Sleep for SpinWaitSleeper {
     async fn sleep(&self, duration: Duration) {
         use std::time::Instant;
 
@@ -63,7 +49,7 @@ impl AsyncSleep for SpinWaitSleeper {
 pub struct AsyncSleeper;
 
 #[cfg_attr(feature = "async-trait", async_trait::async_trait)]
-impl AsyncSleep for AsyncSleeper {
+impl Sleep for AsyncSleeper {
     async fn sleep(&self, duration: Duration) {
         tokio::time::sleep(duration).await;
     }

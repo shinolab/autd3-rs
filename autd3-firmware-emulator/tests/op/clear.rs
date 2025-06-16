@@ -5,18 +5,13 @@ use crate::{
     op::{gain::TestGain, modulation::TestModulation, stm::foci::gen_random_foci},
     send,
 };
-use autd3_core::{derive::*, link::MsgId};
-use autd3_driver::{
-    autd3_device::AUTD3,
-    datagram::*,
-    firmware::{
-        cpu::TxMessage,
-        fpga::{
-            Drive, EmitIntensity, Phase, PulseWidth, SILENCER_STEPS_INTENSITY_DEFAULT,
-            SILENCER_STEPS_PHASE_DEFAULT,
-        },
-    },
+use autd3_core::{
+    common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+    datagram::PulseWidth,
+    derive::*,
+    link::{MsgId, TxMessage},
 };
+use autd3_driver::{autd3_device::AUTD3, datagram::*};
 use autd3_firmware_emulator::CPUEmulator;
 
 use zerocopy::FromZeros;

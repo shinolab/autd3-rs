@@ -1,10 +1,6 @@
 use autd3_core::derive::*;
 
-use autd3_driver::{
-    common::rad,
-    firmware::fpga::{EmitIntensity, Phase},
-    geometry::UnitVector3,
-};
+use autd3_driver::{common::rad, geometry::UnitVector3};
 
 /// The option of [`Plane`].
 #[derive(Debug, Clone, Copy, PartialEq)]

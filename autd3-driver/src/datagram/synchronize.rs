@@ -1,8 +1,10 @@
 use std::convert::Infallible;
 
-use crate::firmware::operation::SyncOp;
-
-use crate::datagram::*;
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter},
+    derive::FirmwareLimits,
+    geometry::Geometry,
+};
 
 /// [`Datagram`] to synchronize the devices.
 #[derive(Default, Debug)]
@@ -16,22 +18,16 @@ impl Synchronize {
     }
 }
 
-pub struct SynchronizeOpGenerator {}
-
-impl OperationGenerator for SynchronizeOpGenerator {
-    type O1 = SyncOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((Self::O1::new(), Self::O2 {}))
-    }
-}
-
 impl Datagram for Synchronize {
-    type G = SynchronizeOpGenerator;
+    type G = Self;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
-        Ok(SynchronizeOpGenerator {})
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
+        Ok(self)
     }
 }
