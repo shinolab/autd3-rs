@@ -22,7 +22,7 @@ pub struct Controller {
 
 pub struct Sender<'a, S>
 where
-    S: autd3::r#async::controller::AsyncSleep,
+    S: autd3::r#async::controller::Sleep,
     Sleeper: for<'b> From<&'b S>,
 {
     pub(crate) controller: &'a mut Controller,
@@ -60,7 +60,12 @@ impl autd3_core::datagram::Datagram for LightweightDatagram {
     type G = NullOperationGenerator;
     type Error = std::convert::Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
         unimplemented!("`LightweightDatagram` does not support normal `Controller`");
     }
 }
@@ -176,7 +181,7 @@ impl Controller {
         sleeper: S,
     ) -> Result<Self, crate::error::AUTDProtoBufError>
     where
-        S: autd3::r#async::controller::AsyncSleep,
+        S: autd3::r#async::controller::Sleep,
         Sleeper: for<'a> From<&'a S>,
     {
         Controller::open_impl(
@@ -195,7 +200,7 @@ impl Controller {
         sleeper: S,
     ) -> Result<Self, crate::error::AUTDProtoBufError>
     where
-        S: autd3::r#async::controller::AsyncSleep,
+        S: autd3::r#async::controller::Sleep,
         Sleeper: for<'a> From<&'a S>,
     {
         let conn = tonic::transport::Endpoint::new(format!("http://{}", addr))?
@@ -290,7 +295,7 @@ impl Controller {
 
     pub fn sender<S>(&mut self, option: autd3::controller::SenderOption, sleeper: S) -> Sender<S>
     where
-        S: autd3::r#async::controller::AsyncSleep,
+        S: autd3::r#async::controller::Sleep,
         Sleeper: for<'a> From<&'a S>,
     {
         Sender {
@@ -303,7 +308,7 @@ impl Controller {
 
 impl<S> Sender<'_, S>
 where
-    S: autd3::r#async::controller::AsyncSleep,
+    S: autd3::r#async::controller::Sleep,
     Sleeper: for<'a> From<&'a S>,
 {
     pub async fn send(

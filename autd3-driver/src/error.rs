@@ -1,28 +1,20 @@
 use std::{convert::Infallible, time::Duration};
 
 use autd3_core::{
+    common::{FOCI_STM_FOCI_NUM_MIN, MOD_BUF_SIZE_MIN, STM_BUF_SIZE_MIN},
     datagram::CombinedError,
-    derive::SamplingConfigError,
+    derive::FirmwareLimits,
     gain::GainError,
-    link::{Ack, LinkError},
+    link::LinkError,
     modulation::ModulationError,
+    sampling_config::SamplingConfigError,
 };
 use thiserror::Error;
-
-use crate::{firmware::cpu::GainSTMMode, firmware::fpga::*};
 
 /// A interface for error handling in autd3-driver.
 #[derive(Error, Debug, PartialEq, Clone)]
 #[non_exhaustive]
 pub enum AUTDDriverError {
-    /// Modulation buffer size is out of range.
-    #[error(
-        "Modulation buffer size ({0}) is out of range ([{min}, {max}])",
-        min = MOD_BUF_SIZE_MIN,
-        max = MOD_BUF_SIZE_MAX
-    )]
-    ModulationSizeOutOfRange(usize),
-
     /// Invalid silencer completion time.
     #[error("Silencer completion time ({0:?}) must be a multiple of the ultrasound period")]
     InvalidSilencerCompletionTime(Duration),
@@ -38,41 +30,34 @@ pub enum AUTDDriverError {
     #[error("STM sampling period ({1:?}/{0}) must be integer")]
     STMPeriodInvalid(usize, Duration),
 
+    /// Modulation buffer size is out of range.
+    #[error("Modulation buffer size ({0}) is out of range ([{min}, {max}])", min = MOD_BUF_SIZE_MIN, max = .1.mod_buf_size_max)]
+    ModulationSizeOutOfRange(usize, FirmwareLimits),
+
     /// FociSTM buffer size is out of range.
-    #[error(
-        "The number of total foci ({0}) is out of range ([{min}, {max}])",
-        min = STM_BUF_SIZE_MIN,
-        max = FOCI_STM_BUF_SIZE_MAX
-    )]
-    FociSTMTotalSizeOutOfRange(usize),
+    #[error("The number of total foci ({0}) is out of range ([{min}, {max}])", min = STM_BUF_SIZE_MIN, max = .1.foci_stm_buf_size_max)]
+    FociSTMTotalSizeOutOfRange(usize, FirmwareLimits),
     /// Number of foci is out of range.
-    #[error(
-        "Number of foci ({0}) is out of range ([{min}, {max}])",
-        min = 1,
-        max = FOCI_STM_FOCI_NUM_MAX
-    )]
-    FociSTMNumFociOutOfRange(usize),
+    #[error("Number of foci ({0}) is out of range ([{min}, {max}])", min = FOCI_STM_FOCI_NUM_MIN, max = .1.num_foci_max)]
+    FociSTMNumFociOutOfRange(usize, FirmwareLimits),
     /// FociSTM point is out of range.
     #[error(
-        "Point coordinate ({0}, {1}, {2}) is out of range ([{x_min}, {x_max}], [{y_min}, {y_max}], [{z_min}, {z_max}])",
-        x_min = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_X as f32,
-        x_max = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_X as f32,
-        y_min = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_Y as f32,
-        y_max = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_Y as f32,
-        z_min = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_LOWER_Z as f32,
-        z_max = FOCI_STM_FIXED_NUM_UNIT * FOCI_STM_FIXED_NUM_UPPER_Z as f32,
+        "Point coordinate ({0}, {1}, {2}) is out of range ([{min_x}, {max_x}], [{min_y}, {max_y}], [{min_z}, {max_z}])",
+        min_x = .3.foci_stm_lower_x(),
+        max_x = .3.foci_stm_upper_x(),
+        min_y = .3.foci_stm_lower_y(),
+        max_y = .3.foci_stm_upper_y(),
+        min_z = .3.foci_stm_lower_z(),
+        max_z = .3.foci_stm_upper_z()
     )]
-    FociSTMPointOutOfRange(f32, f32, f32),
+    FociSTMPointOutOfRange(f32, f32, f32, FirmwareLimits),
     /// GainSTM buffer size is out of range.
-    #[error(
-        "GainSTM size ({0}) is out of range ([{min}, {max}])",
-        min = STM_BUF_SIZE_MIN,
-        max = GAIN_STM_BUF_SIZE_MAX
-    )]
-    GainSTMSizeOutOfRange(usize),
-    /// GainSTM mode is not supported.
-    #[error("GainSTMMode ({0:?}) is not supported")]
-    GainSTMModeNotSupported(GainSTMMode),
+    #[error("GainSTM size ({0}) is out of range ([{min}, {max}])", min = STM_BUF_SIZE_MIN, max = .1.gain_stm_buf_size_max)]
+    GainSTMSizeOutOfRange(usize, FirmwareLimits),
+
+    /// GPIO output type is not supported.
+    #[error("GPIO output type ({0}) is not supported")]
+    UnsupportedGPIOOutputType(String),
 
     /// Error in the modulation.
     #[error("{0}")]
@@ -102,6 +87,17 @@ pub enum AUTDDriverError {
     /// Invalid date time.
     #[error("The input data is invalid.")]
     InvalidDateTime,
+
+    /// Firmware version mismatch.
+    #[error("Firmware version mismatch")]
+    FirmwareVersionMismatch,
+
+    /// Unsupported operation.
+    #[error("Unsupported operation")]
+    UnsupportedOperation,
+    /// Unsupported firmware.
+    #[error("Unsupported firmware")]
+    UnsupportedFirmware,
 
     /// Not supported tag.
     ///
@@ -136,34 +132,6 @@ pub enum AUTDDriverError {
     InvalidSilencerSettings,
 }
 
-#[doc(hidden)]
-impl AUTDDriverError {
-    pub const NO_ERROR: u8 = 0x00;
-    pub const NOT_SUPPORTED_TAG: u8 = 0x01;
-    pub const INVALID_MESSAGE_ID: u8 = 0x02;
-    pub const INVALID_INFO_TYPE: u8 = 0x03;
-    pub const INVALID_GAIN_STM_MODE: u8 = 0x04;
-    pub const INVALID_SEGMENT_TRANSITION: u8 = 0x05;
-    pub const MISS_TRANSITION_TIME: u8 = 0x06;
-    pub const INVALID_SILENCER_SETTINGS: u8 = 0x07;
-    pub const INVALID_TRANSITION_MODE: u8 = 0x08;
-
-    pub const fn check_firmware_err(ack: Ack) -> Result<(), Self> {
-        match ack.err() {
-            Self::NO_ERROR => Ok(()),
-            Self::NOT_SUPPORTED_TAG => Err(AUTDDriverError::NotSupportedTag),
-            Self::INVALID_MESSAGE_ID => Err(AUTDDriverError::InvalidMessageID),
-            Self::INVALID_INFO_TYPE => Err(AUTDDriverError::InvalidInfoType),
-            Self::INVALID_GAIN_STM_MODE => Err(AUTDDriverError::InvalidGainSTMMode),
-            Self::INVALID_SEGMENT_TRANSITION => Err(AUTDDriverError::InvalidSegmentTransition),
-            Self::MISS_TRANSITION_TIME => Err(AUTDDriverError::MissTransitionTime),
-            Self::INVALID_SILENCER_SETTINGS => Err(AUTDDriverError::InvalidSilencerSettings),
-            Self::INVALID_TRANSITION_MODE => Err(AUTDDriverError::InvalidTransitionMode),
-            _ => Err(AUTDDriverError::UnknownFirmwareError(ack.err())),
-        }
-    }
-}
-
 // GRCOV_EXCL_START
 impl From<Infallible> for AUTDDriverError {
     fn from(_: Infallible) -> Self {
@@ -185,19 +153,3 @@ where
     }
 }
 // GRCOV_EXCL_STOP
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::error::Error;
-
-    #[test]
-    fn unknown_firmware_err() {
-        let err = AUTDDriverError::check_firmware_err(Ack::new().with_err(0x0F))
-            .err()
-            .unwrap();
-        assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "Unknown firmware error: 15");
-        assert_eq!(format!("{:?}", err), "UnknownFirmwareError(15)");
-    }
-}

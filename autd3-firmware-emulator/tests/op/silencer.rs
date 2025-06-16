@@ -1,12 +1,10 @@
 use std::num::NonZeroU16;
 
-use autd3_core::link::MsgId;
-use autd3_driver::{
-    datagram::*,
-    error::AUTDDriverError,
-    firmware::{cpu::TxMessage, fpga::SamplingConfig},
-    geometry::Point3,
+use autd3_core::{
+    link::{MsgId, TxMessage},
+    sampling_config::SamplingConfig,
 };
+use autd3_driver::{datagram::*, error::AUTDDriverError, geometry::Point3};
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;

@@ -1,9 +1,10 @@
 use std::num::NonZeroU16;
 
-use autd3_driver::{
-    ethercat::DcSysTime,
-    firmware::fpga::{Drive, GPIOIn, LoopBehavior, Segment, TransitionMode},
+use autd3_core::{
+    datagram::{GPIOIn, LoopBehavior, Segment, TransitionMode},
+    gain::Drive,
 };
+use autd3_driver::ethercat::DcSysTime;
 
 use super::{super::params::*, FPGAEmulator};
 

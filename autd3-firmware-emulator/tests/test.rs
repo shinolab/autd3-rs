@@ -1,11 +1,18 @@
-use autd3_core::{datagram::Operation, link::MsgId};
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter},
+    link::{MsgId, TxMessage},
+};
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::*,
     error::AUTDDriverError,
     firmware::{
-        cpu::TxMessage,
-        operation::{OperationGenerator, OperationHandler},
+        driver::Driver,
+        latest::{
+            Latest,
+            cpu::check_firmware_err,
+            operation::{Operation, OperationGenerator, OperationHandler},
+        },
     },
     geometry::{Geometry, Point3},
 };
@@ -44,7 +51,11 @@ where
 {
     let option = d.option();
     let parallel = geometry.num_devices() > option.parallel_threshold;
-    let generator = d.operation_generator(geometry, &DeviceFilter::all_enabled())?;
+    let generator = d.operation_generator(
+        geometry,
+        &DeviceFilter::all_enabled(),
+        &Latest.firmware_limits(),
+    )?;
     let mut op = OperationHandler::generate(generator, geometry);
     loop {
         if OperationHandler::is_done(&op) {
@@ -53,7 +64,7 @@ where
         msg_id.increment();
         OperationHandler::pack(*msg_id, &mut op, geometry, tx, parallel)?;
         cpu.send(tx);
-        AUTDDriverError::check_firmware_err(cpu.rx().ack())?;
+        check_firmware_err(cpu.rx().ack())?;
         assert_eq!(tx[0].header.msg_id.get(), cpu.rx().ack().msg_id());
     }
     Ok(())
@@ -71,7 +82,7 @@ fn send_invalid_tag() {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::NotSupportedTag),
-        AUTDDriverError::check_firmware_err(cpu.rx().ack())
+        check_firmware_err(cpu.rx().ack())
     );
 }
 
@@ -86,7 +97,7 @@ fn send_invalid_msg_id() {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::InvalidMessageID),
-        AUTDDriverError::check_firmware_err(cpu.rx().ack())
+        check_firmware_err(cpu.rx().ack())
     );
 }
 
@@ -98,14 +109,22 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0x0A);
 
     let d = Clear::new();
-    let generator = d.operation_generator(&geometry, &DeviceFilter::all_enabled())?;
+    let generator = d.operation_generator(
+        &geometry,
+        &DeviceFilter::all_enabled(),
+        &Latest.firmware_limits(),
+    )?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
     cpu.send(&tx);
     assert_eq!(cpu.rx().ack().msg_id(), tx[0].header.msg_id.get());
 
     let d = Synchronize::new();
-    let generator = d.operation_generator(&geometry, &DeviceFilter::all_enabled())?;
+    let generator = d.operation_generator(
+        &geometry,
+        &DeviceFilter::all_enabled(),
+        &Latest.firmware_limits(),
+    )?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
     assert!(!cpu.synchronized());
@@ -123,7 +142,11 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0x0E);
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry, &DeviceFilter::all_enabled())?;
+    let generator = d.operation_generator(
+        &geometry,
+        &DeviceFilter::all_enabled(),
+        &Latest.firmware_limits(),
+    )?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
 
@@ -143,7 +166,11 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0);
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(&geometry, &DeviceFilter::all_enabled())?;
+    let generator = d.operation_generator(
+        &geometry,
+        &DeviceFilter::all_enabled(),
+        &Latest.firmware_limits(),
+    )?;
     let mut op = OperationHandler::generate(generator, &geometry);
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
 
@@ -153,7 +180,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::NotSupportedTag),
-        AUTDDriverError::check_firmware_err(cpu.rx().ack())
+        check_firmware_err(cpu.rx().ack())
     );
 
     Ok(())

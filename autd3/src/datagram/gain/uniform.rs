@@ -1,7 +1,5 @@
 use autd3_core::derive::*;
 
-use autd3_driver::firmware::fpga::Drive;
-
 /// [`Gain`] that output uniform phase and intensity
 #[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Uniform {
@@ -49,7 +47,6 @@ mod tests {
     use crate::tests::create_geometry;
 
     use super::*;
-    use autd3_driver::firmware::fpga::{EmitIntensity, Phase};
     use rand::Rng;
 
     #[test]

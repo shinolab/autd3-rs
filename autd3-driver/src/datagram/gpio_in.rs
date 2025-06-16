@@ -1,17 +1,19 @@
 use std::convert::Infallible;
 
-use crate::{
-    datagram::*,
-    firmware::{fpga::GPIOIn, operation::EmulateGPIOInOp},
-};
+use crate::geometry::Device;
 
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter, GPIOIn},
+    derive::FirmwareLimits,
+    geometry::Geometry,
+};
 use derive_more::Debug;
 
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct EmulateGPIOIn<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> {
     #[debug(ignore)]
-    f: F,
+    pub(crate) f: F,
 }
 
 impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> EmulateGPIOIn<H, F> {
@@ -22,30 +24,16 @@ impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> EmulateGPIOIn<H, F> {
     }
 }
 
-pub struct EmulateGPIOInOpGenerator<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> {
-    f: F,
-}
-
-impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
-    for EmulateGPIOInOpGenerator<H, F>
-{
-    type O1 = EmulateGPIOInOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        let h = (self.f)(device);
-        Some((
-            Self::O1::new([h(GPIOIn::I0), h(GPIOIn::I1), h(GPIOIn::I2), h(GPIOIn::I3)]),
-            Self::O2 {},
-        ))
-    }
-}
-
 impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for EmulateGPIOIn<H, F> {
-    type G = EmulateGPIOInOpGenerator<H, F>;
+    type G = Self;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
-        Ok(EmulateGPIOInOpGenerator { f: self.f })
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
+        Ok(self)
     }
 }

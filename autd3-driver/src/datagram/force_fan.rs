@@ -1,6 +1,12 @@
 use std::convert::Infallible;
 
-use crate::{datagram::*, firmware::operation::ForceFanOp};
+use crate::geometry::Device;
+
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter},
+    derive::FirmwareLimits,
+    geometry::Geometry,
+};
 
 use derive_more::Debug;
 
@@ -20,24 +26,16 @@ impl<F: Fn(&Device) -> bool> ForceFan<F> {
     }
 }
 
-pub struct ForceFanOpGenerator<F: Fn(&Device) -> bool> {
-    f: F,
-}
-
-impl<F: Fn(&Device) -> bool> OperationGenerator for ForceFanOpGenerator<F> {
-    type O1 = ForceFanOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((Self::O1::new((self.f)(device)), Self::O2 {}))
-    }
-}
-
 impl<F: Fn(&Device) -> bool> Datagram for ForceFan<F> {
-    type G = ForceFanOpGenerator<F>;
+    type G = Self;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
-        Ok(ForceFanOpGenerator { f: self.f })
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
+        Ok(self)
     }
 }

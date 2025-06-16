@@ -1,33 +1,15 @@
 mod boxed;
 
-use autd3_core::gain::{
-    Gain, GainCalculatorGenerator, GainInspectionResult, GainOperationGenerator,
+use autd3_core::{
+    datagram::{Segment, TransitionMode},
+    gain::{Gain, GainCalculatorGenerator, GainInspectionResult},
 };
 pub use boxed::BoxedGain;
 
-use crate::{
-    firmware::operation::{GainOp, NullOp, OperationGenerator},
-    geometry::Device,
-};
-
 use super::with_segment::InspectionResultWithSegment;
 
-impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G> {
-    type O1 = GainOp<G::Calculator>;
-    type O2 = NullOp;
-
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        let c = self.generator.generate(device);
-        Some((Self::O1::new(self.segment, self.transition, c), Self::O2 {}))
-    }
-}
-
 impl InspectionResultWithSegment for GainInspectionResult {
-    fn with_segment(
-        self,
-        segment: autd3_core::derive::Segment,
-        transition_mode: Option<autd3_core::derive::TransitionMode>,
-    ) -> Self {
+    fn with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
         Self {
             segment,
             transition_mode,
@@ -40,11 +22,9 @@ impl InspectionResultWithSegment for GainInspectionResult {
 pub mod tests {
     use std::collections::HashMap;
 
-    use autd3_core::derive::*;
-
-    use crate::{
-        datagram::tests::create_geometry,
-        firmware::fpga::{Drive, EmitIntensity, Phase},
+    use autd3_core::{
+        derive::*,
+        geometry::{Point3, UnitQuaternion},
     };
 
     #[derive(Gain, Clone, Debug)]
@@ -100,6 +80,21 @@ pub mod tests {
         }
     }
 
+    pub fn create_geometry(num_dev: usize, num_trans: usize) -> Geometry {
+        Geometry::new(
+            (0..num_dev)
+                .map(|_| {
+                    Device::new(
+                        UnitQuaternion::identity(),
+                        (0..num_trans)
+                            .map(|_| Transducer::new(Point3::origin()))
+                            .collect(),
+                    )
+                })
+                .collect(),
+        )
+    }
+
     const NUM_TRANSDUCERS: usize = 2;
 
     #[rstest::rstest]
@@ -119,10 +114,9 @@ pub mod tests {
             (4, vec![Drive { phase: Phase(0x05), intensity: EmitIntensity(0x05) }; NUM_TRANSDUCERS]),
         ].into_iter().collect(),
         5)]
-    fn gain(#[case] expect: HashMap<usize, Vec<Drive>>, #[case] n: u16) -> anyhow::Result<()> {
-        use crate::datagram::tests::create_geometry;
+    fn gain(#[case] expect: HashMap<usize, Vec<Drive>>, #[case] n: usize) -> anyhow::Result<()> {
+        let geometry = create_geometry(n, NUM_TRANSDUCERS);
 
-        let geometry = create_geometry(n, NUM_TRANSDUCERS as _);
         let g = TestGain::new(
             |dev| {
                 let dev_idx = dev.idx();
@@ -161,7 +155,11 @@ pub mod tests {
             },
             &geometry,
         )
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -201,7 +199,11 @@ pub mod tests {
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(

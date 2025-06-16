@@ -23,6 +23,8 @@ autd3-core = { workspace = true, features = ["link", "derive", "gain", "modulati
 autd3-derive = { workspace = true }
 autd3-driver = { workspace = true }
 autd3-firmware-emulator = { workspace = true }
+autd3-firmware-emulator-v10 = { version = "=31.0.1", package = "autd3-firmware-emulator" }
+autd3-firmware-emulator-v11 = { version = "=33.0.0", package = "autd3-firmware-emulator" }
 bit-vec = { workspace = true }
 derive_more = { workspace = true }
 getset = { workspace = true }

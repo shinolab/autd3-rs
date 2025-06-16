@@ -1,12 +1,8 @@
-use autd3_core::link::MsgId;
-use autd3_driver::{
-    datagram::*,
-    ethercat::DcSysTime,
-    firmware::{
-        cpu::TxMessage,
-        fpga::{GPIOOut, GPIOOutputType},
-    },
+use autd3_core::{
+    datagram::GPIOOut,
+    link::{MsgId, TxMessage},
 };
+use autd3_driver::{datagram::*, ethercat::DcSysTime};
 use autd3_firmware_emulator::{CPUEmulator, fpga::params::*};
 
 use crate::{create_geometry, send};

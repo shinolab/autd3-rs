@@ -1,7 +1,6 @@
 use autd3_driver::{
     ethercat::{DcSysTime, EC_OUTPUT_FRAME_SIZE},
-    firmware::cpu::{Header, RxMessage, TxMessage},
-    link::{Ack, MsgId},
+    link::{Ack, Header, MsgId, RxMessage, TxMessage},
 };
 
 use getset::{CopyGetters, Getters, MutGetters};

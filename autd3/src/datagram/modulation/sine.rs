@@ -77,9 +77,12 @@ impl Sine<Freq<f32>> {
 }
 
 impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Sine<S> {
-    pub(super) fn calc_raw(&self) -> Result<impl Iterator<Item = f32>, ModulationError> {
+    pub(super) fn calc_raw(
+        &self,
+        limits: &FirmwareLimits,
+    ) -> Result<impl Iterator<Item = f32>, ModulationError> {
         let sampling_mode: SamplingMode = self.freq.into();
-        let (n, rep) = sampling_mode.validate(self.option.sampling_config)?;
+        let (n, rep) = sampling_mode.validate(self.option.sampling_config, limits)?;
         let intensity = self.option.intensity;
         let offset = self.option.offset;
         let phase = self.option.phase.radian();
@@ -91,8 +94,8 @@ impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Sine<S> {
 }
 
 impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Modulation for Sine<S> {
-    fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        self.calc_raw()?
+    fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+        self.calc_raw(limits)?
             .map(|v| v.floor() as i16)
             .map(|v| {
                 if (u8::MIN as i16..=u8::MAX as _).contains(&v) {
@@ -118,7 +121,10 @@ impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Modulation for Sine
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::common::{Hz, rad};
+    use autd3_driver::{
+        common::{Hz, rad},
+        firmware::{driver::Driver, latest::Latest},
+    };
 
     use super::*;
 
@@ -191,7 +197,7 @@ mod tests {
         assert_eq!(0x80, m.option.offset);
         assert_eq!(0. * rad, m.option.phase);
         assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
-        assert_eq!(expect, m.calc());
+        assert_eq!(expect, m.calc(&Latest.firmware_limits()));
     }
 
     #[rstest::rstest]
@@ -220,7 +226,7 @@ mod tests {
         assert_eq!(0x80, m.option.offset);
         assert_eq!(0. * rad, m.option.phase);
         assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
-        assert_eq!(expect, m.calc());
+        assert_eq!(expect, m.calc(&Latest.firmware_limits()));
     }
 
     #[rstest::rstest]
@@ -250,7 +256,7 @@ mod tests {
                     ..Default::default()
                 }
             }
-            .calc()
+            .calc(&Latest.firmware_limits())
         );
     }
 }

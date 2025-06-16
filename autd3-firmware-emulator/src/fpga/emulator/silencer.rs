@@ -1,9 +1,7 @@
 use std::num::NonZeroU16;
 
-use autd3_driver::{
-    datagram::{FixedCompletionSteps, FixedUpdateRate},
-    firmware::fpga::{EmitIntensity, Phase},
-};
+use autd3_core::gain::{EmitIntensity, Phase};
+use autd3_driver::datagram::{FixedCompletionSteps, FixedUpdateRate};
 
 use super::{super::params::*, FPGAEmulator};
 

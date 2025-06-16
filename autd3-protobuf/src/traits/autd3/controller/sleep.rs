@@ -25,7 +25,7 @@ impl FromMessage<i32> for autd3_core::sleep::SpinStrategy {
     }
 }
 
-impl FromMessage<Sleeper> for Box<dyn autd3::r#async::controller::AsyncSleep> {
+impl FromMessage<Sleeper> for Box<dyn autd3::r#async::controller::Sleep> {
     fn from_msg(value: Sleeper) -> Result<Self, AUTDProtoBufError> {
         Ok(match value.sleeper {
             Some(sleeper::Sleeper::Std(_)) => Box::new(autd3_core::sleep::StdSleeper),

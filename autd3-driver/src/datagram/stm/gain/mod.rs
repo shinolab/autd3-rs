@@ -1,28 +1,40 @@
 mod implement;
+mod mode;
 
 use std::{fmt::Debug, time::Duration};
 
+pub use mode::GainSTMMode;
+
 use super::sampling_config::*;
-pub use crate::firmware::operation::GainSTMIterator;
 use crate::{
     common::Freq,
-    datagram::{
-        with_loop_behavior::InspectionResultWithLoopBehavior,
-        with_segment::InspectionResultWithSegment, *,
-    },
-    firmware::{
-        cpu::GainSTMMode,
-        fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-        operation::GainSTMOp,
-    },
+    datagram::{InspectionResultWithLoopBehavior, InspectionResultWithSegment},
+    error::AUTDDriverError,
+    geometry::{Device, Geometry},
 };
 
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
-    datagram::{DatagramL, DatagramOption, Inspectable, InspectionResult},
-    gain::{Drive, GainCalculatorGenerator, GainError, TransducerFilter},
+    datagram::{
+        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
+        LoopBehavior, Segment, TransitionMode,
+    },
+    derive::FirmwareLimits,
+    gain::{Drive, GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter},
+    sampling_config::SamplingConfig,
 };
 use derive_more::{Deref, DerefMut};
+
+/// A trait to iterate a [`GainCalculator`] for [`GainSTM`].
+///
+/// [`GainSTM`]: crate::datagram::GainSTM
+pub trait GainSTMIterator: Send + Sync {
+    /// The output [`GainCalculator`] type.
+    type Calculator: GainCalculator;
+
+    /// Returns the next [`GainCalculator`].
+    fn next(&mut self) -> Option<Self::Calculator>;
+}
 
 /// A trait to generate the [`GainSTMIterator`].
 pub trait GainSTMIteratorGenerator {
@@ -130,36 +142,17 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy> GainSTM<T, C> {
 }
 
 pub struct GainSTMOperationGenerator<T: GainSTMIteratorGenerator> {
-    g: T,
-    size: usize,
-    mode: GainSTMMode,
-    sampling_config: SamplingConfig,
-    loop_behavior: LoopBehavior,
-    segment: Segment,
-    transition_mode: Option<TransitionMode>,
+    pub(crate) g: T,
+    pub(crate) size: usize,
+    pub(crate) mode: GainSTMMode,
+    pub(crate) sampling_config: SamplingConfig,
+    pub(crate) limits: FirmwareLimits,
+    pub(crate) loop_behavior: LoopBehavior,
+    pub(crate) segment: Segment,
+    pub(crate) transition_mode: Option<TransitionMode>,
 }
 
-impl<T: GainSTMIteratorGenerator> OperationGenerator for GainSTMOperationGenerator<T> {
-    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator>::Calculator, T::Iterator>;
-    type O2 = NullOp;
-
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((
-            Self::O1::new(
-                self.g.generate(device),
-                self.size,
-                self.mode,
-                self.sampling_config,
-                self.loop_behavior,
-                self.segment,
-                self.transition_mode,
-            ),
-            Self::O2 {},
-        ))
-    }
-}
-
-impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C> {
+impl<T: GainSTMGenerator, C: Into<STMConfig> + std::fmt::Debug> DatagramL for GainSTM<T, C> {
     type G = GainSTMOperationGenerator<T::T>;
     type Error = AUTDDriverError;
 
@@ -167,6 +160,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C
         self,
         geometry: &Geometry,
         filter: &DeviceFilter,
+        limits: &FirmwareLimits,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,
@@ -174,12 +168,14 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Debug> DatagramL for GainSTM<T, C
         let size = self.gains.len();
         let stm_config: STMConfig = self.config.into();
         let sampling_config = stm_config.into_sampling_config(size)?;
+        let limits = *limits;
         let GainSTMOption { mode } = self.option;
         let gains = self.gains;
         Ok(GainSTMOperationGenerator {
             g: gains.init(geometry, &TransducerFilter::from(filter))?,
             size,
             sampling_config,
+            limits,
             mode,
             loop_behavior,
             segment,
@@ -207,11 +203,7 @@ pub struct GainSTMInspectionResult {
 }
 
 impl InspectionResultWithSegment for GainSTMInspectionResult {
-    fn with_segment(
-        self,
-        segment: autd3_core::derive::Segment,
-        transition_mode: Option<autd3_core::derive::TransitionMode>,
-    ) -> Self {
+    fn with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
         Self {
             segment,
             transition_mode,
@@ -223,9 +215,9 @@ impl InspectionResultWithSegment for GainSTMInspectionResult {
 impl InspectionResultWithLoopBehavior for GainSTMInspectionResult {
     fn with_loop_behavior(
         self,
-        loop_behavior: autd3_core::derive::LoopBehavior,
-        segment: autd3_core::derive::Segment,
-        transition_mode: Option<autd3_core::derive::TransitionMode>,
+        loop_behavior: LoopBehavior,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
             loop_behavior,
@@ -236,13 +228,16 @@ impl InspectionResultWithLoopBehavior for GainSTMInspectionResult {
     }
 }
 
-impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy + Debug> Inspectable for GainSTM<T, C> {
+impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy + std::fmt::Debug> Inspectable
+    for GainSTM<T, C>
+{
     type Result = GainSTMInspectionResult;
 
     fn inspect(
         self,
         geometry: &Geometry,
         filter: &DeviceFilter,
+        _: &FirmwareLimits,
     ) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
         let sampling_config = self.sampling_config()?;
         sampling_config.divide()?;
@@ -278,18 +273,12 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy + Debug> Inspectable for Gai
 mod tests {
     use super::*;
 
-    use crate::{
-        datagram::{GainSTMOption, gain::tests::TestGain, tests::create_geometry},
-        firmware::fpga::SamplingConfig,
-    };
-    use autd3_core::{
-        derive::Inspectable,
-        gain::{Drive, EmitIntensity, Phase},
-    };
+    use crate::datagram::{GainSTMOption, WithLoopBehavior, WithSegment, gain::tests::TestGain};
+    use autd3_core::gain::{Drive, EmitIntensity, Phase};
 
     #[test]
     fn inspect() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         GainSTM {
             gains: vec![
@@ -307,7 +296,11 @@ mod tests {
             config: SamplingConfig::FREQ_4K,
             option: GainSTMOption::default(),
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -338,7 +331,7 @@ mod tests {
 
     #[test]
     fn inspect_with_segment() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         WithSegment {
             inner: GainSTM {
@@ -360,7 +353,11 @@ mod tests {
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -391,7 +388,7 @@ mod tests {
 
     #[test]
     fn inspect_with_loop_behavior() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         WithLoopBehavior {
             inner: GainSTM {
@@ -414,7 +411,11 @@ mod tests {
             transition_mode: Some(TransitionMode::Immediate),
             loop_behavior: LoopBehavior::ONCE,
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(

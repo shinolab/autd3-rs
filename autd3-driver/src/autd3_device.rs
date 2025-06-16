@@ -92,10 +92,18 @@ impl<R: Into<UnitQuaternion> + Debug> From<AUTD3<R>> for Device {
 }
 
 #[cfg(test)]
-mod tests {
-    use autd3_core::geometry::Vector3;
+pub(crate) mod tests {
+    use autd3_core::geometry::{Geometry, Vector3};
 
     use super::*;
+
+    pub fn create_device() -> Device {
+        AUTD3::default().into()
+    }
+
+    pub fn create_geometry(n: usize) -> crate::geometry::Geometry {
+        Geometry::new((0..n).map(|_| create_device()).collect())
+    }
 
     #[test]
     fn num_devices() {

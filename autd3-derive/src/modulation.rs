@@ -13,12 +13,13 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             type G = ModulationOperationGenerator;
             type Error = ModulationError;
 
-            fn operation_generator_with_loop_behavior(self, _: &Geometry, _: &DeviceFilter, segment: Segment, transition_mode: Option<TransitionMode>, loop_behavior: LoopBehavior) -> Result<Self::G, Self::Error> {
+            fn operation_generator_with_loop_behavior(self, _: &Geometry, _: &DeviceFilter, limits: &FirmwareLimits, segment: Segment, transition_mode: Option<TransitionMode>, loop_behavior: LoopBehavior) -> Result<Self::G, Self::Error> {
                 let config = <Self as Modulation>::sampling_config(&self);
-                let g = self.calc()?;
+                let g = self.calc(limits)?;
                 Ok(Self::G {
                     g: std::sync::Arc::new(g),
                     config,
+                    limits: *limits,
                     loop_behavior,
                     segment,
                     transition_mode,
@@ -34,33 +35,14 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let lifetimes = generics.lifetimes();
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
-    let ext = quote! {
-        impl <#(#lifetimes,)* #(#type_params,)* > #name #ty_generics #where_clause {
-            /// Returns the expected radiation pressure. The value are normalized to 0-1.
-            pub fn expected_radiation_pressure(self) -> Result<f32, ModulationError> {
-                <Self as Modulation>::calc(self).map(|buf| {
-                    1. / buf.len() as f32
-                        * buf
-                            .into_iter()
-                            .map(|p| p as f32 / u8::MAX as f32)
-                            .map(|p| p * p)
-                            .sum::<f32>()
-                })
-            }
-        }
-    };
-
-    let lifetimes = generics.lifetimes();
-    let type_params = generics.type_params();
-    let (_, ty_generics, where_clause) = generics.split_for_impl();
     let inspect = quote! {
         impl <#(#lifetimes,)* #(#type_params,)* > Inspectable for #name #ty_generics #where_clause {
             type Result = ModulationInspectionResult;
 
-            fn inspect(self, geometry: &Geometry, filter: &DeviceFilter) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
+            fn inspect(self, geometry: &Geometry, filter: &DeviceFilter, limits: &FirmwareLimits) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
                 let sampling_config = self.sampling_config();
                 sampling_config.divide()?;
-                let data = self.calc()?;
+                let data = self.calc(limits)?;
                 let loop_behavior = LoopBehavior::Infinite;
                 let segment = Segment::S0;
                 let transition_mode = None;
@@ -82,8 +64,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
 
     let generator = quote! {
         #datagram
-
-        #ext
 
         #inspect
     };

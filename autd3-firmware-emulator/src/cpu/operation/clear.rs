@@ -1,4 +1,4 @@
-use autd3_driver::firmware::fpga::PWE_BUF_SIZE;
+use autd3_driver::firmware::latest::fpga::PWE_BUF_SIZE;
 
 use crate::{CPUEmulator, cpu::params::*};
 

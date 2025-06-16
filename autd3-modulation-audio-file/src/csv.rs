@@ -77,7 +77,7 @@ where
     P: AsRef<Path> + Clone + Debug,
     Config: Into<SamplingConfig> + Debug + Copy,
 {
-    fn calc(self) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
         Ok(self.read_buf()?)
     }
 
@@ -109,7 +109,7 @@ mod tests {
 
         let m = Csv::new(path, sample_rate, CsvOption::default());
         assert_eq!(sample_rate.hz(), m.sampling_config().freq()?.hz());
-        assert_eq!(data, *m.calc()?);
+        assert_eq!(data, *m.calc(&FirmwareLimits::unused())?);
 
         Ok(())
     }
@@ -121,7 +121,7 @@ mod tests {
             sampling_config: 4000. * Hz,
             option: CsvOption::default(),
         };
-        assert!(m.calc().is_err());
+        assert!(m.calc(&FirmwareLimits::unused()).is_err());
         Ok(())
     }
 }

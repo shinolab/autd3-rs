@@ -350,7 +350,7 @@ where
                 Some(option) => {
                     let option = autd3::controller::SenderOption::from_msg(option)?;
                     let sleeper = sleeper
-                        .map(Box::<dyn autd3::r#async::controller::AsyncSleep>::from_msg)
+                        .map(Box::<dyn autd3::r#async::controller::Sleep>::from_msg)
                         .transpose()?
                         .unwrap_or_else(|| Box::new(autd3::r#async::AsyncSleeper));
                     (option, sleeper)

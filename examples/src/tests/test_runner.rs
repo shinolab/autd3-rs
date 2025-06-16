@@ -7,10 +7,10 @@ use super::{
     stm::*, user_defined_gain_modulation::*,
 };
 
-pub fn run<L: Link>(mut autd: Controller<L>) -> anyhow::Result<()> {
+pub fn run<L: Link>(mut autd: Controller<L, firmware::Auto>) -> anyhow::Result<()> {
     type Test<L> = (
         &'static str,
-        fn(&'_ mut Controller<L>) -> anyhow::Result<bool>,
+        fn(&'_ mut Controller<L, firmware::Auto>) -> anyhow::Result<bool>,
     );
 
     println!("======== AUTD3 firmware information ========");

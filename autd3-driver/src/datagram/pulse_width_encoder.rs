@@ -1,34 +1,26 @@
-use std::convert::Infallible;
+use std::{convert::Infallible, f32::consts::PI};
 
-use crate::{
-    datagram::*,
-    firmware::{fpga::PulseWidth, operation::PulseWidthEncoderOp},
-};
+use crate::geometry::Device;
 
 use autd3_core::{
-    common::{DEFAULT_TIMEOUT, ULTRASOUND_PERIOD_COUNT_BITS},
-    derive::DatagramOption,
+    common::DEFAULT_TIMEOUT,
+    datagram::{Datagram, DatagramOption, DeviceFilter, PulseWidth},
+    derive::FirmwareLimits,
     gain::EmitIntensity,
+    geometry::Geometry,
 };
+
 use derive_more::Debug;
-
-const DEFAULT_TABLE: &[u8; 512] = include_bytes!("asin.dat");
-
-fn default_table(i: EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> {
-    PulseWidth::new(u16::from_le_bytes([
-        DEFAULT_TABLE[((i.0 as usize) << 1) + 1],
-        DEFAULT_TABLE[(i.0 as usize) << 1],
-    ]))
-    .unwrap()
-}
+use num::Zero;
 
 /// [`Datagram`] to configure pulse width encoder table.
 ///
 /// The pulse width encoder table is a table to determine the pulse width (or duty ratio) from the intensity.
-/// In the firmware, the intensity (0-255) is used as the index of the table to determine the pulse width (0-255).
-/// The period of the ultrasound is mapped to 512, and therefore, the ultrasound output is the ultrasound is maximum when the pulse width is 256 (50% in duty ratio).
+/// In the firmware, the intensity (0-255) is used as the index of the table to determine the pulse width.
+/// For firmware v11 or later, the period of the ultrasound is mapped to 512, therefore, the ultrasound output becomes maximum when the pulse width is 256 (50% in duty ratio).
+/// For firmware v10, the period of the ultrasound is mapped to 256, therefore, the ultrasound output becomes maximum when the pulse width is 128 (50% in duty ratio).
 ///
-/// The default table is set by the arcsin function so that [`EmitIntensity`] is linear; that is, `table[i] = round(512*arcsin(i/255)/π)`.
+/// The default table is set by the arcsin function so that [`EmitIntensity`] is linearly proportional to output ultrasound pressure; that is, `table[i] = round(T*arcsin(i/255)/π)` where `T` is the period of the ultrasound.
 ///
 /// # Example
 ///
@@ -37,24 +29,31 @@ fn default_table(i: EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BI
 /// The following example sets the pulse width to be linearly proportional to the intensity for all devices.
 /// ```
 /// # use autd3_driver::datagram::PulseWidthEncoder;
-/// # use autd3_driver::firmware::fpga::PulseWidth;
-/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::from_duty(i.0 as f32 / 510.).unwrap());
+/// # use autd3_core::datagram::PulseWidth;
+/// // For firmware version 11 or later
+/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::<9, u16>::from_duty(i.0 as f32 / 510.).unwrap());
+/// // For firmware version 10
+/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::<8, u8>::from_duty(i.0 as f32 / 510.).unwrap());
 /// ```
 ///
-/// [`EmitIntensity`]: crate::firmware::fpga::EmitIntensity
+/// [`EmitIntensity`]: autd3_core::gain::EmitIntensity
 #[derive(Clone, Debug)]
 pub struct PulseWidthEncoder<
-    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
+    const BITS: usize,
+    T: Copy + TryFrom<usize> + Zero + PartialOrd,
+    H: Fn(EmitIntensity) -> PulseWidth<BITS, T> + Send + Sync,
     F: Fn(&Device) -> H,
 > {
     #[debug(ignore)]
-    f: F,
+    pub(crate) f: F,
 }
 
 impl<
-    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
+    const BITS: usize,
+    T: Copy + TryFrom<usize> + Zero + PartialOrd,
+    H: Fn(EmitIntensity) -> PulseWidth<BITS, T> + Send + Sync,
     F: Fn(&Device) -> H,
-> PulseWidthEncoder<H, F>
+> PulseWidthEncoder<BITS, T, H, F>
 {
     /// Creates a new [`PulseWidthEncoder`].
     #[must_use]
@@ -63,55 +62,23 @@ impl<
     }
 }
 
-impl Default
-    for PulseWidthEncoder<
-        Box<dyn Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync>,
-        Box<
-            dyn Fn(
-                &Device,
-            ) -> Box<
-                dyn Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS>
-                    + Send
-                    + Sync,
-            >,
-        >,
-    >
-{
-    fn default() -> Self {
-        Self::new(Box::new(|_| Box::new(default_table)))
-    }
-}
-
-pub struct PulseWidthEncoderOpGenerator<
-    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
-    F: Fn(&Device) -> H,
-> {
-    f: F,
-}
-
 impl<
-    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
+    const BITS: usize,
+    T: Copy + TryFrom<usize> + Zero + PartialOrd,
+    H: Fn(EmitIntensity) -> PulseWidth<BITS, T> + Send + Sync,
     F: Fn(&Device) -> H,
-> OperationGenerator for PulseWidthEncoderOpGenerator<H, F>
+> Datagram for PulseWidthEncoder<BITS, T, H, F>
 {
-    type O1 = PulseWidthEncoderOp<H>;
-    type O2 = NullOp;
-
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((Self::O1::new((self.f)(device)), Self::O2 {}))
-    }
-}
-
-impl<
-    H: Fn(EmitIntensity) -> PulseWidth<u16, ULTRASOUND_PERIOD_COUNT_BITS> + Send + Sync,
-    F: Fn(&Device) -> H,
-> Datagram for PulseWidthEncoder<H, F>
-{
-    type G = PulseWidthEncoderOpGenerator<H, F>;
+    type G = Self;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
-        Ok(PulseWidthEncoderOpGenerator { f: self.f })
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
+        Ok(self)
     }
 
     fn option(&self) -> DatagramOption {
@@ -119,5 +86,20 @@ impl<
             timeout: DEFAULT_TIMEOUT,
             parallel_threshold: num_cpus::get(),
         }
+    }
+}
+
+impl<const BITS: usize, T: Copy + TryFrom<usize> + Zero + PartialOrd> Default
+    for PulseWidthEncoder<
+        BITS,
+        T,
+        fn(EmitIntensity) -> PulseWidth<BITS, T>,
+        fn(&Device) -> fn(EmitIntensity) -> PulseWidth<BITS, T>,
+    >
+{
+    fn default() -> Self {
+        Self::new(|_| {
+            |intensity| PulseWidth::from_duty((intensity.0 as f32 / 255.).asin() / PI).unwrap()
+        })
     }
 }

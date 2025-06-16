@@ -1,6 +1,10 @@
 use std::convert::Infallible;
 
-use crate::{datagram::*, firmware::operation::ReadsFPGAStateOp};
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter},
+    derive::FirmwareLimits,
+    geometry::{Device, Geometry},
+};
 
 use derive_more::Debug;
 
@@ -20,24 +24,16 @@ impl<F: Fn(&Device) -> bool> ReadsFPGAState<F> {
     }
 }
 
-pub struct ReadsFPGAStateOpGenerator<F: Fn(&Device) -> bool> {
-    f: F,
-}
-
-impl<F: Fn(&Device) -> bool> OperationGenerator for ReadsFPGAStateOpGenerator<F> {
-    type O1 = ReadsFPGAStateOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((Self::O1::new((self.f)(device)), Self::O2 {}))
-    }
-}
-
 impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
-    type G = ReadsFPGAStateOpGenerator<F>;
+    type G = Self;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
-        Ok(ReadsFPGAStateOpGenerator { f: self.f })
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
+        Ok(self)
     }
 }

@@ -62,12 +62,12 @@ dependencies = ["cov-build", "cov-test", "cov-grcov", "cov-cleanup"]
 [tasks.cov-build]
 env = { RUSTFLAGS = "-Cinstrument-coverage", LLVM_PROFILE_FILE = "${CARGO_MAKE_WORKING_DIRECTORY}/%m-%p.profraw" }
 command = "cargo"
-args = ["build", "--features", 'remote', "--features", "async", "--workspace", "--exclude", "autd3-examples"]
+args = ["build", "--features", 'remote', "--workspace", "--exclude", "autd3-examples"]
 
 [tasks.cov-test]
 env = { RUSTFLAGS = "-Cinstrument-coverage", LLVM_PROFILE_FILE = "${CARGO_MAKE_WORKING_DIRECTORY}/%m-%p.profraw" }
 command = "cargo"
-args = ["test", "--features", 'remote', "--features", "async", "--workspace", "--exclude", "autd3-examples"]
+args = ["test", "--features", 'remote', "--workspace", "--exclude", "autd3-examples"]
 
 [tasks.cov-grcov]
 command = "grcov"
@@ -85,7 +85,7 @@ args = [
     "-t",
     "${@}",
     "--excl-line",
-    "GRCOV_EXCL_LINE|^\\s*\\.await\\??[,;]?$|#\\[derive|#\\[error|#\\[bitfield_struct|unreachable!|unimplemented!",
+    "GRCOV_EXCL_LINE|#\\[derive|#\\[error|#\\[bitfield_struct|unreachable!|unimplemented!",
     "--keep-only",
     "autd3/src/**/*.rs",
     "--keep-only",
@@ -106,6 +106,16 @@ args = [
     "GRCOV_EXCL_START",
     "--excl-stop",
     "GRCOV_EXCL_STOP",
+    "--ignore",
+    "**/async.rs",
+    "--ignore",
+    "**/async/**/*.rs",
+    "--ignore",
+    "**/auto/**/*.rs",
+    "--ignore",
+    "**/v10/**/*.rs",
+    "--ignore",
+    "**/v11/**/*.rs",
 ]
 
 [tasks.cov-cleanup]
