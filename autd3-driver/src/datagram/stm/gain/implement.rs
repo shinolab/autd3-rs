@@ -51,15 +51,15 @@ impl<G: Gain> GainSTMGenerator for Vec<G> {
 
 #[cfg(test)]
 mod tests {
-
     use std::time::Duration;
 
     use super::super::GainSTM;
     use crate::{
         common::{Freq, Hz, kHz},
-        datagram::{GainSTMOption, gain::tests::TestGain},
-        firmware::fpga::SamplingConfig,
+        datagram::{gain::tests::TestGain, stm::GainSTMOption},
     };
+
+    use autd3_core::sampling_config::SamplingConfig;
 
     #[rstest::rstest]
     #[test]

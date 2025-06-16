@@ -58,15 +58,15 @@ where
 
 #[cfg(test)]
 mod tests {
-
     use std::time::Duration;
 
     use super::super::FociSTM;
     use crate::{
         common::{Freq, Hz, kHz},
-        firmware::fpga::SamplingConfig,
         geometry::Point3,
     };
+
+    use autd3_core::sampling_config::SamplingConfig;
 
     #[rstest::rstest]
     #[test]

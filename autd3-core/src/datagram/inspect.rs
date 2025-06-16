@@ -1,5 +1,8 @@
 use super::{Datagram, DeviceFilter};
-use crate::geometry::{Device, Geometry};
+use crate::{
+    datagram::FirmwareLimits,
+    geometry::{Device, Geometry},
+};
 
 use derive_more::Deref;
 
@@ -46,5 +49,6 @@ pub trait Inspectable: Datagram {
         self,
         geometry: &Geometry,
         filter: &DeviceFilter,
+        limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error>;
 }

@@ -1,6 +1,6 @@
 use autd3::{core::link::Link, prelude::*};
 
-pub fn plane(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub fn plane(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<bool> {
     autd.send(Silencer::default())?;
 
     let dir = Vector3::z_axis();

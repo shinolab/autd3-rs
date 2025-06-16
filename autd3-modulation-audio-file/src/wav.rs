@@ -62,7 +62,7 @@ impl Wav {
 }
 
 impl Modulation for Wav {
-    fn calc(self) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buffer)
     }
 
@@ -168,7 +168,7 @@ mod tests {
         create_wav(&path, spec, data)?;
         let m = Wav::new(path)?;
         assert_eq!(spec.sample_rate, m.sampling_config().freq()?.hz() as u32);
-        assert_eq!(Ok(expect), m.calc());
+        assert_eq!(Ok(expect), m.calc(&FirmwareLimits::unused()));
 
         Ok(())
     }

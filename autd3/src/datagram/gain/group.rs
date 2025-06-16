@@ -1,9 +1,6 @@
 use autd3_core::derive::*;
 
-use autd3_driver::{
-    firmware::fpga::Drive,
-    geometry::{Device, Transducer},
-};
+use autd3_driver::geometry::{Device, Transducer};
 
 use itertools::Itertools;
 use std::{
@@ -220,10 +217,7 @@ where
 mod tests {
     use super::*;
 
-    use autd3_driver::{
-        datagram::BoxedGain,
-        firmware::fpga::{EmitIntensity, Phase},
-    };
+    use autd3_driver::datagram::BoxedGain;
     use rand::Rng;
 
     use crate::{

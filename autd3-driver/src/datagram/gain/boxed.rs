@@ -123,12 +123,14 @@ impl Gain for BoxedGain {
 
 #[cfg(test)]
 pub mod tests {
-    use autd3_core::gain::Drive;
-
     use super::*;
+
     use crate::datagram::gain::tests::TestGain;
 
-    use crate::firmware::fpga::{EmitIntensity, Phase};
+    use autd3_core::{
+        gain::Drive,
+        geometry::{Point3, UnitQuaternion},
+    };
 
     const NUM_TRANSDUCERS: usize = 2;
 
@@ -153,9 +155,18 @@ pub mod tests {
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] n: u16,
     ) -> anyhow::Result<()> {
-        use crate::datagram::tests::create_geometry;
-
-        let geometry = create_geometry(n, NUM_TRANSDUCERS as _);
+        let geometry = Geometry::new(
+            (0..n)
+                .map(|_| {
+                    Device::new(
+                        UnitQuaternion::identity(),
+                        (0..NUM_TRANSDUCERS)
+                            .map(|_| Transducer::new(Point3::origin()))
+                            .collect(),
+                    )
+                })
+                .collect(),
+        );
 
         let g = BoxedGain::new(TestGain::new(
             |dev| {

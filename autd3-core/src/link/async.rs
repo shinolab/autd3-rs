@@ -7,7 +7,6 @@ pub use internal::AsyncLink;
 
 #[cfg(feature = "async-trait")]
 mod internal {
-
     use super::*;
 
     /// A trait that provides the interface with the device.

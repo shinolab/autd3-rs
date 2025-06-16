@@ -1,4 +1,7 @@
+mod control_point;
 mod implement;
+
+pub use control_point::{ControlPoint, ControlPoints};
 
 use std::{fmt::Debug, time::Duration};
 
@@ -7,22 +10,30 @@ use crate::{
     common::Freq,
     datagram::{
         with_loop_behavior::InspectionResultWithLoopBehavior,
-        with_segment::InspectionResultWithSegment, *,
+        with_segment::InspectionResultWithSegment,
     },
-    firmware::{
-        fpga::{LoopBehavior, SamplingConfig, Segment, TransitionMode},
-        operation::FociSTMOp,
-    },
+    error::AUTDDriverError,
+    geometry::{Device, Geometry},
 };
-
-pub use crate::firmware::operation::FociSTMIterator;
 
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
-    datagram::{DatagramL, DatagramOption, Inspectable},
-    derive::InspectionResult,
+    datagram::{
+        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
+        LoopBehavior, Segment, TransitionMode,
+    },
+    derive::FirmwareLimits,
+    sampling_config::SamplingConfig,
 };
 use derive_more::{Deref, DerefMut};
+
+/// A trait to generate a [`ControlPoints`] for  [`FociSTM`].
+///
+/// [`FociSTM`]: crate::datagram::FociSTM
+pub trait FociSTMIterator<const N: usize>: Send + Sync {
+    /// Returns the next [`ControlPoints`].
+    fn next(&mut self) -> ControlPoints<N>;
+}
 
 /// A trait to generate the [`FociSTMIterator`].
 pub trait FociSTMIteratorGenerator<const N: usize>: std::fmt::Debug {
@@ -99,36 +110,16 @@ impl<const N: usize, T: FociSTMGenerator<N>, C: Into<STMConfig> + Copy> FociSTM<
 }
 
 pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMIteratorGenerator<N>> {
-    generator: G,
-    size: usize,
-    config: SamplingConfig,
-    loop_behavior: LoopBehavior,
-    segment: Segment,
-    transition_mode: Option<TransitionMode>,
+    pub(crate) generator: G,
+    pub(crate) size: usize,
+    pub(crate) config: SamplingConfig,
+    pub(crate) limits: FirmwareLimits,
+    pub(crate) loop_behavior: LoopBehavior,
+    pub(crate) segment: Segment,
+    pub(crate) transition_mode: Option<TransitionMode>,
 }
 
-impl<const N: usize, G: FociSTMIteratorGenerator<N>> OperationGenerator
-    for FociSTMOperationGenerator<N, G>
-{
-    type O1 = FociSTMOp<N, G::Iterator>;
-    type O2 = NullOp;
-
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((
-            Self::O1::new(
-                self.generator.generate(device),
-                self.size,
-                self.config,
-                self.loop_behavior,
-                self.segment,
-                self.transition_mode,
-            ),
-            Self::O2 {},
-        ))
-    }
-}
-
-impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Debug> DatagramL
+impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + std::fmt::Debug> DatagramL
     for FociSTM<N, G, C>
 {
     type G = FociSTMOperationGenerator<N, G::T>;
@@ -138,6 +129,7 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Debug> Datagra
         self,
         _: &Geometry,
         _: &DeviceFilter,
+        limits: &FirmwareLimits,
         segment: Segment,
         transition_mode: Option<TransitionMode>,
         loop_behavior: LoopBehavior,
@@ -149,6 +141,7 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Debug> Datagra
             generator: self.foci.init()?,
             size,
             config: sampling_config,
+            limits: *limits,
             loop_behavior,
             segment,
             transition_mode,
@@ -178,11 +171,7 @@ pub struct FociSTMInspectionResult<const N: usize> {
 }
 
 impl<const N: usize> InspectionResultWithSegment for FociSTMInspectionResult<N> {
-    fn with_segment(
-        self,
-        segment: autd3_core::derive::Segment,
-        transition_mode: Option<autd3_core::derive::TransitionMode>,
-    ) -> Self {
+    fn with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
         Self {
             segment,
             transition_mode,
@@ -194,9 +183,9 @@ impl<const N: usize> InspectionResultWithSegment for FociSTMInspectionResult<N> 
 impl<const N: usize> InspectionResultWithLoopBehavior for FociSTMInspectionResult<N> {
     fn with_loop_behavior(
         self,
-        loop_behavior: autd3_core::derive::LoopBehavior,
-        segment: autd3_core::derive::Segment,
-        transition_mode: Option<autd3_core::derive::TransitionMode>,
+        loop_behavior: LoopBehavior,
+        segment: Segment,
+        transition_mode: Option<TransitionMode>,
     ) -> Self {
         Self {
             loop_behavior,
@@ -216,6 +205,7 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Debug> 
         self,
         geometry: &Geometry,
         filter: &DeviceFilter,
+        _: &FirmwareLimits,
     ) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
         let sampling_config = self.sampling_config()?;
         sampling_config.divide()?;
@@ -242,18 +232,19 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Debug> 
 
 #[cfg(test)]
 mod tests {
+    use crate::datagram::{WithLoopBehavior, WithSegment};
+
     use super::*;
 
-    use crate::{datagram::tests::create_geometry, firmware::fpga::SamplingConfig};
     use autd3_core::{
-        derive::Inspectable,
         gain::{EmitIntensity, Phase},
         geometry::Point3,
+        sampling_config::SamplingConfig,
     };
 
     #[test]
     fn inspect() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         FociSTM {
             foci: vec![
@@ -268,7 +259,11 @@ mod tests {
             ],
             config: SamplingConfig::FREQ_4K,
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -304,7 +299,7 @@ mod tests {
 
     #[test]
     fn inspect_with_segment() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         WithSegment {
             inner: FociSTM {
@@ -323,7 +318,11 @@ mod tests {
             segment: Segment::S1,
             transition_mode: Some(TransitionMode::Immediate),
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -359,7 +358,7 @@ mod tests {
 
     #[test]
     fn inspect_with_loop_behavior() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         WithLoopBehavior {
             inner: FociSTM {
@@ -379,7 +378,11 @@ mod tests {
             transition_mode: Some(TransitionMode::Immediate),
             loop_behavior: LoopBehavior::ONCE,
         }
-        .inspect(&geometry, &DeviceFilter::all_enabled())?
+        .inspect(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &FirmwareLimits::unused(),
+        )?
         .iter()
         .for_each(|r| {
             assert_eq!(

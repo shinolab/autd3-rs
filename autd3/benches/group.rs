@@ -1,11 +1,17 @@
 use std::hint::black_box;
 
-use autd3::{gain::Null, prelude::BoxedDatagram};
-use autd3_core::{derive::*, link::MsgId};
+use autd3::gain::Null;
+use autd3_core::{
+    derive::*,
+    link::{MsgId, TxMessage},
+};
 use autd3_driver::{
     autd3_device::AUTD3,
-    datagram::{Datagram, Group},
-    firmware::{cpu::TxMessage, operation::OperationHandler},
+    datagram::Group,
+    firmware::{
+        driver::Driver,
+        latest::{Latest, operation::OperationHandler},
+    },
     geometry::{Geometry, Point3},
 };
 
@@ -40,7 +46,11 @@ fn without_group(c: &mut Criterion) {
                 b.iter(|| {
                     let g = black_box(Null {});
                     let generator = g
-                        .operation_generator(geometry, &DeviceFilter::all_enabled())
+                        .operation_generator(
+                            geometry,
+                            &DeviceFilter::all_enabled(),
+                            &Latest.firmware_limits(),
+                        )
                         .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(
@@ -73,7 +83,11 @@ fn group(c: &mut Criterion) {
                         datagram_map: geometry.iter().map(|dev| (dev.idx(), Null {})).collect(),
                     };
                     let generator = g
-                        .operation_generator(geometry, &DeviceFilter::all_enabled())
+                        .operation_generator(
+                            geometry,
+                            &DeviceFilter::all_enabled(),
+                            &Latest.firmware_limits(),
+                        )
                         .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(
@@ -105,11 +119,22 @@ fn group_boxed(c: &mut Criterion) {
                         key_map: |dev| Some(dev.idx()),
                         datagram_map: geometry
                             .iter()
-                            .map(|dev| (dev.idx(), BoxedDatagram::new(Null {})))
+                            .map(|dev| {
+                                (
+                                    dev.idx(),
+                                    autd3_driver::firmware::latest::operation::BoxedDatagram::new(
+                                        Null {},
+                                    ),
+                                )
+                            })
                             .collect(),
                     };
                     let generator = g
-                        .operation_generator(geometry, &DeviceFilter::all_enabled())
+                        .operation_generator(
+                            geometry,
+                            &DeviceFilter::all_enabled(),
+                            &Latest.firmware_limits(),
+                        )
                         .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(
@@ -145,7 +170,11 @@ fn gain_group(c: &mut Criterion) {
                         gain_map: geometry.iter().map(|dev| (dev.idx(), Null {})).collect(),
                     };
                     let generator = g
-                        .operation_generator(geometry, &DeviceFilter::all_enabled())
+                        .operation_generator(
+                            geometry,
+                            &DeviceFilter::all_enabled(),
+                            &Latest.firmware_limits(),
+                        )
                         .unwrap();
                     let mut operations = OperationHandler::generate(generator, geometry);
                     OperationHandler::pack(

@@ -1,25 +1,16 @@
-use crate::{gain::Null, modulation::Static};
-
 use autd3_core::{
     datagram::{Inspectable, InspectionResult},
-    derive::DeviceFilter,
-    link::{Ack, Link, MsgId},
+    derive::{Datagram, DeviceFilter},
+    link::{Ack, Link, MsgId, RxMessage},
     sleep::Sleep,
 };
-use autd3_driver::{
-    datagram::{Clear, Datagram, FixedCompletionSteps, Silencer},
-    error::AUTDDriverError,
-    firmware::{
-        cpu::RxMessage,
-        fpga::FPGAState,
-        operation::{Operation, OperationGenerator},
-        version::FirmwareVersion,
-    },
-    geometry::{Device, Geometry},
+pub use autd3_driver::firmware::driver::{
+    Driver, FPGAState, FixedDelay, FixedSchedule, ParallelMode, SenderOption, TimerStrategy,
 };
-
-pub use autd3_driver::transmission::{
-    FixedDelay, FixedSchedule, ParallelMode, Sender, SenderOption, TimerStrategy,
+use autd3_driver::{
+    error::AUTDDriverError,
+    firmware::{self, auto::Auto, driver::Sender, version::FirmwareVersion},
+    geometry::{Device, Geometry},
 };
 
 use derive_more::{Deref, DerefMut};
@@ -29,10 +20,13 @@ use getset::{Getters, MutGetters};
 ///
 /// All operations to the devices are done through this struct.
 #[derive(Deref, DerefMut, Getters, MutGetters)]
-pub struct Controller<L: Link> {
+pub struct Controller<L: Link, V: Driver> {
     /// The link to the devices.
     #[getset(get = "pub", get_mut = "pub")]
     link: L,
+    #[doc(hidden)]
+    #[getset(get = "pub")]
+    driver: V,
     /// The geometry of the devices.
     #[getset(get = "pub", get_mut = "pub")]
     #[deref]
@@ -45,18 +39,23 @@ pub struct Controller<L: Link> {
     pub default_sender_option: SenderOption,
 }
 
-impl<L: Link> Controller<L> {
-    /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`] and [`FixedSchedule`].
+impl<L: Link> Controller<L, Auto> {
+    /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`], [`FixedSchedule`] and [`Auto`] diver.
     pub fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
         devices: F,
         link: L,
     ) -> Result<Self, AUTDDriverError> {
-        Self::open_with_option(
-            devices,
-            link,
-            SenderOption::default(),
-            FixedSchedule::default(),
-        )
+        Self::open_with_option(devices, link, Default::default(), FixedSchedule::default())
+    }
+}
+
+impl<L: Link, V: Driver> Controller<L, V> {
+    /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`] and [`FixedSchedule`].
+    pub fn open_with<D: Into<Device>, F: IntoIterator<Item = D>>(
+        devices: F,
+        link: L,
+    ) -> Result<Self, AUTDDriverError> {
+        Self::open_with_option(devices, link, Default::default(), FixedSchedule::default())
     }
 
     /// Opens a controller with a [`SenderOption`].
@@ -77,11 +76,25 @@ impl<L: Link> Controller<L> {
 
         link.open(&geometry)?;
 
+        let mut msg_id = MsgId::new(0);
+        let mut sent_flags = smallvec::smallvec![false; geometry.len()];
+        let mut rx_buf = vec![RxMessage::new(0, Ack::new()); geometry.len()];
+
+        let mut driver = V::new();
+        driver.detect_version(
+            &mut msg_id,
+            &mut link,
+            &geometry,
+            &mut sent_flags,
+            &mut rx_buf,
+        )?;
+
         let mut cnt = Controller {
             link,
-            msg_id: MsgId::new(0),
-            sent_flags: smallvec::smallvec![false; geometry.len()],
-            rx_buf: vec![RxMessage::new(0, Ack::new()); geometry.len()],
+            driver,
+            msg_id,
+            sent_flags,
+            rx_buf,
             geometry,
             default_sender_option: option,
         };
@@ -96,11 +109,11 @@ impl<L: Link> Controller<L> {
         &mut self,
         option: SenderOption,
         timer_strategy: T,
-    ) -> Sender<'_, L, S, T> {
-        Sender::new(
+    ) -> V::Sender<'_, L, S, T> {
+        self.driver.sender(
             &mut self.msg_id,
             &mut self.link,
-            &mut self.geometry,
+            &self.geometry,
             &mut self.sent_flags,
             &mut self.rx_buf,
             option,
@@ -108,21 +121,13 @@ impl<L: Link> Controller<L> {
         )
     }
 
-    /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
-    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
-    where
-        AUTDDriverError: From<D::Error>,
-        D::G: OperationGenerator,
-        AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
-            + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
-    {
-        self.sender(self.default_sender_option, FixedSchedule::default())
-            .send(s)
-    }
-
     /// Returns the inspection result.
     pub fn inspect<I: Inspectable>(&self, s: I) -> Result<InspectionResult<I::Result>, I::Error> {
-        s.inspect(&self.geometry, &DeviceFilter::all_enabled())
+        s.inspect(
+            &self.geometry,
+            &DeviceFilter::all_enabled(),
+            &self.driver.firmware_limits(),
+        )
     }
 
     /// Closes the controller.
@@ -156,14 +161,14 @@ impl<L: Link> Controller<L> {
     /// ```
     ///
     /// [`ReadsFPGAState`]: autd3_driver::datagram::ReadsFPGAState
-    pub fn fpga_state(&mut self) -> Result<Vec<Option<FPGAState>>, AUTDDriverError> {
+    pub fn fpga_state(&mut self) -> Result<Vec<Option<V::FPGAState>>, AUTDDriverError> {
         self.link.ensure_is_open()?;
         self.link.receive(&mut self.rx_buf)?;
-        Ok(self.rx_buf.iter().map(FPGAState::from_rx).collect())
+        Ok(self.rx_buf.iter().map(V::FPGAState::from_rx).collect())
     }
 }
 
-impl<L: Link> Controller<L> {
+impl<L: Link, V: Driver> Controller<L, V> {
     fn close_impl<S: Sleep, T: TimerStrategy<S>>(
         &mut self,
         option: SenderOption,
@@ -173,25 +178,11 @@ impl<L: Link> Controller<L> {
             return Ok(());
         }
 
-        let mut sender = self.sender(option, timer_strategy);
-
-        [
-            sender.send(Silencer {
-                config: FixedCompletionSteps {
-                    strict_mode: false,
-                    ..Default::default()
-                },
-            }),
-            sender.send((Static::default(), Null)),
-            sender.send(Clear {}),
-            Ok(self.link.close()?),
-        ]
-        .into_iter()
-        .try_fold((), |_, x| x)
+        self.sender(option, timer_strategy).close()
     }
 }
 
-impl<'a, L: Link> IntoIterator for &'a Controller<L> {
+impl<'a, L: Link, V: Driver> IntoIterator for &'a Controller<L, V> {
     type Item = &'a Device;
     type IntoIter = std::slice::Iter<'a, Device>;
 
@@ -200,7 +191,7 @@ impl<'a, L: Link> IntoIterator for &'a Controller<L> {
     }
 }
 
-impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
+impl<'a, L: Link, V: Driver> IntoIterator for &'a mut Controller<L, V> {
     type Item = &'a mut Device;
     type IntoIter = std::slice::IterMut<'a, Device>;
 
@@ -209,11 +200,12 @@ impl<'a, L: Link> IntoIterator for &'a mut Controller<L> {
     }
 }
 
-impl<L: Link + 'static> Controller<L> {
+impl<L: Link + 'static, V: Driver> Controller<L, V> {
     /// Converts `Controller<L>` into a `Controller<Box<dyn Link>>`.
-    pub fn into_boxed_link(self) -> Controller<Box<dyn Link>> {
+    pub fn into_boxed_link(self) -> Controller<Box<dyn Link>, V> {
         let cnt = std::mem::ManuallyDrop::new(self);
         let msg_id = unsafe { std::ptr::read(&cnt.msg_id) };
+        let driver = unsafe { std::ptr::read(&cnt.driver) };
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let sent_flags = unsafe { std::ptr::read(&cnt.sent_flags) };
@@ -221,6 +213,7 @@ impl<L: Link + 'static> Controller<L> {
         let default_sender_option = unsafe { std::ptr::read(&cnt.default_sender_option) };
         Controller {
             msg_id,
+            driver,
             link: Box::new(link) as _,
             geometry,
             sent_flags,
@@ -234,9 +227,10 @@ impl<L: Link + 'static> Controller<L> {
     /// # Safety
     ///
     /// This function must be used only when converting an instance created by [`Controller::into_boxed_link`] back to the original [`Controller<L>`].
-    pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn Link>>) -> Controller<L> {
+    pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn Link>, V>) -> Controller<L, V> {
         let cnt = std::mem::ManuallyDrop::new(cnt);
         let msg_id = unsafe { std::ptr::read(&cnt.msg_id) };
+        let driver = unsafe { std::ptr::read(&cnt.driver) };
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
         let sent_flags = unsafe { std::ptr::read(&cnt.sent_flags) };
@@ -244,6 +238,7 @@ impl<L: Link + 'static> Controller<L> {
         let default_sender_option = unsafe { std::ptr::read(&cnt.default_sender_option) };
         Controller {
             msg_id,
+            driver,
             link: unsafe { *Box::from_raw(Box::into_raw(link) as *mut L) },
             geometry,
             sent_flags,
@@ -253,12 +248,139 @@ impl<L: Link + 'static> Controller<L> {
     }
 }
 
-impl<L: Link> Drop for Controller<L> {
+impl<L: Link, V: Driver> Drop for Controller<L, V> {
     fn drop(&mut self) {
         if !self.link.is_open() {
             return;
         }
         let _ = self.close_impl(self.default_sender_option, FixedSchedule::default());
+    }
+}
+
+// The following implementations are necessary because Rust does not have associated traits.
+// https://github.com/rust-lang/rfcs/issues/2190
+
+impl<L: Link> Controller<L, firmware::v12::V12> {
+    /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::v12::transmission::Sender`].
+    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    where
+        AUTDDriverError: From<D::Error>,
+        D::G: autd3_driver::firmware::v12::operation::OperationGenerator,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator>::O1 as autd3_driver::firmware::v12::operation::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator>::O2 as autd3_driver::firmware::v12::operation::Operation>::Error>,
+    {
+        self.sender(self.default_sender_option, FixedSchedule::default())
+            .send(s)
+    }
+}
+
+impl<L: Link> Controller<L, firmware::v11::V11> {
+    /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::v11::transmission::Sender`].
+    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    where
+        AUTDDriverError: From<D::Error>,
+        D::G: autd3_driver::firmware::v11::operation::OperationGenerator,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator>::O1 as autd3_driver::firmware::v11::operation::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator>::O2 as autd3_driver::firmware::v11::operation::Operation>::Error>,
+    {
+        self.sender(self.default_sender_option, FixedSchedule::default())
+            .send(s)
+    }
+}
+
+impl<L: Link> Controller<L, firmware::v10::V10> {
+    /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::v10::transmission::Sender`].
+    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    where
+        AUTDDriverError: From<D::Error>,
+        D::G: autd3_driver::firmware::v10::operation::OperationGenerator,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator>::O1 as autd3_driver::firmware::v10::operation::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator>::O2 as autd3_driver::firmware::v10::operation::Operation>::Error>,
+    {
+        self.sender(self.default_sender_option, FixedSchedule::default())
+            .send(s)
+    }
+}
+
+impl<L: Link> Controller<L, firmware::auto::Auto> {
+    /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::auto::transmission::Sender`].
+    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    where
+        AUTDDriverError: From<D::Error>,
+        D::G: autd3_driver::firmware::auto::operation::OperationGenerator,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator>::O1 as autd3_driver::firmware::auto::operation::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator>::O2 as autd3_driver::firmware::auto::operation::Operation>::Error>,
+    {
+        self.sender(self.default_sender_option, FixedSchedule::default())
+            .send(s)
+    }
+}
+
+impl<L: Link> Controller<L, firmware::v12::V12> {
+    /// Make a [`firmware::v12::operation::BoxedDatagram`].
+    pub fn make_boxed<
+        E,
+        G: firmware::v12::operation::DOperationGenerator + 'static,
+        D: Datagram<G = G, Error = E> + 'static,
+    >(
+        &self,
+        d: D,
+    ) -> firmware::v12::operation::BoxedDatagram
+    where
+        AUTDDriverError: From<E>,
+    {
+        firmware::v12::operation::BoxedDatagram::new(d)
+    }
+}
+
+impl<L: Link> Controller<L, firmware::v11::V11> {
+    /// Make a [`firmware::v11::operation::BoxedDatagram`].
+    pub fn make_boxed<
+        E,
+        G: firmware::v11::operation::DOperationGenerator + 'static,
+        D: Datagram<G = G, Error = E> + 'static,
+    >(
+        &self,
+        d: D,
+    ) -> firmware::v11::operation::BoxedDatagram
+    where
+        AUTDDriverError: From<E>,
+    {
+        firmware::v11::operation::BoxedDatagram::new(d)
+    }
+}
+
+impl<L: Link> Controller<L, firmware::v10::V10> {
+    /// Make a [`firmware::v10::operation::BoxedDatagram`].
+    pub fn make_boxed<
+        E,
+        G: firmware::v10::operation::DOperationGenerator + 'static,
+        D: Datagram<G = G, Error = E> + 'static,
+    >(
+        &self,
+        d: D,
+    ) -> firmware::v10::operation::BoxedDatagram
+    where
+        AUTDDriverError: From<E>,
+    {
+        firmware::v10::operation::BoxedDatagram::new(d)
+    }
+}
+
+impl<L: Link> Controller<L, firmware::auto::Auto> {
+    /// Make a [`firmware::auto::operation::BoxedDatagram`].
+    pub fn make_boxed<
+        E,
+        G: firmware::auto::operation::DOperationGenerator + 'static,
+        D: Datagram<G = G, Error = E> + 'static,
+    >(
+        &self,
+        d: D,
+    ) -> firmware::auto::operation::BoxedDatagram
+    where
+        AUTDDriverError: From<E>,
+    {
+        firmware::auto::operation::BoxedDatagram::new(d)
     }
 }
 
@@ -275,18 +397,22 @@ pub(crate) mod tests {
             autd3_device::AUTD3,
             common::Hz,
             datagram::{GainSTM, ReadsFPGAState},
+            firmware,
+            firmware::latest::Latest,
         },
         gain::Uniform,
-        link::{Audit, AuditOption},
-        modulation::Sine,
+        link::{Audit, AuditOption, audit::version},
+        modulation::{Sine, Static},
     };
 
     use super::*;
 
-    pub fn create_controller(dev_num: usize) -> anyhow::Result<Controller<Audit>> {
-        Ok(Controller::open(
+    pub fn create_controller(
+        dev_num: usize,
+    ) -> anyhow::Result<Controller<Audit<version::Latest>, Latest>> {
+        Ok(Controller::open_with(
             (0..dev_num).map(|_| AUTD3::default()),
-            Audit::new(AuditOption::default()),
+            Audit::latest(AuditOption::default()),
         )?)
     }
 
@@ -294,12 +420,12 @@ pub(crate) mod tests {
     fn open_failed() {
         assert_eq!(
             Some(AUTDDriverError::Link(LinkError::new("broken"))),
-            Controller::open(
+            Controller::<_, Latest>::open_with(
                 [AUTD3::default()],
-                Audit::new(AuditOption {
+                Audit::latest(AuditOption {
                     broken: true,
                     ..Default::default()
-                })
+                }),
             )
             .err()
         );
@@ -335,7 +461,7 @@ pub(crate) mod tests {
                     freq: 150. * Hz,
                     option: Default::default(),
                 }
-                .calc()?,
+                .calc(&Latest.firmware_limits())?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {
@@ -451,9 +577,9 @@ pub(crate) mod tests {
 
     #[test]
     fn fpga_state() -> anyhow::Result<()> {
-        let mut autd = Controller::open(
+        let mut autd = Controller::<_, Latest>::open_with(
             [AUTD3::default(), AUTD3::default()],
-            Audit::new(AuditOption::default()),
+            Audit::latest(AuditOption::default()),
         )?;
 
         autd.send(ReadsFPGAState::new(|_| true))?;
@@ -524,8 +650,8 @@ pub(crate) mod tests {
 
     #[test]
     fn with_boxed_link() -> anyhow::Result<()> {
-        let link: Box<dyn Link> = Box::new(Audit::new(AuditOption::default()));
-        let mut autd = Controller::open([AUTD3::default()], link)?;
+        let link: Box<dyn Link> = Box::new(Audit::latest(AuditOption::default()));
+        let mut autd = Controller::<_, Latest>::open_with([AUTD3::default()], link)?;
 
         autd.send(Sine {
             freq: 150. * Hz,
@@ -539,9 +665,9 @@ pub(crate) mod tests {
 
     #[test]
     fn into_boxed_link_unsafe() -> anyhow::Result<()> {
-        let autd = Controller::open_with_option(
+        let autd = Controller::<_, Latest>::open_with_option(
             [AUTD3::default()],
-            Audit::new(AuditOption::default()),
+            Audit::latest(AuditOption::default()),
             SenderOption::default(),
             FixedSchedule::default(),
         )?;
@@ -569,7 +695,7 @@ pub(crate) mod tests {
             },
         ))?;
 
-        let autd = unsafe { Controller::<Audit>::from_boxed_link(autd) };
+        let autd = unsafe { Controller::<Audit<version::Latest>, _>::from_boxed_link(autd) };
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
@@ -577,7 +703,7 @@ pub(crate) mod tests {
                     freq: 150. * Hz,
                     option: Default::default(),
                 }
-                .calc()?,
+                .calc(&Latest.firmware_limits())?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {
@@ -614,6 +740,57 @@ pub(crate) mod tests {
         let autd = autd.into_boxed_link();
 
         autd.close()?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn make_boxed() -> anyhow::Result<()> {
+        use crate::gain::Null;
+
+        {
+            let mut autd = Controller::<_, firmware::v12::V12>::open_with(
+                [AUTD3::default()],
+                Audit::<version::V12>::new(AuditOption::default()),
+            )?;
+
+            autd.send(autd.make_boxed(Null))?;
+
+            autd.close()?;
+        }
+
+        {
+            let mut autd = Controller::<_, firmware::v11::V11>::open_with(
+                [AUTD3::default()],
+                Audit::<version::V11>::new(AuditOption::default()),
+            )?;
+
+            autd.send(autd.make_boxed(Null))?;
+
+            autd.close()?;
+        }
+
+        {
+            let mut autd = Controller::<_, firmware::v10::V10>::open_with(
+                [AUTD3::default()],
+                Audit::<version::V10>::new(AuditOption::default()),
+            )?;
+
+            autd.send(autd.make_boxed(Null))?;
+
+            autd.close()?;
+        }
+
+        {
+            let mut autd = Controller::<_, firmware::auto::Auto>::open_with(
+                [AUTD3::default()],
+                Audit::<version::Latest>::new(AuditOption::default()),
+            )?;
+
+            autd.send(autd.make_boxed(Null))?;
+
+            autd.close()?;
+        }
 
         Ok(())
     }

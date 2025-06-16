@@ -1,8 +1,8 @@
-use autd3_core::link::MsgId;
-use autd3_driver::{
-    datagram::PulseWidthEncoder,
-    firmware::{cpu::TxMessage, fpga::PulseWidth},
+use autd3_core::{
+    datagram::PulseWidth,
+    link::{MsgId, TxMessage},
 };
+use autd3_driver::datagram::PulseWidthEncoder;
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;

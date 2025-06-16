@@ -1,10 +1,17 @@
-use autd3_core::link::MsgId;
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter},
+    link::{MsgId, TxMessage},
+};
 use autd3_driver::{
     datagram::*,
     error::AUTDDriverError,
     firmware::{
-        cpu::TxMessage,
-        operation::{FirmwareVersionType, OperationGenerator, OperationHandler},
+        driver::Driver,
+        latest::{
+            Latest,
+            cpu::check_firmware_err,
+            operation::{OperationGenerator, OperationHandler},
+        },
         version::FirmwareVersion,
     },
 };
@@ -71,7 +78,11 @@ fn invalid_info_type() -> anyhow::Result<()> {
 
     let d = FirmwareVersionType::CPUMajor;
     let operations = d
-        .operation_generator(&geometry, &DeviceFilter::all_enabled())?
+        .operation_generator(
+            &geometry,
+            &DeviceFilter::all_enabled(),
+            &Latest.firmware_limits(),
+        )?
         .generate(&geometry[0]);
 
     OperationHandler::pack(msg_id, &mut [operations], &geometry, &mut tx, false)?;
@@ -80,7 +91,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
     cpu.send(&tx);
     assert_eq!(
         Err(AUTDDriverError::InvalidInfoType),
-        AUTDDriverError::check_firmware_err(cpu.rx().ack())
+        check_firmware_err(cpu.rx().ack())
     );
 
     Ok(())

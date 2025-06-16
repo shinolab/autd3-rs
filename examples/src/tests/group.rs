@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use autd3::{core::link::Link, prelude::*};
 
-pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub fn group_by_device(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<bool> {
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
     autd.send(Group {
@@ -12,10 +12,10 @@ pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
             _ => None,
         },
         datagram_map: HashMap::from([
-            ("null", BoxedDatagram::new(Null {})),
+            ("null", autd.make_boxed(Null {})),
             (
                 "focus",
-                BoxedDatagram::new(Focus {
+                autd.make_boxed(Focus {
                     pos: center,
                     option: Default::default(),
                 }),
@@ -26,7 +26,9 @@ pub fn group_by_device(autd: &mut Controller<impl Link>) -> anyhow::Result<bool>
     Ok(true)
 }
 
-pub fn group_by_transducer(autd: &mut Controller<impl Link>) -> anyhow::Result<bool> {
+pub fn group_by_transducer(
+    autd: &mut Controller<impl Link, firmware::Auto>,
+) -> anyhow::Result<bool> {
     let pos = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
     let g = GainGroup {

@@ -1,5 +1,8 @@
-use autd3_core::link::MsgId;
-use autd3_driver::{datagram::*, firmware::cpu::TxMessage};
+use autd3_core::{
+    datagram::CpuGPIOPort,
+    link::{MsgId, TxMessage},
+};
+use autd3_driver::datagram::*;
 use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, send};

@@ -96,7 +96,7 @@ impl Device {
 
     /// Gets the number of transducers of the device.
     #[must_use]
-    pub fn num_transducers(&self) -> usize {
+    pub const fn num_transducers(&self) -> usize {
         self.transducers.len()
     }
 

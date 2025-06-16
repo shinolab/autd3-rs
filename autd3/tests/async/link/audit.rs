@@ -2,17 +2,18 @@ use std::time::Duration;
 
 use autd3::{
     r#async::{AsyncSleeper, Controller},
+    controller::{FixedSchedule, SenderOption},
     link::{Audit, AuditOption},
     prelude::*,
 };
-use autd3_core::link::{Ack, LinkError};
-use autd3_driver::firmware::{cpu::RxMessage, fpga::FPGAState};
+use autd3_core::link::{Ack, LinkError, RxMessage};
+use autd3_driver::firmware::latest::fpga::FPGAState;
 
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {
-    let mut autd = Controller::open_with_option(
+    let mut autd = Controller::<_, firmware::Latest>::open_with_option(
         [AUTD3::default()],
-        Audit::new(AuditOption::default()),
+        Audit::latest(AuditOption::default()),
         SenderOption {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()

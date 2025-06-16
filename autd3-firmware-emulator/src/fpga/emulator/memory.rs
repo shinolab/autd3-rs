@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::FPGAEmulator;
 
-use autd3_driver::firmware::fpga::Segment;
+use autd3_core::datagram::Segment;
 use getset::{Getters, MutGetters};
 
 use super::super::params::*;

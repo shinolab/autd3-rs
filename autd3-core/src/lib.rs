@@ -125,7 +125,7 @@ pub use async_trait::async_trait;
 /// }
 ///
 /// impl Modulation for Burst {
-///     fn calc(self) -> Result<Vec<u8>, ModulationError>  {
+///     fn calc(self, _limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError>  {
 ///         Ok((0..4000)
 ///             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
 ///             .collect())
@@ -146,8 +146,8 @@ pub mod derive {
     mod common {
         pub use crate::{
             datagram::{
-                DatagramOption, DeviceFilter, Inspectable, InspectionResult, Segment,
-                TransitionMode,
+                DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
+                Segment, TransitionMode,
             },
             geometry::Geometry,
         };

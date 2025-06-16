@@ -1,14 +1,10 @@
 use std::{convert::Infallible, num::NonZeroU16};
 
-use crate::{
-    datagram::*,
-    firmware::{
-        fpga::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-        operation::{
-            NullOp, OperationGenerator, SilencerFixedCompletionStepsOp, SilencerFixedUpdateRateOp,
-        },
-    },
-    geometry::{Device, Geometry},
+use autd3_core::{
+    common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, ULTRASOUND_PERIOD},
+    datagram::{Datagram, DeviceFilter},
+    derive::FirmwareLimits,
+    geometry::Geometry,
 };
 
 pub trait SilencerConfig: std::fmt::Debug + Clone + Copy {}
@@ -39,9 +35,8 @@ impl SilencerConfig for FixedCompletionTime {}
 impl Default for FixedCompletionTime {
     fn default() -> Self {
         FixedCompletionTime {
-            intensity: SILENCER_STEPS_INTENSITY_DEFAULT as u32
-                * autd3_core::common::ULTRASOUND_PERIOD,
-            phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * autd3_core::common::ULTRASOUND_PERIOD,
+            intensity: SILENCER_STEPS_INTENSITY_DEFAULT as u32 * ULTRASOUND_PERIOD,
+            phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * ULTRASOUND_PERIOD,
             strict_mode: true,
         }
     }
@@ -132,65 +127,17 @@ impl Default for Silencer<FixedCompletionSteps> {
     }
 }
 
-pub struct SilencerOpGenerator<T: SilencerConfig> {
-    config: T,
-}
-
-impl OperationGenerator for SilencerOpGenerator<FixedUpdateRate> {
-    type O1 = SilencerFixedUpdateRateOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((
-            Self::O1::new(self.config.intensity, self.config.phase),
-            Self::O2 {},
-        ))
-    }
-}
-
-impl OperationGenerator for SilencerOpGenerator<FixedCompletionTime> {
-    type O1 = crate::firmware::operation::SilencerFixedCompletionTimeOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((
-            Self::O1::new(
-                self.config.intensity,
-                self.config.phase,
-                self.config.strict_mode,
-            ),
-            Self::O2 {},
-        ))
-    }
-}
-
-impl OperationGenerator for SilencerOpGenerator<FixedCompletionSteps> {
-    type O1 = SilencerFixedCompletionStepsOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((
-            Self::O1::new(
-                self.config.intensity,
-                self.config.phase,
-                self.config.strict_mode,
-            ),
-            Self::O2 {},
-        ))
-    }
-}
-
-impl<T: SilencerConfig> Datagram for Silencer<T>
-where
-    SilencerOpGenerator<T>: OperationGenerator,
-{
-    type G = SilencerOpGenerator<T>;
+impl<T: SilencerConfig> Datagram for Silencer<T> {
+    type G = T;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
-        Ok(Self::G {
-            config: self.config,
-        })
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
+        Ok(self.config)
     }
 }
 

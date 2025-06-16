@@ -1,15 +1,10 @@
 use std::collections::HashMap;
 
-use autd3_core::{derive::*, link::MsgId};
-use autd3_driver::{
-    datagram::*,
-    error::AUTDDriverError,
-    firmware::{
-        cpu::TxMessage,
-        fpga::{Drive, EmitIntensity, Phase},
-    },
-    geometry::Point3,
+use autd3_core::{
+    derive::*,
+    link::{MsgId, TxMessage},
 };
+use autd3_driver::{datagram::*, error::AUTDDriverError, geometry::Point3};
 use autd3_firmware_emulator::CPUEmulator;
 
 use rand::*;

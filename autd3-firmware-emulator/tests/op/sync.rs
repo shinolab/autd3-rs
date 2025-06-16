@@ -1,10 +1,9 @@
-use autd3_core::link::MsgId;
-use autd3_driver::{datagram::*, firmware::cpu::TxMessage};
+use autd3_core::link::{MsgId, TxMessage};
+use autd3_driver::datagram::Synchronize;
 use autd3_firmware_emulator::CPUEmulator;
+use zerocopy::FromZeros;
 
 use crate::{create_geometry, send};
-
-use zerocopy::FromZeros;
 
 #[test]
 fn send_sync() -> anyhow::Result<()> {

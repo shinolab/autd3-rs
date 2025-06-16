@@ -1,9 +1,8 @@
 use autd3_core::{
     derive::*,
-    link::{Link, LinkError, TxBufferPoolSync},
+    link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
 };
 
-use autd3_driver::firmware::cpu::{RxMessage, TxMessage};
 use autd3_firmware_emulator::CPUEmulator;
 
 /// A [`Link`] that does nothing.

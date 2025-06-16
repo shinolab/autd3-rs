@@ -1,0 +1,85 @@
+use super::{super::Version, Operation, OperationGenerator};
+use crate::{datagram::SwapSegment, error::AUTDDriverError, geometry::Device};
+
+enum Inner {
+    V10(crate::firmware::v10::operation::SwapSegmentOp),
+    V11(crate::firmware::v11::operation::SwapSegmentOp),
+    V12(crate::firmware::v12::operation::SwapSegmentOp),
+}
+
+pub struct SwapSegmentOp {
+    inner: Inner,
+}
+
+impl Operation for SwapSegmentOp {
+    type Error = AUTDDriverError;
+
+    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+        Ok(match &mut self.inner {
+            Inner::V10(inner) => {
+                crate::firmware::v10::operation::Operation::pack(inner, device, tx)?
+            }
+            Inner::V11(inner) => {
+                crate::firmware::v11::operation::Operation::pack(inner, device, tx)?
+            }
+            Inner::V12(inner) => {
+                crate::firmware::v12::operation::Operation::pack(inner, device, tx)?
+            }
+        })
+    }
+
+    fn required_size(&self, device: &Device) -> usize {
+        match &self.inner {
+            Inner::V10(inner) => {
+                crate::firmware::v10::operation::Operation::required_size(inner, device)
+            }
+            Inner::V11(inner) => {
+                crate::firmware::v11::operation::Operation::required_size(inner, device)
+            }
+            Inner::V12(inner) => {
+                crate::firmware::v12::operation::Operation::required_size(inner, device)
+            }
+        }
+    }
+
+    fn is_done(&self) -> bool {
+        match &self.inner {
+            Inner::V10(inner) => crate::firmware::v10::operation::Operation::is_done(inner),
+            Inner::V11(inner) => crate::firmware::v11::operation::Operation::is_done(inner),
+            Inner::V12(inner) => crate::firmware::v12::operation::Operation::is_done(inner),
+        }
+    }
+}
+
+impl OperationGenerator for SwapSegment {
+    type O1 = SwapSegmentOp;
+    type O2 = super::NullOp;
+
+    fn generate(&mut self, device: &Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+        Some((
+            SwapSegmentOp {
+                inner: match version {
+                    Version::V10 => Inner::V10(
+                        crate::firmware::v10::operation::OperationGenerator::generate(
+                            self, device,
+                        )?
+                        .0,
+                    ),
+                    Version::V11 => Inner::V11(
+                        crate::firmware::v11::operation::OperationGenerator::generate(
+                            self, device,
+                        )?
+                        .0,
+                    ),
+                    Version::V12 => Inner::V12(
+                        crate::firmware::v12::operation::OperationGenerator::generate(
+                            self, device,
+                        )?
+                        .0,
+                    ),
+                },
+            },
+            super::NullOp,
+        ))
+    }
+}

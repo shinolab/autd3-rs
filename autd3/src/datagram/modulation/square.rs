@@ -67,13 +67,13 @@ impl Square<Freq<f32>> {
 }
 
 impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Modulation for Square<S> {
-    fn calc(self) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
         if !(0.0..=1.0).contains(&self.option.duty) {
             return Err(ModulationError::new("duty must be in range from 0 to 1"));
         }
 
         let sampling_mode: SamplingMode = self.freq.into();
-        let (n, rep) = sampling_mode.validate(self.option.sampling_config)?;
+        let (n, rep) = sampling_mode.validate(self.option.sampling_config, limits)?;
         let high = self.option.high;
         let low = self.option.low;
         let duty = self.option.duty;
@@ -95,7 +95,10 @@ impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Modulation for Squa
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::common::Hz;
+    use autd3_driver::{
+        common::Hz,
+        firmware::{driver::Driver, latest::Latest},
+    };
 
     use super::*;
 
@@ -175,7 +178,7 @@ mod tests {
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
         assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
-        assert_eq!(expect, m.calc());
+        assert_eq!(expect, m.calc(&Latest.firmware_limits()));
     }
 
     #[rstest::rstest]
@@ -201,7 +204,7 @@ mod tests {
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
         assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
-        assert_eq!(expect, m.calc());
+        assert_eq!(expect, m.calc(&Latest.firmware_limits()));
     }
 
     #[test]
@@ -213,7 +216,11 @@ mod tests {
                 ..Default::default()
             },
         };
-        assert!(m.calc()?.iter().all(|&x| x == u8::MAX));
+        assert!(
+            m.calc(&Latest.firmware_limits())?
+                .iter()
+                .all(|&x| x == u8::MAX)
+        );
 
         Ok(())
     }
@@ -227,7 +234,11 @@ mod tests {
                 ..Default::default()
             },
         };
-        assert!(m.calc()?.iter().all(|&x| x == u8::MIN));
+        assert!(
+            m.calc(&Latest.firmware_limits())?
+                .iter()
+                .all(|&x| x == u8::MIN)
+        );
 
         Ok(())
     }
@@ -244,7 +255,11 @@ mod tests {
                 ..Default::default()
             },
         };
-        assert!(m.calc()?.iter().all(|&x| x == expect));
+        assert!(
+            m.calc(&Latest.firmware_limits())?
+                .iter()
+                .all(|&x| x == expect)
+        );
 
         Ok(())
     }
@@ -263,7 +278,7 @@ mod tests {
                     ..Default::default()
                 },
             }
-            .calc()
+            .calc(&Latest.firmware_limits())
             .err()
         );
     }

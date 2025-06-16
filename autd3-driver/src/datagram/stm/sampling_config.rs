@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use crate::{common::Freq, error::AUTDDriverError, firmware::fpga::SamplingConfig};
+use crate::{common::Freq, error::AUTDDriverError};
+
+use autd3_core::sampling_config::SamplingConfig;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]
@@ -83,7 +85,7 @@ impl From<PeriodNearest> for STMConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{common::Hz, firmware::fpga::SamplingConfig};
+    use crate::common::Hz;
 
     #[rstest::rstest]
     #[test]

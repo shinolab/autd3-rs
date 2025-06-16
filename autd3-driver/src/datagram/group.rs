@@ -1,10 +1,12 @@
 use std::{collections::HashMap, fmt::Debug, hash::Hash, time::Duration};
 
-use crate::datagram::*;
+use crate::error::AUTDDriverError;
 
 use autd3_core::{
-    datagram::DatagramOption,
-    derive::{Inspectable, InspectionResult},
+    datagram::{
+        Datagram, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
+    },
+    geometry::{Device, Geometry},
 };
 use derive_more::Debug as DeriveDebug;
 use itertools::Itertools;
@@ -21,13 +23,13 @@ use itertools::Itertools;
 ///
 /// Group {
 ///     key_map: |dev| match dev.idx() {
-///         0 => Some("clear"),
-///         2 => Some("force-fan"),
+///         0 => Some("silencer"),
+///         1 => Some("disable"),
 ///         _ => None,
 ///     },
 ///     datagram_map: HashMap::from([
-///         ("clear", BoxedDatagram::new(Clear::default())),
-///         ("force-fan", BoxedDatagram::new(ForceFan { f: |_| false })),
+///         ("silencer", Silencer::default()),
+///         ("disable", Silencer::disable()),
 ///     ]),
 /// };
 /// ```
@@ -37,7 +39,6 @@ where
     K: Hash + Eq + Debug,
     D: Datagram,
     F: Fn(&Device) -> Option<K>,
-    D::G: OperationGenerator,
     AUTDDriverError: From<<D as Datagram>::Error>,
 {
     /// Mapping function from device to group key.
@@ -53,7 +54,6 @@ where
     K: Hash + Eq + Debug,
     D: Datagram,
     F: Fn(&Device) -> Option<K>,
-    D::G: OperationGenerator,
     AUTDDriverError: From<<D as Datagram>::Error>,
 {
     /// Creates a new [`Group`].
@@ -65,7 +65,7 @@ where
         }
     }
 
-    fn generate_filter(key_map: F, geometry: &Geometry) -> HashMap<K, DeviceFilter> {
+    fn generate_filter(key_map: &F, geometry: &Geometry) -> HashMap<K, DeviceFilter> {
         let mut filters: HashMap<K, DeviceFilter> = HashMap::new();
         geometry.iter().for_each(|dev| {
             if let Some(key) = key_map(dev) {
@@ -83,31 +83,14 @@ where
     }
 }
 
-pub struct GroupOpGenerator<D>
+pub struct GroupOpGenerator<K, F, D>
 where
+    K: Hash + Eq + Debug,
+    F: Fn(&Device) -> Option<K>,
     D: Datagram,
-    D::G: OperationGenerator,
 {
-    #[allow(clippy::type_complexity)]
-    operations: Vec<
-        Option<(
-            <D::G as OperationGenerator>::O1,
-            <D::G as OperationGenerator>::O2,
-        )>,
-    >,
-}
-
-impl<D> OperationGenerator for GroupOpGenerator<D>
-where
-    D: Datagram,
-    D::G: OperationGenerator,
-{
-    type O1 = <D::G as OperationGenerator>::O1;
-    type O2 = <D::G as OperationGenerator>::O2;
-
-    fn generate(&mut self, dev: &Device) -> Option<(Self::O1, Self::O2)> {
-        self.operations[dev.idx()].take()
-    }
+    pub(crate) key_map: F,
+    pub(crate) generators: HashMap<K, D::G>,
 }
 
 impl<K, D, F> Datagram for Group<K, D, F>
@@ -115,48 +98,38 @@ where
     K: Hash + Eq + Debug,
     D: Datagram,
     F: Fn(&Device) -> Option<K>,
-    D::G: OperationGenerator,
     AUTDDriverError: From<<D as Datagram>::Error>,
 {
-    type G = GroupOpGenerator<D>;
+    type G = GroupOpGenerator<K, F, D>;
     type Error = AUTDDriverError;
 
     fn operation_generator(
         self,
         geometry: &Geometry,
         _: &DeviceFilter,
+        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         let Self {
             key_map,
             mut datagram_map,
         } = self;
 
-        let filters = Self::generate_filter(key_map, geometry);
+        let filters = Self::generate_filter(&key_map, geometry);
 
-        let mut operations: Vec<_> = geometry.iter().map(|_| None).collect();
-        filters
+        let generators = filters
             .into_iter()
-            .try_for_each(|(k, filter)| -> Result<(), AUTDDriverError> {
-                {
-                    let datagram = datagram_map
-                        .remove(&k)
-                        .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
-
-                    let mut generator = datagram
-                        .operation_generator(geometry, &filter)
-                        .map_err(AUTDDriverError::from)?;
-
-                    operations
-                        .iter_mut()
-                        .zip(geometry.iter())
-                        .filter(|(_, dev)| filter.is_enabled(dev))
-                        .for_each(|(op, dev)| {
-                            *op = generator.generate(dev);
-                        });
-
-                    Ok(())
-                }
-            })?;
+            .map(|(k, filter)| {
+                let datagram = datagram_map
+                    .remove(&k)
+                    .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
+                Ok((
+                    k,
+                    datagram
+                        .operation_generator(geometry, &filter, limits)
+                        .map_err(AUTDDriverError::from)?,
+                ))
+            })
+            .collect::<Result<_, AUTDDriverError>>()?;
 
         if !datagram_map.is_empty() {
             return Err(AUTDDriverError::UnusedKey(
@@ -164,7 +137,10 @@ where
             ));
         }
 
-        Ok(GroupOpGenerator { operations })
+        Ok(GroupOpGenerator {
+            key_map,
+            generators,
+        })
     }
 
     fn option(&self) -> DatagramOption {
@@ -183,7 +159,6 @@ where
     K: Hash + Eq + Debug,
     D: Datagram + Inspectable,
     F: Fn(&Device) -> Option<K>,
-    D::G: OperationGenerator,
     AUTDDriverError: From<<D as Datagram>::Error>,
 {
     type Result = D::Result;
@@ -192,13 +167,14 @@ where
         self,
         geometry: &Geometry,
         _: &DeviceFilter,
+        limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, AUTDDriverError> {
         let Self {
             key_map,
             mut datagram_map,
         } = self;
 
-        let filters = Self::generate_filter(key_map, geometry);
+        let filters = Self::generate_filter(&key_map, geometry);
 
         let results = filters
             .into_iter()
@@ -210,7 +186,7 @@ where
                             .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
 
                         let r = datagram
-                            .inspect(geometry, &filter)
+                            .inspect(geometry, &filter, limits)
                             .map_err(AUTDDriverError::from)?;
 
                         Ok(r.result)
@@ -230,126 +206,22 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::datagram::tests::create_geometry;
-
     use super::*;
 
-    use std::{
-        convert::Infallible,
-        sync::{Arc, Mutex},
-    };
-
-    pub struct NullOperationGenerator;
-
-    impl OperationGenerator for NullOperationGenerator {
-        type O1 = NullOp;
-        type O2 = NullOp;
-
-        fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-            Some((NullOp, NullOp))
-        }
-    }
-
-    #[test]
-    fn test_group_option() -> anyhow::Result<()> {
-        #[derive(Debug)]
-        pub struct TestDatagram {
-            pub option: DatagramOption,
-        }
-
-        impl Datagram for TestDatagram {
-            type G = NullOperationGenerator;
-            type Error = Infallible;
-
-            // GRCOV_EXCL_START
-            fn operation_generator(
-                self,
-                _: &Geometry,
-                _: &DeviceFilter,
-            ) -> Result<Self::G, Self::Error> {
-                Ok(NullOperationGenerator)
-            }
-            // GRCOV_EXCL_STOP
-
-            fn option(&self) -> DatagramOption {
-                self.option
-            }
-        }
-
-        let option1 = DatagramOption {
-            timeout: Duration::from_secs(1),
-            parallel_threshold: 10,
-        };
-        let option2 = DatagramOption {
-            timeout: Duration::from_secs(2),
-            parallel_threshold: 5,
-        };
-
-        assert_eq!(
-            option1.merge(option2),
-            Group::new(
-                |dev| Some(dev.idx()),
-                HashMap::from([
-                    (0, TestDatagram { option: option1 }),
-                    (1, TestDatagram { option: option2 }),
-                ]),
-            )
-            .option()
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_group() -> anyhow::Result<()> {
-        #[derive(Debug)]
-        pub struct TestDatagram {
-            pub test: Arc<Mutex<Vec<bool>>>,
-        }
-
-        impl Datagram for TestDatagram {
-            type G = NullOperationGenerator;
-            type Error = Infallible;
-
-            fn operation_generator(
-                self,
-                geometry: &Geometry,
-                filter: &DeviceFilter,
-            ) -> Result<Self::G, Self::Error> {
-                geometry.iter().for_each(|dev| {
-                    self.test.lock().unwrap()[dev.idx()] = filter.is_enabled(dev);
-                });
-                Ok(NullOperationGenerator)
-            }
-        }
-
-        let geometry = create_geometry(3, 1);
-
-        let test = Arc::new(Mutex::new(vec![false; 3]));
-        Group::new(
-            |dev| match dev.idx() {
-                0 | 2 => Some(()),
-                _ => None,
-            },
-            HashMap::from([((), TestDatagram { test: test.clone() })]),
-        )
-        .operation_generator(&geometry, &DeviceFilter::all_enabled())?;
-
-        assert!(test.lock().unwrap()[0]);
-        assert!(!test.lock().unwrap()[1]);
-        assert!(test.lock().unwrap()[2]);
-
-        Ok(())
-    }
+    use crate::datagram::Clear;
 
     #[test]
     fn unknown_key() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::autd3_device::tests::create_geometry(2);
 
         assert_eq!(
             Some(AUTDDriverError::UnknownKey("1".to_owned())),
             Group::new(|dev| Some(dev.idx()), HashMap::from([(0, Clear {})]))
-                .operation_generator(&geometry, &DeviceFilter::all_enabled())
+                .operation_generator(
+                    &geometry,
+                    &DeviceFilter::all_enabled(),
+                    &FirmwareLimits::unused()
+                )
                 .err()
         );
 
@@ -358,66 +230,21 @@ mod tests {
 
     #[test]
     fn unused_key() -> anyhow::Result<()> {
-        let geometry = create_geometry(2, 1);
+        let geometry = crate::autd3_device::tests::create_geometry(2);
+
         assert_eq!(
             Some(AUTDDriverError::UnusedKey("2".to_owned())),
             Group::new(
                 |dev| Some(dev.idx()),
                 HashMap::from([(0, Clear {}), (1, Clear {}), (2, Clear {})])
             )
-            .operation_generator(&geometry, &DeviceFilter::all_enabled())
+            .operation_generator(
+                &geometry,
+                &DeviceFilter::all_enabled(),
+                &FirmwareLimits::unused()
+            )
             .err()
         );
-
-        Ok(())
-    }
-
-    #[test]
-    fn inspect() -> anyhow::Result<()> {
-        #[derive(Debug)]
-        pub struct TestDatagram {}
-
-        impl Datagram for TestDatagram {
-            type G = NullOperationGenerator;
-            type Error = Infallible;
-
-            // GRCOV_EXCL_START
-            fn operation_generator(
-                self,
-                _: &Geometry,
-                _: &DeviceFilter,
-            ) -> Result<Self::G, Self::Error> {
-                Ok(NullOperationGenerator)
-            }
-            // GRCOV_EXCL_STOP
-        }
-
-        impl Inspectable for TestDatagram {
-            type Result = ();
-
-            fn inspect(
-                self,
-                geometry: &Geometry,
-                filter: &DeviceFilter,
-            ) -> Result<InspectionResult<Self::Result>, Self::Error> {
-                Ok(InspectionResult::new(geometry, filter, |_| ()))
-            }
-        }
-
-        let geometry = create_geometry(4, 1);
-        let r = Group::new(
-            |dev| match dev.idx() {
-                1 => None,
-                _ => Some(()),
-            },
-            HashMap::from([((), TestDatagram {})]),
-        )
-        .inspect(&geometry, &DeviceFilter::all_enabled())?;
-
-        assert!(r[0].is_some());
-        assert!(r[1].is_none());
-        assert!(r[2].is_some());
-        assert!(r[3].is_some());
 
         Ok(())
     }

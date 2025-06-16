@@ -7,9 +7,9 @@ use autd3::{
 
 #[test]
 fn only_for_enabled() -> anyhow::Result<()> {
-    let mut autd = Controller::open(
+    let mut autd = Controller::<_, firmware::Latest>::open_with(
         [AUTD3::default(), AUTD3::default()],
-        Audit::new(AuditOption::default()),
+        Audit::latest(AuditOption::default()),
     )?;
 
     let check = std::sync::Arc::new(std::sync::Mutex::new(vec![false; autd.num_devices()]));

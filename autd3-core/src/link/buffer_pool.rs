@@ -21,7 +21,7 @@ impl TxBufferPoolSync {
 
     /// Sets the number of devices.
     pub fn init(&mut self, geometry: &Geometry) {
-        self.num_devices = geometry.len(); // Do not use `num_devices` here because the devices may be disabled.
+        self.num_devices = geometry.len();
     }
 
     /// Borrows a buffer from the pool.

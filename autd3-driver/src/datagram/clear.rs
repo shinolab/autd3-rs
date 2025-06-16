@@ -1,8 +1,10 @@
 use std::convert::Infallible;
 
-use crate::firmware::operation::ClearOp;
-
-use crate::datagram::*;
+use autd3_core::{
+    datagram::{Datagram, DeviceFilter},
+    derive::FirmwareLimits,
+    geometry::Geometry,
+};
 
 /// [`Datagram`] to clear all data in the devices.
 #[derive(Default, Debug)]
@@ -16,22 +18,16 @@ impl Clear {
     }
 }
 
-pub struct ClearOpGenerator {}
-
-impl OperationGenerator for ClearOpGenerator {
-    type O1 = ClearOp;
-    type O2 = NullOp;
-
-    fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((Self::O1::new(), Self::O2 {}))
-    }
-}
-
 impl Datagram for Clear {
-    type G = ClearOpGenerator;
+    type G = Self;
     type Error = Infallible;
 
-    fn operation_generator(self, _: &Geometry, _: &DeviceFilter) -> Result<Self::G, Self::Error> {
-        Ok(ClearOpGenerator {})
+    fn operation_generator(
+        self,
+        _: &Geometry,
+        _: &DeviceFilter,
+        _: &FirmwareLimits,
+    ) -> Result<Self::G, Self::Error> {
+        Ok(self)
     }
 }
