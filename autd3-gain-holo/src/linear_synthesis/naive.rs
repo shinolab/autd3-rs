@@ -23,7 +23,7 @@ pub struct NaiveOption<D: Directivity> {
 impl<D: Directivity> Default for NaiveOption<D> {
     fn default() -> Self {
         Self {
-            constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
+            constraint: EmissionConstraint::Clamp(Intensity::MIN, Intensity::MAX),
             __phantom: std::marker::PhantomData,
         }
     }
@@ -109,7 +109,7 @@ mod tests {
         let g = Naive::new(
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             NaiveOption {
-                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                constraint: EmissionConstraint::Uniform(Intensity::MAX),
                 ..Default::default()
             },
             backend,
@@ -137,7 +137,7 @@ mod tests {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             backend,
             option: NaiveOption {
-                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                constraint: EmissionConstraint::Uniform(Intensity::MAX),
                 ..Default::default()
             },
         };
@@ -167,7 +167,7 @@ mod tests {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             backend,
             option: NaiveOption {
-                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                constraint: EmissionConstraint::Uniform(Intensity::MAX),
                 ..Default::default()
             },
         };
@@ -211,7 +211,7 @@ mod tests {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             backend,
             option: NaiveOption {
-                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                constraint: EmissionConstraint::Uniform(Intensity::MAX),
                 ..Default::default()
             },
         };

@@ -9,7 +9,7 @@ use autd3_driver::{
 #[repr(C)]
 pub struct BesselOption {
     /// The intensity of the beam.
-    pub intensity: EmitIntensity,
+    pub intensity: Intensity,
     /// The phase offset of the beam.
     pub phase_offset: Phase,
 }
@@ -17,7 +17,7 @@ pub struct BesselOption {
 impl Default for BesselOption {
     fn default() -> Self {
         Self {
-            intensity: EmitIntensity::MAX,
+            intensity: Intensity::MAX,
             phase_offset: Phase::ZERO,
         }
     }
@@ -53,7 +53,7 @@ impl Bessel {
 
 pub struct Impl {
     pos: Point3,
-    intensity: EmitIntensity,
+    intensity: Intensity,
     phase_offset: Phase,
     wavenumber: f32,
     rot: UnitQuaternion,
@@ -117,7 +117,7 @@ mod tests {
         pos: Point3,
         dir: UnitVector3,
         theta: Angle,
-        intensity: EmitIntensity,
+        intensity: Intensity,
         phase_offset: Phase,
         geometry: &Geometry,
     ) {
@@ -158,13 +158,13 @@ mod tests {
             0. * rad,
             BesselOption::default(),
         );
-        assert_eq!(EmitIntensity::MAX, g.option.intensity);
+        assert_eq!(Intensity::MAX, g.option.intensity);
         assert_eq!(Phase::ZERO, g.option.phase_offset);
 
         let pos = random_point3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let theta = rng.random_range(-PI..PI) * rad;
-        let intensity = EmitIntensity(rng.random());
+        let intensity = Intensity(rng.random());
         let phase_offset = Phase(rng.random());
         let g = Bessel {
             pos,

@@ -6,7 +6,7 @@ mod phase;
 use std::collections::HashMap;
 
 pub use drive::Drive;
-pub use emit_intensity::EmitIntensity;
+pub use emit_intensity::Intensity;
 pub use error::GainError;
 pub use phase::Phase;
 

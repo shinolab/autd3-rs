@@ -1,6 +1,6 @@
 use std::num::NonZeroU16;
 
-use autd3_core::gain::{EmitIntensity, Phase};
+use autd3_core::gain::{Intensity, Phase};
 use autd3_driver::datagram::{FixedCompletionSteps, FixedUpdateRate};
 
 use super::{super::params::*, FPGAEmulator};
@@ -83,7 +83,7 @@ impl SilencerEmulator<Phase> {
     }
 }
 
-impl SilencerEmulator<EmitIntensity> {
+impl SilencerEmulator<Intensity> {
     #[allow(clippy::collapsible_else_if)]
     #[must_use]
     fn update_rate(&mut self, input: u8) -> u16 {
@@ -237,7 +237,7 @@ impl FPGAEmulator {
     }
 
     #[must_use]
-    pub fn silencer_emulator_intensity(&self, initial: u8) -> SilencerEmulator<EmitIntensity> {
+    pub fn silencer_emulator_intensity(&self, initial: u8) -> SilencerEmulator<Intensity> {
         SilencerEmulator {
             current: (initial as i32) << 8,
             fixed_update_rate_mode: self.silencer_fixed_update_rate_mode(),
@@ -256,8 +256,8 @@ impl FPGAEmulator {
     #[must_use]
     pub fn silencer_emulator_intensity_continue_with(
         &self,
-        prev: SilencerEmulator<EmitIntensity>,
-    ) -> SilencerEmulator<EmitIntensity> {
+        prev: SilencerEmulator<Intensity>,
+    ) -> SilencerEmulator<Intensity> {
         let SilencerEmulator {
             current,
             fixed_update_rate_mode: _fixed_update_rate_mode,

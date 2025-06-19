@@ -7,7 +7,7 @@ use autd3_driver::{common::rad, geometry::Point3};
 #[repr(C)]
 pub struct FocusOption {
     /// The intensity of the beam.
-    pub intensity: EmitIntensity,
+    pub intensity: Intensity,
     /// The phase offset of the beam.
     pub phase_offset: Phase,
 }
@@ -15,7 +15,7 @@ pub struct FocusOption {
 impl Default for FocusOption {
     fn default() -> Self {
         Self {
-            intensity: EmitIntensity::MAX,
+            intensity: Intensity::MAX,
             phase_offset: Phase::ZERO,
         }
     }
@@ -40,7 +40,7 @@ impl Focus {
 
 pub struct Impl {
     pub(crate) pos: Point3,
-    pub(crate) intensity: EmitIntensity,
+    pub(crate) intensity: Intensity,
     pub(crate) phase_offset: Phase,
     pub(crate) wavenumber: f32,
 }
@@ -85,7 +85,7 @@ mod tests {
     fn focus_check(
         mut b: Focus,
         pos: Point3,
-        intensity: EmitIntensity,
+        intensity: Intensity,
         phase_offset: Phase,
         geometry: &Geometry,
     ) {
@@ -113,13 +113,13 @@ mod tests {
         focus_check(
             g.init(&geometry, &TransducerFilter::all_enabled()).unwrap(),
             pos,
-            EmitIntensity::MAX,
+            Intensity::MAX,
             Phase::ZERO,
             &geometry,
         );
 
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
-        let intensity = EmitIntensity(rng.random());
+        let intensity = Intensity(rng.random());
         let phase_offset = Phase(rng.random());
         let g = Focus {
             pos,

@@ -106,7 +106,7 @@ impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G
 #[cfg(test)]
 mod tests {
     use autd3_core::{
-        gain::{EmitIntensity, Phase},
+        gain::{Intensity, Phase},
         geometry::Transducer,
     };
 
@@ -135,7 +135,7 @@ mod tests {
         let data: Vec<_> = (0..device.num_transducers())
             .map(|_| Drive {
                 phase: Phase(rng.random_range(0x00..=0xFF)),
-                intensity: EmitIntensity(rng.random_range(0..=0xFF)),
+                intensity: Intensity(rng.random_range(0..=0xFF)),
             })
             .collect();
 

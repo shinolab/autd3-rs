@@ -27,7 +27,7 @@ fn only_for_enabled() -> anyhow::Result<()> {
                     0,
                     Uniform {
                         phase: Phase(0x90),
-                        intensity: EmitIntensity(0x80),
+                        intensity: Intensity(0x80),
                     },
                 )]),
             },
@@ -51,7 +51,7 @@ fn only_for_enabled() -> anyhow::Result<()> {
             .into_iter()
             .all(|d| Drive {
                 phase: Phase(0x90),
-                intensity: EmitIntensity(0x80)
+                intensity: Intensity(0x80)
             } == d)
     );
 

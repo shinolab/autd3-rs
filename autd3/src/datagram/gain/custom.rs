@@ -11,7 +11,7 @@ use derive_more::Debug;
 /// use autd3::prelude::*;
 /// use autd3::gain::Custom;
 ///
-/// Custom::new(|dev| |tr| Drive { phase: Phase::ZERO, intensity: EmitIntensity::MAX });
+/// Custom::new(|dev| |tr| Drive { phase: Phase::ZERO, intensity: Intensity::MAX });
 /// ```
 #[derive(Gain, Debug)]
 #[debug("Custom (Gain)")]
@@ -87,7 +87,7 @@ mod tests {
         let test_id = rng.random_range(0..geometry[0].num_transducers());
         let test_drive = Drive {
             phase: Phase(rng.random()),
-            intensity: EmitIntensity(rng.random()),
+            intensity: Intensity(rng.random()),
         };
         let transducer_test = Custom::new(move |dev| {
             let dev_idx = dev.idx();

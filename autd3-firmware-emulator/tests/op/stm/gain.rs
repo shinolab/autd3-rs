@@ -4,7 +4,7 @@ use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     datagram::{Datagram, GPIOIn, LoopBehavior, Segment, TransitionMode},
     derive::DeviceFilter,
-    gain::{Drive, EmitIntensity, Phase},
+    gain::{Drive, Intensity, Phase},
     link::{MsgId, TxMessage},
     sampling_config::SamplingConfig,
 };
@@ -44,7 +44,7 @@ fn gen_random_buf(n: usize, geometry: &Geometry) -> Vec<HashMap<usize, Vec<Drive
                         dev.iter()
                             .map(|_| Drive {
                                 phase: Phase(rng.random()),
-                                intensity: EmitIntensity(rng.random()),
+                                intensity: Intensity(rng.random()),
                             })
                             .collect(),
                     )
@@ -181,7 +181,7 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> anyhow::Result<()> {
             .iter()
             .enumerate()
             .for_each(|(i, drive)| {
-                assert_eq!(EmitIntensity::MAX, drive.intensity);
+                assert_eq!(Intensity::MAX, drive.intensity);
                 assert_eq!(bufs[gain_idx][&0][i].phase, drive.phase);
             });
         assert_eq!(segment, cpu.fpga().req_stm_segment());
@@ -254,7 +254,7 @@ fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> anyhow::Result<()> {
                 .iter()
                 .enumerate()
                 .for_each(|(i, &drive)| {
-                    assert_eq!(EmitIntensity::MAX, drive.intensity);
+                    assert_eq!(Intensity::MAX, drive.intensity);
                     assert_eq!(bufs[gain_idx][&0][i].phase.0 >> 4, drive.phase.0 >> 4);
                 });
             assert_eq!(segment, cpu.fpga().req_stm_segment());

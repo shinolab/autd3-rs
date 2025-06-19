@@ -274,7 +274,7 @@ mod tests {
     use super::*;
 
     use crate::datagram::{GainSTMOption, WithLoopBehavior, WithSegment, gain::tests::TestGain};
-    use autd3_core::gain::{Drive, EmitIntensity, Phase};
+    use autd3_core::gain::{Drive, Intensity, Phase};
 
     #[test]
     fn inspect() -> anyhow::Result<()> {
@@ -287,7 +287,7 @@ mod tests {
                     |_dev| {
                         |_| Drive {
                             phase: Phase(0xFF),
-                            intensity: EmitIntensity(0xFF),
+                            intensity: Intensity(0xFF),
                         }
                     },
                     &geometry,
@@ -311,7 +311,7 @@ mod tests {
                         vec![
                             Drive {
                                 phase: Phase(0xFF),
-                                intensity: EmitIntensity(0xFF),
+                                intensity: Intensity(0xFF),
                             };
                             1
                         ],
@@ -341,7 +341,7 @@ mod tests {
                         |_dev| {
                             |_| Drive {
                                 phase: Phase(0xFF),
-                                intensity: EmitIntensity(0xFF),
+                                intensity: Intensity(0xFF),
                             }
                         },
                         &geometry,
@@ -368,7 +368,7 @@ mod tests {
                         vec![
                             Drive {
                                 phase: Phase(0xFF),
-                                intensity: EmitIntensity(0xFF),
+                                intensity: Intensity(0xFF),
                             };
                             1
                         ],
@@ -398,7 +398,7 @@ mod tests {
                         |_dev| {
                             |_| Drive {
                                 phase: Phase(0xFF),
-                                intensity: EmitIntensity(0xFF),
+                                intensity: Intensity(0xFF),
                             }
                         },
                         &geometry,
@@ -426,7 +426,7 @@ mod tests {
                         vec![
                             Drive {
                                 phase: Phase(0xFF),
-                                intensity: EmitIntensity(0xFF),
+                                intensity: Intensity(0xFF),
                             };
                             1
                         ],

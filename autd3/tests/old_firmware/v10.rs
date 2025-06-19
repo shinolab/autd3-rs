@@ -22,11 +22,11 @@ fn firmware_v10_by_v10_driver() -> anyhow::Result<()> {
         GainSTM {
             gains: vec![
                 Uniform {
-                    intensity: EmitIntensity(0x80),
+                    intensity: Intensity(0x80),
                     phase: Phase::ZERO,
                 },
                 Uniform {
-                    intensity: EmitIntensity(0x81),
+                    intensity: Intensity(0x81),
                     phase: Phase::ZERO,
                 },
             ],
@@ -47,7 +47,7 @@ fn firmware_v10_by_v10_driver() -> anyhow::Result<()> {
                 .modulation_buffer(unsafe { std::mem::transmute(Segment::S0) })
         );
         let f = Uniform {
-            intensity: EmitIntensity(0x80),
+            intensity: Intensity(0x80),
             phase: Phase::ZERO,
         }
         .init(autd.geometry(), &TransducerFilter::all_enabled())?
@@ -62,7 +62,7 @@ fn firmware_v10_by_v10_driver() -> anyhow::Result<()> {
                 .collect::<Vec<_>>()
         );
         let f = Uniform {
-            intensity: EmitIntensity(0x81),
+            intensity: Intensity(0x81),
             phase: Phase::ZERO,
         }
         .init(autd.geometry(), &TransducerFilter::all_enabled())?

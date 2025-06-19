@@ -15,7 +15,7 @@ impl MyUniform {
 impl GainCalculator for MyUniform {
     fn calc(&self, _: &Transducer) -> Drive {
         Drive {
-            intensity: EmitIntensity::MAX,
+            intensity: Intensity::MAX,
             phase: Phase::ZERO,
         }
     }

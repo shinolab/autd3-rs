@@ -1,6 +1,6 @@
 use autd3_core::{
     derive::{Device, Geometry},
-    gain::{EmitIntensity, GainError, Phase, TransducerFilter},
+    gain::{GainError, Intensity, Phase, TransducerFilter},
 };
 use autd3_driver::{
     datagram::{
@@ -26,7 +26,7 @@ use crate::gain::Focus;
 ///         start: Point3::new(-15.0 * mm, 0., 0.),
 ///         end: Point3::new(15.0 * mm, 0., 0.),
 ///         num_points: 50,
-///         intensity: EmitIntensity::MAX,
+///         intensity: Intensity::MAX,
 ///     },
 /// };
 /// ```
@@ -39,7 +39,7 @@ pub struct Line {
     /// The number of points on the line.
     pub num_points: usize,
     /// The intensity of the emitted ultrasound.
-    pub intensity: EmitIntensity,
+    pub intensity: Intensity,
 }
 
 pub struct LineSTMIterator {
@@ -47,7 +47,7 @@ pub struct LineSTMIterator {
     dir: Vector3,
     num_points: usize,
     wavenumber: f32,
-    intensity: EmitIntensity,
+    intensity: Intensity,
     i: usize,
 }
 
@@ -157,7 +157,7 @@ mod tests {
             start: Point3::new(0., -length / 2., 0.),
             end: Point3::new(0., length / 2., 0.),
             num_points: 3,
-            intensity: EmitIntensity::MAX,
+            intensity: Intensity::MAX,
         };
         assert_eq!(3, FociSTMGenerator::len(&line));
         assert_eq!(3, GainSTMGenerator::len(&line));
