@@ -1,8 +1,11 @@
 use std::time::Duration;
 
-use super::super::{Operation, OperationGenerator, null::NullOp};
+use super::super::{Operation, OperationGenerator};
 use crate::{
-    datagram::FixedCompletionTime, error::AUTDDriverError, firmware::tag::TypeTag, geometry::Device,
+    datagram::FixedCompletionTime,
+    error::AUTDDriverError,
+    firmware::{driver::NullOp, tag::TypeTag},
+    geometry::Device,
 };
 
 use super::SilencerControlFlags;
@@ -57,7 +60,7 @@ impl Operation for SilencerFixedCompletionTimeOp {
         let step_intensity = validate(self.intensity)?;
         let step_phase = validate(self.phase)?;
 
-        super::super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             SilencerFixedCompletionTime {
                 tag: TypeTag::Silencer,

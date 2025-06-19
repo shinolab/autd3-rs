@@ -1,12 +1,13 @@
 use std::mem::size_of;
 
-use super::super::{
-    super::fpga::STMFocus, Operation, OperationGenerator, null::NullOp, write_to_tx,
-};
+use super::super::{super::fpga::STMFocus, Operation, OperationGenerator};
 use crate::{
     datagram::{FociSTMIterator, FociSTMIteratorGenerator, FociSTMOperationGenerator},
     error::AUTDDriverError,
-    firmware::tag::TypeTag,
+    firmware::{
+        driver::{NullOp, write_to_tx},
+        tag::TypeTag,
+    },
     geometry::Device,
 };
 

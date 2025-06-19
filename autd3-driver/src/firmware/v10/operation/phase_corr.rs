@@ -1,9 +1,12 @@
 use std::{convert::Infallible, mem::size_of};
 
-use super::{Operation, OperationGenerator, null::NullOp};
+use super::OperationGenerator;
 use crate::{
     datagram::PhaseCorrection,
-    firmware::tag::TypeTag,
+    firmware::{
+        driver::{NullOp, Operation},
+        tag::TypeTag,
+    },
     geometry::{Device, Transducer},
 };
 
@@ -33,7 +36,7 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
     type Error = Infallible;
 
     fn pack(&mut self, dev: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             PhaseCorr {
                 tag: TypeTag::PhaseCorrection,
@@ -45,7 +48,7 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
             .chunks_mut(size_of::<Phase>())
             .zip(dev.iter())
             .for_each(|(dst, tr)| {
-                super::write_to_tx(dst, (self.f)(tr));
+                crate::firmware::driver::write_to_tx(dst, (self.f)(tr));
             });
 
         self.is_done = true;

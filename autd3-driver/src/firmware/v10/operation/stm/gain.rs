@@ -2,12 +2,15 @@
 
 use std::mem::size_of;
 
-use super::super::{Operation, OperationGenerator, null::NullOp, write_to_tx};
+use super::super::{Operation, OperationGenerator};
 use crate::{
     common::STM_BUF_SIZE_MIN,
     datagram::{GainSTMIterator, GainSTMIteratorGenerator, GainSTMMode, GainSTMOperationGenerator},
     error::AUTDDriverError,
-    firmware::tag::TypeTag,
+    firmware::{
+        driver::{NullOp, write_to_tx},
+        tag::TypeTag,
+    },
     geometry::Device,
 };
 

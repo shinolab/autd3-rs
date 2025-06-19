@@ -39,11 +39,9 @@ pub use controller::Controller;
 
 /// A module for firmware driver
 pub mod firmware {
-    pub use autd3_driver::firmware::auto::{Auto, Version};
-    pub use autd3_driver::firmware::latest::Latest;
-    pub use autd3_driver::firmware::v10::V10;
-    pub use autd3_driver::firmware::v11::V11;
-    pub use autd3_driver::firmware::v12::V12;
+    pub use autd3_driver::firmware::{
+        auto::Auto, driver::Version, latest::Latest, v10::V10, v11::V11, v12::V12,
+    };
 }
 
 #[cfg(test)]

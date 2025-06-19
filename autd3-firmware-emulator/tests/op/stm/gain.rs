@@ -15,10 +15,10 @@ use autd3_driver::{
     },
     error::AUTDDriverError,
     firmware::{
-        driver::Driver,
+        driver::{Driver, OperationHandler},
         latest::{
             Latest, cpu::check_firmware_err, fpga::GAIN_STM_BUF_SIZE_MAX,
-            operation::OperationHandler,
+            operation::OperationGenerator,
         },
     },
     geometry::{Geometry, Point3},
@@ -553,12 +553,15 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
         option: GainSTMOption::default(),
     };
 
-    let generator = d.operation_generator(
+    let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
         &Latest.firmware_limits(),
     )?;
-    let mut op = OperationHandler::generate(generator, &geometry);
+    let mut op = geometry
+        .iter()
+        .map(|dev| generator.generate(dev))
+        .collect::<Vec<_>>();
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
     tx[0].payload_mut()[2] = 3;
 

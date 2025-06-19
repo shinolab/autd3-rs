@@ -266,8 +266,8 @@ impl<L: Link> Controller<L, firmware::v12::V12> {
     where
         AUTDDriverError: From<D::Error>,
         D::G: autd3_driver::firmware::v12::operation::OperationGenerator,
-        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator>::O1 as autd3_driver::firmware::v12::operation::Operation>::Error>
-            + From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator>::O2 as autd3_driver::firmware::v12::operation::Operation>::Error>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
     {
         self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
@@ -280,8 +280,8 @@ impl<L: Link> Controller<L, firmware::v11::V11> {
     where
         AUTDDriverError: From<D::Error>,
         D::G: autd3_driver::firmware::v11::operation::OperationGenerator,
-        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator>::O1 as autd3_driver::firmware::v11::operation::Operation>::Error>
-            + From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator>::O2 as autd3_driver::firmware::v11::operation::Operation>::Error>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
     {
         self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
@@ -294,8 +294,8 @@ impl<L: Link> Controller<L, firmware::v10::V10> {
     where
         AUTDDriverError: From<D::Error>,
         D::G: autd3_driver::firmware::v10::operation::OperationGenerator,
-        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator>::O1 as autd3_driver::firmware::v10::operation::Operation>::Error>
-            + From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator>::O2 as autd3_driver::firmware::v10::operation::Operation>::Error>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
     {
         self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
@@ -308,84 +308,18 @@ impl<L: Link> Controller<L, firmware::auto::Auto> {
     where
         AUTDDriverError: From<D::Error>,
         D::G: autd3_driver::firmware::auto::operation::OperationGenerator,
-        AUTDDriverError: From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator>::O1 as autd3_driver::firmware::auto::operation::Operation>::Error>
-            + From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator>::O2 as autd3_driver::firmware::auto::operation::Operation>::Error>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
     {
         self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
     }
 }
 
-impl<L: Link> Controller<L, firmware::v12::V12> {
-    /// Make a [`firmware::v12::operation::BoxedDatagram`].
-    pub fn make_boxed<
-        E,
-        G: firmware::v12::operation::DOperationGenerator + 'static,
-        D: Datagram<G = G, Error = E> + 'static,
-    >(
-        &self,
-        d: D,
-    ) -> firmware::v12::operation::BoxedDatagram
-    where
-        AUTDDriverError: From<E>,
-    {
-        firmware::v12::operation::BoxedDatagram::new(d)
-    }
-}
-
-impl<L: Link> Controller<L, firmware::v11::V11> {
-    /// Make a [`firmware::v11::operation::BoxedDatagram`].
-    pub fn make_boxed<
-        E,
-        G: firmware::v11::operation::DOperationGenerator + 'static,
-        D: Datagram<G = G, Error = E> + 'static,
-    >(
-        &self,
-        d: D,
-    ) -> firmware::v11::operation::BoxedDatagram
-    where
-        AUTDDriverError: From<E>,
-    {
-        firmware::v11::operation::BoxedDatagram::new(d)
-    }
-}
-
-impl<L: Link> Controller<L, firmware::v10::V10> {
-    /// Make a [`firmware::v10::operation::BoxedDatagram`].
-    pub fn make_boxed<
-        E,
-        G: firmware::v10::operation::DOperationGenerator + 'static,
-        D: Datagram<G = G, Error = E> + 'static,
-    >(
-        &self,
-        d: D,
-    ) -> firmware::v10::operation::BoxedDatagram
-    where
-        AUTDDriverError: From<E>,
-    {
-        firmware::v10::operation::BoxedDatagram::new(d)
-    }
-}
-
-impl<L: Link> Controller<L, firmware::auto::Auto> {
-    /// Make a [`firmware::auto::operation::BoxedDatagram`].
-    pub fn make_boxed<
-        E,
-        G: firmware::auto::operation::DOperationGenerator + 'static,
-        D: Datagram<G = G, Error = E> + 'static,
-    >(
-        &self,
-        d: D,
-    ) -> firmware::auto::operation::BoxedDatagram
-    where
-        AUTDDriverError: From<E>,
-    {
-        firmware::auto::operation::BoxedDatagram::new(d)
-    }
-}
-
 #[cfg(test)]
 pub(crate) mod tests {
+    use autd3_driver::firmware::driver::BoxedDatagram;
+
     use crate::{
         core::{
             common::mm,
@@ -745,7 +679,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn make_boxed() -> anyhow::Result<()> {
+    fn send_boxed() -> anyhow::Result<()> {
         use crate::gain::Null;
 
         {
@@ -754,7 +688,7 @@ pub(crate) mod tests {
                 Audit::<version::V12>::new(AuditOption::default()),
             )?;
 
-            autd.send(autd.make_boxed(Null))?;
+            autd.send(BoxedDatagram::new(Null))?;
 
             autd.close()?;
         }
@@ -765,7 +699,7 @@ pub(crate) mod tests {
                 Audit::<version::V11>::new(AuditOption::default()),
             )?;
 
-            autd.send(autd.make_boxed(Null))?;
+            autd.send(BoxedDatagram::new(Null))?;
 
             autd.close()?;
         }
@@ -776,7 +710,7 @@ pub(crate) mod tests {
                 Audit::<version::V10>::new(AuditOption::default()),
             )?;
 
-            autd.send(autd.make_boxed(Null))?;
+            autd.send(BoxedDatagram::new(Null))?;
 
             autd.close()?;
         }
@@ -787,7 +721,7 @@ pub(crate) mod tests {
                 Audit::<version::Latest>::new(AuditOption::default()),
             )?;
 
-            autd.send(autd.make_boxed(Null))?;
+            autd.send(BoxedDatagram::new(Null))?;
 
             autd.close()?;
         }

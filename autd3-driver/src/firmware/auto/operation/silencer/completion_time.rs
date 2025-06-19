@@ -1,5 +1,10 @@
-use super::super::{super::Version, Operation, OperationGenerator};
-use crate::{datagram::FixedCompletionTime, error::AUTDDriverError, geometry::Device};
+use super::super::OperationGenerator;
+use crate::{
+    datagram::FixedCompletionTime,
+    error::AUTDDriverError,
+    firmware::driver::{Operation, Version},
+    geometry::Device,
+};
 
 enum Inner {
     V10(crate::firmware::v10::operation::SilencerFixedCompletionTimeOp),
@@ -16,44 +21,32 @@ impl Operation for SilencerFixedCompletionTimeOp {
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         Ok(match &mut self.inner {
-            Inner::V10(inner) => {
-                crate::firmware::v10::operation::Operation::pack(inner, device, tx)?
-            }
-            Inner::V11(inner) => {
-                crate::firmware::v11::operation::Operation::pack(inner, device, tx)?
-            }
-            Inner::V12(inner) => {
-                crate::firmware::v12::operation::Operation::pack(inner, device, tx)?
-            }
+            Inner::V10(inner) => Operation::pack(inner, device, tx)?,
+            Inner::V11(inner) => Operation::pack(inner, device, tx)?,
+            Inner::V12(inner) => Operation::pack(inner, device, tx)?,
         })
     }
 
     fn required_size(&self, device: &Device) -> usize {
         match &self.inner {
-            Inner::V10(inner) => {
-                crate::firmware::v10::operation::Operation::required_size(inner, device)
-            }
-            Inner::V11(inner) => {
-                crate::firmware::v11::operation::Operation::required_size(inner, device)
-            }
-            Inner::V12(inner) => {
-                crate::firmware::v12::operation::Operation::required_size(inner, device)
-            }
+            Inner::V10(inner) => Operation::required_size(inner, device),
+            Inner::V11(inner) => Operation::required_size(inner, device),
+            Inner::V12(inner) => Operation::required_size(inner, device),
         }
     }
 
     fn is_done(&self) -> bool {
         match &self.inner {
-            Inner::V10(inner) => crate::firmware::v10::operation::Operation::is_done(inner),
-            Inner::V11(inner) => crate::firmware::v11::operation::Operation::is_done(inner),
-            Inner::V12(inner) => crate::firmware::v12::operation::Operation::is_done(inner),
+            Inner::V10(inner) => Operation::is_done(inner),
+            Inner::V11(inner) => Operation::is_done(inner),
+            Inner::V12(inner) => Operation::is_done(inner),
         }
     }
 }
 
 impl OperationGenerator for FixedCompletionTime {
     type O1 = SilencerFixedCompletionTimeOp;
-    type O2 = super::super::NullOp;
+    type O2 = crate::firmware::driver::NullOp;
 
     fn generate(&mut self, device: &Device, version: Version) -> Option<(Self::O1, Self::O2)> {
         Some((
@@ -79,7 +72,7 @@ impl OperationGenerator for FixedCompletionTime {
                     ),
                 },
             },
-            super::super::NullOp,
+            crate::firmware::driver::NullOp,
         ))
     }
 }

@@ -3,7 +3,6 @@ use std::{convert::Infallible, mem::size_of};
 use super::{
     super::fpga::{PWE_BUF_SIZE, ULTRASOUND_PERIOD_COUNT_BITS},
     Operation, OperationGenerator,
-    null::NullOp,
 };
 use crate::{datagram::PulseWidthEncoder, firmware::tag::TypeTag, geometry::Device};
 
@@ -35,7 +34,7 @@ impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + 
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             PweMsg {
                 tag: TypeTag::ConfigPulseWidthEncoderV11,
@@ -48,7 +47,10 @@ impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + 
             .take(PWE_BUF_SIZE)
             .enumerate()
             .for_each(|(i, dst)| {
-                super::write_to_tx(dst, (self.f)(Intensity(i as u8)).pulse_width());
+                crate::firmware::driver::write_to_tx(
+                    dst,
+                    (self.f)(Intensity(i as u8)).pulse_width(),
+                );
             });
 
         self.is_done = true;
@@ -71,7 +73,7 @@ impl<
 > OperationGenerator for PulseWidthEncoder<ULTRASOUND_PERIOD_COUNT_BITS, u16, H, F>
 {
     type O1 = PulseWidthEncoderOp<H>;
-    type O2 = NullOp;
+    type O2 = crate::firmware::driver::NullOp;
 
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
         Some((Self::O1::new((self.f)(device)), Self::O2 {}))

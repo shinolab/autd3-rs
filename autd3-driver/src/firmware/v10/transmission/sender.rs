@@ -4,11 +4,8 @@ use crate::{
     datagram::FirmwareVersionType,
     error::AUTDDriverError,
     firmware::{
-        driver::{Driver, SenderOption, TimerStrategy},
-        v10::{
-            V10,
-            operation::{Operation, OperationGenerator, OperationHandler},
-        },
+        driver::{Driver, Operation, OperationHandler, SenderOption, TimerStrategy},
+        v10::{V10, operation::OperationGenerator},
     },
 };
 
@@ -50,12 +47,16 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
         let parallel_threshold = s.option().parallel_threshold;
         let strict = self.option.strict;
 
-        let g = s.operation_generator(
+        let mut g = s.operation_generator(
             self.geometry,
             &DeviceFilter::all_enabled(),
             &V10.firmware_limits(),
         )?;
-        let mut operations = OperationHandler::generate(g, self.geometry);
+        let mut operations = self
+            .geometry
+            .iter()
+            .map(|dev| g.generate(dev))
+            .collect::<Vec<_>>();
 
         operations
             .iter()

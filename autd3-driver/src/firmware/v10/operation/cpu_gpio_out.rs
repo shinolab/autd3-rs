@@ -1,7 +1,14 @@
 use std::{convert::Infallible, mem::size_of};
 
-use super::{Operation, OperationGenerator, null::NullOp};
-use crate::{datagram::CpuGPIOOutputs, firmware::tag::TypeTag, geometry::Device};
+use super::OperationGenerator;
+use crate::{
+    datagram::CpuGPIOOutputs,
+    firmware::{
+        driver::{NullOp, Operation},
+        tag::TypeTag,
+    },
+    geometry::Device,
+};
 
 use autd3_core::datagram::CpuGPIOPort;
 
@@ -34,7 +41,7 @@ impl Operation for CpuGPIOOutOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             CpuGPIOOutMsg {
                 tag: TypeTag::CpuGPIOOut,

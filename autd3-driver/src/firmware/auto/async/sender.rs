@@ -3,11 +3,8 @@ use std::time::Duration;
 use crate::{
     error::AUTDDriverError,
     firmware::{
-        auto::{
-            Version,
-            operation::{Operation, OperationGenerator, OperationHandler},
-        },
-        driver::{SenderOption, r#async::TimerStrategy},
+        auto::operation::OperationGenerator,
+        driver::{Operation, OperationHandler, SenderOption, Version, r#async::TimerStrategy},
     },
 };
 
@@ -52,8 +49,13 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
         let parallel_threshold = s.option().parallel_threshold;
         let strict = self.option.strict;
 
-        let g = s.operation_generator(self.geometry, &DeviceFilter::all_enabled(), &self.limits)?;
-        let mut operations = OperationHandler::generate(g, self.geometry, self.version);
+        let mut g =
+            s.operation_generator(self.geometry, &DeviceFilter::all_enabled(), &self.limits)?;
+        let mut operations = self
+            .geometry
+            .iter()
+            .map(|dev| g.generate(dev, self.version))
+            .collect::<Vec<_>>();
 
         operations
             .iter()
