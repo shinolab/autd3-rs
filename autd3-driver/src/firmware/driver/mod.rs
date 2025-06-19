@@ -8,11 +8,10 @@ mod option;
 mod parallel_mode;
 mod strategy;
 
-pub(crate) use operation::{
-    BoxedOperation, DOperationGenerator, DynOperationGenerator, NullOp, write_to_tx,
-};
+pub(crate) use operation::{DOperationGenerator, DynOperationGenerator, NullOp, write_to_tx};
 
-pub use operation::{BoxedDatagram, Operation, OperationHandler, Version};
+// `BoxedOperation` must be pub for capi
+pub use operation::{BoxedDatagram, BoxedOperation, Operation, OperationHandler, Version};
 pub use option::SenderOption;
 pub use parallel_mode::ParallelMode;
 pub use strategy::{FixedDelay, FixedSchedule, TimerStrategy};
