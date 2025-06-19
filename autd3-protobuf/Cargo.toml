@@ -22,12 +22,8 @@ async-trait = ["autd3-core/async-trait", "autd3/async-trait"]
 autd3 = { workspace = true, optional = true }
 autd3-core = { workspace = true, features = ["geometry"] }
 autd3-driver = { workspace = true }
-autd3-gain-holo = { workspace = true, optional = true }
-derive_more = { workspace = true, optional = true, features = ["deref"] }
 prost = { workspace = true, features = ["derive"] }
-seq-macro = { workspace = true, optional = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, optional = true }
 tonic = { workspace = true, features = ["channel", "codegen", "prost", "server"] }
 zerocopy = { workspace = true }
 
