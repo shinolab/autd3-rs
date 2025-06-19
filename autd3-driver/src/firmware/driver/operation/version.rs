@@ -1,5 +1,6 @@
 /// Firmware version enum.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Version {
     /// A driver for firmware version 10.
     V10,
