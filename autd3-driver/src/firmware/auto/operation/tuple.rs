@@ -1,5 +1,6 @@
-use super::{OperationGenerator, null::NullOp};
-use crate::{firmware::auto::Version, geometry::Device};
+use super::OperationGenerator;
+use crate::firmware::driver::{NullOp, Version};
+use crate::geometry::Device;
 
 use autd3_core::datagram::CombinedOperationGenerator;
 

@@ -5,13 +5,12 @@ use autd3_core::{
     sleep::r#async::{AsyncSleeper, Sleep},
 };
 
-use super::Version;
 use crate::{
     error::AUTDDriverError,
     firmware::{
         auto::Auto,
         driver::{
-            FixedSchedule,
+            FixedSchedule, Version,
             r#async::{Driver, Sender, TimerStrategy},
         },
     },

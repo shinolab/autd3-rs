@@ -1,7 +1,6 @@
 use super::Operation;
 use crate::geometry::Device;
 
-#[doc(hidden)]
 pub struct NullOp;
 
 // GRCOV_EXCL_START

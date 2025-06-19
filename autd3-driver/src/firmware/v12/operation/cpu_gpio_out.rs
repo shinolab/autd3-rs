@@ -1,29 +1,10 @@
-use super::{Operation, OperationGenerator};
+use super::OperationGenerator;
 use crate::{
     datagram::CpuGPIOOutputs,
-    firmware::v11::operation::{
-        CpuGPIOOutOp, Operation as OperationV11, OperationGenerator as OperationGeneratorV11,
-    },
-    geometry::Device,
+    firmware::v11::operation::OperationGenerator as OperationGeneratorV11, geometry::Device,
 };
 
 use autd3_core::datagram::CpuGPIOPort;
-
-impl Operation for CpuGPIOOutOp {
-    type Error = <Self as OperationV11>::Error;
-
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        OperationV11::pack(self, device, tx)
-    }
-
-    fn required_size(&self, device: &Device) -> usize {
-        OperationV11::required_size(self, device)
-    }
-
-    fn is_done(&self) -> bool {
-        OperationV11::is_done(self)
-    }
-}
 
 impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator for CpuGPIOOutputs<F> {
     type O1 = <Self as OperationGeneratorV11>::O1;

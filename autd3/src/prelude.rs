@@ -35,5 +35,6 @@ pub use autd3_driver::{
     },
     error::AUTDDriverError,
     ethercat::DcSysTime,
+    firmware::driver::BoxedDatagram,
     geometry::{EulerAngle, Geometry, Point3, Quaternion, UnitQuaternion, UnitVector3, Vector3},
 };

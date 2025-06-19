@@ -1,7 +1,7 @@
 use std::{fmt::Debug, hash::Hash};
 
-use super::{super::Version, OperationGenerator};
-use crate::{datagram::GroupOpGenerator, geometry::Device};
+use super::OperationGenerator;
+use crate::{datagram::GroupOpGenerator, firmware::driver::Version, geometry::Device};
 
 use autd3_core::datagram::Datagram;
 

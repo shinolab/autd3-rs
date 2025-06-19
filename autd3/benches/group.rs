@@ -9,8 +9,8 @@ use autd3_driver::{
     autd3_device::AUTD3,
     datagram::Group,
     firmware::{
-        driver::Driver,
-        latest::{Latest, operation::OperationHandler},
+        driver::{BoxedDatagram, Driver, OperationHandler},
+        latest::{Latest, operation::OperationGenerator},
     },
     geometry::{Geometry, Point3},
 };
@@ -45,14 +45,17 @@ fn without_group(c: &mut Criterion) {
                 let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
                     let g = black_box(Null {});
-                    let generator = g
+                    let mut generator = g
                         .operation_generator(
                             geometry,
                             &DeviceFilter::all_enabled(),
                             &Latest.firmware_limits(),
                         )
                         .unwrap();
-                    let mut operations = OperationHandler::generate(generator, geometry);
+                    let mut operations = geometry
+                        .iter()
+                        .map(|dev| generator.generate(dev))
+                        .collect::<Vec<_>>();
                     OperationHandler::pack(
                         MsgId::new(0x00),
                         &mut operations,
@@ -82,14 +85,17 @@ fn group(c: &mut Criterion) {
                         key_map: |dev| Some(dev.idx()),
                         datagram_map: geometry.iter().map(|dev| (dev.idx(), Null {})).collect(),
                     };
-                    let generator = g
+                    let mut generator = g
                         .operation_generator(
                             geometry,
                             &DeviceFilter::all_enabled(),
                             &Latest.firmware_limits(),
                         )
                         .unwrap();
-                    let mut operations = OperationHandler::generate(generator, geometry);
+                    let mut operations = geometry
+                        .iter()
+                        .map(|dev| generator.generate(dev))
+                        .collect::<Vec<_>>();
                     OperationHandler::pack(
                         MsgId::new(0x00),
                         &mut operations,
@@ -119,24 +125,20 @@ fn group_boxed(c: &mut Criterion) {
                         key_map: |dev| Some(dev.idx()),
                         datagram_map: geometry
                             .iter()
-                            .map(|dev| {
-                                (
-                                    dev.idx(),
-                                    autd3_driver::firmware::latest::operation::BoxedDatagram::new(
-                                        Null {},
-                                    ),
-                                )
-                            })
+                            .map(|dev| (dev.idx(), BoxedDatagram::new(Null {})))
                             .collect(),
                     };
-                    let generator = g
+                    let mut generator = g
                         .operation_generator(
                             geometry,
                             &DeviceFilter::all_enabled(),
                             &Latest.firmware_limits(),
                         )
                         .unwrap();
-                    let mut operations = OperationHandler::generate(generator, geometry);
+                    let mut operations = geometry
+                        .iter()
+                        .map(|dev| generator.generate(dev))
+                        .collect::<Vec<_>>();
                     OperationHandler::pack(
                         MsgId::new(0x00),
                         &mut operations,
@@ -169,14 +171,17 @@ fn gain_group(c: &mut Criterion) {
                         },
                         gain_map: geometry.iter().map(|dev| (dev.idx(), Null {})).collect(),
                     };
-                    let generator = g
+                    let mut generator = g
                         .operation_generator(
                             geometry,
                             &DeviceFilter::all_enabled(),
                             &Latest.firmware_limits(),
                         )
                         .unwrap();
-                    let mut operations = OperationHandler::generate(generator, geometry);
+                    let mut operations = geometry
+                        .iter()
+                        .map(|dev| generator.generate(dev))
+                        .collect::<Vec<_>>();
                     OperationHandler::pack(
                         MsgId::new(0x00),
                         &mut operations,
