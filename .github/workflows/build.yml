@@ -84,6 +84,7 @@ jobs:
           submodules: true
       - uses: ./.github/actions/setup-build
         with:
+          cache: false
           components: llvm-tools
       - uses: SierraSoftworks/setup-grcov@v1
         with:
