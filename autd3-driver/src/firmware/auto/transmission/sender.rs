@@ -73,7 +73,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
         self.link.ensure_is_open()?;
         self.link.update(self.geometry)?;
 
-        let mut send_timing = T::initial();
+        let mut send_timing = self.timer_strategy.initial();
         loop {
             let mut tx = self.link.alloc_tx_buffer()?;
 
