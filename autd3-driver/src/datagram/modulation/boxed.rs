@@ -9,11 +9,7 @@ pub trait DModulation {
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
-impl<
-    #[cfg(not(feature = "lightweight"))] T: Modulation,
-    #[cfg(feature = "lightweight")] T: Modulation + Send + Sync,
-> DModulation for MaybeUninit<T>
-{
+impl<T: Modulation> DModulation for MaybeUninit<T> {
     fn dyn_calc(&mut self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
@@ -39,12 +35,7 @@ pub struct BoxedModulation {
 
 impl BoxedModulation {
     /// Creates a new [`BoxedModulation`].
-    pub fn new<
-        #[cfg(not(feature = "lightweight"))] M: Modulation + 'static,
-        #[cfg(feature = "lightweight")] M: Modulation + Send + Sync + 'static,
-    >(
-        m: M,
-    ) -> BoxedModulation {
+    pub fn new<M: Modulation + 'static>(m: M) -> BoxedModulation {
         let sampling_config = m.sampling_config();
         BoxedModulation {
             m: Box::new(MaybeUninit::new(m)),
@@ -52,11 +43,6 @@ impl BoxedModulation {
         }
     }
 }
-
-#[cfg(feature = "lightweight")]
-unsafe impl Send for BoxedModulation {}
-#[cfg(feature = "lightweight")]
-unsafe impl Sync for BoxedModulation {}
 
 impl std::fmt::Debug for BoxedModulation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

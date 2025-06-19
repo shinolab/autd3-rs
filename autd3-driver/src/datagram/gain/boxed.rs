@@ -6,13 +6,7 @@ pub use crate::geometry::{Device, Geometry};
 
 use autd3_core::{derive::*, gain::TransducerFilter};
 
-#[cfg(not(feature = "lightweight"))]
 pub trait DGainCalculatorGenerator {
-    #[must_use]
-    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator>;
-}
-#[cfg(feature = "lightweight")]
-pub trait DGainCalculatorGenerator: Send + Sync {
     #[must_use]
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator>;
 }
@@ -29,11 +23,8 @@ impl GainCalculatorGenerator for DynGainCalculatorGenerator {
     }
 }
 
-impl<
-    Calculator: GainCalculator + 'static,
-    #[cfg(not(feature = "lightweight"))] G: GainCalculatorGenerator<Calculator = Calculator>,
-    #[cfg(feature = "lightweight")] G: GainCalculatorGenerator<Calculator = Calculator> + Send + Sync,
-> DGainCalculatorGenerator for G
+impl<Calculator: GainCalculator + 'static, G: GainCalculatorGenerator<Calculator = Calculator>>
+    DGainCalculatorGenerator for G
 {
     fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator> {
         Box::new(GainCalculatorGenerator::generate(self, device))
@@ -50,12 +41,7 @@ trait DGain {
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
-impl<
-    G: DGainCalculatorGenerator + 'static,
-    #[cfg(not(feature = "lightweight"))] T: Gain<G = G>,
-    #[cfg(feature = "lightweight")] T: Gain<G = G> + Send + Sync,
-> DGain for MaybeUninit<T>
-{
+impl<G: DGainCalculatorGenerator + 'static, T: Gain<G = G>> DGain for MaybeUninit<T> {
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
@@ -86,23 +72,12 @@ pub struct BoxedGain {
 impl BoxedGain {
     /// Creates a new [`BoxedGain`].
     #[must_use]
-    pub fn new<
-        #[cfg(feature = "lightweight")] GG: GainCalculatorGenerator + Send + Sync + 'static,
-        #[cfg(not(feature = "lightweight"))] G: Gain + 'static,
-        #[cfg(feature = "lightweight")] G: Gain<G = GG> + Send + Sync + 'static,
-    >(
-        g: G,
-    ) -> Self {
+    pub fn new<G: Gain + 'static>(g: G) -> Self {
         Self {
             g: Box::new(MaybeUninit::new(g)),
         }
     }
 }
-
-#[cfg(feature = "lightweight")]
-unsafe impl Send for BoxedGain {}
-#[cfg(feature = "lightweight")]
-unsafe impl Sync for BoxedGain {}
 
 impl std::fmt::Debug for BoxedGain {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

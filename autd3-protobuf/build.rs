@@ -7,11 +7,6 @@ fn main() -> std::io::Result<()> {
         .enum_attribute(".", "#[non_exhaustive]")
         .compile_protos(&["./proto/autd3.proto"], &["./proto"])?;
 
-    tonic_build::configure()
-        .out_dir(home_dir.join("src/pb/lightweight"))
-        .enum_attribute(".", "#[non_exhaustive]")
-        .compile_protos(&["./proto/lightweight.proto"], &["./proto"])?;
-
     Ok(())
 }
 
