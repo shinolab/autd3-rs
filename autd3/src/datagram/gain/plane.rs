@@ -7,7 +7,7 @@ use autd3_driver::{common::rad, geometry::UnitVector3};
 #[repr(C)]
 pub struct PlaneOption {
     /// The intensity of the beam.
-    pub intensity: EmitIntensity,
+    pub intensity: Intensity,
     /// The phase offset of the beam.
     pub phase_offset: Phase,
 }
@@ -15,7 +15,7 @@ pub struct PlaneOption {
 impl Default for PlaneOption {
     fn default() -> Self {
         Self {
-            intensity: EmitIntensity::MAX,
+            intensity: Intensity::MAX,
             phase_offset: Phase::ZERO,
         }
     }
@@ -40,7 +40,7 @@ impl Plane {
 
 pub struct Impl {
     dir: UnitVector3,
-    intensity: EmitIntensity,
+    intensity: Intensity,
     phase_offset: Phase,
     wavenumber: f32,
 }
@@ -87,7 +87,7 @@ mod tests {
     fn plane_check(
         mut b: Plane,
         dir: UnitVector3,
-        intensity: EmitIntensity,
+        intensity: Intensity,
         phase_offset: Phase,
         geometry: &Geometry,
     ) {
@@ -112,10 +112,10 @@ mod tests {
 
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let g = Plane::new(dir, PlaneOption::default());
-        plane_check(g, dir, EmitIntensity::MAX, Phase::ZERO, &geometry);
+        plane_check(g, dir, Intensity::MAX, Phase::ZERO, &geometry);
 
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
-        let intensity = EmitIntensity(rng.random());
+        let intensity = Intensity(rng.random());
         let phase_offset = Phase(rng.random());
         let g = Plane {
             dir,

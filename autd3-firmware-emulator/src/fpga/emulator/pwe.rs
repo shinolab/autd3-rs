@@ -1,4 +1,4 @@
-use autd3_core::{datagram::PulseWidth, gain::EmitIntensity};
+use autd3_core::{datagram::PulseWidth, gain::Intensity};
 
 use super::FPGAEmulator;
 
@@ -22,7 +22,7 @@ impl FPGAEmulator {
     }
 
     #[must_use]
-    pub fn to_pulse_width(&self, a: EmitIntensity, b: u8) -> PulseWidth<9, u16> {
+    pub fn to_pulse_width(&self, a: Intensity, b: u8) -> PulseWidth<9, u16> {
         let key = (a.0 as usize * b as usize) / 255;
         self.pulse_width_encoder_table_at(key)
     }
@@ -49,7 +49,7 @@ mod tests {
         itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
             assert_eq!(
                 to_pulse_width_actual(a, b),
-                fpga.to_pulse_width(EmitIntensity(a), b)
+                fpga.to_pulse_width(Intensity(a), b)
             );
         });
     }

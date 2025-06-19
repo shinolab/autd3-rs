@@ -4,7 +4,7 @@ use autd3_core::derive::*;
 #[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Uniform {
     /// The intensity of the gain.
-    pub intensity: EmitIntensity,
+    pub intensity: Intensity,
     /// The phase of the gain.
     pub phase: Phase,
 }
@@ -12,7 +12,7 @@ pub struct Uniform {
 impl Uniform {
     /// Create a new [`Uniform`]
     #[must_use]
-    pub const fn new(intensity: EmitIntensity, phase: Phase) -> Self {
+    pub const fn new(intensity: Intensity, phase: Phase) -> Self {
         Self { intensity, phase }
     }
 }
@@ -55,7 +55,7 @@ mod tests {
 
         let geometry = create_geometry(1);
 
-        let intensity = EmitIntensity(rng.random());
+        let intensity = Intensity(rng.random());
         let phase = Phase(rng.random());
         let g = Uniform::new(intensity, phase);
 

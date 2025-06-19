@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use autd3_core::{
     derive::{Device, Geometry},
-    gain::{EmitIntensity, GainError, Phase, TransducerFilter},
+    gain::{GainError, Intensity, Phase, TransducerFilter},
 };
 use autd3_driver::{
     datagram::{
@@ -29,7 +29,7 @@ use crate::gain::Focus;
 ///         radius: 30.0 * mm,
 ///         num_points: 50,
 ///         n: Vector3::z_axis(),
-///         intensity: EmitIntensity::MAX,
+///         intensity: Intensity::MAX,
 ///     },
 /// };
 /// ```
@@ -44,7 +44,7 @@ pub struct Circle {
     /// The normal vector of the circle.
     pub n: UnitVector3,
     /// The intensity of the emitted ultrasound.
-    pub intensity: EmitIntensity,
+    pub intensity: Intensity,
 }
 
 pub struct CircleSTMIterator {
@@ -54,7 +54,7 @@ pub struct CircleSTMIterator {
     u: Vector3,
     v: Vector3,
     wavenumber: f32,
-    intensity: EmitIntensity,
+    intensity: Intensity,
     i: usize,
 }
 
@@ -206,7 +206,7 @@ mod tests {
             radius: 30.0 * mm,
             num_points: 4,
             n,
-            intensity: EmitIntensity::MAX,
+            intensity: Intensity::MAX,
         };
         assert_eq!(4, FociSTMGenerator::len(&circle));
         assert_eq!(4, GainSTMGenerator::len(&circle));

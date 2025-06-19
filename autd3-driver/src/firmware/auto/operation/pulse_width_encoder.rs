@@ -1,4 +1,4 @@
-use autd3_core::{datagram::PulseWidth, gain::EmitIntensity};
+use autd3_core::{datagram::PulseWidth, gain::Intensity};
 
 use super::{super::Version, Operation, OperationGenerator};
 use crate::{datagram::PulseWidthEncoder, geometry::Device};
@@ -10,7 +10,7 @@ use crate::firmware::v11::operation::{
     Operation as OperationV11, OperationGenerator as OperationGeneratorV11,
 };
 
-impl<H: Fn(EmitIntensity) -> PulseWidth<9, u16> + Send + Sync> Operation
+impl<H: Fn(Intensity) -> PulseWidth<9, u16> + Send + Sync> Operation
     for crate::firmware::v11::operation::PulseWidthEncoderOp<H>
 {
     type Error = <Self as OperationV11>::Error;
@@ -28,7 +28,7 @@ impl<H: Fn(EmitIntensity) -> PulseWidth<9, u16> + Send + Sync> Operation
     }
 }
 
-impl<H: Fn(EmitIntensity) -> PulseWidth<8, u8> + Send + Sync> Operation
+impl<H: Fn(Intensity) -> PulseWidth<8, u8> + Send + Sync> Operation
     for crate::firmware::v10::operation::PulseWidthEncoderOp<H>
 {
     type Error = <Self as OperationV10>::Error;
@@ -46,8 +46,8 @@ impl<H: Fn(EmitIntensity) -> PulseWidth<8, u8> + Send + Sync> Operation
     }
 }
 
-impl<H: Fn(EmitIntensity) -> PulseWidth<9, u16> + Send + Sync, F: Fn(&Device) -> H>
-    OperationGenerator for PulseWidthEncoder<9, u16, H, F>
+impl<H: Fn(Intensity) -> PulseWidth<9, u16> + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
+    for PulseWidthEncoder<9, u16, H, F>
 {
     type O1 = crate::firmware::v11::operation::PulseWidthEncoderOp<H>;
     type O2 = super::NullOp;
@@ -57,8 +57,8 @@ impl<H: Fn(EmitIntensity) -> PulseWidth<9, u16> + Send + Sync, F: Fn(&Device) ->
     }
 }
 
-impl<H: Fn(EmitIntensity) -> PulseWidth<8, u8> + Send + Sync, F: Fn(&Device) -> H>
-    OperationGenerator for PulseWidthEncoder<8, u8, H, F>
+impl<H: Fn(Intensity) -> PulseWidth<8, u8> + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
+    for PulseWidthEncoder<8, u8, H, F>
 {
     type O1 = crate::firmware::v10::operation::PulseWidthEncoderOp<H>;
     type O2 = super::NullOp;

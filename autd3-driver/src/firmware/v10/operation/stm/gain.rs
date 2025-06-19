@@ -274,7 +274,7 @@ mod tests {
     use crate::{ethercat::DcSysTime, firmware::driver::Driver, geometry::Transducer};
 
     use autd3_core::{
-        gain::{EmitIntensity, Phase},
+        gain::{Intensity, Phase},
         link::TxMessage,
     };
     use rand::prelude::*;
@@ -318,7 +318,7 @@ mod tests {
                 (0..device.num_transducers())
                     .map(|_| Drive {
                         phase: Phase(rng.random_range(0x00..=0xFF)),
-                        intensity: EmitIntensity(rng.random_range(0..=0xFF)),
+                        intensity: Intensity(rng.random_range(0..=0xFF)),
                     })
                     .collect()
             })
@@ -469,7 +469,7 @@ mod tests {
                 (0..device.num_transducers())
                     .map(|_| Drive {
                         phase: Phase(rng.random_range(0x00..=0xFF)),
-                        intensity: EmitIntensity(rng.random_range(0..=0xFF)),
+                        intensity: Intensity(rng.random_range(0..=0xFF)),
                     })
                     .collect()
             })
@@ -603,7 +603,7 @@ mod tests {
                 (0..device.num_transducers())
                     .map(|_| Drive {
                         phase: Phase(rng.random_range(0x00..=0xFF)),
-                        intensity: EmitIntensity(rng.random_range(0..=0xFF)),
+                        intensity: Intensity(rng.random_range(0..=0xFF)),
                     })
                     .collect()
             })

@@ -6,7 +6,7 @@ use autd3_core::{
     common::DEFAULT_TIMEOUT,
     datagram::{Datagram, DatagramOption, DeviceFilter, PulseWidth},
     derive::FirmwareLimits,
-    gain::EmitIntensity,
+    gain::Intensity,
     geometry::Geometry,
 };
 
@@ -20,7 +20,7 @@ use num::Zero;
 /// For firmware v11 or later, the period of the ultrasound is mapped to 512, therefore, the ultrasound output becomes maximum when the pulse width is 256 (50% in duty ratio).
 /// For firmware v10, the period of the ultrasound is mapped to 256, therefore, the ultrasound output becomes maximum when the pulse width is 128 (50% in duty ratio).
 ///
-/// The default table is set by the arcsin function so that [`EmitIntensity`] is linearly proportional to output ultrasound pressure; that is, `table[i] = round(T*arcsin(i/255)/π)` where `T` is the period of the ultrasound.
+/// The default table is set by the arcsin function so that [`Intensity`] is linearly proportional to output ultrasound pressure; that is, `table[i] = round(T*arcsin(i/255)/π)` where `T` is the period of the ultrasound.
 ///
 /// # Example
 ///
@@ -36,12 +36,12 @@ use num::Zero;
 /// PulseWidthEncoder::new(|_dev| |i| PulseWidth::<8, u8>::from_duty(i.0 as f32 / 510.).unwrap());
 /// ```
 ///
-/// [`EmitIntensity`]: autd3_core::gain::EmitIntensity
+/// [`Intensity`]: autd3_core::gain::Intensity
 #[derive(Clone, Debug)]
 pub struct PulseWidthEncoder<
     const BITS: usize,
     T: Copy + TryFrom<usize> + Zero + PartialOrd,
-    H: Fn(EmitIntensity) -> PulseWidth<BITS, T> + Send + Sync,
+    H: Fn(Intensity) -> PulseWidth<BITS, T> + Send + Sync,
     F: Fn(&Device) -> H,
 > {
     #[debug(ignore)]
@@ -51,7 +51,7 @@ pub struct PulseWidthEncoder<
 impl<
     const BITS: usize,
     T: Copy + TryFrom<usize> + Zero + PartialOrd,
-    H: Fn(EmitIntensity) -> PulseWidth<BITS, T> + Send + Sync,
+    H: Fn(Intensity) -> PulseWidth<BITS, T> + Send + Sync,
     F: Fn(&Device) -> H,
 > PulseWidthEncoder<BITS, T, H, F>
 {
@@ -65,7 +65,7 @@ impl<
 impl<
     const BITS: usize,
     T: Copy + TryFrom<usize> + Zero + PartialOrd,
-    H: Fn(EmitIntensity) -> PulseWidth<BITS, T> + Send + Sync,
+    H: Fn(Intensity) -> PulseWidth<BITS, T> + Send + Sync,
     F: Fn(&Device) -> H,
 > Datagram for PulseWidthEncoder<BITS, T, H, F>
 {
@@ -93,8 +93,8 @@ impl<const BITS: usize, T: Copy + TryFrom<usize> + Zero + PartialOrd> Default
     for PulseWidthEncoder<
         BITS,
         T,
-        fn(EmitIntensity) -> PulseWidth<BITS, T>,
-        fn(&Device) -> fn(EmitIntensity) -> PulseWidth<BITS, T>,
+        fn(Intensity) -> PulseWidth<BITS, T>,
+        fn(&Device) -> fn(Intensity) -> PulseWidth<BITS, T>,
     >
 {
     fn default() -> Self {

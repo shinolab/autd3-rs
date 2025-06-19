@@ -1,4 +1,4 @@
-use super::{emit_intensity::EmitIntensity, phase::Phase};
+use super::{emit_intensity::Intensity, phase::Phase};
 
 use zerocopy::{Immutable, IntoBytes};
 
@@ -9,14 +9,14 @@ pub struct Drive {
     /// The phase of the ultrasound.
     pub phase: Phase,
     /// The intensity of the ultrasound.
-    pub intensity: EmitIntensity,
+    pub intensity: Intensity,
 }
 
 impl Drive {
-    /// A [`Drive`] with a phase of [`Phase::ZERO`] and an intensity of [`EmitIntensity::MIN`].
+    /// A [`Drive`] with a phase of [`Phase::ZERO`] and an intensity of [`Intensity::MIN`].
     pub const NULL: Self = Self {
         phase: Phase::ZERO,
-        intensity: EmitIntensity::MIN,
+        intensity: Intensity::MIN,
     };
 }
 
@@ -29,7 +29,7 @@ mod tests {
         assert_eq!(
             Drive {
                 phase: Phase::ZERO,
-                intensity: EmitIntensity::MIN
+                intensity: Intensity::MIN
             },
             Drive::NULL
         );

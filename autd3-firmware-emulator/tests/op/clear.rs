@@ -62,7 +62,7 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
                 vec![
                     Drive {
                         phase: Phase(0xFF),
-                        intensity: EmitIntensity::MAX
+                        intensity: Intensity::MAX
                     };
                     AUTD3::NUM_TRANS_IN_UNIT
                 ],

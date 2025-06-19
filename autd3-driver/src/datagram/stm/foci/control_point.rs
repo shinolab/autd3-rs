@@ -1,6 +1,6 @@
 use crate::geometry::{Isometry, Point3};
 
-use autd3_core::gain::{EmitIntensity, Phase};
+use autd3_core::gain::{Intensity, Phase};
 use derive_more::{Deref, DerefMut};
 
 /// A pair of a focal point and a phase offset.
@@ -57,21 +57,21 @@ pub struct ControlPoints<const N: usize> {
     /// The control points.
     pub points: [ControlPoint; N],
     /// The intensity of all control points.
-    pub intensity: EmitIntensity,
+    pub intensity: Intensity,
 }
 
 impl<const N: usize> Default for ControlPoints<N> {
     fn default() -> Self {
         Self {
             points: [Default::default(); N],
-            intensity: EmitIntensity::MAX,
+            intensity: Intensity::MAX,
         }
     }
 }
 
 impl<const N: usize> ControlPoints<N> {
     /// Create a new [`ControlPoints`].
-    pub const fn new(points: [ControlPoint; N], intensity: EmitIntensity) -> Self {
+    pub const fn new(points: [ControlPoint; N], intensity: Intensity) -> Self {
         Self { points, intensity }
     }
 
@@ -130,7 +130,7 @@ mod tests {
         let v1 = Point3::new(1.0, 2.0, 3.0);
         let v2 = Point3::new(4.0, 5.0, 6.0);
         let cp = ControlPoints::from([v1, v2]);
-        assert_eq!(EmitIntensity::MAX, cp.intensity);
+        assert_eq!(Intensity::MAX, cp.intensity);
         assert_eq!(v1, cp[0].point);
         assert_eq!(v2, cp[1].point);
     }

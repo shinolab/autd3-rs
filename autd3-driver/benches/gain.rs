@@ -34,7 +34,7 @@ pub fn generate_geometry(size: usize) -> Geometry {
 
 #[derive(Clone, PartialEq, Debug)]
 struct FocusOption {
-    intensity: EmitIntensity,
+    intensity: Intensity,
     phase_offset: Phase,
 }
 
@@ -49,7 +49,7 @@ impl Focus {
         Self {
             pos,
             option: FocusOption {
-                intensity: EmitIntensity::MAX,
+                intensity: Intensity::MAX,
                 phase_offset: Phase::ZERO,
             },
         }
@@ -58,7 +58,7 @@ impl Focus {
 
 struct Impl {
     pos: Point3,
-    intensity: EmitIntensity,
+    intensity: Intensity,
     phase_offset: Phase,
     wavenumber: f32,
 }

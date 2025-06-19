@@ -26,7 +26,7 @@ impl<D: Directivity> Default for GSOption<D> {
     fn default() -> Self {
         Self {
             repeat: NonZeroUsize::new(100).unwrap(),
-            constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
+            constraint: EmissionConstraint::Clamp(Intensity::MIN, Intensity::MAX),
             __phantom: std::marker::PhantomData,
         }
     }
@@ -134,7 +134,7 @@ mod tests {
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             GSOption {
                 repeat: NonZeroUsize::new(5).unwrap(),
-                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                constraint: EmissionConstraint::Uniform(Intensity::MAX),
                 ..Default::default()
             },
             backend,
@@ -163,7 +163,7 @@ mod tests {
             backend,
             option: GSOption {
                 repeat: NonZeroUsize::new(5).unwrap(),
-                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                constraint: EmissionConstraint::Uniform(Intensity::MAX),
                 ..Default::default()
             },
         };

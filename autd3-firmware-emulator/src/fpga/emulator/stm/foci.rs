@@ -1,6 +1,6 @@
 use autd3_core::{
     datagram::Segment,
-    gain::{Drive, EmitIntensity, Phase},
+    gain::{Drive, Intensity, Phase},
 };
 
 use super::super::{super::params::*, FPGAEmulator};
@@ -80,7 +80,7 @@ impl FPGAEmulator {
                 let phase = self.mem.atan_table[(sin << 7) | cos];
                 dst[i] = Drive {
                     phase: Phase(phase) + p,
-                    intensity: EmitIntensity(intensity),
+                    intensity: Intensity(intensity),
                 };
             });
     }
