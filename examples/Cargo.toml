@@ -13,8 +13,6 @@ async = ["autd3/async", "tokio"]
 simulator = ["autd3-link-simulator"]
 twincat = ["autd3-link-twincat/local"]
 remote_twincat = ["autd3-link-twincat/remote"]
-lightweight = ["autd3-protobuf/lightweight", "autd3-protobuf/async-trait", "tokio"]
-lightweight_server = ["autd3-protobuf/lightweight", "autd3-link-twincat/local", "autd3-link-twincat/async-trait", "autd3-protobuf/async-trait", "tonic", "tokio/signal"]
 all = ["async", "twincat", "remote_twincat", "simulator"]
 
 [dependencies]
@@ -53,13 +51,3 @@ required-features = ["simulator"]
 name = "async"
 path = "src/async.rs"
 required-features = ["async"]
-
-[[bin]]
-name = "lightweight"
-path = "src/lightweight.rs"
-required-features = ["lightweight"]
-
-[[bin]]
-name = "lightweight_server"
-path = "src/lightweight_server.rs"
-required-features = ["lightweight_server"]

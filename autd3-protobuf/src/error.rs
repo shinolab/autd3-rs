@@ -16,9 +16,6 @@ pub enum AUTDProtoBufError {
     TokioSendError(String),
     #[error("{0}")]
     TransportError(#[from] tonic::transport::Error),
-    #[cfg(feature = "lightweight")]
-    #[error("{0}")]
-    HoloError(#[from] autd3_gain_holo::HoloError),
     #[error("{0}")]
     TokioJoinError(String),
     #[error("{0}")]
@@ -27,15 +24,6 @@ pub enum AUTDProtoBufError {
     NotSupportedData,
     #[error("Failed to parse data or missing required fields")]
     DataParseError,
-    #[cfg(feature = "lightweight")]
-    #[error("{0}")]
-    UnknownEnumValue(#[from] prost::UnknownEnumValue),
-    #[cfg(feature = "lightweight")]
-    #[error("{0}")]
-    Infallible(#[from] std::convert::Infallible),
-    #[cfg(feature = "lightweight")]
-    #[error("{0}")]
-    TryFromInt(#[from] std::num::TryFromIntError),
     #[error("{0}")]
     Unknown(String),
 }

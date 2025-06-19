@@ -32,13 +32,8 @@ pub trait DOperationGenerator {
     ) -> Option<(BoxedOperation, BoxedOperation)>;
 }
 
-#[cfg(feature = "lightweight")]
-type DynDOperationGenerator = Box<dyn DOperationGenerator + Send>;
-#[cfg(not(feature = "lightweight"))]
-type DynDOperationGenerator = Box<dyn DOperationGenerator>;
-
 pub struct DynOperationGenerator {
-    pub(crate) g: DynDOperationGenerator,
+    pub(crate) g: Box<dyn DOperationGenerator>,
 }
 
 pub trait DDatagram: std::fmt::Debug {
@@ -47,18 +42,14 @@ pub trait DDatagram: std::fmt::Debug {
         geometry: &Geometry,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
-    ) -> Result<DynDOperationGenerator, AUTDDriverError>;
+    ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError>;
     #[must_use]
     fn dyn_option(&self) -> DatagramOption;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
-impl<
-    E,
-    #[cfg(feature = "lightweight")] G: DOperationGenerator + Send + 'static,
-    #[cfg(not(feature = "lightweight"))] G: DOperationGenerator + 'static,
-    T: Datagram<G = G, Error = E>,
-> DDatagram for MaybeUninit<T>
+impl<E, G: DOperationGenerator + 'static, T: Datagram<G = G, Error = E>> DDatagram
+    for MaybeUninit<T>
 where
     AUTDDriverError: From<E>,
 {
@@ -67,7 +58,7 @@ where
         geometry: &Geometry,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
-    ) -> Result<DynDOperationGenerator, AUTDDriverError> {
+    ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError> {
         let mut tmp = MaybeUninit::<T>::uninit();
         std::mem::swap(&mut tmp, self);
         let d = unsafe { tmp.assume_init() };
@@ -88,11 +79,6 @@ pub struct BoxedDatagram {
     d: Box<dyn DDatagram>,
 }
 
-#[cfg(feature = "lightweight")]
-unsafe impl Send for BoxedDatagram {}
-#[cfg(feature = "lightweight")]
-unsafe impl Sync for BoxedDatagram {}
-
 impl std::fmt::Debug for BoxedDatagram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.d.dyn_fmt(f)
@@ -101,12 +87,7 @@ impl std::fmt::Debug for BoxedDatagram {
 
 impl BoxedDatagram {
     /// Creates a new [`BoxedDatagram`].
-    pub fn new<
-        E,
-        #[cfg(feature = "lightweight")] G: DOperationGenerator + Send + 'static,
-        #[cfg(not(feature = "lightweight"))] G: DOperationGenerator + 'static,
-        D: Datagram<G = G, Error = E> + 'static,
-    >(
+    pub fn new<E, G: DOperationGenerator + 'static, D: Datagram<G = G, Error = E> + 'static>(
         d: D,
     ) -> Self
     where
