@@ -1,6 +1,13 @@
 # Changelog
 
 
+# 34.0.0-rc.1 (2025-06-19)
+
+## 🚀 Features
+
+- Add `left_handed` and `use_meter` features to `autd3` crate
+
+
 # 34.0.0-rc.0 (2025-06-19)
 
 ## 🚀 Features
