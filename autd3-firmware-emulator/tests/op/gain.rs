@@ -64,7 +64,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
                     dev.iter()
                         .map(|_| Drive {
                             phase: Phase(rng.random()),
-                            intensity: EmitIntensity(rng.random()),
+                            intensity: Intensity(rng.random()),
                         })
                         .collect(),
                 )
@@ -99,7 +99,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
                     dev.iter()
                         .map(|_| Drive {
                             phase: Phase(rng.random()),
-                            intensity: EmitIntensity(rng.random()),
+                            intensity: Intensity(rng.random()),
                         })
                         .collect(),
                 )

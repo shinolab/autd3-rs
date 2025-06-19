@@ -233,11 +233,11 @@ mod tests {
 
         let d1 = Drive {
             phase: Phase(rng.random()),
-            intensity: EmitIntensity(rng.random()),
+            intensity: Intensity(rng.random()),
         };
         let d2 = Drive {
             phase: Phase(rng.random()),
-            intensity: EmitIntensity(rng.random()),
+            intensity: Intensity(rng.random()),
         };
 
         let gain = Group::new(

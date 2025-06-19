@@ -237,7 +237,7 @@ mod tests {
     use super::*;
 
     use autd3_core::{
-        gain::{EmitIntensity, Phase},
+        gain::{Intensity, Phase},
         geometry::Point3,
         sampling_config::SamplingConfig,
     };
@@ -275,14 +275,14 @@ mod tests {
                                 point: Point3::origin(),
                                 phase_offset: Phase::ZERO,
                             }],
-                            intensity: EmitIntensity::MAX
+                            intensity: Intensity::MAX
                         },
                         ControlPoints {
                             points: [ControlPoint {
                                 point: Point3::new(1., 2., 3.),
                                 phase_offset: Phase::PI,
                             }],
-                            intensity: EmitIntensity::MAX
+                            intensity: Intensity::MAX
                         },
                     ],
                     config: SamplingConfig::FREQ_4K,
@@ -334,14 +334,14 @@ mod tests {
                                 point: Point3::origin(),
                                 phase_offset: Phase::ZERO,
                             }],
-                            intensity: EmitIntensity::MAX
+                            intensity: Intensity::MAX
                         },
                         ControlPoints {
                             points: [ControlPoint {
                                 point: Point3::new(1., 2., 3.),
                                 phase_offset: Phase::PI,
                             }],
-                            intensity: EmitIntensity::MAX
+                            intensity: Intensity::MAX
                         },
                     ],
                     config: SamplingConfig::FREQ_4K,
@@ -394,14 +394,14 @@ mod tests {
                                 point: Point3::origin(),
                                 phase_offset: Phase::ZERO,
                             }],
-                            intensity: EmitIntensity::MAX
+                            intensity: Intensity::MAX
                         },
                         ControlPoints {
                             points: [ControlPoint {
                                 point: Point3::new(1., 2., 3.),
                                 phase_offset: Phase::PI,
                             }],
-                            intensity: EmitIntensity::MAX
+                            intensity: Intensity::MAX
                         },
                     ],
                     config: SamplingConfig::FREQ_4K,

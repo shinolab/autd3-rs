@@ -38,7 +38,7 @@ impl<D: Directivity> Default for LMOption<D> {
             tau: 1e-3,
             k_max: NonZeroUsize::new(5).unwrap(),
             initial: vec![],
-            constraint: EmissionConstraint::Clamp(EmitIntensity::MIN, EmitIntensity::MAX),
+            constraint: EmissionConstraint::Clamp(Intensity::MIN, Intensity::MAX),
             __phantom: std::marker::PhantomData,
         }
     }
@@ -301,7 +301,7 @@ mod tests {
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             LMOption {
                 k_max: NonZeroUsize::new(2).unwrap(),
-                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                constraint: EmissionConstraint::Uniform(Intensity::MAX),
                 ..Default::default()
             },
             backend,
@@ -333,7 +333,7 @@ mod tests {
             backend,
             option: LMOption {
                 k_max: NonZeroUsize::new(2).unwrap(),
-                constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+                constraint: EmissionConstraint::Uniform(Intensity::MAX),
                 ..Default::default()
             },
         };

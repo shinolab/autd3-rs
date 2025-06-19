@@ -79,7 +79,7 @@ pub use async_trait::async_trait;
 ///     fn calc(&self, tr: &Transducer) -> Drive {
 ///         Drive {
 ///             phase: Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad),
-///             intensity: EmitIntensity::MAX,
+///             intensity: Intensity::MAX,
 ///         }
 ///     }
 /// }
@@ -162,8 +162,8 @@ pub mod derive {
         pub use crate::{
             datagram::DatagramS,
             gain::{
-                Drive, EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator, GainError,
-                GainInspectionResult, GainOperationGenerator, Phase, TransducerFilter,
+                Drive, Gain, GainCalculator, GainCalculatorGenerator, GainError,
+                GainInspectionResult, GainOperationGenerator, Intensity, Phase, TransducerFilter,
             },
             geometry::{Device, Transducer},
         };

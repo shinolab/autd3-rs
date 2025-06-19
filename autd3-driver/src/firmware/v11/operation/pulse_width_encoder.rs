@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{datagram::PulseWidthEncoder, firmware::tag::TypeTag, geometry::Device};
 
-use autd3_core::{datagram::PulseWidth, gain::EmitIntensity};
+use autd3_core::{datagram::PulseWidth, gain::Intensity};
 
 use zerocopy::{Immutable, IntoBytes};
 
@@ -18,20 +18,18 @@ struct PweMsg {
     __: u8,
 }
 
-pub struct PulseWidthEncoderOp<
-    F: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16>,
-> {
+pub struct PulseWidthEncoderOp<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16>> {
     is_done: bool,
     f: F,
 }
 
-impl<F: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16>> PulseWidthEncoderOp<F> {
+impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16>> PulseWidthEncoderOp<F> {
     pub(crate) const fn new(f: F) -> Self {
         Self { is_done: false, f }
     }
 }
 
-impl<F: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync> Operation
+impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync> Operation
     for PulseWidthEncoderOp<F>
 {
     type Error = Infallible;
@@ -50,7 +48,7 @@ impl<F: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Sen
             .take(PWE_BUF_SIZE)
             .enumerate()
             .for_each(|(i, dst)| {
-                super::write_to_tx(dst, (self.f)(EmitIntensity(i as u8)).pulse_width());
+                super::write_to_tx(dst, (self.f)(Intensity(i as u8)).pulse_width());
             });
 
         self.is_done = true;
@@ -68,7 +66,7 @@ impl<F: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Sen
 }
 
 impl<
-    H: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync,
+    H: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync,
     F: Fn(&Device) -> H,
 > OperationGenerator for PulseWidthEncoder<ULTRASOUND_PERIOD_COUNT_BITS, u16, H, F>
 {

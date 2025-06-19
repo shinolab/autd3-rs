@@ -3,7 +3,7 @@ use std::{collections::HashMap, num::NonZeroU16, time::Duration};
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     datagram::{LoopBehavior, Segment, TransitionMode},
-    gain::{Drive, EmitIntensity, Phase},
+    gain::{Drive, Intensity, Phase},
     link::{MsgId, TxMessage},
     sampling_config::SamplingConfig,
 };
@@ -40,7 +40,7 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
                         Phase(rng.random()),
                     )
                 }),
-                EmitIntensity(rng.random()),
+                Intensity(rng.random()),
             )
         })
         .collect()

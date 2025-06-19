@@ -247,7 +247,7 @@ mod tests {
         geometry::Point3,
     };
 
-    use autd3_core::gain::EmitIntensity;
+    use autd3_core::gain::Intensity;
     use rand::prelude::*;
 
     struct TestIterator<const N: usize> {
@@ -279,7 +279,7 @@ mod tests {
                     rng.random_range(-500.0 * mm..500.0 * mm),
                     rng.random_range(0.0 * mm..500.0 * mm),
                 ))],
-                intensity: EmitIntensity(rng.random::<u8>()),
+                intensity: Intensity(rng.random::<u8>()),
             })
             .collect();
         let rep = 0xFFFF;
@@ -383,7 +383,7 @@ mod tests {
                         rng.random_range(0.0 * mm..500.0 * mm),
                     ))
                 }),
-                intensity: EmitIntensity(rng.random::<u8>()),
+                intensity: Intensity(rng.random::<u8>()),
             })
             .collect();
         let rep = 0xFFFF;
@@ -495,7 +495,7 @@ mod tests {
                     rng.random_range(-500.0 * mm..500.0 * mm),
                     rng.random_range(0.0 * mm..500.0 * mm),
                 ))],
-                intensity: EmitIntensity(rng.random::<u8>()),
+                intensity: Intensity(rng.random::<u8>()),
             })
             .collect();
         let freq_div = rng.random_range(0x0001..0xFFFF);

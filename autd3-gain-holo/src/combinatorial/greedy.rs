@@ -49,7 +49,7 @@ impl Default for GreedyOption<Sphere, AbsGreedyObjectiveFn> {
     fn default() -> Self {
         Self {
             phase_quantization_levels: NonZeroU8::new(16).unwrap(),
-            constraint: EmissionConstraint::Uniform(EmitIntensity::MAX),
+            constraint: EmissionConstraint::Uniform(Intensity::MAX),
             objective_func: AbsGreedyObjectiveFn,
             __phantom: std::marker::PhantomData,
         }

@@ -33,11 +33,11 @@ fn firmware_v10_by_auto_driver() -> anyhow::Result<()> {
         GainSTM {
             gains: vec![
                 Uniform {
-                    intensity: EmitIntensity(0x80),
+                    intensity: Intensity(0x80),
                     phase: Phase::ZERO,
                 },
                 Uniform {
-                    intensity: EmitIntensity(0x81),
+                    intensity: Intensity(0x81),
                     phase: Phase::ZERO,
                 },
             ],
@@ -58,7 +58,7 @@ fn firmware_v10_by_auto_driver() -> anyhow::Result<()> {
                 .modulation_buffer(unsafe { std::mem::transmute(Segment::S0) })
         );
         let f = Uniform {
-            intensity: EmitIntensity(0x80),
+            intensity: Intensity(0x80),
             phase: Phase::ZERO,
         }
         .init(autd.geometry(), &TransducerFilter::all_enabled())?
@@ -73,7 +73,7 @@ fn firmware_v10_by_auto_driver() -> anyhow::Result<()> {
                 .collect::<Vec<_>>()
         );
         let f = Uniform {
-            intensity: EmitIntensity(0x81),
+            intensity: Intensity(0x81),
             phase: Phase::ZERO,
         }
         .init(autd.geometry(), &TransducerFilter::all_enabled())?
@@ -133,7 +133,7 @@ fn firmware_v10_by_auto_driver_focistm_out_of_range() {
                 start: Point3::origin(),
                 end: Point3::origin(),
                 num_points: 65536,
-                intensity: EmitIntensity::MAX,
+                intensity: Intensity::MAX,
             },
             config: SamplingConfig::Divide(NonZeroU16::MAX),
         })
@@ -162,11 +162,11 @@ fn firmware_v11_by_auto_driver() -> anyhow::Result<()> {
         GainSTM {
             gains: vec![
                 Uniform {
-                    intensity: EmitIntensity(0x80),
+                    intensity: Intensity(0x80),
                     phase: Phase::ZERO,
                 },
                 Uniform {
-                    intensity: EmitIntensity(0x81),
+                    intensity: Intensity(0x81),
                     phase: Phase::ZERO,
                 },
             ],
@@ -187,7 +187,7 @@ fn firmware_v11_by_auto_driver() -> anyhow::Result<()> {
                 .modulation_buffer(unsafe { std::mem::transmute(Segment::S0) })
         );
         let f = Uniform {
-            intensity: EmitIntensity(0x80),
+            intensity: Intensity(0x80),
             phase: Phase::ZERO,
         }
         .init(autd.geometry(), &TransducerFilter::all_enabled())?
@@ -202,7 +202,7 @@ fn firmware_v11_by_auto_driver() -> anyhow::Result<()> {
                 .collect::<Vec<_>>()
         );
         let f = Uniform {
-            intensity: EmitIntensity(0x81),
+            intensity: Intensity(0x81),
             phase: Phase::ZERO,
         }
         .init(autd.geometry(), &TransducerFilter::all_enabled())?
@@ -268,11 +268,11 @@ fn firmware_v12_by_auto_driver() -> anyhow::Result<()> {
         GainSTM {
             gains: vec![
                 Uniform {
-                    intensity: EmitIntensity(0x80),
+                    intensity: Intensity(0x80),
                     phase: Phase::ZERO,
                 },
                 Uniform {
-                    intensity: EmitIntensity(0x81),
+                    intensity: Intensity(0x81),
                     phase: Phase::ZERO,
                 },
             ],
@@ -291,7 +291,7 @@ fn firmware_v12_by_auto_driver() -> anyhow::Result<()> {
             autd.link()[dev.idx()].fpga().modulation_buffer(Segment::S0)
         );
         let f = Uniform {
-            intensity: EmitIntensity(0x80),
+            intensity: Intensity(0x80),
             phase: Phase::ZERO,
         }
         .init(autd.geometry(), &TransducerFilter::all_enabled())?
@@ -301,7 +301,7 @@ fn firmware_v12_by_auto_driver() -> anyhow::Result<()> {
             autd.link()[dev.idx()].fpga().drives_at(Segment::S0, 0)
         );
         let f = Uniform {
-            intensity: EmitIntensity(0x81),
+            intensity: Intensity(0x81),
             phase: Phase::ZERO,
         }
         .init(autd.geometry(), &TransducerFilter::all_enabled())?

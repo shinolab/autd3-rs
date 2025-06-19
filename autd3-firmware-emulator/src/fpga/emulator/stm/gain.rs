@@ -1,6 +1,6 @@
 use autd3_core::{
     datagram::Segment,
-    gain::{Drive, EmitIntensity, Phase},
+    gain::{Drive, Intensity, Phase},
 };
 
 use crate::FPGAEmulator;
@@ -17,7 +17,7 @@ impl FPGAEmulator {
             .for_each(|(i, (&d, &p))| {
                 dst[i] = Drive {
                     phase: Phase((d & 0xFF) as u8) + p,
-                    intensity: EmitIntensity(((d >> 8) & 0xFF) as u8),
+                    intensity: Intensity(((d >> 8) & 0xFF) as u8),
                 }
             })
     }

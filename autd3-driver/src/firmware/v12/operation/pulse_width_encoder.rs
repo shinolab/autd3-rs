@@ -7,9 +7,9 @@ use crate::{
     geometry::Device,
 };
 
-use autd3_core::{datagram::PulseWidth, gain::EmitIntensity};
+use autd3_core::{datagram::PulseWidth, gain::Intensity};
 
-impl<F: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync> Operation
+impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync> Operation
     for PulseWidthEncoderOp<F>
 {
     type Error = <Self as OperationV11>::Error;
@@ -28,7 +28,7 @@ impl<F: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Sen
 }
 
 impl<
-    H: Fn(EmitIntensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync,
+    H: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync,
     F: Fn(&Device) -> H,
 > OperationGenerator for PulseWidthEncoder<ULTRASOUND_PERIOD_COUNT_BITS, u16, H, F>
 {

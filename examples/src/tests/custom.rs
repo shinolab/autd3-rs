@@ -11,7 +11,7 @@ pub fn custom(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Resul
         let dev_idx = dev.idx();
         move |tr| match (dev_idx, tr.idx()) {
             (0, 0) | (0, 248) => Drive {
-                intensity: EmitIntensity::MAX,
+                intensity: Intensity::MAX,
                 phase: Phase::ZERO,
             },
             _ => Drive::NULL,

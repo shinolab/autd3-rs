@@ -427,9 +427,7 @@ mod tests {
     use autd3_core::{
         common::mm,
         derive::*,
-        gain::{
-            EmitIntensity, Gain, GainCalculator, GainCalculatorGenerator, Phase, TransducerFilter,
-        },
+        gain::{Gain, GainCalculator, GainCalculatorGenerator, Intensity, Phase, TransducerFilter},
         link::LinkError,
     };
     use autd3_driver::{
@@ -486,11 +484,11 @@ mod tests {
             GainSTM {
                 gains: vec![
                     Uniform {
-                        intensity: EmitIntensity(0x80),
+                        intensity: Intensity(0x80),
                         phase: Phase::ZERO,
                     },
                     Uniform {
-                        intensity: EmitIntensity(0x81),
+                        intensity: Intensity(0x81),
                         phase: Phase::ZERO,
                     },
                 ],
@@ -510,7 +508,7 @@ mod tests {
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {
-                intensity: EmitIntensity(0x80),
+                intensity: Intensity(0x80),
                 phase: Phase::ZERO,
             }
             .init(&autd.geometry, &TransducerFilter::all_enabled())?
@@ -520,7 +518,7 @@ mod tests {
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
             let f = Uniform {
-                intensity: EmitIntensity(0x81),
+                intensity: Intensity(0x81),
                 phase: Phase::ZERO,
             }
             .init(&autd.geometry, &TransducerFilter::all_enabled())?
@@ -717,11 +715,11 @@ mod tests {
             GainSTM {
                 gains: vec![
                     Uniform {
-                        intensity: EmitIntensity(0x80),
+                        intensity: Intensity(0x80),
                         phase: Phase::ZERO,
                     },
                     Uniform {
-                        intensity: EmitIntensity(0x81),
+                        intensity: Intensity(0x81),
                         phase: Phase::ZERO,
                     },
                 ],
@@ -743,7 +741,7 @@ mod tests {
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {
-                intensity: EmitIntensity(0x80),
+                intensity: Intensity(0x80),
                 phase: Phase::ZERO,
             }
             .init(&autd.geometry, &TransducerFilter::all_enabled())?
@@ -753,7 +751,7 @@ mod tests {
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 0)
             );
             let f = Uniform {
-                intensity: EmitIntensity(0x81),
+                intensity: Intensity(0x81),
                 phase: Phase::ZERO,
             }
             .init(&autd.geometry, &TransducerFilter::all_enabled())?

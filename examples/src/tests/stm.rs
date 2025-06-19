@@ -9,7 +9,7 @@ pub fn foci_stm(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Res
             radius: 30.0 * mm,
             num_points: 50,
             n: Vector3::z_axis(),
-            intensity: EmitIntensity::MAX,
+            intensity: Intensity::MAX,
         },
         config: 1.0 * Hz,
     };
@@ -30,7 +30,7 @@ pub fn gain_stm(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Res
             radius: 30.0 * mm,
             num_points: 50,
             n: Vector3::z_axis(),
-            intensity: EmitIntensity::MAX,
+            intensity: Intensity::MAX,
         },
         config: 1.0 * Hz,
         option: Default::default(),
