@@ -3,9 +3,12 @@ use std::{convert::Infallible, mem::size_of};
 use super::{
     super::fpga::{PWE_BUF_SIZE, ULTRASOUND_PERIOD_COUNT_BITS},
     Operation, OperationGenerator,
-    null::NullOp,
 };
-use crate::{datagram::PulseWidthEncoder, firmware::tag::TypeTag, geometry::Device};
+use crate::{
+    datagram::PulseWidthEncoder,
+    firmware::{driver::NullOp, tag::TypeTag},
+    geometry::Device,
+};
 
 use autd3_core::{datagram::PulseWidth, gain::Intensity};
 
@@ -35,7 +38,7 @@ impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u8> + Send + S
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             PweMsg {
                 tag: TypeTag::ConfigPulseWidthEncoderV10,

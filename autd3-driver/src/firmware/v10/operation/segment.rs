@@ -1,8 +1,15 @@
 use std::mem::size_of;
 
-use super::{Operation, OperationGenerator, null::NullOp};
+use super::OperationGenerator;
+
 use crate::{
-    datagram::SwapSegment, error::AUTDDriverError, firmware::tag::TypeTag, geometry::Device,
+    datagram::SwapSegment,
+    error::AUTDDriverError,
+    firmware::{
+        driver::{NullOp, Operation},
+        tag::TypeTag,
+    },
+    geometry::Device,
 };
 
 use autd3_core::datagram::TransitionMode;
@@ -58,7 +65,7 @@ impl Operation for SwapSegmentOp {
                 if transition != TransitionMode::Immediate {
                     return Err(AUTDDriverError::InvalidTransitionMode);
                 }
-                super::write_to_tx(
+                crate::firmware::driver::write_to_tx(
                     tx,
                     SwapSegmentT {
                         tag,
@@ -71,7 +78,7 @@ impl Operation for SwapSegmentOp {
             SwapSegment::Modulation(segment, transition)
             | SwapSegment::FociSTM(segment, transition)
             | SwapSegment::GainSTM(segment, transition) => {
-                super::write_to_tx(
+                crate::firmware::driver::write_to_tx(
                     tx,
                     SwapSegmentTWithTransition {
                         tag,

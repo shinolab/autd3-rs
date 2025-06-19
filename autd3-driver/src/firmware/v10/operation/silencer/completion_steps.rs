@@ -1,7 +1,11 @@
 use std::{convert::Infallible, num::NonZeroU16};
 
-use super::super::{Operation, OperationGenerator, null::NullOp};
-use crate::{datagram::FixedCompletionSteps, firmware::tag::TypeTag, geometry::Device};
+use super::super::{Operation, OperationGenerator};
+use crate::{
+    datagram::FixedCompletionSteps,
+    firmware::{driver::NullOp, tag::TypeTag},
+    geometry::Device,
+};
 
 use super::SilencerControlFlags;
 
@@ -38,7 +42,7 @@ impl Operation for SilencerFixedCompletionStepsOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        super::super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             SilencerFixedCompletionSteps {
                 tag: TypeTag::Silencer,

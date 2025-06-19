@@ -1,28 +1,9 @@
-use super::{Operation, OperationGenerator};
+use super::OperationGenerator;
 use crate::{
-    firmware::v11::operation::{
-        GainOp, Operation as OperationV11, OperationGenerator as OperationGeneratorV11,
-    },
-    geometry::Device,
+    firmware::v11::operation::OperationGenerator as OperationGeneratorV11, geometry::Device,
 };
 
-use autd3_core::gain::{GainCalculator, GainCalculatorGenerator, GainOperationGenerator};
-
-impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {
-    type Error = <Self as OperationV11>::Error;
-
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        OperationV11::pack(self, device, tx)
-    }
-
-    fn required_size(&self, device: &Device) -> usize {
-        OperationV11::required_size(self, device)
-    }
-
-    fn is_done(&self) -> bool {
-        OperationV11::is_done(self)
-    }
-}
+use autd3_core::gain::{GainCalculatorGenerator, GainOperationGenerator};
 
 impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G> {
     type O1 = <Self as OperationGeneratorV11>::O1;

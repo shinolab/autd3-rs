@@ -12,10 +12,10 @@ pub fn group_by_device(autd: &mut Controller<impl Link, firmware::Auto>) -> anyh
             _ => None,
         },
         datagram_map: HashMap::from([
-            ("null", autd.make_boxed(Null {})),
+            ("null", BoxedDatagram::new(Null {})),
             (
                 "focus",
-                autd.make_boxed(Focus {
+                BoxedDatagram::new(Focus {
                     pos: center,
                     option: Default::default(),
                 }),

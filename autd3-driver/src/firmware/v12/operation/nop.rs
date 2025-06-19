@@ -1,7 +1,14 @@
 use std::convert::Infallible;
 
-use super::{Operation, OperationGenerator, null::NullOp};
-use crate::{datagram::Nop, firmware::tag::TypeTag, geometry::Device};
+use super::OperationGenerator;
+use crate::{
+    datagram::Nop,
+    firmware::{
+        driver::{NullOp, Operation},
+        tag::TypeTag,
+    },
+    geometry::Device,
+};
 
 use zerocopy::{Immutable, IntoBytes};
 
@@ -26,7 +33,7 @@ impl Operation for NopOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             NopMsg {
                 tag: TypeTag::Nop,

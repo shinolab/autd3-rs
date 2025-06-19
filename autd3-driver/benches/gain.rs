@@ -9,8 +9,8 @@ use autd3_driver::{
     common::rad,
     datagram::BoxedGain,
     firmware::{
-        driver::Driver,
-        latest::{Latest, operation::OperationHandler},
+        driver::{Driver, OperationHandler},
+        latest::{Latest, operation::OperationGenerator},
     },
     geometry::{Device, Geometry, Point3, Transducer},
 };
@@ -108,14 +108,17 @@ fn focus(c: &mut Criterion) {
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
-                    let generator = g
+                    let mut generator = g
                         .operation_generator(
                             geometry,
                             &DeviceFilter::all_enabled(),
                             &Latest.firmware_limits(),
                         )
                         .unwrap();
-                    let mut operations = OperationHandler::generate(generator, geometry);
+                    let mut operations = geometry
+                        .iter()
+                        .map(|dev| generator.generate(dev))
+                        .collect::<Vec<_>>();
                     OperationHandler::pack(
                         MsgId::new(0x00),
                         &mut operations,
@@ -143,14 +146,17 @@ fn focus_parallel(c: &mut Criterion) {
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
-                    let generator = g
+                    let mut generator = g
                         .operation_generator(
                             geometry,
                             &DeviceFilter::all_enabled(),
                             &Latest.firmware_limits(),
                         )
                         .unwrap();
-                    let mut operations = OperationHandler::generate(generator, geometry);
+                    let mut operations = geometry
+                        .iter()
+                        .map(|dev| generator.generate(dev))
+                        .collect::<Vec<_>>();
                     OperationHandler::pack(
                         MsgId::new(0x00),
                         &mut operations,
@@ -181,14 +187,17 @@ fn focus_boxed(c: &mut Criterion) {
                         black_box(70.),
                         black_box(150.),
                     )));
-                    let generator = g
+                    let mut generator = g
                         .operation_generator(
                             geometry,
                             &DeviceFilter::all_enabled(),
                             &Latest.firmware_limits(),
                         )
                         .unwrap();
-                    let mut operations = OperationHandler::generate(generator, geometry);
+                    let mut operations = geometry
+                        .iter()
+                        .map(|dev| generator.generate(dev))
+                        .collect::<Vec<_>>();
                     OperationHandler::pack(
                         MsgId::new(0x00),
                         &mut operations,

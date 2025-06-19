@@ -1,7 +1,14 @@
 use std::sync::Arc;
 
-use super::{Operation, OperationGenerator, null::NullOp};
-use crate::{error::AUTDDriverError, firmware::tag::TypeTag, geometry::Device};
+use super::OperationGenerator;
+use crate::{
+    error::AUTDDriverError,
+    firmware::{
+        driver::{NullOp, Operation},
+        tag::TypeTag,
+    },
+    geometry::Device,
+};
 
 use autd3_core::{
     common::MOD_BUF_SIZE_MIN,
@@ -132,7 +139,7 @@ impl Operation for ModulationOp {
         }
 
         if is_first {
-            super::write_to_tx(
+            crate::firmware::driver::write_to_tx(
                 tx,
                 ModulationHead {
                     tag: TypeTag::Modulation,
@@ -149,7 +156,7 @@ impl Operation for ModulationOp {
             );
             Ok(size_of::<ModulationHead>() + ((send_num + 0x01) & !0x1))
         } else {
-            super::write_to_tx(
+            crate::firmware::driver::write_to_tx(
                 tx,
                 ModulationSubseq {
                     tag: TypeTag::Modulation,

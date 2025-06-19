@@ -1,9 +1,8 @@
 use autd3_core::{link::Link, sleep::Sleep};
 
-use super::Version;
 use crate::{
     error::AUTDDriverError,
-    firmware::driver::{Driver, FixedSchedule, Sender, TimerStrategy},
+    firmware::driver::{Driver, FixedSchedule, Sender, TimerStrategy, Version},
 };
 
 use getset::CopyGetters;

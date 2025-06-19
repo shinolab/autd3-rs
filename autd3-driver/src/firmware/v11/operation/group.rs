@@ -30,8 +30,8 @@ mod tests {
         time::Duration,
     };
 
-    use super::{super::null::NullOp, *};
-    use crate::datagram::Group;
+    use super::*;
+    use crate::{datagram::Group, firmware::driver::NullOp};
 
     use autd3_core::{
         datagram::{DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult},

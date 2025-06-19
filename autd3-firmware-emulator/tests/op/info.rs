@@ -6,12 +6,8 @@ use autd3_driver::{
     datagram::*,
     error::AUTDDriverError,
     firmware::{
-        driver::Driver,
-        latest::{
-            Latest,
-            cpu::check_firmware_err,
-            operation::{OperationGenerator, OperationHandler},
-        },
+        driver::{Driver, OperationHandler},
+        latest::{Latest, cpu::check_firmware_err, operation::OperationGenerator},
         version::FirmwareVersion,
     },
 };

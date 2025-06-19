@@ -7,12 +7,8 @@ use autd3_driver::{
     datagram::*,
     error::AUTDDriverError,
     firmware::{
-        driver::Driver,
-        latest::{
-            Latest,
-            cpu::check_firmware_err,
-            operation::{Operation, OperationGenerator, OperationHandler},
-        },
+        driver::{Driver, Operation, OperationHandler},
+        latest::{Latest, cpu::check_firmware_err, operation::OperationGenerator},
     },
     geometry::{Geometry, Point3},
 };
@@ -51,12 +47,15 @@ where
 {
     let option = d.option();
     let parallel = geometry.num_devices() > option.parallel_threshold;
-    let generator = d.operation_generator(
+    let mut generator = d.operation_generator(
         geometry,
         &DeviceFilter::all_enabled(),
         &Latest.firmware_limits(),
     )?;
-    let mut op = OperationHandler::generate(generator, geometry);
+    let mut op = geometry
+        .iter()
+        .map(|dev| generator.generate(dev))
+        .collect::<Vec<_>>();
     loop {
         if OperationHandler::is_done(&op) {
             break;
@@ -109,23 +108,29 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0x0A);
 
     let d = Clear::new();
-    let generator = d.operation_generator(
+    let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
         &Latest.firmware_limits(),
     )?;
-    let mut op = OperationHandler::generate(generator, &geometry);
+    let mut op = geometry
+        .iter()
+        .map(|dev| generator.generate(dev))
+        .collect::<Vec<_>>();
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
     cpu.send(&tx);
     assert_eq!(cpu.rx().ack().msg_id(), tx[0].header.msg_id.get());
 
     let d = Synchronize::new();
-    let generator = d.operation_generator(
+    let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
         &Latest.firmware_limits(),
     )?;
-    let mut op = OperationHandler::generate(generator, &geometry);
+    let mut op = geometry
+        .iter()
+        .map(|dev| generator.generate(dev))
+        .collect::<Vec<_>>();
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
     assert!(!cpu.synchronized());
     cpu.send(&tx);
@@ -142,12 +147,15 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0x0E);
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(
+    let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
         &Latest.firmware_limits(),
     )?;
-    let mut op = OperationHandler::generate(generator, &geometry);
+    let mut op = geometry
+        .iter()
+        .map(|dev| generator.generate(dev))
+        .collect::<Vec<_>>();
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
 
     assert!(!cpu.synchronized());
@@ -166,12 +174,15 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let msg_id = MsgId::new(0);
 
     let d = (Clear::new(), Synchronize::new());
-    let generator = d.operation_generator(
+    let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
         &Latest.firmware_limits(),
     )?;
-    let mut op = OperationHandler::generate(generator, &geometry);
+    let mut op = geometry
+        .iter()
+        .map(|dev| generator.generate(dev))
+        .collect::<Vec<_>>();
     OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false)?;
 
     let slot2_offset = tx[0].header.slot_2_offset as usize;

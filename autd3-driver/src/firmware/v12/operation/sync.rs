@@ -1,29 +1,8 @@
-use std::convert::Infallible;
-
-use super::{Operation, OperationGenerator};
+use super::OperationGenerator;
 use crate::{
-    datagram::Synchronize,
-    firmware::v11::operation::{
-        Operation as OperationV11, OperationGenerator as OperationGeneratorV11, SyncOp,
-    },
+    datagram::Synchronize, firmware::v11::operation::OperationGenerator as OperationGeneratorV11,
     geometry::Device,
 };
-
-impl Operation for SyncOp {
-    type Error = Infallible;
-
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        OperationV11::pack(self, device, tx)
-    }
-
-    fn required_size(&self, device: &Device) -> usize {
-        OperationV11::required_size(self, device)
-    }
-
-    fn is_done(&self) -> bool {
-        OperationV11::is_done(self)
-    }
-}
 
 impl OperationGenerator for Synchronize {
     type O1 = <Self as OperationGeneratorV11>::O1;

@@ -1,7 +1,8 @@
-use super::{Operation, OperationGenerator, null::NullOp};
+use super::OperationGenerator;
+use crate::firmware::driver::NullOp;
 use crate::{
     datagram::{GPIOOutputType, GPIOOutputs},
-    firmware::v11::operation::{GPIOOutputOp, Operation as OperationV11},
+    firmware::v11::operation::GPIOOutputOp,
     geometry::Device,
 };
 
@@ -42,22 +43,6 @@ fn convert(ty: Option<GPIOOutputType<'_>>) -> crate::firmware::v11::operation::G
             Some(GPIOOutputType::PwmOut(_)) => 0xE0,
             Some(GPIOOutputType::Direct(_)) => 0xF0,
         })
-}
-
-impl Operation for GPIOOutputOp {
-    type Error = <Self as OperationV11>::Error;
-
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        OperationV11::pack(self, device, tx)
-    }
-
-    fn required_size(&self, device: &Device) -> usize {
-        OperationV11::required_size(self, device)
-    }
-
-    fn is_done(&self) -> bool {
-        OperationV11::is_done(self)
-    }
 }
 
 impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator

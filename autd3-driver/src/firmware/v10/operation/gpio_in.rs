@@ -1,7 +1,14 @@
 use std::convert::Infallible;
 
-use super::{Operation, OperationGenerator, null::NullOp};
-use crate::{datagram::EmulateGPIOIn, firmware::tag::TypeTag, geometry::Device};
+use super::OperationGenerator;
+use crate::{
+    datagram::EmulateGPIOIn,
+    firmware::{
+        driver::{NullOp, Operation},
+        tag::TypeTag,
+    },
+    geometry::Device,
+};
 
 use autd3_core::datagram::GPIOIn;
 
@@ -49,7 +56,7 @@ impl Operation for EmulateGPIOInOp {
         let mut flag = GPIOInFlags::NONE;
         seq_macro::seq!(N in 0..4 {#(flag.set(GPIOInFlags::GPIO_IN_~N, self.value[N]);)*});
 
-        super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             EmulateGPIOInMsg {
                 tag: TypeTag::EmulateGPIOIn,

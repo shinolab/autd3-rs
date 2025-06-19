@@ -1,7 +1,14 @@
 use std::mem::size_of;
 
-use super::{Operation, OperationGenerator, null::NullOp};
-use crate::{error::AUTDDriverError, firmware::tag::TypeTag, geometry::Device};
+use super::OperationGenerator;
+use crate::{
+    error::AUTDDriverError,
+    firmware::{
+        driver::{NullOp, Operation},
+        tag::TypeTag,
+    },
+    geometry::Device,
+};
 
 use autd3_core::{
     datagram::{Segment, TransitionMode},
@@ -60,7 +67,7 @@ impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {
     }
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             Gain {
                 tag: TypeTag::Gain,
@@ -81,7 +88,7 @@ impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {
             .chunks_mut(size_of::<Drive>())
             .zip(device.iter())
             .for_each(|(dst, tr)| {
-                super::write_to_tx(dst, self.calculator.calc(tr));
+                crate::firmware::driver::write_to_tx(dst, self.calculator.calc(tr));
             });
 
         self.is_done = true;

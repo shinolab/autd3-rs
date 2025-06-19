@@ -1,10 +1,13 @@
 use std::mem::size_of;
 
-use super::{Operation, OperationGenerator, null::NullOp};
+use super::OperationGenerator;
 use crate::{
     datagram::{GPIOOutputType, GPIOOutputs},
     error::AUTDDriverError,
-    firmware::tag::TypeTag,
+    firmware::{
+        driver::{NullOp, Operation},
+        tag::TypeTag,
+    },
     geometry::Device,
 };
 
@@ -87,7 +90,7 @@ impl Operation for GPIOOutputOp {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             GPIOOutputMsg {
                 tag: TypeTag::Debug,

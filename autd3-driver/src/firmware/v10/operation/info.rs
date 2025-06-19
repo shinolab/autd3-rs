@@ -1,9 +1,12 @@
 use std::convert::Infallible;
 
-use super::{Operation, OperationGenerator, null::NullOp};
+use super::OperationGenerator;
 use crate::{
     datagram::{FetchFirmwareInfoOpGenerator, FirmwareVersionType},
-    firmware::tag::TypeTag,
+    firmware::{
+        driver::{NullOp, Operation},
+        tag::TypeTag,
+    },
     geometry::Device,
 };
 
@@ -31,7 +34,7 @@ impl Operation for FirmInfoOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        super::write_to_tx(
+        crate::firmware::driver::write_to_tx(
             tx,
             FirmInfo {
                 tag: TypeTag::FirmwareVersion,
