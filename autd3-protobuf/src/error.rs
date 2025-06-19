@@ -9,23 +9,9 @@ pub enum AUTDProtoBufError {
     #[error("{0}")]
     Status(String),
     #[error("{0}")]
-    DecodeError(#[from] prost::DecodeError),
-    #[error("{0}")]
     SendError(String),
     #[error("{0}")]
-    TokioSendError(String),
-    #[error("{0}")]
     TransportError(#[from] tonic::transport::Error),
-    #[error("{0}")]
-    TokioJoinError(String),
-    #[error("{0}")]
-    AUTDDriverError(#[from] autd3_driver::error::AUTDDriverError),
-    #[error("Not supported data")]
-    NotSupportedData,
-    #[error("Failed to parse data or missing required fields")]
-    DataParseError,
-    #[error("{0}")]
-    Unknown(String),
 }
 
 // GRCOV_EXCL_START
@@ -55,15 +41,3 @@ impl From<AUTDProtoBufError> for autd3_core::link::LinkError {
 }
 
 // GRCOV_EXCL_STOP
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_protobuf_error() {
-        let e = AUTDProtoBufError::NotSupportedData;
-        assert_eq!(e.to_string(), "Not supported data");
-        assert_eq!(format!("{:?}", e), "NotSupportedData");
-    }
-}
