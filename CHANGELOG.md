@@ -1,22 +1,69 @@
+# Changelog
+
+
+# 34.0.0-rc.0 (2025-06-19)
+
+## 🚀 Features
+
+- Add `thread-safe` feature to make `CPUEmulator` `Sync` (#272)
+- Introduce `GainGroup` alias for gain::Group`
+- Add `SpinWaitSleeper`
+- [**breaking**] Add `TimerStrategy` (#282)
+- Support firmware v12.0.0 (#289)
+- Add supports for old firmwares
+
+## 🗑️ Removals
+
+- [**breaking**] `gain::Cache` and `modulation::Cache`
+- [**breaking**] `Device::enable` flag (#275)
+- [**breaking**] `IntoBoxed` traits
+- [**breaking**] `WaitableSleeper`
+- [**breaking**] `lightweight` feature
+
+## 🐛 Bug Fixes
+
+- `datagram::Group` unnecessarily updates `Geometry::version` (#263)
+- `SenderOption::timeout` reverts to `None` (#264)
+- Error when sending invalid msg id should be `InvalidMessageID` rather than  `ConfirmResponseFailed` (#290)
+
+## 🚜 Refactor
+
+- Move codes related to transmission control to `autd3-driver` (#286)
+- [**breaking**] Rename from `EmitIntensity` to `Intensity`
+
+## ⚡ Performance
+
+- Use `ReadsFPGAState` instead of `ForceFan` to clear `msg_id` in device
+- Adopt `smallvec`
+- Adjust parallel threshold (#285)
+
+## ⚙️ Miscellaneous Tasks
+
+- Update error messages
+
+
 # 33.0.0 (2025-05-25)
 
 ## 🚀 Features
 
 - Make `SenderOption` used in `Controller::send` configurable (#250)
 - Enhance `Greedy` algorithm with customizable objective function (#253)
-- Remove `Controller::group_send`, add `datagram::Group` instead (#257)
 - Make `GPIOOutputType` optional
 - Add `BoxedGain::new`, `BoxedModulation::new` and `BoxedDatagram::new`
 - Add `Controller::inspect` (#261)
 
-## 🐛 Bug Fixes
+## 🗑️ Removals
 
-- No need to check the response of disabled devices (#247)
+- `Controller::group_send`, add `datagram::Group` instead (#257)
 
 ## ⬆️ Update Dependencies
 
 - Update bitfield-struct requirement from 0.10.1 to 0.11.0
 - Update criterion requirement from 0.5.1 to 0.6.0
+
+## 🐛 Bug Fixes
+
+- No need to check the response of disabled devices (#247)
 
 ## 🚜 Refactor
 
@@ -51,6 +98,9 @@
 ## 🐛 Bug Fixes
 
 - Size calculations in `PulseWidthEncoderOp` is invalid
+
+
+# 19.0.0 (2023-12-08)
 
 
 # 32.0.1
