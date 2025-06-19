@@ -11,7 +11,7 @@ mod internal {
     #[autd3_core::async_trait]
     pub trait TimerStrategy<S: Sleep>: Send + Sync {
         /// Returns the initial instant.
-        fn initial() -> Instant;
+        fn initial(&self) -> Instant;
         /// Sleep until the specified time.
         /// The first call receives the return value of [`TimerStrategy::initial`] as `old`, and subsequent calls receive the previous return value.
         async fn sleep(&self, old: Instant, interval: Duration) -> Instant;
@@ -25,7 +25,7 @@ mod internal {
     /// A trait for timer strategies.
     pub trait TimerStrategy<S: Sleep>: Send {
         /// Returns the initial instant.
-        fn initial() -> Instant;
+        fn initial(&self) -> Instant;
         /// Sleep until the specified time.
         /// The first call receives the return value of [`TimerStrategy::initial`] as `old`, and subsequent calls receive the previous return value.
         fn sleep(
@@ -40,7 +40,7 @@ pub use internal::*;
 
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl<S: Sleep> TimerStrategy<S> for FixedSchedule<S> {
-    fn initial() -> Instant {
+    fn initial(&self) -> Instant {
         Instant::now()
     }
 
@@ -55,7 +55,7 @@ impl<S: Sleep> TimerStrategy<S> for FixedSchedule<S> {
 
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl<S: Sleep> TimerStrategy<S> for FixedDelay<S> {
-    fn initial() -> Instant {
+    fn initial(&self) -> Instant {
         Instant::now()
     }
 
@@ -91,7 +91,7 @@ mod tests {
 
         let strategy = FixedSchedule(DebugSleep { sleep });
 
-        let start = FixedSchedule::<DebugSleep>::initial();
+        let start = strategy.initial();
         let interval = Duration::from_millis(1);
 
         let next = strategy.sleep(start, interval).await;
@@ -109,7 +109,7 @@ mod tests {
             sleep: sleep.clone(),
         });
 
-        let start = FixedDelay::<DebugSleep>::initial();
+        let start = strategy.initial();
         let interval = Duration::from_millis(1);
 
         let next = strategy.sleep(start, interval).await;
