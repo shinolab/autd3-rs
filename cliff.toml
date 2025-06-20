@@ -25,11 +25,13 @@ commit_parsers = [
 filter_commits = false
 topo_order = false
 sort_commits = "oldest"
-skip_tags = "(v(2[3-9]|3[0-1]).*.*)|v32.0.0"
+skip_tags = "(v(1[0-9]|2[0-9]|3[0-1]).*.*)|v32.0.0"
 
 [changelog]
 header = "# Changelog\n\n"
-body = """
+body = """\
+{% if version == "v19.0.0" %}\
+{% else %}\
 {% if version %}\
 # {{ version | trim_start_matches(pat="v") }} ({{ timestamp | date(format="%Y-%m-%d") }})
 {% else %}\
@@ -43,10 +45,11 @@ body = """
   {{ commit.message | upper_first }}\
 {% endfor %}
 {% endfor %}\n
+{% endif %}\
 """
 
 # old changelog
-footer = """
+footer = """\
 # 32.0.1
 
 - Remove unintended `dbg!` 
