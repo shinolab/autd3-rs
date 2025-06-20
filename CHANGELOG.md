@@ -107,9 +107,6 @@
 - Size calculations in `PulseWidthEncoderOp` is invalid
 
 
-# 19.0.0 (2023-12-08)
-
-
 # 32.0.1
 
 - Remove unintended `dbg!` 
