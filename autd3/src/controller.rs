@@ -226,7 +226,7 @@ impl<L: Link + 'static, V: Driver> Controller<L, V> {
     ///
     /// # Safety
     ///
-    /// This function must be used only when converting an instance created by [`Controller::into_boxed_link`] back to the original [`Controller<L>`].
+    /// This function must be used only when converting an instance created by [`Controller::into_boxed_link`] back to the original [`Controller`].
     pub unsafe fn from_boxed_link(cnt: Controller<Box<dyn Link>, V>) -> Controller<L, V> {
         let cnt = std::mem::ManuallyDrop::new(cnt);
         let msg_id = unsafe { std::ptr::read(&cnt.msg_id) };
@@ -261,7 +261,9 @@ impl<L: Link, V: Driver> Drop for Controller<L, V> {
 // https://github.com/rust-lang/rfcs/issues/2190
 
 impl<L: Link> Controller<L, firmware::v12::V12> {
-    /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::v12::transmission::Sender`].
+    /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
+    ///
+    /// [`Sender::send`]: autd3_driver::firmware::v12::transmission::Sender::send
     pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
@@ -275,7 +277,9 @@ impl<L: Link> Controller<L, firmware::v12::V12> {
 }
 
 impl<L: Link> Controller<L, firmware::v11::V11> {
-    /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::v11::transmission::Sender`].
+    /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
+    ///
+    /// [`Sender::send`]: autd3_driver::firmware::v11::transmission::Sender::send
     pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
@@ -289,7 +293,9 @@ impl<L: Link> Controller<L, firmware::v11::V11> {
 }
 
 impl<L: Link> Controller<L, firmware::v10::V10> {
-    /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::v10::transmission::Sender`].
+    /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
+    ///
+    /// [`Sender::send`]: autd3_driver::firmware::v10::transmission::Sender::send
     pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
@@ -303,7 +309,9 @@ impl<L: Link> Controller<L, firmware::v10::V10> {
 }
 
 impl<L: Link> Controller<L, firmware::auto::Auto> {
-    /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::auto::transmission::Sender`].
+    /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
+    ///
+    /// [`Sender::send`]: autd3_driver::firmware::auto::transmission::Sender::send
     pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,

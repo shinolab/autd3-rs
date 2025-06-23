@@ -33,12 +33,6 @@ pub struct Sender<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> {
 
 impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     /// Send the [`Datagram`] to the devices.
-    ///
-    /// If the `timeout` value is
-    /// - greater than 0, this function waits until the sent data is processed by the device or the specified timeout time elapses. If it cannot be confirmed that the sent data has been processed by the device, [`AUTDDriverError::ConfirmResponseFailed`] is returned.
-    /// - 0, this function does not check whether the sent data has been processed by the device.
-    ///
-    /// The calculation of each [`Datagram`] is executed in parallel for each device if the number of devices is greater than the `parallel_threshold`.
     pub async fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,

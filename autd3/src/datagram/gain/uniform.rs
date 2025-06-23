@@ -3,9 +3,9 @@ use autd3_core::derive::*;
 /// [`Gain`] that output uniform phase and intensity
 #[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Uniform {
-    /// The intensity of the gain.
+    /// The intensity of all transducers.
     pub intensity: Intensity,
-    /// The phase of the gain.
+    /// The phase of all transducers.
     pub phase: Phase,
 }
 
