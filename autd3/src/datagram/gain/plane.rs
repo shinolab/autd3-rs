@@ -6,9 +6,9 @@ use autd3_driver::{common::rad, geometry::UnitVector3};
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]
 pub struct PlaneOption {
-    /// The intensity of the beam.
+    /// The intensity of the wave.
     pub intensity: Intensity,
-    /// The phase offset of the beam.
+    /// The phase offset of the wave.
     pub phase_offset: Phase,
 }
 

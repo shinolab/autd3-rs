@@ -1,9 +1,9 @@
-/// Primitive [`Gain`]
+/// Primitive [`Gain`]s
 ///
 /// [`Gain`]: autd3_core::gain::Gain
 pub mod gain;
 
-/// Primitive [`Modulation`]
+/// Primitive [`Modulation`]s
 ///
 /// [`Modulation`]: autd3_core::modulation::Modulation
 pub mod modulation;

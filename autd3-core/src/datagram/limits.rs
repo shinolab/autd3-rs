@@ -1,6 +1,6 @@
 use crate::common::{FOCI_STM_TR_X_MAX, FOCI_STM_TR_Y_MAX};
 
-/// Limits for the AUTD3 firmware.
+/// Limits of the AUTD3 firmware.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FirmwareLimits {
     /// Maximum modulation buffer size.
