@@ -16,7 +16,7 @@ members = [
 resolver = "3"
 
 [workspace.package]
-version = "34.0.0-rc.1"
+version = "34.0.0"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2024"
 license = "MIT"
@@ -27,16 +27,16 @@ keywords = ["autd"]
 anyhow = { version = "1.0.98", default-features = false }
 approx = { version = "0.5.1", default-features = false }
 async-trait = { version = "0.1.88", default-features = false }
-autd3 = { path = "./autd3", version = "34.0.0-rc.1", default-features = false }
-autd3-core = { path = "./autd3-core", version = "34.0.0-rc.1", default-features = false }
-autd3-derive = { path = "./autd3-derive", version = "34.0.0-rc.1", default-features = false }
-autd3-driver = { path = "./autd3-driver", version = "34.0.0-rc.1", default-features = false }
-autd3-firmware-emulator = { path = "./autd3-firmware-emulator", version = "34.0.0-rc.1", default-features = false }
-autd3-gain-holo = { path = "./autd3-gain-holo", version = "34.0.0-rc.1", default-features = false }
-autd3-link-simulator = { path = "./autd3-link-simulator", version = "34.0.0-rc.1", default-features = false }
-autd3-link-twincat = { path = "./autd3-link-twincat", version = "34.0.0-rc.1", default-features = false }
-autd3-modulation-audio-file = { path = "./autd3-modulation-audio-file", version = "34.0.0-rc.1", default-features = false }
-autd3-protobuf = { path = "./autd3-protobuf", version = "34.0.0-rc.1", default-features = false }
+autd3 = { path = "./autd3", version = "34.0.0", default-features = false }
+autd3-core = { path = "./autd3-core", version = "34.0.0", default-features = false }
+autd3-derive = { path = "./autd3-derive", version = "34.0.0", default-features = false }
+autd3-driver = { path = "./autd3-driver", version = "34.0.0", default-features = false }
+autd3-firmware-emulator = { path = "./autd3-firmware-emulator", version = "34.0.0", default-features = false }
+autd3-gain-holo = { path = "./autd3-gain-holo", version = "34.0.0", default-features = false }
+autd3-link-simulator = { path = "./autd3-link-simulator", version = "34.0.0", default-features = false }
+autd3-link-twincat = { path = "./autd3-link-twincat", version = "34.0.0", default-features = false }
+autd3-modulation-audio-file = { path = "./autd3-modulation-audio-file", version = "34.0.0", default-features = false }
+autd3-protobuf = { path = "./autd3-protobuf", version = "34.0.0", default-features = false }
 bit-vec = { version = "0.8.0", default-features = false }
 bitfield-struct = { version = "0.11.0", default-features = false }
 bitflags = { version = "2.9.1", default-features = false }
