@@ -1,14 +1,7 @@
 # Changelog
 
 
-# 34.0.0-rc.1 (2025-06-19)
-
-## 🚀 Features
-
-- Add `left_handed` and `use_meter` features to `autd3` crate
-
-
-# 34.0.0-rc.0 (2025-06-19)
+# 34.0.0 (2025-06-23)
 
 ## 🚀 Features
 
@@ -18,6 +11,7 @@
 - [**breaking**] Add `TimerStrategy` (#282)
 - Support firmware v12.0.0 (#289)
 - Add supports for old firmwares
+- Add `left_handed` and `use_meter` features to `autd3` crate
 
 ## 🗑️ Removals
 
