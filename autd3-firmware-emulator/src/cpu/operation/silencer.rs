@@ -15,7 +15,7 @@ impl CPUEmulator {
         stm_freq_div: u16,
         mod_freq_div: u16,
     ) -> bool {
-        if self.silencer_strict_mode
+        if self.silencer_strict
             && (mod_freq_div < self.min_freq_div_intensity
                 || stm_freq_div < self.min_freq_div_intensity
                 || stm_freq_div < self.min_freq_div_phase)
@@ -41,11 +41,11 @@ impl CPUEmulator {
                 d.value_phase,
             );
         } else {
-            let strict_mode = self.silencer_strict_mode;
+            let strict = self.silencer_strict;
             let min_freq_div_intensity = self.min_freq_div_intensity;
             let min_freq_div_phase = self.min_freq_div_phase;
 
-            self.silencer_strict_mode =
+            self.silencer_strict =
                 (d.flag & SILENCER_FLAG_STRICT_MODE) == SILENCER_FLAG_STRICT_MODE;
             self.min_freq_div_intensity = d.value_intensity;
             self.min_freq_div_phase = d.value_phase;
@@ -54,7 +54,7 @@ impl CPUEmulator {
                 self.stm_freq_div[self.stm_segment as usize],
                 self.mod_freq_div[self.mod_segment as usize],
             ) {
-                self.silencer_strict_mode = strict_mode;
+                self.silencer_strict = strict;
                 self.min_freq_div_intensity = min_freq_div_intensity;
                 self.min_freq_div_phase = min_freq_div_phase;
                 return ERR_INVALID_SILENCER_SETTING;

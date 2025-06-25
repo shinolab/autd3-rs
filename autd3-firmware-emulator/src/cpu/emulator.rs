@@ -43,7 +43,7 @@ pub struct CPUEmulator {
     pub(crate) num_transducers: usize,
     pub(crate) fpga_flags_internal: u16,
     #[getset(get_copy = "pub")]
-    pub(crate) silencer_strict_mode: bool,
+    pub(crate) silencer_strict: bool,
     pub(crate) min_freq_div_intensity: u16,
     pub(crate) min_freq_div_phase: u16,
     pub(crate) is_rx_data_used: bool,
@@ -82,7 +82,7 @@ impl CPUEmulator {
             stm_freq_div: [0xFFFF, 0xFFFF],
             stm_segment: 0,
             stm_write: 0,
-            silencer_strict_mode: true,
+            silencer_strict: true,
             min_freq_div_intensity: 10,
             min_freq_div_phase: 40,
             is_rx_data_used: false,
