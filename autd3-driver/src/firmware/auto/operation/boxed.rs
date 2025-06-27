@@ -137,6 +137,6 @@ pub mod tests {
             option: Default::default(),
         };
         let bd = BoxedDatagram::new(d);
-        assert_eq!(format!("{:?}", bd), "test");
+        assert_eq!(format!("{bd:?}"), "test");
     }
 }

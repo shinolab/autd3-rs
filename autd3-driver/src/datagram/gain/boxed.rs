@@ -172,6 +172,6 @@ pub mod tests {
     #[test]
     fn boxed_gain_dbg_unsafe() {
         let g = TestGain::null();
-        assert_eq!(format!("{:?}", g), format!("{:?}", BoxedGain::new(g)));
+        assert_eq!(format!("{g:?}"), format!("{:?}", BoxedGain::new(g)));
     }
 }

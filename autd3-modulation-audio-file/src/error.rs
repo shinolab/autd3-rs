@@ -35,7 +35,7 @@ mod tests {
         let e = AudioFileError::Io(std::io::Error::other("test"));
         assert_eq!(e.to_string(), "test");
         assert_eq!(
-            format!("{:?}", e),
+            format!("{e:?}"),
             "Io(Custom { kind: Other, error: \"test\" })"
         );
     }

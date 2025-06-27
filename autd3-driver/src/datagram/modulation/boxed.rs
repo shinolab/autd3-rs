@@ -74,7 +74,7 @@ pub mod tests {
 
         let mb = BoxedModulation::new(m.clone());
 
-        assert_eq!(format!("{:?}", m), format!("{:?}", mb));
+        assert_eq!(format!("{m:?}"), format!("{:?}", mb));
         assert_eq!(SamplingConfig::FREQ_4K, mb.sampling_config());
         assert_eq!(Ok(vec![0; 2]), mb.calc(&FirmwareLimits::unused()));
     }
