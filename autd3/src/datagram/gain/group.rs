@@ -169,7 +169,7 @@ where
             .map(|(k, filter)| {
                 let g = gain_map
                     .remove(&k)
-                    .ok_or(GainError::new(format!("Unknown group key: {:?}", k)))?;
+                    .ok_or(GainError::new(format!("Unknown group key: {k:?}")))?;
                 let mut g = g.init(geometry, &filter)?;
                 Ok((
                     k,
@@ -184,7 +184,7 @@ where
         if !gain_map.is_empty() {
             return Err(GainError::new(format!(
                 "Unused group keys: {}",
-                gain_map.keys().map(|k| format!("{:?}", k)).join(", "),
+                gain_map.keys().map(|k| format!("{k:?}")).join(", "),
             )));
         }
 

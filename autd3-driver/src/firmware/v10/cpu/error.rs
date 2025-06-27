@@ -41,7 +41,7 @@ mod tests {
             .err()
             .unwrap();
         assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "Unknown firmware error: 255");
-        assert_eq!(format!("{:?}", err), "UnknownFirmwareError(255)");
+        assert_eq!(format!("{err}"), "Unknown firmware error: 255");
+        assert_eq!(format!("{err:?}"), "UnknownFirmwareError(255)");
     }
 }

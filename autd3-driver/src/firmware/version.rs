@@ -62,7 +62,7 @@ impl std::fmt::Display for FPGAVersion {
             .filter_map(Option::as_ref)
             .join(", ");
         if !features.is_empty() {
-            write!(f, " [{}]", features)?;
+            write!(f, " [{features}]")?;
         }
         Ok(())
     }
@@ -249,7 +249,7 @@ mod tests {
         }
     )]
     fn display(#[case] expected: &str, #[case] info: FirmwareVersion) {
-        assert_eq!(expected, format!("{}", info));
-        assert_eq!(expected, format!("{:?}", info));
+        assert_eq!(expected, format!("{info}"));
+        assert_eq!(expected, format!("{info:?}"));
     }
 }

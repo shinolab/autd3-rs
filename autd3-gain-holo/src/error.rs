@@ -31,22 +31,22 @@ mod tests {
     fn solve_failed() {
         let err = HoloError::SolveFailed;
         assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "Failed to solve linear system");
-        assert_eq!(format!("{:?}", err), "SolveFailed");
+        assert_eq!(format!("{err}"), "Failed to solve linear system");
+        assert_eq!(format!("{err:?}"), "SolveFailed");
     }
 
     #[test]
     fn backend_error() {
         let err = HoloError::BackendError("test".to_string());
         assert!(err.source().is_none());
-        assert_eq!(format!("{}", err), "test");
-        assert_eq!(format!("{:?}", err), "BackendError(\"test\")");
+        assert_eq!(format!("{err}"), "test");
+        assert_eq!(format!("{err:?}"), "BackendError(\"test\")");
     }
 
     #[test]
     fn from() {
         let err = HoloError::SolveFailed;
         let err: GainError = err.into();
-        assert_eq!(format!("{}", err), "Failed to solve linear system");
+        assert_eq!(format!("{err}"), "Failed to solve linear system");
     }
 }

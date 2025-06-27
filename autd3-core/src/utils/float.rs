@@ -18,7 +18,7 @@ mod tests {
     #[case(false, 1.0 + 1e-3)]
     #[case(false, 1.0 - 1e-3)]
     fn is_integer(#[case] expected: bool, #[case] a: f32) {
-        assert_eq!(super::is_integer(a as f64), expected, "{}", a);
+        assert_eq!(super::is_integer(a as f64), expected, "{a}");
     }
 
     #[test]
