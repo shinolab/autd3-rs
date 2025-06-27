@@ -56,7 +56,7 @@ impl CPUEmulator {
                 ADDR_SILENCER_COMPLETION_STEPS_PHASE,
                 40,
             );
-            self.silencer_strict_mode = true;
+            self.silencer_strict = true;
             self.min_freq_div_intensity = 10;
             self.min_freq_div_phase = 40;
 

@@ -28,7 +28,7 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
             config: FixedCompletionSteps {
                 intensity: NonZeroU16::MIN,
                 phase: NonZeroU16::MIN,
-                strict_mode: true,
+                strict: true,
             },
         };
         assert_eq!(

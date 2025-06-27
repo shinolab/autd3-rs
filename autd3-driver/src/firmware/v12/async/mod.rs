@@ -64,7 +64,7 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
         [
             self.send(Silencer {
                 config: FixedCompletionSteps {
-                    strict_mode: false,
+                    strict: false,
                     ..Default::default()
                 },
             })

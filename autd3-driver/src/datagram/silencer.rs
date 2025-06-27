@@ -28,7 +28,7 @@ pub struct FixedCompletionTime {
     /// [`Modulation`]: autd3_core::modulation::Modulation
     /// [`FociSTM`]: crate::datagram::FociSTM
     /// [`GainSTM`]: crate::datagram::GainSTM
-    pub strict_mode: bool,
+    pub strict: bool,
 }
 impl SilencerConfig for FixedCompletionTime {}
 
@@ -37,7 +37,7 @@ impl Default for FixedCompletionTime {
         FixedCompletionTime {
             intensity: SILENCER_STEPS_INTENSITY_DEFAULT as u32 * ULTRASOUND_PERIOD,
             phase: SILENCER_STEPS_PHASE_DEFAULT as u32 * ULTRASOUND_PERIOD,
-            strict_mode: true,
+            strict: true,
         }
     }
 }
@@ -61,7 +61,7 @@ pub struct FixedCompletionSteps {
     /// [`Modulation`]: autd3_core::modulation::Modulation
     /// [`FociSTM`]: crate::datagram::FociSTM
     /// [`GainSTM`]: crate::datagram::GainSTM
-    pub strict_mode: bool,
+    pub strict: bool,
 }
 impl SilencerConfig for FixedCompletionSteps {}
 
@@ -70,7 +70,7 @@ impl Default for FixedCompletionSteps {
         FixedCompletionSteps {
             intensity: NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
             phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
-            strict_mode: true,
+            strict: true,
         }
     }
 }
@@ -113,7 +113,7 @@ impl Silencer<()> {
             config: FixedCompletionSteps {
                 intensity: NonZeroU16::MIN,
                 phase: NonZeroU16::MIN,
-                strict_mode: true,
+                strict: true,
             },
         }
     }
@@ -150,7 +150,7 @@ mod tests {
         let s = Silencer::disable();
         assert_eq!(1, s.config.intensity.get());
         assert_eq!(1, s.config.phase.get());
-        assert!(s.config.strict_mode);
+        assert!(s.config.strict);
     }
 
     #[test]
@@ -158,7 +158,7 @@ mod tests {
         let s: Silencer<FixedCompletionSteps> = Silencer::default();
         assert_eq!(10, s.config.intensity.get());
         assert_eq!(40, s.config.phase.get());
-        assert!(s.config.strict_mode);
+        assert!(s.config.strict);
     }
 
     #[test]
@@ -166,6 +166,6 @@ mod tests {
         let s: Silencer<FixedCompletionTime> = Silencer::new(Default::default());
         assert_eq!(std::time::Duration::from_micros(250), s.config.intensity);
         assert_eq!(std::time::Duration::from_micros(1000), s.config.phase);
-        assert!(s.config.strict_mode);
+        assert!(s.config.strict);
     }
 }

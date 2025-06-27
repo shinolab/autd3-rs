@@ -226,7 +226,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
             config: FixedCompletionSteps {
                 intensity: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
                 phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
-                strict_mode: true,
+                strict: true,
             },
         };
         assert_eq!(

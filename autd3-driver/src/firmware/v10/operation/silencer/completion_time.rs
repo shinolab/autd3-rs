@@ -26,16 +26,16 @@ pub struct SilencerFixedCompletionTimeOp {
     is_done: bool,
     intensity: Duration,
     phase: Duration,
-    strict_mode: bool,
+    strict: bool,
 }
 
 impl SilencerFixedCompletionTimeOp {
-    pub(crate) const fn new(intensity: Duration, phase: Duration, strict_mode: bool) -> Self {
+    pub(crate) const fn new(intensity: Duration, phase: Duration, strict: bool) -> Self {
         Self {
             is_done: false,
             intensity,
             phase,
-            strict_mode,
+            strict,
         }
     }
 }
@@ -64,7 +64,7 @@ impl Operation for SilencerFixedCompletionTimeOp {
             tx,
             SilencerFixedCompletionTime {
                 tag: TypeTag::Silencer,
-                flag: if self.strict_mode {
+                flag: if self.strict {
                     SilencerControlFlags::STRICT_MODE
                 } else {
                     SilencerControlFlags::NONE
@@ -93,7 +93,7 @@ impl OperationGenerator for FixedCompletionTime {
 
     fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
         Some((
-            Self::O1::new(self.intensity, self.phase, self.strict_mode),
+            Self::O1::new(self.intensity, self.phase, self.strict),
             Self::O2 {},
         ))
     }
@@ -110,7 +110,7 @@ mod tests {
     #[test]
     #[case(SilencerControlFlags::STRICT_MODE.bits(), true)]
     #[case(0x00, false)]
-    fn test(#[case] value: u8, #[case] strict_mode: bool) {
+    fn test(#[case] value: u8, #[case] strict: bool) {
         let device = crate::autd3_device::tests::create_device();
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionTime>()];
@@ -118,7 +118,7 @@ mod tests {
         let mut op = SilencerFixedCompletionTimeOp::new(
             ULTRASOUND_PERIOD * 0x12,
             ULTRASOUND_PERIOD * 0x34,
-            strict_mode,
+            strict,
         );
 
         assert_eq!(
