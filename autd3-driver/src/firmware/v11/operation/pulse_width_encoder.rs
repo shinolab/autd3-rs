@@ -70,7 +70,7 @@ impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + 
 impl<
     H: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync,
     F: Fn(&Device) -> H,
-> OperationGenerator for PulseWidthEncoder<ULTRASOUND_PERIOD_COUNT_BITS, u16, H, F>
+> OperationGenerator for PulseWidthEncoder<PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16>, F>
 {
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = crate::firmware::driver::NullOp;

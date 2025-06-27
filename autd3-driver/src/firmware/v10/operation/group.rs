@@ -3,17 +3,14 @@ use std::{fmt::Debug, hash::Hash};
 use super::OperationGenerator;
 use crate::{datagram::GroupOpGenerator, geometry::Device};
 
-use autd3_core::datagram::Datagram;
-
-impl<K, F, D> OperationGenerator for GroupOpGenerator<K, F, D>
+impl<K, F, G> OperationGenerator for GroupOpGenerator<K, F, G>
 where
     K: Hash + Eq + Debug,
     F: Fn(&Device) -> Option<K>,
-    D: Datagram,
-    D::G: OperationGenerator,
+    G: OperationGenerator,
 {
-    type O1 = <D::G as OperationGenerator>::O1;
-    type O2 = <D::G as OperationGenerator>::O2;
+    type O1 = <G as OperationGenerator>::O1;
+    type O2 = <G as OperationGenerator>::O2;
 
     fn generate(&mut self, dev: &Device) -> Option<(Self::O1, Self::O2)> {
         let key = (self.key_map)(dev)?;
@@ -34,7 +31,9 @@ mod tests {
     use crate::{datagram::Group, firmware::driver::NullOp};
 
     use autd3_core::{
-        datagram::{DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult},
+        datagram::{
+            Datagram, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
+        },
         geometry::Geometry,
     };
 

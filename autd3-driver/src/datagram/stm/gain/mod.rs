@@ -141,7 +141,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy> GainSTM<T, C> {
     }
 }
 
-pub struct GainSTMOperationGenerator<T: GainSTMIteratorGenerator> {
+pub struct GainSTMOperationGenerator<T> {
     pub(crate) g: T,
     pub(crate) size: usize,
     pub(crate) mode: GainSTMMode,
