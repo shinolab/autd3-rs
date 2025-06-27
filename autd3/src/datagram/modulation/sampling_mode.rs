@@ -74,8 +74,7 @@ impl SamplingMode {
     ) -> Result<(u64, u64), ModulationError> {
         if freq.hz() < 0. || freq.hz().is_nan() {
             return Err(ModulationError::new(format!(
-                "Frequency ({:?}) must be valid positive value",
-                freq
+                "Frequency ({freq:?}) must be valid positive value"
             )));
         }
         if freq.hz() == 0. {
@@ -105,8 +104,7 @@ impl SamplingMode {
             return Ok((n as _, k as _));
         }
         Err(ModulationError::new(format!(
-            "Frequency ({:?}) cannot be output with the sampling config ({:?}).",
-            freq, sampling_config
+            "Frequency ({freq:?}) cannot be output with the sampling config ({sampling_config:?})."
         )))
     }
 }
@@ -130,8 +128,7 @@ impl SamplingMode {
         let freq = Self::freq_nearest(freq, sampling_config, limits)?;
         if freq.hz().is_nan() {
             return Err(ModulationError::new(format!(
-                "Frequency ({:?}) must be valid value",
-                freq
+                "Frequency ({freq:?}) must be valid value"
             )));
         }
         Ok(((sampling_config.freq()?.hz() / freq.hz()).round() as u64, 1))

@@ -24,7 +24,7 @@ impl SimulatorInner {
         addr: &SocketAddr,
         geometry: &autd3_core::geometry::Geometry,
     ) -> Result<SimulatorInner, LinkError> {
-        let conn = tonic::transport::Endpoint::new(format!("http://{}", addr))
+        let conn = tonic::transport::Endpoint::new(format!("http://{addr}"))
             .map_err(AUTDProtoBufError::from)?
             .connect()
             .await
@@ -35,7 +35,7 @@ impl SimulatorInner {
             .config_geometry(Geometry::from(geometry))
             .await
             .map_err(|e| {
-                AUTDProtoBufError::SendError(format!("Failed to initialize simulator: {}", e))
+                AUTDProtoBufError::SendError(format!("Failed to initialize simulator: {e}"))
             })?;
 
         let mut buffer_pool = TxBufferPoolSync::default();
@@ -65,9 +65,7 @@ impl SimulatorInner {
         self.client
             .update_geometry(Geometry::from(geometry))
             .await
-            .map_err(|e| {
-                AUTDProtoBufError::SendError(format!("Failed to update geometry: {}", e))
-            })?;
+            .map_err(|e| AUTDProtoBufError::SendError(format!("Failed to update geometry: {e}")))?;
         Ok(())
     }
 

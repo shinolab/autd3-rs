@@ -116,7 +116,7 @@ where
             .map(|(k, filter)| {
                 let datagram = datagram_map
                     .remove(&k)
-                    .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
+                    .ok_or(AUTDDriverError::UnknownKey(format!("{k:?}")))?;
                 Ok((
                     k,
                     datagram
@@ -128,7 +128,7 @@ where
 
         if !datagram_map.is_empty() {
             return Err(AUTDDriverError::UnusedKey(
-                datagram_map.keys().map(|k| format!("{:?}", k)).join(", "),
+                datagram_map.keys().map(|k| format!("{k:?}")).join(", "),
             ));
         }
 
@@ -178,7 +178,7 @@ where
                     {
                         let datagram = datagram_map
                             .remove(&k)
-                            .ok_or(AUTDDriverError::UnknownKey(format!("{:?}", k)))?;
+                            .ok_or(AUTDDriverError::UnknownKey(format!("{k:?}")))?;
 
                         let r = datagram
                             .inspect(geometry, &filter, limits)

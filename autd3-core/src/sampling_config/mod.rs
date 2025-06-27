@@ -40,14 +40,14 @@ impl PartialEq for SamplingConfig {
 impl std::fmt::Debug for SamplingConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SamplingConfig::Divide(div) => write!(f, "SamplingConfig::Divide({})", div),
-            SamplingConfig::Freq(freq) => write!(f, "SamplingConfig::Freq({:?})", freq),
-            SamplingConfig::Period(period) => write!(f, "SamplingConfig::Period({:?})", period),
+            SamplingConfig::Divide(div) => write!(f, "SamplingConfig::Divide({div})"),
+            SamplingConfig::Freq(freq) => write!(f, "SamplingConfig::Freq({freq:?})"),
+            SamplingConfig::Period(period) => write!(f, "SamplingConfig::Period({period:?})"),
             SamplingConfig::FreqNearest(nearest) => {
-                write!(f, "SamplingConfig::FreqNearest({:?})", nearest)
+                write!(f, "SamplingConfig::FreqNearest({nearest:?})")
             }
             SamplingConfig::PeriodNearest(nearest) => {
-                write!(f, "SamplingConfig::PeriodNearest({:?})", nearest)
+                write!(f, "SamplingConfig::PeriodNearest({nearest:?})")
             }
         }
     }
@@ -291,6 +291,6 @@ mod tests {
     )]
     #[test]
     fn debug(#[case] expect: &str, #[case] config: SamplingConfig) {
-        assert_eq!(expect, format!("{:?}", config));
+        assert_eq!(expect, format!("{config:?}"));
     }
 }
