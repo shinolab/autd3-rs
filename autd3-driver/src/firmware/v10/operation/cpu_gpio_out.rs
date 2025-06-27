@@ -21,13 +21,13 @@ struct CpuGPIOOutMsg {
     pa_podr: u8,
 }
 
-pub struct CpuGPIOOutOp {
+pub struct CpuGPIOOutputsOp {
     is_done: bool,
     pa5: bool,
     pa7: bool,
 }
 
-impl CpuGPIOOutOp {
+impl CpuGPIOOutputsOp {
     pub(crate) const fn new(pa5: bool, pa7: bool) -> Self {
         Self {
             is_done: false,
@@ -37,7 +37,7 @@ impl CpuGPIOOutOp {
     }
 }
 
-impl Operation for CpuGPIOOutOp {
+impl Operation for CpuGPIOOutputsOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -63,12 +63,12 @@ impl Operation for CpuGPIOOutOp {
 }
 
 impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator for CpuGPIOOutputs<F> {
-    type O1 = CpuGPIOOutOp;
+    type O1 = CpuGPIOOutputsOp;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
         let port = (self.f)(device);
-        Some((CpuGPIOOutOp::new(port.pa5, port.pa7), Self::O2 {}))
+        Some((CpuGPIOOutputsOp::new(port.pa5, port.pa7), Self::O2 {}))
     }
 }
 
@@ -88,7 +88,7 @@ mod tests {
         let device = crate::autd3_device::tests::create_device();
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut op = CpuGPIOOutOp::new(pa5, pa7);
+        let mut op = CpuGPIOOutputsOp::new(pa5, pa7);
 
         assert_eq!(size_of::<CpuGPIOOutMsg>(), op.required_size(&device));
         assert_eq!(Ok(size_of::<CpuGPIOOutMsg>()), op.pack(&device, &mut tx));

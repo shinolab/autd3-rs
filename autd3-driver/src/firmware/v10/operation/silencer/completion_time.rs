@@ -22,14 +22,14 @@ struct SilencerFixedCompletionTime {
     value_phase: u16,
 }
 
-pub struct SilencerFixedCompletionTimeOp {
+pub struct FixedCompletionTimeOp {
     is_done: bool,
     intensity: Duration,
     phase: Duration,
     strict: bool,
 }
 
-impl SilencerFixedCompletionTimeOp {
+impl FixedCompletionTimeOp {
     pub(crate) const fn new(intensity: Duration, phase: Duration, strict: bool) -> Self {
         Self {
             is_done: false,
@@ -40,7 +40,7 @@ impl SilencerFixedCompletionTimeOp {
     }
 }
 
-impl Operation for SilencerFixedCompletionTimeOp {
+impl Operation for FixedCompletionTimeOp {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
@@ -88,7 +88,7 @@ impl Operation for SilencerFixedCompletionTimeOp {
 }
 
 impl OperationGenerator for FixedCompletionTime {
-    type O1 = SilencerFixedCompletionTimeOp;
+    type O1 = FixedCompletionTimeOp;
     type O2 = NullOp;
 
     fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
@@ -115,11 +115,8 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionTime>()];
 
-        let mut op = SilencerFixedCompletionTimeOp::new(
-            ULTRASOUND_PERIOD * 0x12,
-            ULTRASOUND_PERIOD * 0x34,
-            strict,
-        );
+        let mut op =
+            FixedCompletionTimeOp::new(ULTRASOUND_PERIOD * 0x12, ULTRASOUND_PERIOD * 0x34, strict);
 
         assert_eq!(
             op.required_size(&device),
@@ -180,7 +177,7 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionTime>()];
 
-        let mut op = SilencerFixedCompletionTimeOp::new(time_intensity, time_phase, true);
+        let mut op = FixedCompletionTimeOp::new(time_intensity, time_phase, true);
 
         assert_eq!(expected, op.pack(&device, &mut tx).unwrap_err());
     }
