@@ -12,7 +12,7 @@ use derive_more::Debug;
 
 /// [`Datagram`] to force the fan to run.
 #[derive(Debug)]
-pub struct ForceFan<F: Fn(&Device) -> bool> {
+pub struct ForceFan<F> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,

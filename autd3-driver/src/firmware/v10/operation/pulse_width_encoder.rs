@@ -71,7 +71,7 @@ impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u8> + Send + S
 impl<
     H: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u8> + Send + Sync,
     F: Fn(&Device) -> H,
-> OperationGenerator for PulseWidthEncoder<ULTRASOUND_PERIOD_COUNT_BITS, u8, H, F>
+> OperationGenerator for PulseWidthEncoder<PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u8>, F>
 {
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = NullOp;

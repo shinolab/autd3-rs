@@ -10,7 +10,7 @@ use derive_more::Debug;
 
 /// [`Datagram`] to enable reading the FPGA state.
 #[derive(Debug)]
-pub struct ReadsFPGAState<F: Fn(&Device) -> bool> {
+pub struct ReadsFPGAState<F> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,

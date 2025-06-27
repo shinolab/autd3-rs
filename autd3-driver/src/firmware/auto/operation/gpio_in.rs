@@ -47,7 +47,7 @@ impl Operation for EmulateGPIOInOp {
 }
 
 impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
-    for EmulateGPIOIn<H, F>
+    for EmulateGPIOIn<F>
 {
     type O1 = EmulateGPIOInOp;
     type O2 = crate::firmware::driver::NullOp;

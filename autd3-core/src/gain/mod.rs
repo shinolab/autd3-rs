@@ -146,7 +146,7 @@ pub trait Gain: std::fmt::Debug + Sized {
 }
 
 #[doc(hidden)]
-pub struct GainOperationGenerator<G: GainCalculatorGenerator> {
+pub struct GainOperationGenerator<G> {
     pub generator: G,
     pub segment: Segment,
     pub transition: Option<TransitionMode>,
