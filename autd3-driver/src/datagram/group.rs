@@ -83,14 +83,9 @@ where
     }
 }
 
-pub struct GroupOpGenerator<K, F, D>
-where
-    K: Hash + Eq + Debug,
-    F: Fn(&Device) -> Option<K>,
-    D: Datagram,
-{
+pub struct GroupOpGenerator<K, F, G> {
     pub(crate) key_map: F,
-    pub(crate) generators: HashMap<K, D::G>,
+    pub(crate) generators: HashMap<K, G>,
 }
 
 impl<K, D, F> Datagram for Group<K, D, F>
@@ -100,7 +95,7 @@ where
     F: Fn(&Device) -> Option<K>,
     AUTDDriverError: From<<D as Datagram>::Error>,
 {
-    type G = GroupOpGenerator<K, F, D>;
+    type G = GroupOpGenerator<K, F, D::G>;
     type Error = AUTDDriverError;
 
     fn operation_generator(

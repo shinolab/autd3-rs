@@ -38,14 +38,10 @@ use num::Zero;
 ///
 /// [`Intensity`]: autd3_core::gain::Intensity
 #[derive(Clone, Debug)]
-pub struct PulseWidthEncoder<
-    const BITS: usize,
-    T: Copy + TryFrom<usize> + Zero + PartialOrd,
-    H: Fn(Intensity) -> PulseWidth<BITS, T> + Send + Sync,
-    F: Fn(&Device) -> H,
-> {
+pub struct PulseWidthEncoder<P, F> {
     #[debug(ignore)]
     pub(crate) f: F,
+    phantom: std::marker::PhantomData<P>,
 }
 
 impl<
@@ -53,12 +49,15 @@ impl<
     T: Copy + TryFrom<usize> + Zero + PartialOrd,
     H: Fn(Intensity) -> PulseWidth<BITS, T> + Send + Sync,
     F: Fn(&Device) -> H,
-> PulseWidthEncoder<BITS, T, H, F>
+> PulseWidthEncoder<PulseWidth<BITS, T>, F>
 {
     /// Creates a new [`PulseWidthEncoder`].
     #[must_use]
     pub const fn new(f: F) -> Self {
-        Self { f }
+        Self {
+            f,
+            phantom: std::marker::PhantomData,
+        }
     }
 }
 
@@ -67,7 +66,7 @@ impl<
     T: Copy + TryFrom<usize> + Zero + PartialOrd,
     H: Fn(Intensity) -> PulseWidth<BITS, T> + Send + Sync,
     F: Fn(&Device) -> H,
-> Datagram for PulseWidthEncoder<BITS, T, H, F>
+> Datagram for PulseWidthEncoder<PulseWidth<BITS, T>, F>
 {
     type G = Self;
     type Error = Infallible;
@@ -90,12 +89,7 @@ impl<
 }
 
 impl<const BITS: usize, T: Copy + TryFrom<usize> + Zero + PartialOrd> Default
-    for PulseWidthEncoder<
-        BITS,
-        T,
-        fn(Intensity) -> PulseWidth<BITS, T>,
-        fn(&Device) -> fn(Intensity) -> PulseWidth<BITS, T>,
-    >
+    for PulseWidthEncoder<PulseWidth<BITS, T>, fn(&Device) -> fn(Intensity) -> PulseWidth<BITS, T>>
 {
     fn default() -> Self {
         Self::new(|_| {

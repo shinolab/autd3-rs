@@ -29,7 +29,7 @@ use derive_more::Debug;
 /// });
 /// ```
 #[derive(Debug)]
-pub struct GPIOOutputs<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> {
+pub struct GPIOOutputs<F> {
     #[debug(ignore)]
     pub(crate) f: F,
 }
