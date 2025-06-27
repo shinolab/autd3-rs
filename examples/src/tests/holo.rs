@@ -55,7 +55,7 @@ pub fn holo(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<
     ];
 
     gains.iter().enumerate().for_each(|(i, (name, _))| {
-        println!("[{}]: {}", i, name);
+        println!("[{i}]: {name}");
     });
     println!("[Others]: GSPAT");
     color_print::cprint!("<green><bold>Choose number: ");

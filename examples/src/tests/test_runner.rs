@@ -15,7 +15,7 @@ pub fn run<L: Link>(mut autd: Controller<L, firmware::Auto>) -> anyhow::Result<(
 
     println!("======== AUTD3 firmware information ========");
     autd.firmware_version()?.iter().for_each(|firm_info| {
-        println!("{}", firm_info);
+        println!("{firm_info}");
     });
     println!("============================================");
 
@@ -43,7 +43,7 @@ pub fn run<L: Link>(mut autd: Controller<L, firmware::Auto>) -> anyhow::Result<(
 
     loop {
         examples.iter().enumerate().for_each(|(i, (name, _))| {
-            println!("[{}]: {}", i, name);
+            println!("[{i}]: {name}");
         });
         println!("[Others]: Finish");
         color_print::cprint!("<green><bold>Choose number: ");
