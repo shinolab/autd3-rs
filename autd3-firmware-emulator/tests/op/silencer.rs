@@ -72,7 +72,7 @@ fn send_silencer_fixed_completion_time_unsafe() {
         let config = FixedCompletionTime {
             intensity: ULTRASOUND_PERIOD * rng.random_range(1..=10),
             phase: ULTRASOUND_PERIOD * rng.random_range(1..=u8::MAX) as u32,
-            strict_mode: true,
+            strict: true,
         };
         let d = Silencer { config };
 
@@ -90,14 +90,14 @@ fn send_silencer_fixed_completion_time_unsafe() {
             cpu.fpga().silencer_completion_steps().phase.get()
         );
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-        assert!(cpu.silencer_strict_mode());
+        assert!(cpu.silencer_strict());
     }
 
     {
         let config = FixedCompletionTime {
             intensity: ULTRASOUND_PERIOD * rng.random_range(1..=10),
             phase: ULTRASOUND_PERIOD * rng.random_range(1..=u8::MAX) as u32,
-            strict_mode: true,
+            strict: true,
         };
         let d = Silencer { config };
         assert_eq!(
@@ -114,7 +114,7 @@ fn send_silencer_fixed_completion_time_unsafe() {
             cpu.fpga().silencer_completion_steps().phase.get()
         );
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-        assert!(cpu.silencer_strict_mode());
+        assert!(cpu.silencer_strict());
     }
 }
 
@@ -131,7 +131,7 @@ fn send_silencer_fixed_completion_steps_unsafe() {
         let config = FixedCompletionSteps {
             intensity: NonZeroU16::new(rng.random_range(1..=10)).unwrap(),
             phase: NonZeroU16::new(rng.random_range(1..=u8::MAX) as u16).unwrap(),
-            strict_mode: true,
+            strict: true,
         };
         let d = Silencer { config };
 
@@ -142,14 +142,14 @@ fn send_silencer_fixed_completion_steps_unsafe() {
 
         assert_eq!(config, cpu.fpga().silencer_completion_steps());
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-        assert!(cpu.silencer_strict_mode());
+        assert!(cpu.silencer_strict());
     }
 
     {
         let config = FixedCompletionSteps {
             intensity: NonZeroU16::new(rng.random_range(1..=10)).unwrap(),
             phase: NonZeroU16::new(rng.random_range(1..=u8::MAX) as u16).unwrap(),
-            strict_mode: true,
+            strict: true,
         };
         let d = Silencer { config };
         assert_eq!(
@@ -159,7 +159,7 @@ fn send_silencer_fixed_completion_steps_unsafe() {
 
         assert_eq!(config, cpu.fpga().silencer_completion_steps());
         assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-        assert!(cpu.silencer_strict_mode());
+        assert!(cpu.silencer_strict());
     }
 }
 
@@ -182,7 +182,7 @@ fn silencer_completion_steps_too_large_mod(
         config: FixedCompletionSteps {
             intensity: NonZeroU16::MIN,
             phase: NonZeroU16::MIN,
-            strict_mode: true,
+            strict: true,
         },
     };
     assert_eq!(
@@ -208,7 +208,7 @@ fn silencer_completion_steps_too_large_mod(
         config: FixedCompletionSteps {
             intensity: NonZeroU16::new(steps_intensity).unwrap(),
             phase: NonZeroU16::new(steps_phase).unwrap(),
-            strict_mode: true,
+            strict: true,
         },
     };
 
@@ -239,7 +239,7 @@ fn silencer_completion_steps_too_large_stm(
         config: FixedCompletionSteps {
             intensity: NonZeroU16::MIN,
             phase: NonZeroU16::MIN,
-            strict_mode: true,
+            strict: true,
         },
     };
     assert_eq!(
@@ -264,7 +264,7 @@ fn silencer_completion_steps_too_large_stm(
         config: FixedCompletionSteps {
             intensity: NonZeroU16::new(steps_intensity).unwrap(),
             phase: NonZeroU16::new(steps_phase).unwrap(),
-            strict_mode: true,
+            strict: true,
         },
     };
 
@@ -288,7 +288,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     let config = FixedCompletionSteps {
         intensity: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
         phase: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
-        strict_mode: false,
+        strict: false,
     };
     let d = Silencer { config };
 
@@ -303,7 +303,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
     );
     assert_eq!(config.phase, cpu.fpga().silencer_completion_steps().phase);
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-    assert!(!cpu.silencer_strict_mode());
+    assert!(!cpu.silencer_strict());
 
     Ok(())
 }
@@ -320,7 +320,7 @@ fn send_silencer_fixed_completion_time_permissive() {
     let config = FixedCompletionSteps {
         intensity: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
         phase: NonZeroU16::new(rng.random_range(1..=u16::MAX)).unwrap(),
-        strict_mode: false,
+        strict: false,
     };
     let d = Silencer { config };
 
@@ -335,5 +335,5 @@ fn send_silencer_fixed_completion_time_permissive() {
     );
     assert_eq!(config.phase, cpu.fpga().silencer_completion_steps().phase);
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());
-    assert!(!cpu.silencer_strict_mode());
+    assert!(!cpu.silencer_strict());
 }
