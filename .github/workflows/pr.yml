@@ -40,7 +40,9 @@ jobs:
           - os: windows-latest
           - os: macos-latest
           - os: ubuntu-latest
-            features: "async remote twincat remote_twincat simulator thread-safe"
+            features: "async remote twincat remote_twincat simulator"
+          - os: ubuntu-latest
+            features: "async async-trait thread-safe"
           - os: ubuntu-latest
             features: "use_meter left_handed"
     steps:
