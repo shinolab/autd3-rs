@@ -27,13 +27,13 @@ use derive_more::Debug;
 /// [`FociSTM`]: crate::datagram::FociSTM
 /// [`GainSTM`]: crate::datagram::GainSTM
 #[derive(Debug)]
-pub struct PhaseCorrection<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> {
+pub struct PhaseCorrection<F> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseCorrection<FT, F> {
+impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseCorrection<F> {
     /// Creates a new [`PhaseCorrection`].
     #[must_use]
     pub const fn new(f: F) -> Self {
@@ -42,7 +42,7 @@ impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseCorrection<FT, F> 
 }
 
 impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Datagram
-    for PhaseCorrection<FT, F>
+    for PhaseCorrection<F>
 {
     type G = Self;
     type Error = Infallible;

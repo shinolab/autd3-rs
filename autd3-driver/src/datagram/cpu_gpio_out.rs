@@ -12,7 +12,7 @@ use derive_more::Debug;
 
 #[derive(Debug)]
 #[doc(hidden)]
-pub struct CpuGPIOOutputs<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> {
+pub struct CpuGPIOOutputs<F> {
     #[debug(ignore)]
     pub(crate) f: F,
 }

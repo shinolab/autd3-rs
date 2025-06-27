@@ -11,12 +11,12 @@ use derive_more::Debug;
 
 #[doc(hidden)]
 #[derive(Debug)]
-pub struct EmulateGPIOIn<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> {
+pub struct EmulateGPIOIn<F> {
     #[debug(ignore)]
     pub(crate) f: F,
 }
 
-impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> EmulateGPIOIn<H, F> {
+impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> EmulateGPIOIn<F> {
     /// Creates a new [`EmulateGPIOIn`].
     #[must_use]
     pub const fn new(f: F) -> Self {
@@ -24,7 +24,7 @@ impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> EmulateGPIOIn<H, F> {
     }
 }
 
-impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for EmulateGPIOIn<H, F> {
+impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram for EmulateGPIOIn<F> {
     type G = Self;
     type Error = Infallible;
 

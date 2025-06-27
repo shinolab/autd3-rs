@@ -47,7 +47,7 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
 }
 
 impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> OperationGenerator
-    for PhaseCorrection<FT, F>
+    for PhaseCorrection<F>
 {
     type O1 = PhaseCorrectionOp<FT>;
     type O2 = crate::firmware::driver::NullOp;
