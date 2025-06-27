@@ -20,17 +20,17 @@ struct SyncMsg {
     __: u8,
 }
 
-pub struct SyncOp {
+pub struct SynchronizeOp {
     is_done: bool,
 }
 
-impl SyncOp {
+impl SynchronizeOp {
     pub(crate) const fn new() -> Self {
         Self { is_done: false }
     }
 }
 
-impl Operation for SyncOp {
+impl Operation for SynchronizeOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -56,7 +56,7 @@ impl Operation for SyncOp {
 }
 
 impl OperationGenerator for Synchronize {
-    type O1 = SyncOp;
+    type O1 = SynchronizeOp;
     type O2 = NullOp;
 
     fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
@@ -75,7 +75,7 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<SyncMsg>()];
 
-        let mut op = SyncOp::new();
+        let mut op = SynchronizeOp::new();
 
         assert_eq!(op.required_size(&device), size_of::<SyncMsg>());
 

@@ -20,13 +20,13 @@ struct SilencerFixedUpdateRate {
     value_phase: u16,
 }
 
-pub struct SilencerFixedUpdateRateOp {
+pub struct FixedUpdateRateOp {
     is_done: bool,
     intensity: NonZeroU16,
     phase: NonZeroU16,
 }
 
-impl SilencerFixedUpdateRateOp {
+impl FixedUpdateRateOp {
     pub(crate) const fn new(intensity: NonZeroU16, phase: NonZeroU16) -> Self {
         Self {
             is_done: false,
@@ -36,7 +36,7 @@ impl SilencerFixedUpdateRateOp {
     }
 }
 
-impl Operation for SilencerFixedUpdateRateOp {
+impl Operation for FixedUpdateRateOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -64,7 +64,7 @@ impl Operation for SilencerFixedUpdateRateOp {
 }
 
 impl OperationGenerator for FixedUpdateRate {
-    type O1 = SilencerFixedUpdateRateOp;
+    type O1 = FixedUpdateRateOp;
     type O2 = NullOp;
 
     fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
@@ -84,7 +84,7 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<SilencerFixedUpdateRate>()];
 
-        let mut op = SilencerFixedUpdateRateOp::new(
+        let mut op = FixedUpdateRateOp::new(
             NonZeroU16::new(0x1234).unwrap(),
             NonZeroU16::new(0x5678).unwrap(),
         );

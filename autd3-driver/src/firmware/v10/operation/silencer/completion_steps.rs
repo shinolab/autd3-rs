@@ -20,14 +20,14 @@ struct SilencerFixedCompletionSteps {
     value_phase: u16,
 }
 
-pub struct SilencerFixedCompletionStepsOp {
+pub struct FixedCompletionStepsOp {
     is_done: bool,
     intensity: NonZeroU16,
     phase: NonZeroU16,
     strict: bool,
 }
 
-impl SilencerFixedCompletionStepsOp {
+impl FixedCompletionStepsOp {
     pub(crate) const fn new(intensity: NonZeroU16, phase: NonZeroU16, strict: bool) -> Self {
         Self {
             is_done: false,
@@ -38,7 +38,7 @@ impl SilencerFixedCompletionStepsOp {
     }
 }
 
-impl Operation for SilencerFixedCompletionStepsOp {
+impl Operation for FixedCompletionStepsOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -70,7 +70,7 @@ impl Operation for SilencerFixedCompletionStepsOp {
 }
 
 impl OperationGenerator for FixedCompletionSteps {
-    type O1 = SilencerFixedCompletionStepsOp;
+    type O1 = FixedCompletionStepsOp;
     type O2 = NullOp;
 
     fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
@@ -96,7 +96,7 @@ mod tests {
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionSteps>()];
 
-        let mut op = SilencerFixedCompletionStepsOp::new(
+        let mut op = FixedCompletionStepsOp::new(
             NonZeroU16::new(0x12).unwrap(),
             NonZeroU16::new(0x34).unwrap(),
             strict,

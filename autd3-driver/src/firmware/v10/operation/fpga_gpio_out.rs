@@ -72,12 +72,12 @@ struct GPIOOutputMsg {
     value: [GPIOOutValue; 4],
 }
 
-pub struct GPIOOutputOp {
+pub struct GPIOOutputsOp {
     is_done: bool,
     value: [Result<GPIOOutValue, AUTDDriverError>; 4],
 }
 
-impl GPIOOutputOp {
+impl GPIOOutputsOp {
     pub(crate) const fn new(value: [Result<GPIOOutValue, AUTDDriverError>; 4]) -> Self {
         Self {
             is_done: false,
@@ -86,7 +86,7 @@ impl GPIOOutputOp {
     }
 }
 
-impl Operation for GPIOOutputOp {
+impl Operation for GPIOOutputsOp {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -120,7 +120,7 @@ impl Operation for GPIOOutputOp {
 impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator
     for GPIOOutputs<F>
 {
-    type O1 = GPIOOutputOp;
+    type O1 = GPIOOutputsOp;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
@@ -145,7 +145,7 @@ mod tests {
         let device = crate::autd3_device::tests::create_device();
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
-        let mut op = GPIOOutputOp::new([
+        let mut op = GPIOOutputsOp::new([
             Ok(GPIOOutValue::new()
                 .with_tag(0x01)
                 .with_value(0x02030405060708)),

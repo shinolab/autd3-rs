@@ -24,8 +24,8 @@ macro_rules! impl_v11_op {
             }
         }
     };
-    ($($generics:tt),+; $ty:ty) => {
-           impl<$($generics),+> OperationGenerator for $ty
+    ($($generics:tt),*; $ty:ty) => {
+           impl<$($generics),*> OperationGenerator for $ty
            where
                $ty: crate::firmware::v10::operation::OperationGenerator,
            {

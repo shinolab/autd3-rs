@@ -2,7 +2,7 @@ use super::OperationGenerator;
 use crate::firmware::driver::NullOp;
 use crate::{
     datagram::{GPIOOutputType, GPIOOutputs},
-    firmware::v11::operation::GPIOOutputOp,
+    firmware::v11::operation::GPIOOutputsOp,
     geometry::Device,
 };
 
@@ -48,7 +48,7 @@ fn convert(ty: Option<GPIOOutputType<'_>>) -> crate::firmware::v11::operation::G
 impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator
     for GPIOOutputs<F>
 {
-    type O1 = GPIOOutputOp;
+    type O1 = GPIOOutputsOp;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {

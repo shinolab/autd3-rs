@@ -2,9 +2,9 @@ mod completion_steps;
 mod completion_time;
 mod update_rate;
 
-pub(crate) use completion_steps::SilencerFixedCompletionStepsOp;
-pub(crate) use completion_time::SilencerFixedCompletionTimeOp;
-pub(crate) use update_rate::SilencerFixedUpdateRateOp;
+pub(crate) use completion_steps::FixedCompletionStepsOp;
+pub(crate) use completion_time::FixedCompletionTimeOp;
+pub(crate) use update_rate::FixedUpdateRateOp;
 
 use zerocopy::{Immutable, IntoBytes};
 

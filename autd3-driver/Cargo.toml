@@ -29,6 +29,7 @@ itertools = { workspace = true, features = ["use_alloc"] }
 nalgebra = { workspace = true }
 num = { workspace = true }
 num_cpus = { workspace = true }
+paste = { workspace = true }
 rayon = { workspace = true }
 seq-macro = { workspace = true }
 thiserror = { workspace = true }

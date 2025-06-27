@@ -21,7 +21,7 @@ struct PhaseCorr {
     __: u8,
 }
 
-pub struct PhaseCorrectionOp<F: Fn(&Transducer) -> Phase> {
+pub struct PhaseCorrectionOp<F> {
     is_done: bool,
     f: F,
 }
