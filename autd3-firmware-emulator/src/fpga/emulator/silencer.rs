@@ -23,11 +23,7 @@ impl SilencerEmulator<Phase> {
         if self.fixed_update_rate_mode {
             self.value
         } else {
-            let diff = if input < self.current_target {
-                self.current_target - input
-            } else {
-                input - self.current_target
-            };
+            let diff = self.current_target.abs_diff(input);
             self.current_target = input;
             let diff = if diff >= 128 {
                 (256 - diff as u16) as u8
@@ -90,11 +86,7 @@ impl SilencerEmulator<Intensity> {
         if self.fixed_update_rate_mode {
             self.value
         } else {
-            let diff = if input < self.current_target {
-                self.current_target - input
-            } else {
-                input - self.current_target
-            };
+            let diff = self.current_target.abs_diff(input);
             self.current_target = input;
             let (diff, rst) = if diff == 0 {
                 (self.diff_mem, false)
