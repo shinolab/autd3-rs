@@ -42,7 +42,6 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     {
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
         let parallel_threshold = s.option().parallel_threshold;
-        let strict = self.option.strict;
 
         let mut g = s.operation_generator(
             self.geometry,
@@ -54,6 +53,25 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
             .iter()
             .map(|dev| g.generate(dev))
             .collect::<Vec<_>>();
+
+        self.send_impl(timeout, parallel_threshold, &mut operations)
+            .await
+    }
+}
+
+impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
+    pub(crate) async fn send_impl<O1, O2>(
+        &mut self,
+        timeout: Duration,
+        parallel_threshold: usize,
+        operations: &mut [Option<(O1, O2)>],
+    ) -> Result<(), AUTDDriverError>
+    where
+        O1: Operation,
+        O2: Operation,
+        AUTDDriverError: From<O1::Error> + From<O2::Error>,
+    {
+        let strict = self.option.strict;
 
         operations
             .iter()
@@ -76,17 +94,11 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
             let mut tx = self.link.alloc_tx_buffer().await?;
 
             self.msg_id.increment();
-            OperationHandler::pack(
-                *self.msg_id,
-                &mut operations,
-                self.geometry,
-                &mut tx,
-                parallel,
-            )?;
+            OperationHandler::pack(*self.msg_id, operations, self.geometry, &mut tx, parallel)?;
 
             self.send_receive(tx, timeout, strict).await?;
 
-            if OperationHandler::is_done(&operations) {
+            if OperationHandler::is_done(operations) {
                 return Ok(());
             }
 
@@ -96,9 +108,7 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
                 .await;
         }
     }
-}
 
-impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     async fn send_receive(
         &mut self,
         tx: Vec<TxMessage>,
@@ -107,38 +117,22 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     ) -> Result<(), AUTDDriverError> {
         self.link.ensure_is_open()?;
         self.link.send(tx).await?;
-        Self::wait_msg_processed(
-            self.link,
-            self.msg_id,
-            self.rx,
-            self.sent_flags,
-            &self.option,
-            &self.timer_strategy,
-            timeout,
-            strict,
-        )
-        .await
+        self.wait_msg_processed(timeout, strict).await
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub(crate) async fn wait_msg_processed(
-        link: &mut L,
-        msg_id: &mut MsgId,
-        rx: &mut [RxMessage],
-        sent_flags: &mut [bool],
-        option: &SenderOption,
-        timer_strategy: &T,
+        &mut self,
         timeout: Duration,
         strict: bool,
     ) -> Result<(), AUTDDriverError> {
         let start = Instant::now();
-        let mut receive_timing = timer_strategy.initial();
+        let mut receive_timing = self.timer_strategy.initial();
         loop {
-            link.ensure_is_open()?;
-            link.receive(rx).await?;
+            self.link.ensure_is_open()?;
+            self.link.receive(self.rx).await?;
 
-            if crate::firmware::v12::cpu::check_if_msg_is_processed(*msg_id, rx)
-                .zip(sent_flags.iter())
+            if crate::firmware::v12::cpu::check_if_msg_is_processed(*self.msg_id, self.rx)
+                .zip(self.sent_flags.iter())
                 .filter_map(|(r, sent)| sent.then_some(r))
                 .all(std::convert::identity)
             {
@@ -153,12 +147,13 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
                 };
             }
 
-            receive_timing = timer_strategy
-                .sleep(receive_timing, option.receive_interval)
+            receive_timing = self
+                .timer_strategy
+                .sleep(receive_timing, self.option.receive_interval)
                 .await;
         }
 
-        rx.iter().try_fold((), |_, r| {
+        self.rx.iter().try_fold((), |_, r| {
             crate::firmware::v12::cpu::check_firmware_err(r.ack())
         })
     }

@@ -1,15 +1,6 @@
 use autd3_core::{link::Link, sleep::Sleep};
 
-use crate::{
-    datagram::{
-        Clear, FixedCompletionSteps, Silencer,
-        implements::{Null, Static},
-    },
-    firmware::{
-        driver::{Driver, Sender, TimerStrategy},
-        version::FirmwareVersion,
-    },
-};
+use crate::firmware::driver::{Driver, Sender, TimerStrategy};
 
 use super::fpga::{
     FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_WIDTH,
@@ -22,64 +13,18 @@ pub struct V11;
 impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
     for super::transmission::Sender<'a, L, S, T>
 {
-    fn initialize_devices(mut self) -> Result<(), crate::error::AUTDDriverError> {
-        // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
-        // Therefore, send a meaningless data.
-        self.send(crate::datagram::ReadsFPGAState::new(|_| false))?;
-
-        self.send((
-            crate::datagram::Clear::new(),
-            crate::datagram::Synchronize::new(),
-        ))
+    fn initialize_devices(self) -> Result<(), crate::error::AUTDDriverError> {
+        self.inner.initialize_devices()
     }
 
     fn firmware_version(
-        mut self,
+        self,
     ) -> Result<Vec<crate::firmware::version::FirmwareVersion>, crate::error::AUTDDriverError> {
-        use crate::{
-            datagram::FirmwareVersionType::*,
-            firmware::version::{CPUVersion, FPGAVersion, Major, Minor},
-        };
-
-        let cpu_major = self.fetch_firminfo(CPUMajor)?;
-        let cpu_minor = self.fetch_firminfo(CPUMinor)?;
-        let fpga_major = self.fetch_firminfo(FPGAMajor)?;
-        let fpga_minor = self.fetch_firminfo(FPGAMinor)?;
-        let fpga_functions = self.fetch_firminfo(FPGAFunctions)?;
-        self.fetch_firminfo(Clear)?;
-
-        Ok(self
-            .geometry
-            .iter()
-            .map(|dev| FirmwareVersion {
-                idx: dev.idx(),
-                cpu: CPUVersion {
-                    major: Major(cpu_major[dev.idx()]),
-                    minor: Minor(cpu_minor[dev.idx()]),
-                },
-                fpga: FPGAVersion {
-                    major: Major(fpga_major[dev.idx()]),
-                    minor: Minor(fpga_minor[dev.idx()]),
-                    function_bits: fpga_functions[dev.idx()],
-                },
-            })
-            .collect())
+        self.inner.firmware_version()
     }
 
-    fn close(mut self) -> Result<(), crate::error::AUTDDriverError> {
-        [
-            self.send(Silencer {
-                config: FixedCompletionSteps {
-                    strict: false,
-                    ..Default::default()
-                },
-            }),
-            self.send((Static::default(), Null)),
-            self.send(Clear {}),
-            Ok(self.link.close()?),
-        ]
-        .into_iter()
-        .try_fold((), |_, x| x)
+    fn close(self) -> Result<(), crate::error::AUTDDriverError> {
+        self.inner.close()
     }
 }
 
@@ -123,14 +68,16 @@ impl Driver for V11 {
         T: TimerStrategy<S>,
     {
         Self::Sender {
-            msg_id,
-            link,
-            geometry,
-            sent_flags,
-            rx,
-            option,
-            timer_strategy,
-            _phantom: std::marker::PhantomData,
+            inner: crate::firmware::v10::transmission::Sender {
+                msg_id,
+                link,
+                geometry,
+                sent_flags,
+                rx,
+                option,
+                timer_strategy,
+                _phantom: std::marker::PhantomData,
+            },
         }
     }
 }

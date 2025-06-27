@@ -39,7 +39,6 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     {
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
         let parallel_threshold = s.option().parallel_threshold;
-        let strict = self.option.strict;
 
         let mut g = s.operation_generator(
             self.geometry,
@@ -51,6 +50,24 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
             .iter()
             .map(|dev| g.generate(dev))
             .collect::<Vec<_>>();
+
+        self.send_impl(timeout, parallel_threshold, &mut operations)
+    }
+}
+
+impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
+    pub(crate) fn send_impl<O1, O2>(
+        &mut self,
+        timeout: Duration,
+        parallel_threshold: usize,
+        operations: &mut [Option<(O1, O2)>],
+    ) -> Result<(), AUTDDriverError>
+    where
+        O1: Operation,
+        O2: Operation,
+        AUTDDriverError: From<O1::Error> + From<O2::Error>,
+    {
+        let strict = self.option.strict;
 
         operations
             .iter()
@@ -73,17 +90,11 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
             let mut tx = self.link.alloc_tx_buffer()?;
 
             self.msg_id.increment();
-            OperationHandler::pack(
-                *self.msg_id,
-                &mut operations,
-                self.geometry,
-                &mut tx,
-                parallel,
-            )?;
+            OperationHandler::pack(*self.msg_id, operations, self.geometry, &mut tx, parallel)?;
 
             self.send_receive(tx, timeout, strict)?;
 
-            if OperationHandler::is_done(&operations) {
+            if OperationHandler::is_done(operations) {
                 return Ok(());
             }
 
@@ -92,9 +103,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
                 .sleep(send_timing, self.option.send_interval);
         }
     }
-}
 
-impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     fn send_receive(
         &mut self,
         tx: Vec<TxMessage>,
@@ -103,37 +112,22 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     ) -> Result<(), AUTDDriverError> {
         self.link.ensure_is_open()?;
         self.link.send(tx)?;
-        Self::wait_msg_processed(
-            self.link,
-            self.msg_id,
-            self.rx,
-            self.sent_flags,
-            &self.option,
-            &self.timer_strategy,
-            timeout,
-            strict,
-        )
+        self.wait_msg_processed(timeout, strict)
     }
 
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn wait_msg_processed(
-        link: &mut L,
-        msg_id: &mut MsgId,
-        rx: &mut [RxMessage],
-        sent_flags: &mut [bool],
-        option: &SenderOption,
-        timer_strategy: &T,
+    fn wait_msg_processed(
+        &mut self,
         timeout: Duration,
         strict: bool,
     ) -> Result<(), AUTDDriverError> {
         let start = Instant::now();
-        let mut receive_timing = timer_strategy.initial();
+        let mut receive_timing = self.timer_strategy.initial();
         loop {
-            link.ensure_is_open()?;
-            link.receive(rx)?;
+            self.link.ensure_is_open()?;
+            self.link.receive(self.rx)?;
 
-            if crate::firmware::v10::cpu::check_if_msg_is_processed(*msg_id, rx)
-                .zip(sent_flags.iter())
+            if crate::firmware::v10::cpu::check_if_msg_is_processed(*self.msg_id, self.rx)
+                .zip(self.sent_flags.iter())
                 .filter_map(|(r, sent)| sent.then_some(r))
                 .all(std::convert::identity)
             {
@@ -144,10 +138,13 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
                 break;
             }
 
-            receive_timing = timer_strategy.sleep(receive_timing, option.receive_interval);
+            receive_timing = self
+                .timer_strategy
+                .sleep(receive_timing, self.option.receive_interval);
         }
 
-        rx.iter()
+        self.rx
+            .iter()
             .try_fold((), |_, r| {
                 crate::firmware::v10::cpu::check_firmware_err(r.ack())
             })
@@ -311,7 +308,7 @@ mod tests {
         let mut msg_id = MsgId::new(1);
 
         assert!(link.open(&geometry).is_ok());
-        let sender = Sender {
+        let mut sender = Sender {
             msg_id: &mut msg_id,
             link: &mut link,
             geometry: &mut geometry,
@@ -330,32 +327,14 @@ mod tests {
 
         assert_eq!(
             Ok(()),
-            Sender::wait_msg_processed(
-                sender.link,
-                sender.msg_id,
-                sender.rx,
-                sender.sent_flags,
-                &sender.option,
-                &sender.timer_strategy,
-                Duration::from_millis(10),
-                true
-            )
+            sender.wait_msg_processed(Duration::from_millis(10), true)
         );
 
         sender.link.recv_cnt = 0;
         sender.link.is_open = false;
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::closed())),
-            Sender::wait_msg_processed(
-                sender.link,
-                sender.msg_id,
-                sender.rx,
-                sender.sent_flags,
-                &sender.option,
-                &sender.timer_strategy,
-                Duration::from_millis(10),
-                true
-            )
+            sender.wait_msg_processed(Duration::from_millis(10), true)
         );
 
         sender.link.recv_cnt = 0;
@@ -363,16 +342,7 @@ mod tests {
         sender.link.down = true;
         assert_eq!(
             Err(AUTDDriverError::ConfirmResponseFailed),
-            Sender::wait_msg_processed(
-                sender.link,
-                sender.msg_id,
-                sender.rx,
-                sender.sent_flags,
-                &sender.option,
-                &sender.timer_strategy,
-                Duration::ZERO,
-                true
-            )
+            sender.wait_msg_processed(Duration::ZERO, true)
         );
 
         sender.link.recv_cnt = 0;
@@ -380,50 +350,20 @@ mod tests {
         sender.link.down = true;
         assert_eq!(
             Err(AUTDDriverError::ConfirmResponseFailed),
-            Sender::wait_msg_processed(
-                sender.link,
-                sender.msg_id,
-                sender.rx,
-                sender.sent_flags,
-                &sender.option,
-                &sender.timer_strategy,
-                Duration::from_secs(10),
-                true
-            )
+            sender.wait_msg_processed(Duration::from_secs(10), true)
         );
 
         sender.link.recv_cnt = 0;
         sender.link.is_open = true;
         sender.link.down = true;
-        assert_eq!(
-            Ok(()),
-            Sender::wait_msg_processed(
-                sender.link,
-                sender.msg_id,
-                sender.rx,
-                sender.sent_flags,
-                &sender.option,
-                &sender.timer_strategy,
-                Duration::ZERO,
-                false
-            )
-        );
+        assert_eq!(Ok(()), sender.wait_msg_processed(Duration::ZERO, false));
 
         sender.link.down = false;
         sender.link.recv_cnt = 0;
         *sender.msg_id = MsgId::new(20);
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::new("too many"))),
-            Sender::wait_msg_processed(
-                sender.link,
-                sender.msg_id,
-                sender.rx,
-                sender.sent_flags,
-                &sender.option,
-                &sender.timer_strategy,
-                Duration::from_secs(10),
-                true
-            )
+            sender.wait_msg_processed(Duration::from_secs(10), true)
         );
     }
 }
