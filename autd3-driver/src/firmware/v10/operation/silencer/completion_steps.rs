@@ -24,16 +24,16 @@ pub struct SilencerFixedCompletionStepsOp {
     is_done: bool,
     intensity: NonZeroU16,
     phase: NonZeroU16,
-    strict_mode: bool,
+    strict: bool,
 }
 
 impl SilencerFixedCompletionStepsOp {
-    pub(crate) const fn new(intensity: NonZeroU16, phase: NonZeroU16, strict_mode: bool) -> Self {
+    pub(crate) const fn new(intensity: NonZeroU16, phase: NonZeroU16, strict: bool) -> Self {
         Self {
             is_done: false,
             intensity,
             phase,
-            strict_mode,
+            strict,
         }
     }
 }
@@ -46,7 +46,7 @@ impl Operation for SilencerFixedCompletionStepsOp {
             tx,
             SilencerFixedCompletionSteps {
                 tag: TypeTag::Silencer,
-                flag: if self.strict_mode {
+                flag: if self.strict {
                     SilencerControlFlags::STRICT_MODE
                 } else {
                     SilencerControlFlags::NONE
@@ -75,7 +75,7 @@ impl OperationGenerator for FixedCompletionSteps {
 
     fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
         Some((
-            Self::O1::new(self.intensity, self.phase, self.strict_mode),
+            Self::O1::new(self.intensity, self.phase, self.strict),
             Self::O2 {},
         ))
     }
@@ -91,7 +91,7 @@ mod tests {
     #[test]
     #[case(SilencerControlFlags::STRICT_MODE.bits(), true)]
     #[case(0x00, false)]
-    fn test(#[case] value: u8, #[case] strict_mode: bool) {
+    fn test(#[case] value: u8, #[case] strict: bool) {
         let device = crate::autd3_device::tests::create_device();
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionSteps>()];
@@ -99,7 +99,7 @@ mod tests {
         let mut op = SilencerFixedCompletionStepsOp::new(
             NonZeroU16::new(0x12).unwrap(),
             NonZeroU16::new(0x34).unwrap(),
-            strict_mode,
+            strict,
         );
 
         assert_eq!(

@@ -174,7 +174,7 @@ impl FPGAEmulator {
                     .read(ADDR_SILENCER_COMPLETION_STEPS_PHASE),
             )
             .unwrap(),
-            strict_mode: true,
+            strict: true,
         }
     }
 
