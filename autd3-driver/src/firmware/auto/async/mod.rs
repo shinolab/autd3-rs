@@ -21,145 +21,28 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
     for sender::Sender<'a, L, S, T>
 {
     async fn initialize_devices(self) -> Result<(), crate::error::AUTDDriverError> {
-        match self.version {
-            Version::V10 => {
-                super::super::v10::V10
-                    .sender(
-                        self.msg_id,
-                        self.link,
-                        self.geometry,
-                        self.sent_flags,
-                        self.rx,
-                        self.option,
-                        self.timer_strategy,
-                    )
-                    .initialize_devices()
-                    .await
-            }
-            Version::V11 => {
-                super::super::v11::V11
-                    .sender(
-                        self.msg_id,
-                        self.link,
-                        self.geometry,
-                        self.sent_flags,
-                        self.rx,
-                        self.option,
-                        self.timer_strategy,
-                    )
-                    .initialize_devices()
-                    .await
-            }
-            Version::V12 => {
-                super::super::v12::V12
-                    .sender(
-                        self.msg_id,
-                        self.link,
-                        self.geometry,
-                        self.sent_flags,
-                        self.rx,
-                        self.option,
-                        self.timer_strategy,
-                    )
-                    .initialize_devices()
-                    .await
-            }
+        match self.inner {
+            sender::Inner::V10(inner) => inner.initialize_devices().await,
+            sender::Inner::V11(inner) => inner.inner.initialize_devices().await,
+            sender::Inner::V12(inner) => inner.initialize_devices().await,
         }
     }
 
     async fn firmware_version(
         self,
     ) -> Result<Vec<crate::firmware::version::FirmwareVersion>, crate::error::AUTDDriverError> {
-        match self.version {
-            Version::V10 => {
-                super::super::v10::V10
-                    .sender(
-                        self.msg_id,
-                        self.link,
-                        self.geometry,
-                        self.sent_flags,
-                        self.rx,
-                        self.option,
-                        self.timer_strategy,
-                    )
-                    .firmware_version()
-                    .await
-            }
-            Version::V11 => {
-                super::super::v11::V11
-                    .sender(
-                        self.msg_id,
-                        self.link,
-                        self.geometry,
-                        self.sent_flags,
-                        self.rx,
-                        self.option,
-                        self.timer_strategy,
-                    )
-                    .firmware_version()
-                    .await
-            }
-            Version::V12 => {
-                super::super::v12::V12
-                    .sender(
-                        self.msg_id,
-                        self.link,
-                        self.geometry,
-                        self.sent_flags,
-                        self.rx,
-                        self.option,
-                        self.timer_strategy,
-                    )
-                    .firmware_version()
-                    .await
-            }
+        match self.inner {
+            sender::Inner::V10(inner) => inner.firmware_version().await,
+            sender::Inner::V11(inner) => inner.inner.firmware_version().await,
+            sender::Inner::V12(inner) => inner.firmware_version().await,
         }
     }
 
     async fn close(self) -> Result<(), crate::error::AUTDDriverError> {
-        match self.version {
-            Version::V10 => {
-                super::super::v10::V10
-                    .sender(
-                        self.msg_id,
-                        self.link,
-                        self.geometry,
-                        self.sent_flags,
-                        self.rx,
-                        self.option,
-                        self.timer_strategy,
-                    )
-                    .close()
-                    .await
-            }
-            Version::V11 => {
-                super::super::v11::V11
-                    .sender(
-                        self.msg_id,
-                        self.link,
-                        self.geometry,
-                        self.sent_flags,
-                        self.rx,
-                        self.option,
-                        self.timer_strategy,
-                    )
-                    .initialize_devices()
-                    .await
-            }
-            Version::V12 => {
-                super::super::v12::V12
-                    .sender(
-                        self.msg_id,
-                        self.link,
-                        self.geometry,
-                        self.sent_flags,
-                        self.rx,
-                        self.option,
-                        self.timer_strategy,
-                    )
-                    .initialize_devices()
-                    .await
-            }
+        match self.inner {
+            sender::Inner::V10(inner) => inner.close().await,
+            sender::Inner::V11(inner) => inner.inner.close().await,
+            sender::Inner::V12(inner) => inner.close().await,
         }
     }
 }
@@ -256,14 +139,40 @@ impl Driver for Auto {
         T: TimerStrategy<S>,
     {
         Self::Sender {
-            msg_id,
-            link,
-            geometry,
-            sent_flags,
-            rx,
-            option,
-            timer_strategy,
-            _phantom: std::marker::PhantomData,
+            inner: match self.version {
+                Version::V10 => sender::Inner::V10(crate::firmware::v10::r#async::sender::Sender {
+                    msg_id,
+                    link,
+                    geometry,
+                    sent_flags,
+                    rx,
+                    option,
+                    timer_strategy,
+                    _phantom: std::marker::PhantomData,
+                }),
+                Version::V11 => sender::Inner::V11(crate::firmware::v11::r#async::sender::Sender {
+                    inner: crate::firmware::v10::r#async::sender::Sender {
+                        msg_id,
+                        link,
+                        geometry,
+                        sent_flags,
+                        rx,
+                        option,
+                        timer_strategy,
+                        _phantom: std::marker::PhantomData,
+                    },
+                }),
+                Version::V12 => sender::Inner::V12(crate::firmware::v12::r#async::sender::Sender {
+                    msg_id,
+                    link,
+                    geometry,
+                    sent_flags,
+                    rx,
+                    option,
+                    timer_strategy,
+                    _phantom: std::marker::PhantomData,
+                }),
+            },
             version: self.version,
             limits: self.firmware_limits(),
         }
