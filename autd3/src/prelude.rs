@@ -30,7 +30,7 @@ pub use autd3_driver::{
     datagram::{
         BoxedGain, Clear, ControlPoint, ControlPoints, FixedCompletionTime, FixedUpdateRate,
         FociSTM, ForceFan, GPIOOutputType, GPIOOutputs, GainSTM, GainSTMMode, GainSTMOption, Group,
-        PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
+        OutputMask, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
         WithLoopBehavior, WithSegment,
     },
     error::AUTDDriverError,

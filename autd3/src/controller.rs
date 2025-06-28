@@ -260,6 +260,22 @@ impl<L: Link, V: Driver> Drop for Controller<L, V> {
 // The following implementations are necessary because Rust does not have associated traits.
 // https://github.com/rust-lang/rfcs/issues/2190
 
+impl<L: Link> Controller<L, firmware::v12_1::V12_1> {
+    /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
+    ///
+    /// [`Sender::send`]: autd3_driver::firmware::v12_1::transmission::Sender::send
+    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    where
+        AUTDDriverError: From<D::Error>,
+        D::G: autd3_driver::firmware::v12_1::operation::OperationGenerator,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v12_1::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::v12_1::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
+    {
+        self.sender(self.default_sender_option, FixedSchedule::default())
+            .send(s)
+    }
+}
+
 impl<L: Link> Controller<L, firmware::v12::V12> {
     /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
     ///
@@ -689,6 +705,17 @@ pub(crate) mod tests {
     #[test]
     fn send_boxed() -> anyhow::Result<()> {
         use crate::gain::Null;
+
+        {
+            let mut autd = Controller::<_, firmware::v12_1::V12_1>::open_with(
+                [AUTD3::default()],
+                Audit::<version::V12_1>::new(AuditOption::default()),
+            )?;
+
+            autd.send(BoxedDatagram::new(Null))?;
+
+            autd.close()?;
+        }
 
         {
             let mut autd = Controller::<_, firmware::v12::V12>::open_with(

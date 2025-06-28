@@ -25,6 +25,7 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
             sender::Inner::V10(inner) => inner.initialize_devices().await,
             sender::Inner::V11(inner) => inner.inner.initialize_devices().await,
             sender::Inner::V12(inner) => inner.initialize_devices().await,
+            sender::Inner::V12_1(inner) => inner.inner.initialize_devices().await,
         }
     }
 
@@ -35,6 +36,7 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
             sender::Inner::V10(inner) => inner.firmware_version().await,
             sender::Inner::V11(inner) => inner.inner.firmware_version().await,
             sender::Inner::V12(inner) => inner.firmware_version().await,
+            sender::Inner::V12_1(inner) => inner.inner.firmware_version().await,
         }
     }
 
@@ -43,6 +45,7 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
             sender::Inner::V10(inner) => inner.close().await,
             sender::Inner::V11(inner) => inner.inner.close().await,
             sender::Inner::V12(inner) => inner.close().await,
+            sender::Inner::V12_1(inner) => inner.inner.close().await,
         }
     }
 }
@@ -115,6 +118,9 @@ impl Driver for Auto {
             0xA4..=0xA4 => {
                 self.version = Version::V12;
             }
+            0xA5..=0xA5 => {
+                self.version = Version::V12_1;
+            }
             _ => {
                 return Err(AUTDDriverError::UnsupportedFirmware);
             }
@@ -172,6 +178,20 @@ impl Driver for Auto {
                     timer_strategy,
                     _phantom: std::marker::PhantomData,
                 }),
+                Version::V12_1 => {
+                    sender::Inner::V12_1(crate::firmware::v12_1::r#async::sender::Sender {
+                        inner: crate::firmware::v12::r#async::sender::Sender {
+                            msg_id,
+                            link,
+                            geometry,
+                            sent_flags,
+                            rx,
+                            option,
+                            timer_strategy,
+                            _phantom: std::marker::PhantomData,
+                        },
+                    })
+                }
             },
             version: self.version,
             limits: self.firmware_limits(),
@@ -183,6 +203,7 @@ impl Driver for Auto {
             Version::V10 => super::super::v10::V10.firmware_limits(),
             Version::V11 => super::super::v11::V11.firmware_limits(),
             Version::V12 => super::super::v12::V12.firmware_limits(),
+            Version::V12_1 => super::super::v12_1::V12_1.firmware_limits(),
         }
     }
 }

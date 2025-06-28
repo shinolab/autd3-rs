@@ -116,6 +116,8 @@ args = [
     "**/v10/**/*.rs",
     "--ignore",
     "**/v11/**/*.rs",
+    "--ignore",
+    "**/v12/**/*.rs",
 ]
 
 [tasks.cov-cleanup]

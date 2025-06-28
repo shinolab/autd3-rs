@@ -20,6 +20,7 @@ pub(crate) enum Inner<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> {
     V10(crate::firmware::v10::r#async::sender::Sender<'a, L, S, T>),
     V11(crate::firmware::v11::r#async::sender::Sender<'a, L, S, T>),
     V12(crate::firmware::v12::r#async::sender::Sender<'a, L, S, T>),
+    V12_1(crate::firmware::v12_1::r#async::sender::Sender<'a, L, S, T>),
 }
 
 impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
@@ -28,6 +29,7 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
             Inner::V10(inner) => &inner.option,
             Inner::V11(inner) => &inner.inner.option,
             Inner::V12(inner) => &inner.option,
+            Inner::V12_1(inner) => &inner.inner.option,
         }
     }
 
@@ -36,6 +38,7 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
             Inner::V10(inner) => inner.geometry,
             Inner::V11(inner) => inner.inner.geometry,
             Inner::V12(inner) => inner.geometry,
+            Inner::V12_1(inner) => inner.inner.geometry,
         }
     }
 
@@ -64,6 +67,12 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
             }
             Inner::V12(inner) => {
                 inner
+                    .send_impl(timeout, parallel_threshold, operations)
+                    .await
+            }
+            Inner::V12_1(inner) => {
+                inner
+                    .inner
                     .send_impl(timeout, parallel_threshold, operations)
                     .await
             }

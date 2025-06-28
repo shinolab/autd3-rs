@@ -1,4 +1,4 @@
-pub const VERSION_NUM_MAJOR: u8 = 0xA4;
+pub const VERSION_NUM_MAJOR: u8 = 0xA5;
 pub const VERSION_NUM_MINOR: u8 = 0x00;
 
 pub const BRAM_SELECT_CONTROLLER: u8 = 0x0;
@@ -8,6 +8,7 @@ pub const BRAM_SELECT_STM: u8 = 0x3;
 
 pub const BRAM_CNT_SEL_MAIN: usize = 0x00;
 pub const BRAM_CNT_SEL_PHASE_CORR: usize = 0x01;
+pub const BRAM_CNT_SEL_OUTPUT_MASK: usize = 0x02;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
