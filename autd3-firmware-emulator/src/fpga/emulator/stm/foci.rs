@@ -34,19 +34,29 @@ impl FPGAEmulator {
             .read(ADDR_STM_NUM_FOCI0 + segment as usize) as u8
     }
 
-    pub(crate) fn foci_stm_drives_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
+    pub(crate) fn foci_stm_drives_inplace(
+        &self,
+        segment: Segment,
+        idx: usize,
+        phase_corr_buf: &mut [Phase],
+        output_mask_buf: &mut [bool],
+        dst: &mut [Drive],
+    ) {
         let bram = &self.mem.stm_bram[&segment];
         let sound_speed = self.sound_speed(segment);
         let num_foci = self.num_foci(segment) as usize;
 
+        self.phase_correction_inplace(phase_corr_buf);
+        self.output_mask_inplace(segment, output_mask_buf);
+
         self.mem
             .tr_pos
             .iter()
-            .zip(self.phase_correction())
-            .zip(self.output_mask(segment))
+            .zip(phase_corr_buf.iter())
+            .zip(output_mask_buf.iter())
             .take(self.mem.num_transducers)
             .enumerate()
-            .for_each(|(i, ((&tr, p), mask))| {
+            .for_each(|(i, ((&tr, &p), &mask))| {
                 let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
                 let tr_y = (tr & 0xFFFF) as i16 as i32;
