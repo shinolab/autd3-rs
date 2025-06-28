@@ -16,8 +16,8 @@ use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
         driver::{Driver, OperationHandler},
-        latest::{
-            Latest, cpu::check_firmware_err, fpga::GAIN_STM_BUF_SIZE_MAX,
+        v12_1::{
+            V12_1, cpu::check_firmware_err, fpga::GAIN_STM_BUF_SIZE_MAX,
             operation::OperationGenerator,
         },
     },
@@ -556,7 +556,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
-        &Latest.firmware_limits(),
+        &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
         .iter()

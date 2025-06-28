@@ -40,7 +40,7 @@ pub use controller::Controller;
 /// A module for firmware driver
 pub mod firmware {
     pub use autd3_driver::firmware::{
-        auto::Auto, driver::Version, latest::Latest, v10::V10, v11::V11, v12::V12, v12_1::V12_1,
+        auto::Auto, driver::Version, v10::V10, v11::V11, v12::V12, v12_1::V12_1,
     };
 }
 

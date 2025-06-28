@@ -97,7 +97,7 @@ impl<S: Into<SamplingMode> + Clone + Copy + std::fmt::Debug> Modulation for Squa
 mod tests {
     use autd3_driver::{
         common::Hz,
-        firmware::{driver::Driver, latest::Latest},
+        firmware::{driver::Driver, v12_1::V12_1},
     };
 
     use super::*;
@@ -178,7 +178,7 @@ mod tests {
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
         assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
-        assert_eq!(expect, m.calc(&Latest.firmware_limits()));
+        assert_eq!(expect, m.calc(&V12_1.firmware_limits()));
     }
 
     #[rstest::rstest]
@@ -204,7 +204,7 @@ mod tests {
         assert_eq!(u8::MAX, m.option.high);
         assert_eq!(0.5, m.option.duty);
         assert_eq!(SamplingConfig::FREQ_4K, m.sampling_config());
-        assert_eq!(expect, m.calc(&Latest.firmware_limits()));
+        assert_eq!(expect, m.calc(&V12_1.firmware_limits()));
     }
 
     #[test]
@@ -217,7 +217,7 @@ mod tests {
             },
         };
         assert!(
-            m.calc(&Latest.firmware_limits())?
+            m.calc(&V12_1.firmware_limits())?
                 .iter()
                 .all(|&x| x == u8::MAX)
         );
@@ -235,7 +235,7 @@ mod tests {
             },
         };
         assert!(
-            m.calc(&Latest.firmware_limits())?
+            m.calc(&V12_1.firmware_limits())?
                 .iter()
                 .all(|&x| x == u8::MIN)
         );
@@ -256,7 +256,7 @@ mod tests {
             },
         };
         assert!(
-            m.calc(&Latest.firmware_limits())?
+            m.calc(&V12_1.firmware_limits())?
                 .iter()
                 .all(|&x| x == expect)
         );
@@ -278,7 +278,7 @@ mod tests {
                     ..Default::default()
                 },
             }
-            .calc(&Latest.firmware_limits())
+            .calc(&V12_1.firmware_limits())
             .err()
         );
     }

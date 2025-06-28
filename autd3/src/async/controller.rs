@@ -381,7 +381,7 @@ mod tests {
         autd3_device::AUTD3,
         common::Hz,
         datagram::{GainSTM, ReadsFPGAState},
-        firmware::latest::Latest,
+        firmware::v12_1::V12_1,
     };
 
     use crate::{
@@ -395,10 +395,10 @@ mod tests {
     // GRCOV_EXCL_START
     pub async fn create_controller(
         dev_num: usize,
-    ) -> anyhow::Result<Controller<Audit<version::Latest>, Latest>> {
+    ) -> anyhow::Result<Controller<Audit<version::V12_1>, V12_1>> {
         Ok(Controller::open_with(
             (0..dev_num).map(|_| AUTD3::default()),
-            Audit::latest(AuditOption::default()),
+            Audit::<version::V12_1>::new(AuditOption::default()),
         )
         .await?)
     }
@@ -408,9 +408,9 @@ mod tests {
     async fn open_failed() {
         assert_eq!(
             Some(AUTDDriverError::Link(LinkError::new("broken"))),
-            Controller::<_, Latest>::open_with(
+            Controller::<_, V12_1>::open_with(
                 [AUTD3::default()],
-                Audit::latest(AuditOption {
+                Audit::<version::V12_1>::new(AuditOption {
                     broken: true,
                     ..Default::default()
                 })
@@ -451,7 +451,7 @@ mod tests {
                     freq: 150. * Hz,
                     option: Default::default(),
                 }
-                .calc(&Latest.firmware_limits())?,
+                .calc(&V12_1.firmware_limits())?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {
@@ -577,7 +577,7 @@ mod tests {
     async fn fpga_state() -> anyhow::Result<()> {
         let mut autd = Controller::open(
             [AUTD3::default(), AUTD3::default()],
-            Audit::latest(AuditOption::default()),
+            Audit::<version::V12_1>::new(AuditOption::default()),
         )
         .await?;
 
@@ -676,7 +676,7 @@ mod tests {
         ))
         .await?;
 
-        let autd = unsafe { Controller::<Audit<version::Latest>, _>::from_boxed_link(autd) };
+        let autd = unsafe { Controller::<Audit<version::V12_1>, _>::from_boxed_link(autd) };
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
@@ -684,7 +684,7 @@ mod tests {
                     freq: 150. * Hz,
                     option: Default::default(),
                 }
-                .calc(&Latest.firmware_limits())?,
+                .calc(&V12_1.firmware_limits())?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {

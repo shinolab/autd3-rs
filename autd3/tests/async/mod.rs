@@ -12,7 +12,7 @@ mod link;
 async fn initial_msg_id() -> anyhow::Result<()> {
     let cnt = Controller::open(
         [AUTD3::default()],
-        Audit::latest(AuditOption {
+        Audit::<version::V12_1>::new(AuditOption {
             initial_msg_id: Some(MsgId::new(0x01)),
             initial_phase_corr: Some(0xFF),
             ..Default::default()
@@ -33,8 +33,11 @@ async fn initial_msg_id() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_retry_with_disabled_device() -> anyhow::Result<()> {
-    let mut cnt =
-        Controller::open([AUTD3::default(); 2], Audit::latest(Default::default())).await?;
+    let mut cnt = Controller::open(
+        [AUTD3::default(); 2],
+        Audit::<version::V12_1>::new(Default::default()),
+    )
+    .await?;
 
     assert_eq!(Ok(()), cnt.send(Null {}).await);
 

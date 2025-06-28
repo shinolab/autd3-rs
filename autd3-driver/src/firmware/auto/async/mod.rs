@@ -58,7 +58,7 @@ impl Driver for Auto {
         L: AsyncLink + 'a,
         S: Sleep,
         T: TimerStrategy<S>;
-    type FPGAState = super::super::latest::fpga::FPGAState;
+    type FPGAState = super::super::v12_1::fpga::FPGAState;
 
     fn new() -> Self {
         Self {

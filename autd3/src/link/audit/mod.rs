@@ -28,12 +28,6 @@ pub struct Audit<E: version::Emulator> {
     buffer_pool: TxBufferPoolSync,
 }
 
-impl Audit<version::Latest> {
-    pub fn latest(option: AuditOption) -> Self {
-        Self::new(option)
-    }
-}
-
 impl<E: version::Emulator> Audit<E> {
     pub const fn new(option: AuditOption) -> Self {
         Self {

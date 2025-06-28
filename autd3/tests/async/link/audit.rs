@@ -7,13 +7,13 @@ use autd3::{
     prelude::*,
 };
 use autd3_core::link::{Ack, LinkError, RxMessage};
-use autd3_driver::firmware::latest::fpga::FPGAState;
+use autd3_driver::firmware::v12_1::fpga::FPGAState;
 
 #[tokio::test]
 async fn audit_test() -> anyhow::Result<()> {
-    let mut autd = Controller::<_, firmware::Latest>::open_with_option(
+    let mut autd = Controller::<_, firmware::V12_1>::open_with_option(
         [AUTD3::default()],
-        Audit::latest(AuditOption::default()),
+        Audit::<version::V12_1>::new(AuditOption::default()),
         SenderOption {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()
