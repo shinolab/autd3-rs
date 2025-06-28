@@ -20,6 +20,7 @@ pub(crate) enum Inner<'a, L: Link, S: Sleep, T: TimerStrategy<S>> {
     V10(crate::firmware::v10::transmission::Sender<'a, L, S, T>),
     V11(crate::firmware::v11::transmission::Sender<'a, L, S, T>),
     V12(crate::firmware::v12::transmission::Sender<'a, L, S, T>),
+    V12_1(crate::firmware::v12_1::transmission::Sender<'a, L, S, T>),
 }
 
 impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
@@ -28,6 +29,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
             Inner::V10(inner) => &inner.option,
             Inner::V11(inner) => &inner.inner.option,
             Inner::V12(inner) => &inner.option,
+            Inner::V12_1(inner) => &inner.inner.option,
         }
     }
 
@@ -36,6 +38,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
             Inner::V10(inner) => inner.geometry,
             Inner::V11(inner) => inner.inner.geometry,
             Inner::V12(inner) => inner.geometry,
+            Inner::V12_1(inner) => inner.inner.geometry,
         }
     }
 
@@ -56,6 +59,9 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
                 .inner
                 .send_impl(timeout, parallel_threshold, operations),
             Inner::V12(inner) => inner.send_impl(timeout, parallel_threshold, operations),
+            Inner::V12_1(inner) => inner
+                .inner
+                .send_impl(timeout, parallel_threshold, operations),
         }
     }
 }

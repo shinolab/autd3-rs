@@ -7,6 +7,7 @@ mod gpio_in;
 mod info;
 mod modulation;
 mod nop;
+mod output_mask;
 mod phase_corr;
 mod pulse_width_encoder;
 mod reads_fpga_state;

@@ -14,6 +14,7 @@ mod gpio_in;
 mod gpio_out;
 mod info;
 mod modulation;
+mod output_mask;
 mod phase_corr;
 mod pulse_width_encoder;
 mod reads_fpga_state;

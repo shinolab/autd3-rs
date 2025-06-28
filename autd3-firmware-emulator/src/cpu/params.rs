@@ -3,7 +3,7 @@ pub const MICROSECONDS: u64 = NANOSECONDS * 1000;
 pub const MILLISECONDS: u64 = MICROSECONDS * 1000;
 pub const SYS_TIME_TRANSITION_MARGIN: u64 = 10 * MILLISECONDS;
 
-pub const CPU_VERSION_MAJOR: u16 = 0xA4;
+pub const CPU_VERSION_MAJOR: u16 = 0xA5;
 pub const CPU_VERSION_MINOR: u16 = 0x00;
 
 pub const TRANS_NUM: usize = 249;
@@ -15,6 +15,7 @@ pub const BRAM_SELECT_STM: u8 = 0x3;
 
 pub const BRAM_CNT_SEL_MAIN: u8 = 0x00;
 pub const BRAM_CNT_SEL_PHASE_CORR: u8 = 0x01;
+pub const BRAM_CNT_SEL_OUTPUT_MASK: u8 = 0x02;
 
 pub const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
 pub const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
@@ -137,6 +138,7 @@ pub const TAG_FORCE_FAN: u8 = 0x60;
 pub const TAG_READS_FPGA_STATE: u8 = 0x61;
 pub const TAG_CONFIG_PULSE_WIDTH_ENCODER: u8 = 0x72;
 pub const TAG_PHASE_CORRECTION: u8 = 0x80;
+pub const TAG_OUTPUT_MASK: u8 = 0x90;
 pub const TAG_DEBUG: u8 = 0xF0;
 pub const TAG_EMULATE_GPIO_IN: u8 = 0xF1;
 pub const TAG_CPU_GPIO_OUT: u8 = 0xF2;

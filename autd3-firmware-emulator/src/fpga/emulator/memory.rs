@@ -118,6 +118,7 @@ pub struct Memory {
     pub(crate) controller_bram: Bram<u16>,
     #[getset(get = "pub", get_mut = "pub")]
     pub(crate) phase_corr_bram: Bram<u16>,
+    pub(crate) output_mask_bram: Bram<u16>,
     pub(crate) modulation_bram: HashMap<Segment, Bram<u16>>,
     pub(crate) stm_bram: HashMap<Segment, Bram<u16>>,
     pub(crate) duty_table_bram: Bram<u16>,
@@ -139,6 +140,7 @@ impl Memory {
                 v
             }),
             phase_corr_bram: create_bram!({ vec![0x0000; 256 / std::mem::size_of::<u16>()] }),
+            output_mask_bram: create_bram!({ vec![0xFFFF; 32] }),
             modulation_bram: HashMap::from([
                 (
                     Segment::S0,
@@ -220,6 +222,7 @@ impl Memory {
             BRAM_SELECT_CONTROLLER => match addr >> 8 {
                 BRAM_CNT_SEL_MAIN => self.controller_bram.write(addr, data),
                 BRAM_CNT_SEL_PHASE_CORR => self.phase_corr_bram.write(addr & 0xFF, data),
+                BRAM_CNT_SEL_OUTPUT_MASK => self.output_mask_bram.write(addr & 0xFF, data),
                 _ => unreachable!(),
             },
             BRAM_SELECT_MOD => {

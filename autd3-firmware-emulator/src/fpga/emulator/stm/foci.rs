@@ -42,10 +42,11 @@ impl FPGAEmulator {
         self.mem
             .tr_pos
             .iter()
-            .zip(self.phase_correction().iter())
+            .zip(self.phase_correction())
+            .zip(self.output_mask(segment))
             .take(self.mem.num_transducers)
             .enumerate()
-            .for_each(|(i, (&tr, &p))| {
+            .for_each(|(i, ((&tr, p), mask))| {
                 let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
                 let tr_y = (tr & 0xFFFF) as i16 as i32;
@@ -80,7 +81,7 @@ impl FPGAEmulator {
                 let phase = self.mem.atan_table[(sin << 7) | cos];
                 dst[i] = Drive {
                     phase: Phase(phase) + p,
-                    intensity: Intensity(intensity),
+                    intensity: Intensity(if mask { intensity } else { 0x00 }),
                 };
             });
     }

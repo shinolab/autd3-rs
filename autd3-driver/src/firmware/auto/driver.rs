@@ -23,6 +23,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
             super::transmission::Inner::V10(inner) => inner.initialize_devices(),
             super::transmission::Inner::V11(inner) => inner.inner.initialize_devices(),
             super::transmission::Inner::V12(inner) => inner.initialize_devices(),
+            super::transmission::Inner::V12_1(inner) => inner.inner.initialize_devices(),
         }
     }
 
@@ -33,6 +34,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
             super::transmission::Inner::V10(inner) => inner.firmware_version(),
             super::transmission::Inner::V11(inner) => inner.inner.firmware_version(),
             super::transmission::Inner::V12(inner) => inner.firmware_version(),
+            super::transmission::Inner::V12_1(inner) => inner.inner.firmware_version(),
         }
     }
 
@@ -41,6 +43,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
             super::transmission::Inner::V10(inner) => inner.close(),
             super::transmission::Inner::V11(inner) => inner.inner.close(),
             super::transmission::Inner::V12(inner) => inner.close(),
+            super::transmission::Inner::V12_1(inner) => inner.inner.close(),
         }
     }
 }
@@ -146,6 +149,20 @@ impl Driver for Auto {
                         _phantom: std::marker::PhantomData,
                     })
                 }
+                Version::V12_1 => super::transmission::Inner::V12_1(
+                    crate::firmware::v12_1::transmission::Sender {
+                        inner: crate::firmware::v12::transmission::Sender {
+                            msg_id,
+                            link,
+                            geometry,
+                            sent_flags,
+                            rx,
+                            option,
+                            timer_strategy,
+                            _phantom: std::marker::PhantomData,
+                        },
+                    },
+                ),
             },
             version: self.version,
             limits: self.firmware_limits(),
@@ -157,6 +174,7 @@ impl Driver for Auto {
             Version::V10 => super::super::v10::V10.firmware_limits(),
             Version::V11 => super::super::v11::V11.firmware_limits(),
             Version::V12 => super::super::v12::V12.firmware_limits(),
+            Version::V12_1 => super::super::v12_1::V12_1.firmware_limits(),
         }
     }
 }
@@ -181,6 +199,7 @@ fn check_firmware_version(
         0xA2..=0xA2 => Ok(Version::V10),
         0xA3..=0xA3 => Ok(Version::V11),
         0xA4..=0xA4 => Ok(Version::V12),
+        0xA5..=0xA5 => Ok(Version::V12_1),
         _ => Err(AUTDDriverError::UnsupportedFirmware),
     }
 }
@@ -237,6 +256,21 @@ mod tests {
             },
         }]
     )]
+    #[case::v12(
+        Ok(Version::V12_1),
+        vec![FirmwareVersion {
+            idx: 0,
+            cpu: CPUVersion {
+                major: Major(0xA5),
+                minor: Minor(0x00),
+            },
+            fpga: FPGAVersion {
+                major: Major(0xA5),
+                minor: Minor(0x00),
+                function_bits: 0,
+            },
+        }]
+    )]
     #[case::empty(
         Err(AUTDDriverError::FirmwareVersionMismatch),
         vec![]
@@ -275,11 +309,11 @@ mod tests {
         vec![FirmwareVersion {
             idx: 0,
             cpu: CPUVersion {
-                major: Major(0xA5),
+                major: Major(0xFF),
                 minor: Minor(0x00),
             },
             fpga: FPGAVersion {
-                major: Major(0xA5),
+                major: Major(0xFF),
                 minor: Minor(0x00),
                 function_bits: 0,
             },
