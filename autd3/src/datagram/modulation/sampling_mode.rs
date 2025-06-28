@@ -157,7 +157,7 @@ impl From<Nearest> for SamplingMode {
 mod tests {
     use autd3_driver::{
         common::Hz,
-        firmware::{driver::Driver, latest::Latest},
+        firmware::{driver::Driver, v12_1::V12_1},
     };
 
     use super::*;
@@ -175,7 +175,7 @@ mod tests {
     ) {
         assert_eq!(
             Ok(expect),
-            SamplingMode::freq_nearest(freq, sampling_config, &Latest.firmware_limits())
+            SamplingMode::freq_nearest(freq, sampling_config, &V12_1.firmware_limits())
         );
     }
 }

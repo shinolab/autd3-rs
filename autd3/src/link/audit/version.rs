@@ -2,7 +2,6 @@ use crate::link::AuditOption;
 
 use autd3_core::link::{RxMessage, TxMessage};
 
-pub use autd3_firmware_emulator::CPUEmulator as Latest;
 pub use autd3_firmware_emulator::CPUEmulator as V12_1;
 pub use autd3_firmware_emulator_v10::CPUEmulator as V10;
 pub use autd3_firmware_emulator_v11::CPUEmulator as V11;
@@ -17,7 +16,7 @@ pub trait Emulator: Send {
     fn idx(&self) -> usize;
 }
 
-impl Emulator for Latest {
+impl Emulator for V12_1 {
     fn new(idx: usize, num_transducers: usize, option: AuditOption) -> Self {
         let mut cpu = V12_1::new(idx, num_transducers);
         if let Some(msg_id) = option.initial_msg_id {

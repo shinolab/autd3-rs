@@ -47,7 +47,7 @@ mod tests {
     use crate::modulation::{Custom, Fourier, Sine};
     use autd3_driver::{
         common::{Hz, kHz},
-        firmware::{driver::Driver, latest::Latest},
+        firmware::{driver::Driver, v12_1::V12_1},
     };
 
     use super::*;
@@ -198,7 +198,7 @@ mod tests {
                 },
                 coef
             }
-            .calc(&Latest.firmware_limits())?
+            .calc(&V12_1.firmware_limits())?
         );
 
         Ok(())
