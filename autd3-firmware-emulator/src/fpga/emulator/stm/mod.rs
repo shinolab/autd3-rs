@@ -2,7 +2,7 @@ use std::num::NonZeroU16;
 
 use autd3_core::{
     datagram::{GPIOIn, LoopBehavior, Segment, TransitionMode},
-    gain::Drive,
+    gain::{Drive, Phase},
 };
 use autd3_driver::ethercat::DcSysTime;
 
@@ -94,16 +94,31 @@ impl FPGAEmulator {
 
     #[must_use]
     pub fn drives_at(&self, segment: Segment, idx: usize) -> Vec<Drive> {
+        let mut phase_corr_buf = vec![Phase::ZERO; self.mem.num_transducers];
+        let mut output_mask_buf = vec![false; self.mem.num_transducers];
         let mut dst = vec![Drive::NULL; self.mem.num_transducers];
-        self.drives_at_inplace(segment, idx, &mut dst);
+        self.drives_at_inplace(
+            segment,
+            idx,
+            &mut phase_corr_buf,
+            &mut output_mask_buf,
+            &mut dst,
+        );
         dst
     }
 
-    pub fn drives_at_inplace(&self, segment: Segment, idx: usize, dst: &mut [Drive]) {
+    pub fn drives_at_inplace(
+        &self,
+        segment: Segment,
+        idx: usize,
+        phase_corr_buf: &mut [Phase],
+        output_mask_buf: &mut [bool],
+        dst: &mut [Drive],
+    ) {
         if self.is_stm_gain_mode(segment) {
-            self.gain_stm_drives_inplace(segment, idx, dst)
+            self.gain_stm_drives_inplace(segment, idx, phase_corr_buf, output_mask_buf, dst)
         } else {
-            self.foci_stm_drives_inplace(segment, idx, dst)
+            self.foci_stm_drives_inplace(segment, idx, phase_corr_buf, output_mask_buf, dst)
         }
     }
 }
