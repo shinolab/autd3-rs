@@ -3,7 +3,7 @@ use std::time::Duration;
 use autd3::{
     r#async::{AsyncSleeper, Controller},
     controller::{FixedSchedule, SenderOption},
-    link::{Audit, AuditOption},
+    link::{Audit, AuditOption, audit::version},
     prelude::*,
 };
 use autd3_core::link::{Ack, LinkError, RxMessage};

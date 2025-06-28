@@ -1,7 +1,7 @@
 use autd3::{
     r#async::Controller,
     gain::Null,
-    link::{Audit, AuditOption},
+    link::{Audit, AuditOption, audit::version},
     prelude::{AUTD3, AUTDDriverError},
 };
 use autd3_core::link::MsgId;
