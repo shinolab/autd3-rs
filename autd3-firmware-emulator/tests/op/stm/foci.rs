@@ -15,7 +15,7 @@ use autd3_driver::{
     },
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::latest::fpga::{FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT},
+    firmware::v12_1::fpga::{FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT},
     geometry::Point3,
 };
 use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARGIN};

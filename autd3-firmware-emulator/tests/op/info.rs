@@ -7,7 +7,7 @@ use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
         driver::{Driver, OperationHandler},
-        latest::{Latest, cpu::check_firmware_err, operation::OperationGenerator},
+        v12_1::{V12_1, cpu::check_firmware_err, operation::OperationGenerator},
         version::FirmwareVersion,
     },
 };
@@ -77,7 +77,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
         .operation_generator(
             &geometry,
             &DeviceFilter::all_enabled(),
-            &Latest.firmware_limits(),
+            &V12_1.firmware_limits(),
         )?
         .generate(&geometry[0]);
 

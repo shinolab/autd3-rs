@@ -356,7 +356,7 @@ pub(crate) mod tests {
             common::Hz,
             datagram::{GainSTM, ReadsFPGAState},
             firmware,
-            firmware::latest::Latest,
+            firmware::v12_1::V12_1,
         },
         gain::Uniform,
         link::{Audit, AuditOption, audit::version},
@@ -367,10 +367,10 @@ pub(crate) mod tests {
 
     pub fn create_controller(
         dev_num: usize,
-    ) -> anyhow::Result<Controller<Audit<version::Latest>, Latest>> {
+    ) -> anyhow::Result<Controller<Audit<version::V12_1>, V12_1>> {
         Ok(Controller::open_with(
             (0..dev_num).map(|_| AUTD3::default()),
-            Audit::latest(AuditOption::default()),
+            Audit::<version::V12_1>::new(AuditOption::default()),
         )?)
     }
 
@@ -378,9 +378,9 @@ pub(crate) mod tests {
     fn open_failed() {
         assert_eq!(
             Some(AUTDDriverError::Link(LinkError::new("broken"))),
-            Controller::<_, Latest>::open_with(
+            Controller::<_, V12_1>::open_with(
                 [AUTD3::default()],
-                Audit::latest(AuditOption {
+                Audit::<version::V12_1>::new(AuditOption {
                     broken: true,
                     ..Default::default()
                 }),
@@ -419,7 +419,7 @@ pub(crate) mod tests {
                     freq: 150. * Hz,
                     option: Default::default(),
                 }
-                .calc(&Latest.firmware_limits())?,
+                .calc(&V12_1.firmware_limits())?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {
@@ -535,9 +535,9 @@ pub(crate) mod tests {
 
     #[test]
     fn fpga_state() -> anyhow::Result<()> {
-        let mut autd = Controller::<_, Latest>::open_with(
+        let mut autd = Controller::<_, V12_1>::open_with(
             [AUTD3::default(), AUTD3::default()],
-            Audit::latest(AuditOption::default()),
+            Audit::<version::V12_1>::new(AuditOption::default()),
         )?;
 
         autd.send(ReadsFPGAState::new(|_| true))?;
@@ -608,8 +608,8 @@ pub(crate) mod tests {
 
     #[test]
     fn with_boxed_link() -> anyhow::Result<()> {
-        let link: Box<dyn Link> = Box::new(Audit::latest(AuditOption::default()));
-        let mut autd = Controller::<_, Latest>::open_with([AUTD3::default()], link)?;
+        let link: Box<dyn Link> = Box::new(Audit::<version::V12_1>::new(AuditOption::default()));
+        let mut autd = Controller::<_, V12_1>::open_with([AUTD3::default()], link)?;
 
         autd.send(Sine {
             freq: 150. * Hz,
@@ -623,9 +623,9 @@ pub(crate) mod tests {
 
     #[test]
     fn into_boxed_link_unsafe() -> anyhow::Result<()> {
-        let autd = Controller::<_, Latest>::open_with_option(
+        let autd = Controller::<_, V12_1>::open_with_option(
             [AUTD3::default()],
-            Audit::latest(AuditOption::default()),
+            Audit::<version::V12_1>::new(AuditOption::default()),
             SenderOption::default(),
             FixedSchedule::default(),
         )?;
@@ -653,7 +653,7 @@ pub(crate) mod tests {
             },
         ))?;
 
-        let autd = unsafe { Controller::<Audit<version::Latest>, _>::from_boxed_link(autd) };
+        let autd = unsafe { Controller::<Audit<version::V12_1>, _>::from_boxed_link(autd) };
 
         autd.iter().try_for_each(|dev| {
             assert_eq!(
@@ -661,7 +661,7 @@ pub(crate) mod tests {
                     freq: 150. * Hz,
                     option: Default::default(),
                 }
-                .calc(&Latest.firmware_limits())?,
+                .calc(&V12_1.firmware_limits())?,
                 autd.link[dev.idx()].fpga().modulation_buffer(Segment::S0)
             );
             let f = Uniform {
@@ -753,7 +753,7 @@ pub(crate) mod tests {
         {
             let mut autd = Controller::<_, firmware::auto::Auto>::open_with(
                 [AUTD3::default()],
-                Audit::<version::Latest>::new(AuditOption::default()),
+                Audit::<version::V12_1>::new(AuditOption::default()),
             )?;
 
             autd.send(BoxedDatagram::new(Null))?;

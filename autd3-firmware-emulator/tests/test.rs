@@ -8,7 +8,7 @@ use autd3_driver::{
     error::AUTDDriverError,
     firmware::{
         driver::{Driver, Operation, OperationHandler},
-        latest::{Latest, cpu::check_firmware_err, operation::OperationGenerator},
+        v12_1::{V12_1, cpu::check_firmware_err, operation::OperationGenerator},
     },
     geometry::{Geometry, Point3},
 };
@@ -50,7 +50,7 @@ where
     let mut generator = d.operation_generator(
         geometry,
         &DeviceFilter::all_enabled(),
-        &Latest.firmware_limits(),
+        &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
         .iter()
@@ -111,7 +111,7 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
-        &Latest.firmware_limits(),
+        &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
         .iter()
@@ -125,7 +125,7 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
-        &Latest.firmware_limits(),
+        &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
         .iter()
@@ -150,7 +150,7 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
-        &Latest.firmware_limits(),
+        &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
         .iter()
@@ -177,7 +177,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &DeviceFilter::all_enabled(),
-        &Latest.firmware_limits(),
+        &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
         .iter()

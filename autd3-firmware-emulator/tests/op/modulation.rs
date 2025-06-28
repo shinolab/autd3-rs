@@ -10,7 +10,7 @@ use autd3_driver::{
     datagram::{FixedCompletionSteps, Silencer, SwapSegment, WithLoopBehavior, WithSegment},
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
-    firmware::latest::fpga::MOD_BUF_SIZE_MAX,
+    firmware::v12_1::fpga::MOD_BUF_SIZE_MAX,
 };
 use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARGIN};
 

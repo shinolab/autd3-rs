@@ -122,7 +122,7 @@ mod tests {
     use autd3_core::common::Freq;
     use autd3_driver::{
         common::{Hz, PI, rad},
-        firmware::{driver::Driver, latest::Latest},
+        firmware::{driver::Driver, v12_1::V12_1},
     };
 
     #[test]
@@ -157,15 +157,15 @@ mod tests {
             option: SineOption::default(),
         };
 
-        let f0_buf = f0.calc_raw(&Latest.firmware_limits())?.collect::<Vec<_>>();
-        let f1_buf = f1.calc_raw(&Latest.firmware_limits())?.collect::<Vec<_>>();
-        let f2_buf = f2.calc_raw(&Latest.firmware_limits())?.collect::<Vec<_>>();
-        let f3_buf = f3.calc_raw(&Latest.firmware_limits())?.collect::<Vec<_>>();
-        let f4_buf = f4.calc_raw(&Latest.firmware_limits())?.collect::<Vec<_>>();
+        let f0_buf = f0.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
+        let f1_buf = f1.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
+        let f2_buf = f2.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
+        let f3_buf = f3.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
+        let f4_buf = f4.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
 
         let f = Fourier::new([f0, f1, f2, f3, f4], FourierOption::default());
 
-        let buf = &f.calc(&Latest.firmware_limits())?;
+        let buf = &f.calc(&V12_1.firmware_limits())?;
 
         (0..buf.len()).for_each(|i| {
             assert_eq!(
@@ -208,7 +208,7 @@ mod tests {
                 ],
                 option: FourierOption::default(),
             }
-            .calc(&Latest.firmware_limits())
+            .calc(&V12_1.firmware_limits())
         );
         Ok(())
     }
@@ -221,7 +221,7 @@ mod tests {
                 components: vec![],
                 option: FourierOption::default(),
             }
-            .calc(&Latest.firmware_limits())
+            .calc(&V12_1.firmware_limits())
         );
     }
 
@@ -267,7 +267,7 @@ mod tests {
                     ..Default::default()
                 },
             }
-            .calc(&Latest.firmware_limits())
+            .calc(&V12_1.firmware_limits())
         );
     }
 }

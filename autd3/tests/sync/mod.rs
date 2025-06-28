@@ -1,8 +1,8 @@
 use autd3::{
     Controller,
-    firmware::Latest,
+    firmware::V12_1,
     gain::Null,
-    link::{Audit, AuditOption},
+    link::{Audit, AuditOption, audit::version},
     prelude::{AUTD3, AUTDDriverError},
 };
 use autd3_core::link::MsgId;
@@ -12,9 +12,9 @@ mod link;
 
 #[test]
 fn initial_msg_id() -> anyhow::Result<()> {
-    let cnt = Controller::<_, Latest>::open_with(
+    let cnt = Controller::<_, V12_1>::open_with(
         [AUTD3::default()],
-        Audit::latest(AuditOption {
+        Audit::<version::V12_1>::new(AuditOption {
             initial_msg_id: Some(MsgId::new(0x01)),
             initial_phase_corr: Some(0xFF),
             ..Default::default()
@@ -34,9 +34,9 @@ fn initial_msg_id() -> anyhow::Result<()> {
 
 #[test]
 fn test_retry_with_disabled_device() -> anyhow::Result<()> {
-    let mut cnt = Controller::<_, Latest>::open_with(
+    let mut cnt = Controller::<_, V12_1>::open_with(
         [AUTD3::default(); 2],
-        Audit::latest(Default::default()),
+        Audit::<version::V12_1>::new(Default::default()),
     )?;
 
     assert_eq!(Ok(()), cnt.send(Null {}));
