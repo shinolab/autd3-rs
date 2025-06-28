@@ -142,6 +142,13 @@ impl CPUEmulator {
                 (TRANS_NUM + 1) >> 1,
             );
 
+            self.bram_set(
+                BRAM_SELECT_CONTROLLER,
+                (BRAM_CNT_SEL_OUTPUT_MASK as u16) << 8,
+                0xFFFF,
+                32,
+            );
+
             (0..PWE_BUF_SIZE).for_each(|i| {
                 self.bram_write(BRAM_SELECT_PWE_TABLE, i as _, ASIN_TABLE[i] as u16);
             });

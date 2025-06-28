@@ -3,9 +3,10 @@ use crate::link::AuditOption;
 use autd3_core::link::{RxMessage, TxMessage};
 
 pub use autd3_firmware_emulator::CPUEmulator as Latest;
-pub use autd3_firmware_emulator::CPUEmulator as V12;
+pub use autd3_firmware_emulator::CPUEmulator as V12_1;
 pub use autd3_firmware_emulator_v10::CPUEmulator as V10;
 pub use autd3_firmware_emulator_v11::CPUEmulator as V11;
+pub use autd3_firmware_emulator_v12::CPUEmulator as V12;
 
 #[doc(hidden)]
 pub trait Emulator: Send {
@@ -16,9 +17,9 @@ pub trait Emulator: Send {
     fn idx(&self) -> usize;
 }
 
-impl Emulator for V12 {
+impl Emulator for Latest {
     fn new(idx: usize, num_transducers: usize, option: AuditOption) -> Self {
-        let mut cpu = V12::new(idx, num_transducers);
+        let mut cpu = V12_1::new(idx, num_transducers);
         if let Some(msg_id) = option.initial_msg_id {
             cpu.set_last_msg_id(msg_id);
         }
@@ -32,7 +33,30 @@ impl Emulator for V12 {
     }
 
     fn send(&mut self, tx: &[TxMessage]) {
-        V12::send(self, tx)
+        V12_1::send(self, tx)
+    }
+
+    fn update(&mut self) {
+        V12_1::update(self);
+    }
+
+    fn rx(&self) -> RxMessage {
+        V12_1::rx(self)
+    }
+
+    fn idx(&self) -> usize {
+        V12_1::idx(self)
+    }
+}
+
+impl Emulator for V12 {
+    fn new(idx: usize, num_transducers: usize, _: AuditOption) -> Self {
+        V12::new(idx, num_transducers)
+    }
+
+    #[allow(clippy::missing_transmute_annotations)]
+    fn send(&mut self, tx: &[TxMessage]) {
+        V12::send(self, unsafe { std::mem::transmute(tx) })
     }
 
     fn update(&mut self) {
@@ -40,7 +64,7 @@ impl Emulator for V12 {
     }
 
     fn rx(&self) -> RxMessage {
-        V12::rx(self)
+        unsafe { std::mem::transmute(V12::rx(self)) }
     }
 
     fn idx(&self) -> usize {

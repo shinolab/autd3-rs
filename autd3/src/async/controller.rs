@@ -273,6 +273,21 @@ impl<L: AsyncLink + 'static, V: Driver> Controller<L, V> {
 // The following implementations are necessary because Rust does not have associated traits.
 // https://github.com/rust-lang/rfcs/issues/2190
 
+impl<L: AsyncLink> Controller<L, firmware::v12_1::V12_1> {
+    /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::v12_1::transmission::Sender`].
+    pub async fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    where
+        AUTDDriverError: From<D::Error>,
+        D::G: autd3_driver::firmware::v12_1::operation::OperationGenerator,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v12_1::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
+            + From<<<D::G as autd3_driver::firmware::v12_1::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
+    {
+        self.sender(self.default_sender_option, FixedSchedule(AsyncSleeper))
+            .send(s)
+            .await
+    }
+}
+
 impl<L: AsyncLink> Controller<L, firmware::v12::V12> {
     /// Sends a data to the devices. This is a shortcut for [`autd3_driver::firmware::v12::transmission::Sender`].
     pub async fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>

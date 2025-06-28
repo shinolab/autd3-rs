@@ -350,7 +350,7 @@ mod tests {
         sender.link.down = true;
         assert_eq!(
             Err(AUTDDriverError::ConfirmResponseFailed),
-            sender.wait_msg_processed(Duration::from_secs(10), true)
+            sender.wait_msg_processed(Duration::from_secs(1), true)
         );
 
         sender.link.recv_cnt = 0;
@@ -363,7 +363,7 @@ mod tests {
         *sender.msg_id = MsgId::new(20);
         assert_eq!(
             Err(AUTDDriverError::Link(LinkError::new("too many"))),
-            sender.wait_msg_processed(Duration::from_secs(10), true)
+            sender.wait_msg_processed(Duration::from_secs(1), true)
         );
     }
 }

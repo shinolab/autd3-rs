@@ -2,6 +2,7 @@ mod boxed;
 mod gain;
 mod group;
 mod nop;
+mod output_mask;
 mod phase_corr;
 mod pulse_width_encoder;
 mod stm;
@@ -28,6 +29,7 @@ macro_rules! impl_auto_op {
                 V10(crate::firmware::v10::operation::[<$op Op>]),
                 V11(crate::firmware::v11::operation::[<$op Op>]),
                 V12(crate::firmware::v12::operation::[<$op Op>]),
+                V12_1(crate::firmware::v12_1::operation::[<$op Op>]),
             }
 
             #[doc(hidden)]
@@ -43,6 +45,7 @@ macro_rules! impl_auto_op {
                         [<$op Inner>]::V10(inner) => Operation::pack(inner, device, tx)?,
                         [<$op Inner>]::V11(inner) => Operation::pack(inner, device, tx)?,
                         [<$op Inner>]::V12(inner) => Operation::pack(inner, device, tx)?,
+                        [<$op Inner>]::V12_1(inner) => Operation::pack(inner, device, tx)?,
                     })
                 }
 
@@ -51,6 +54,7 @@ macro_rules! impl_auto_op {
                         [<$op Inner>]::V10(inner) => Operation::required_size(inner, device),
                         [<$op Inner>]::V11(inner) => Operation::required_size(inner, device),
                         [<$op Inner>]::V12(inner) => Operation::required_size(inner, device),
+                        [<$op Inner>]::V12_1(inner) => Operation::required_size(inner, device),
                     }
                 }
 
@@ -59,6 +63,7 @@ macro_rules! impl_auto_op {
                         [<$op Inner>]::V10(inner) => Operation::is_done(inner),
                         [<$op Inner>]::V11(inner) => Operation::is_done(inner),
                         [<$op Inner>]::V12(inner) => Operation::is_done(inner),
+                        [<$op Inner>]::V12_1(inner) => Operation::is_done(inner),
                     }
                 }
             }
@@ -93,6 +98,12 @@ macro_rules! impl_auto_op {
                                     )?
                                     .0,
                                 ),
+                                Version::V12_1 => [<$op Inner>]::V12_1(
+                                    crate::firmware::v12_1::operation::OperationGenerator::generate(
+                                        self, device,
+                                    )?
+                                    .0,
+                                ),
                             },
                         },
                         crate::firmware::driver::NullOp,
@@ -110,6 +121,7 @@ macro_rules! impl_auto_op {
                 V10(crate::firmware::v10::operation::[<$op Op>]),
                 V11(crate::firmware::v11::operation::[<$op Op>]),
                 V12(crate::firmware::v12::operation::[<$op Op>]),
+                V12_1(crate::firmware::v12_1::operation::[<$op Op>]),
             }
 
             #[doc(hidden)]
@@ -125,6 +137,7 @@ macro_rules! impl_auto_op {
                         [<$op Inner>]::V10(inner) => Operation::pack(inner, device, tx)?,
                         [<$op Inner>]::V11(inner) => Operation::pack(inner, device, tx)?,
                         [<$op Inner>]::V12(inner) => Operation::pack(inner, device, tx)?,
+                        [<$op Inner>]::V12_1(inner) => Operation::pack(inner, device, tx)?,
                     })
                 }
 
@@ -133,6 +146,7 @@ macro_rules! impl_auto_op {
                         [<$op Inner>]::V10(inner) => Operation::required_size(inner, device),
                         [<$op Inner>]::V11(inner) => Operation::required_size(inner, device),
                         [<$op Inner>]::V12(inner) => Operation::required_size(inner, device),
+                        [<$op Inner>]::V12_1(inner) => Operation::required_size(inner, device),
                     }
                 }
 
@@ -141,6 +155,7 @@ macro_rules! impl_auto_op {
                         [<$op Inner>]::V10(inner) => Operation::is_done(inner),
                         [<$op Inner>]::V11(inner) => Operation::is_done(inner),
                         [<$op Inner>]::V12(inner) => Operation::is_done(inner),
+                        [<$op Inner>]::V12_1(inner) => Operation::is_done(inner),
                     }
                 }
             }
@@ -152,6 +167,8 @@ macro_rules! impl_auto_op {
                     > + crate::firmware::v11::operation::OperationGenerator<
                         O1 = crate::firmware::v10::operation::[<$op Op>],
                     > + crate::firmware::v12::operation::OperationGenerator<
+                        O1 = crate::firmware::v10::operation::[<$op Op>],
+                    > + crate::firmware::v12_1::operation::OperationGenerator<
                         O1 = crate::firmware::v10::operation::[<$op Op>],
                     >,
             {
@@ -176,6 +193,12 @@ macro_rules! impl_auto_op {
                                 ),
                                 Version::V12 => [<$op Inner>]::V12(
                                     crate::firmware::v12::operation::OperationGenerator::generate(
+                                        self, device,
+                                    )?
+                                    .0,
+                                ),
+                                Version::V12_1 => [<$op Inner>]::V12_1(
+                                    crate::firmware::v12_1::operation::OperationGenerator::generate(
                                         self, device,
                                     )?
                                     .0,

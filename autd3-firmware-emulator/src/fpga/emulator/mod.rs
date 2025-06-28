@@ -1,6 +1,7 @@
 mod gpio_out;
 mod memory;
 mod modulation;
+mod output_mask;
 mod phase_corr;
 mod pwe;
 mod silencer;

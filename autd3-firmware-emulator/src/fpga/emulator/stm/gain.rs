@@ -11,13 +11,14 @@ impl FPGAEmulator {
             .mem()
             .iter()
             .skip(256 * idx)
-            .zip(self.phase_correction().iter())
+            .zip(self.phase_correction())
+            .zip(self.output_mask(segment))
             .take(self.mem.num_transducers)
             .enumerate()
-            .for_each(|(i, (&d, &p))| {
+            .for_each(|(i, ((&d, p), mask))| {
                 dst[i] = Drive {
                     phase: Phase((d & 0xFF) as u8) + p,
-                    intensity: Intensity(((d >> 8) & 0xFF) as u8),
+                    intensity: Intensity(if mask { ((d >> 8) & 0xFF) as u8 } else { 0x00 }),
                 }
             })
     }

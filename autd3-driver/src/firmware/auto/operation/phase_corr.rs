@@ -12,6 +12,7 @@ enum Inner<F: Fn(&Transducer) -> Phase> {
     V10(crate::firmware::v10::operation::PhaseCorrectionOp<F>),
     V11(crate::firmware::v11::operation::PhaseCorrectionOp<F>),
     V12(crate::firmware::v12::operation::PhaseCorrectionOp<F>),
+    V12_1(crate::firmware::v12_1::operation::PhaseCorrectionOp<F>),
 }
 
 pub struct PhaseCorrectionOp<F: Fn(&Transducer) -> Phase> {
@@ -26,6 +27,7 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
             Inner::V10(inner) => Operation::pack(inner, device, tx)?,
             Inner::V11(inner) => Operation::pack(inner, device, tx)?,
             Inner::V12(inner) => Operation::pack(inner, device, tx)?,
+            Inner::V12_1(inner) => Operation::pack(inner, device, tx)?,
         })
     }
 
@@ -34,6 +36,7 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
             Inner::V10(inner) => Operation::required_size(inner, device),
             Inner::V11(inner) => Operation::required_size(inner, device),
             Inner::V12(inner) => Operation::required_size(inner, device),
+            Inner::V12_1(inner) => Operation::required_size(inner, device),
         }
     }
 
@@ -42,6 +45,7 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
             Inner::V10(inner) => Operation::is_done(inner),
             Inner::V11(inner) => Operation::is_done(inner),
             Inner::V12(inner) => Operation::is_done(inner),
+            Inner::V12_1(inner) => Operation::is_done(inner),
         }
     }
 }
@@ -70,6 +74,12 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Operation
                     ),
                     Version::V12 => Inner::V12(
                         crate::firmware::v12::operation::OperationGenerator::generate(
+                            self, device,
+                        )?
+                        .0,
+                    ),
+                    Version::V12_1 => Inner::V12_1(
+                        crate::firmware::v12_1::operation::OperationGenerator::generate(
                             self, device,
                         )?
                         .0,
