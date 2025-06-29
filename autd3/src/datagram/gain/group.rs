@@ -159,6 +159,7 @@ where
     fn init(
         self,
         geometry: &Geometry,
+        env: &Environment,
         device_filter: &TransducerFilter,
     ) -> Result<Self::G, GainError> {
         let filters = self.get_filters(geometry, device_filter);
@@ -170,7 +171,7 @@ where
                 let g = gain_map
                     .remove(&k)
                     .ok_or(GainError::new(format!("Unknown group key: {k:?}")))?;
-                let mut g = g.init(geometry, &filter)?;
+                let mut g = g.init(geometry, env, &filter)?;
                 Ok((
                     k,
                     geometry
@@ -228,6 +229,7 @@ mod tests {
     #[test]
     fn test() -> anyhow::Result<()> {
         let geometry = create_geometry(4);
+        let env = Environment::new();
 
         let mut rng = rand::rng();
 
@@ -270,7 +272,7 @@ mod tests {
             ]),
         );
 
-        let mut g = gain.init(&geometry, &TransducerFilter::all_enabled())?;
+        let mut g = gain.init(&geometry, &env, &TransducerFilter::all_enabled())?;
         let drives = geometry
             .iter()
             .map(|dev| {
@@ -318,9 +320,11 @@ mod tests {
             gain_map: HashMap::<_, Null>::new(),
         };
         let geometry = create_geometry(1);
+        let env = Environment::new();
         assert_eq!(
             Some(GainError::new("Unknown group key: \"test\"")),
-            gain.init(&geometry, &TransducerFilter::all_enabled()).err()
+            gain.init(&geometry, &env, &TransducerFilter::all_enabled())
+                .err()
         );
 
         Ok(())
@@ -334,9 +338,11 @@ mod tests {
         };
 
         let geometry = create_geometry(1);
+        let env = Environment::new();
         assert_eq!(
             Some(GainError::new("Unused group keys: 2")),
-            gain.init(&geometry, &TransducerFilter::all_enabled()).err()
+            gain.init(&geometry, &env, &TransducerFilter::all_enabled())
+                .err()
         );
 
         Ok(())

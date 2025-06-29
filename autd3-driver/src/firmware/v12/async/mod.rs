@@ -11,7 +11,7 @@ use crate::{
         version::FirmwareVersion,
     },
 };
-use autd3_core::{link::AsyncLink, sleep::r#async::Sleep};
+use autd3_core::{environment::Environment, link::AsyncLink, sleep::r#async::Sleep};
 
 #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
@@ -103,6 +103,7 @@ impl Driver for V12 {
         geometry: &'a autd3_core::derive::Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [autd3_core::link::RxMessage],
+        env: &'a Environment,
         option: crate::firmware::driver::SenderOption,
         timer_strategy: T,
     ) -> Self::Sender<'a, L, S, T>
@@ -117,6 +118,7 @@ impl Driver for V12 {
             geometry,
             sent_flags,
             rx,
+            env,
             option,
             timer_strategy,
             _phantom: std::marker::PhantomData,

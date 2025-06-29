@@ -4,7 +4,9 @@ mod nop;
 pub(crate) use crate::firmware::v11::operation::*;
 pub(crate) use nop::NopOp;
 
-use crate::{firmware::driver::Operation, geometry::Device};
+use crate::firmware::driver::Operation;
+
+use autd3_core::geometry::Device;
 
 #[doc(hidden)]
 pub trait OperationGenerator {

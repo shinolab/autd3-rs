@@ -49,6 +49,7 @@ pub mod tests {
 
     use autd3_core::{
         datagram::{Datagram, DatagramOption, DeviceFilter, FirmwareLimits},
+        environment::Environment,
         geometry::Geometry,
     };
 
@@ -86,6 +87,7 @@ pub mod tests {
         fn operation_generator(
             self,
             _geometry: &Geometry,
+            _: &Environment,
             _: &DeviceFilter,
             _: &FirmwareLimits,
         ) -> Result<Self::G, Self::Error> {
@@ -117,6 +119,7 @@ pub mod tests {
         let mut g = Datagram::operation_generator(
             bd,
             &geometry,
+            &Environment::new(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?;

@@ -10,7 +10,6 @@ use crate::{
     common::Freq,
     datagram::{InspectionResultWithLoopBehavior, InspectionResultWithSegment},
     error::AUTDDriverError,
-    geometry::{Device, Geometry},
 };
 
 use autd3_core::{
@@ -20,7 +19,9 @@ use autd3_core::{
         LoopBehavior, Segment, TransitionMode,
     },
     derive::FirmwareLimits,
+    environment::Environment,
     gain::{Drive, GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter},
+    geometry::{Device, Geometry},
     sampling_config::SamplingConfig,
 };
 use derive_more::{Deref, DerefMut};
@@ -57,7 +58,12 @@ pub trait GainSTMGenerator: std::fmt::Debug {
     type T: GainSTMIteratorGenerator;
 
     /// Initializes and returns the iterator generator.
-    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::T, GainError>;
+    fn init(
+        self,
+        geometry: &Geometry,
+        env: &Environment,
+        filter: &TransducerFilter,
+    ) -> Result<Self::T, GainError>;
     /// Returns the length of the sequence of gains.
     #[must_use]
     fn len(&self) -> usize;
@@ -159,6 +165,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + std::fmt::Debug> DatagramL for Ga
     fn operation_generator_with_loop_behavior(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
         segment: Segment,
@@ -172,7 +179,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + std::fmt::Debug> DatagramL for Ga
         let GainSTMOption { mode } = self.option;
         let gains = self.gains;
         Ok(GainSTMOperationGenerator {
-            g: gains.init(geometry, &TransducerFilter::from(filter))?,
+            g: gains.init(geometry, env, &TransducerFilter::from(filter))?,
             size,
             sampling_config,
             limits,
@@ -236,13 +243,16 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy + std::fmt::Debug> Inspectab
     fn inspect(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
         let sampling_config = self.sampling_config()?;
         sampling_config.divide()?;
         let n = self.gains.len();
-        let mut g = self.gains.init(geometry, &TransducerFilter::from(filter))?;
+        let mut g = self
+            .gains
+            .init(geometry, env, &TransducerFilter::from(filter))?;
         let mode = self.option.mode;
         let loop_behavior = LoopBehavior::Infinite;
         let segment = Segment::S0;
@@ -298,6 +308,7 @@ mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?
@@ -355,6 +366,7 @@ mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?
@@ -413,6 +425,7 @@ mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?

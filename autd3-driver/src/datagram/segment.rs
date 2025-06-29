@@ -3,6 +3,7 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DeviceFilter, Segment, TransitionMode},
     derive::FirmwareLimits,
+    environment::Environment,
     geometry::Geometry,
 };
 
@@ -36,6 +37,7 @@ impl Datagram for SwapSegment {
     fn operation_generator(
         self,
         _: &Geometry,
+        _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {

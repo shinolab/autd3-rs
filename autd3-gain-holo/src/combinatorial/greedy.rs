@@ -150,7 +150,12 @@ impl GainCalculatorGenerator for Generator {
 impl<D: Directivity, F: GreedyObjectiveFn> Gain for Greedy<D, F> {
     type G = Generator;
 
-    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::G, GainError> {
+    fn init(
+        self,
+        geometry: &Geometry,
+        env: &Environment,
+        filter: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
         let phase_candidates = (0..self.option.phase_quantization_levels.get())
@@ -171,7 +176,7 @@ impl<D: Directivity, F: GreedyObjectiveFn> Gain for Greedy<D, F> {
         indices.iter().for_each(|&(dev_idx, idx)| {
             Self::transfer_foci(
                 &geometry[dev_idx][idx],
-                geometry[dev_idx].wavenumber(),
+                env.wavenumber(),
                 geometry[dev_idx].axial_direction(),
                 &foci,
                 &mut tmp,
@@ -218,14 +223,18 @@ mod tests {
             GreedyOption::default(),
         );
         assert_eq!(
-            g.init(&geometry, &TransducerFilter::all_enabled())
-                .map(|mut res| {
-                    let f = res.generate(&geometry[0]);
-                    geometry[0]
-                        .iter()
-                        .filter(|tr| f.calc(tr) != Drive::NULL)
-                        .count()
-                }),
+            g.init(
+                &geometry,
+                &Environment::new(),
+                &TransducerFilter::all_enabled()
+            )
+            .map(|mut res| {
+                let f = res.generate(&geometry[0]);
+                geometry[0]
+                    .iter()
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
+                    .count()
+            }),
             Ok(geometry.num_transducers()),
         );
     }
@@ -282,13 +291,14 @@ mod tests {
                 .collect::<HashMap<_, _>>(),
         );
         assert_eq!(
-            g.init(&geometry, &filter).map(|mut res| {
-                let f = res.generate(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f.calc(tr) != Drive::NULL)
-                    .count()
-            }),
+            g.init(&geometry, &Environment::new(), &filter)
+                .map(|mut res| {
+                    let f = res.generate(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
+                        .count()
+                }),
             Ok(100),
         )
     }

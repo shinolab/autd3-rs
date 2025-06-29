@@ -68,7 +68,6 @@ fn test_send_foci_stm_unsafe(
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
-    geometry.set_sound_speed(400e3);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -115,7 +114,7 @@ fn test_send_foci_stm_unsafe(
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
     }
     assert_eq!(
-        (geometry[0].sound_speed / METER * 64.0).round() as u16,
+        (340e3 / METER * 64.0).round() as u16,
         cpu.fpga().sound_speed(segment)
     );
     foci.iter().enumerate().for_each(|(focus_idx, focus)| {
@@ -436,7 +435,6 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
-    geometry.set_sound_speed(400e3);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -472,7 +470,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
         assert_eq!(freq_div, cpu.fpga().stm_freq_divide(Segment::S0));
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
         assert_eq!(
-            (geometry[0].sound_speed / METER * 64.0).round() as u16,
+            (340e3 / METER * 64.0).round() as u16,
             cpu.fpga().sound_speed(Segment::S0)
         );
         foci.iter().enumerate().for_each(|(focus_idx, focus)| {

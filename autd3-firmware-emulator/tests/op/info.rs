@@ -1,5 +1,6 @@
 use autd3_core::{
     datagram::{Datagram, DeviceFilter},
+    environment::Environment,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{
@@ -76,6 +77,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
     let operations = d
         .operation_generator(
             &geometry,
+            &Environment::new(),
             &DeviceFilter::all_enabled(),
             &V12_1.firmware_limits(),
         )?

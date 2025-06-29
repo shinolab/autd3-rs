@@ -1,12 +1,11 @@
 use std::convert::Infallible;
 
-use crate::geometry::{Device, Transducer};
-
 use autd3_core::{
     datagram::{Datagram, DeviceFilter},
     derive::FirmwareLimits,
+    environment::Environment,
     gain::Phase,
-    geometry::Geometry,
+    geometry::{Device, Geometry, Transducer},
 };
 
 use derive_more::Debug;
@@ -50,6 +49,7 @@ impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Datagram
     fn operation_generator(
         self,
         _: &Geometry,
+        _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {

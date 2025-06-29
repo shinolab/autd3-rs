@@ -3,6 +3,7 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DeviceFilter},
     derive::FirmwareLimits,
+    environment::Environment,
     geometry::Geometry,
 };
 
@@ -25,6 +26,7 @@ impl Datagram for Clear {
     fn operation_generator(
         self,
         _: &Geometry,
+        _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {

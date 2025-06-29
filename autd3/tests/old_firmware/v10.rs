@@ -50,7 +50,11 @@ fn firmware_v10_by_v10_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x80),
             phase: Phase::ZERO,
         }
-        .init(autd.geometry(), &TransducerFilter::all_enabled())?
+        .init(
+            autd.geometry(),
+            &autd.environment,
+            &TransducerFilter::all_enabled(),
+        )?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -65,7 +69,11 @@ fn firmware_v10_by_v10_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x81),
             phase: Phase::ZERO,
         }
-        .init(autd.geometry(), &TransducerFilter::all_enabled())?
+        .init(
+            autd.geometry(),
+            &autd.environment,
+            &TransducerFilter::all_enabled(),
+        )?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

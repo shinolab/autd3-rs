@@ -1,5 +1,6 @@
 use autd3_core::{
     datagram::{Datagram, DeviceFilter, Inspectable, InspectionResult},
+    environment::Environment,
     link::{Ack, AsyncLink, MsgId, RxMessage},
     sleep::r#async::Sleep,
 };
@@ -35,6 +36,8 @@ pub struct Controller<L: AsyncLink, V: Driver> {
     #[deref]
     #[deref_mut]
     geometry: Geometry,
+    /// THe environment where the devices are placed.
+    pub environment: Environment,
     msg_id: MsgId,
     sent_flags: smallvec::SmallVec<[bool; 32]>,
     rx_buf: Vec<RxMessage>,
@@ -88,6 +91,7 @@ impl<L: AsyncLink, V: Driver> Controller<L, V> {
         timer_strategy: T,
     ) -> Result<Self, AUTDDriverError> {
         let geometry = Geometry::new(devices.into_iter().map(|d| d.into()).collect());
+        let environment = Environment::default();
 
         link.open(&geometry).await?;
 
@@ -103,6 +107,7 @@ impl<L: AsyncLink, V: Driver> Controller<L, V> {
                 &geometry,
                 &mut sent_flags,
                 &mut rx_buf,
+                &environment,
             )
             .await?;
 
@@ -113,6 +118,7 @@ impl<L: AsyncLink, V: Driver> Controller<L, V> {
             sent_flags,
             rx_buf,
             geometry,
+            environment,
             default_sender_option: option,
         };
 
@@ -135,6 +141,7 @@ impl<L: AsyncLink, V: Driver> Controller<L, V> {
             &self.geometry,
             &mut self.sent_flags,
             &mut self.rx_buf,
+            &self.environment,
             option,
             timer_strategy,
         )
@@ -144,6 +151,7 @@ impl<L: AsyncLink, V: Driver> Controller<L, V> {
     pub fn inspect<I: Inspectable>(&self, s: I) -> Result<InspectionResult<I::Result>, I::Error> {
         s.inspect(
             &self.geometry,
+            &self.environment,
             &DeviceFilter::all_enabled(),
             &self.driver.firmware_limits(),
         )
@@ -230,6 +238,7 @@ impl<L: AsyncLink + 'static, V: Driver> Controller<L, V> {
         let driver = unsafe { std::ptr::read(&cnt.driver) };
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
+        let environment = unsafe { std::ptr::read(&cnt.environment) };
         let sent_flags = unsafe { std::ptr::read(&cnt.sent_flags) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
         let default_sender_option = unsafe { std::ptr::read(&cnt.default_sender_option) };
@@ -238,6 +247,7 @@ impl<L: AsyncLink + 'static, V: Driver> Controller<L, V> {
             driver,
             link: Box::new(link) as _,
             geometry,
+            environment,
             sent_flags,
             rx_buf,
             default_sender_option,
@@ -255,6 +265,7 @@ impl<L: AsyncLink + 'static, V: Driver> Controller<L, V> {
         let driver = unsafe { std::ptr::read(&cnt.driver) };
         let link = unsafe { std::ptr::read(&cnt.link) };
         let geometry = unsafe { std::ptr::read(&cnt.geometry) };
+        let environment = unsafe { std::ptr::read(&cnt.environment) };
         let sent_flags = unsafe { std::ptr::read(&cnt.sent_flags) };
         let rx_buf = unsafe { std::ptr::read(&cnt.rx_buf) };
         let default_sender_option = unsafe { std::ptr::read(&cnt.default_sender_option) };
@@ -263,6 +274,7 @@ impl<L: AsyncLink + 'static, V: Driver> Controller<L, V> {
             driver,
             link: unsafe { *Box::from_raw(Box::into_raw(link) as *mut L) },
             geometry,
+            environment,
             sent_flags,
             rx_buf,
             default_sender_option,
@@ -372,7 +384,6 @@ mod tests {
     use std::collections::HashMap;
 
     use autd3_core::{
-        common::mm,
         derive::*,
         gain::{Gain, GainCalculator, GainCalculatorGenerator, Intensity, Phase, TransducerFilter},
         link::LinkError,
@@ -458,7 +469,11 @@ mod tests {
                 intensity: Intensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, &TransducerFilter::all_enabled())?
+            .init(
+                &autd.geometry,
+                &autd.environment,
+                &TransducerFilter::all_enabled(),
+            )?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -468,7 +483,11 @@ mod tests {
                 intensity: Intensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, &TransducerFilter::all_enabled())?
+            .init(
+                &autd.geometry,
+                &autd.environment,
+                &TransducerFilter::all_enabled(),
+            )?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -637,11 +656,11 @@ mod tests {
         let mut autd = create_controller(1).await?;
 
         for dev in &mut autd {
-            dev.sound_speed = 300e3 * mm;
+            _ = dev;
         }
 
         for dev in &autd {
-            assert_eq!(300e3 * mm, dev.sound_speed);
+            _ = dev;
         }
 
         Ok(())
@@ -691,7 +710,11 @@ mod tests {
                 intensity: Intensity(0x80),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, &TransducerFilter::all_enabled())?
+            .init(
+                &autd.geometry,
+                &autd.environment,
+                &TransducerFilter::all_enabled(),
+            )?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -701,7 +724,11 @@ mod tests {
                 intensity: Intensity(0x81),
                 phase: Phase::ZERO,
             }
-            .init(&autd.geometry, &TransducerFilter::all_enabled())?
+            .init(
+                &autd.geometry,
+                &autd.environment,
+                &TransducerFilter::all_enabled(),
+            )?
             .generate(dev);
             assert_eq!(
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

@@ -1,7 +1,7 @@
-use autd3_core::{datagram::PulseWidth, gain::Intensity};
+use autd3_core::{datagram::PulseWidth, gain::Intensity, geometry::Device};
 
 use super::OperationGenerator;
-use crate::{datagram::PulseWidthEncoder, firmware::driver::Version, geometry::Device};
+use crate::{datagram::PulseWidthEncoder, firmware::driver::Version};
 
 use crate::firmware::v10::operation::OperationGenerator as OperationGeneratorV10;
 use crate::firmware::v11::operation::OperationGenerator as OperationGeneratorV11;

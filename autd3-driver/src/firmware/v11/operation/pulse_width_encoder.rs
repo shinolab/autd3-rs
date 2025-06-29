@@ -4,9 +4,9 @@ use super::{
     super::fpga::{PWE_BUF_SIZE, ULTRASOUND_PERIOD_COUNT_BITS},
     Operation, OperationGenerator,
 };
-use crate::{datagram::PulseWidthEncoder, firmware::tag::TypeTag, geometry::Device};
+use crate::{datagram::PulseWidthEncoder, firmware::tag::TypeTag};
 
-use autd3_core::{datagram::PulseWidth, gain::Intensity};
+use autd3_core::{datagram::PulseWidth, gain::Intensity, geometry::Device};
 
 use zerocopy::{Immutable, IntoBytes};
 

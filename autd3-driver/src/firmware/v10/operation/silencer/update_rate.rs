@@ -1,13 +1,15 @@
 use std::{convert::Infallible, num::NonZeroU16};
 
-use super::super::{Operation, OperationGenerator};
+use super::{
+    super::{Operation, OperationGenerator},
+    SilencerControlFlags,
+};
 use crate::{
     datagram::FixedUpdateRate,
     firmware::{driver::NullOp, tag::TypeTag},
-    geometry::Device,
 };
 
-use super::SilencerControlFlags;
+use autd3_core::geometry::Device;
 
 use zerocopy::{Immutable, IntoBytes};
 

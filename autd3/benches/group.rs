@@ -48,6 +48,7 @@ fn without_group(c: &mut Criterion) {
                     let mut generator = g
                         .operation_generator(
                             geometry,
+                            &Environment::default(),
                             &DeviceFilter::all_enabled(),
                             &V12_1.firmware_limits(),
                         )
@@ -88,6 +89,7 @@ fn group(c: &mut Criterion) {
                     let mut generator = g
                         .operation_generator(
                             geometry,
+                            &Environment::default(),
                             &DeviceFilter::all_enabled(),
                             &V12_1.firmware_limits(),
                         )
@@ -131,6 +133,7 @@ fn group_boxed(c: &mut Criterion) {
                     let mut generator = g
                         .operation_generator(
                             geometry,
+                            &Environment::default(),
                             &DeviceFilter::all_enabled(),
                             &V12_1.firmware_limits(),
                         )
@@ -174,6 +177,7 @@ fn gain_group(c: &mut Criterion) {
                     let mut generator = g
                         .operation_generator(
                             geometry,
+                            &Environment::default(),
                             &DeviceFilter::all_enabled(),
                             &V12_1.firmware_limits(),
                         )

@@ -18,6 +18,7 @@ pub use strategy::{FixedDelay, FixedSchedule, TimerStrategy};
 
 use autd3_core::{
     derive::FirmwareLimits,
+    environment::Environment,
     geometry::Geometry,
     link::{MsgId, RxMessage},
 };
@@ -57,6 +58,7 @@ pub trait Driver {
         _geometry: &'a autd3_core::derive::Geometry,
         _sent_flags: &'a mut [bool],
         _rx: &'a mut [autd3_core::link::RxMessage],
+        _env: &'a Environment,
     ) -> Result<(), AUTDDriverError>
     where
         L: autd3_core::link::Link + 'a,
@@ -72,6 +74,7 @@ pub trait Driver {
         geometry: &'a Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [RxMessage],
+        env: &'a Environment,
         option: SenderOption,
         timer_strategy: T,
     ) -> Self::Sender<'a, L, S, T>

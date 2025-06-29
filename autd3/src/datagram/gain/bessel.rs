@@ -51,6 +51,7 @@ impl Bessel {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Impl {
     pos: Point3,
     intensity: Intensity,
@@ -71,15 +72,28 @@ impl GainCalculator for Impl {
     }
 }
 
-impl GainCalculatorGenerator for Bessel {
+impl GainCalculatorGenerator for Impl {
     type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Calculator {
-        Impl {
+    fn generate(&mut self, _: &Device) -> Self::Calculator {
+        *self
+    }
+}
+
+impl Gain for Bessel {
+    type G = Impl;
+
+    fn init(
+        self,
+        _: &Geometry,
+        env: &Environment,
+        _: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
+        Ok(Impl {
             pos: self.pos,
             intensity: self.option.intensity,
             phase_offset: self.option.phase_offset,
-            wavenumber: device.wavenumber(),
+            wavenumber: env.wavenumber(),
             rot: {
                 let dir = self.dir.normalize();
                 let v = Vector3::new(dir.y, -dir.x, 0.);
@@ -90,15 +104,7 @@ impl GainCalculatorGenerator for Bessel {
                     })
             },
             theta: self.theta.radian(),
-        }
-    }
-}
-
-impl Gain for Bessel {
-    type G = Bessel;
-
-    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
-        Ok(self)
+        })
     }
 }
 
@@ -112,14 +118,16 @@ mod tests {
 
     use crate::tests::{create_geometry, random_point3, random_vector3};
 
+    #[allow(clippy::too_many_arguments)]
     fn bessel_check(
-        mut b: Bessel,
+        mut b: Impl,
         pos: Point3,
         dir: UnitVector3,
         theta: Angle,
         intensity: Intensity,
         phase_offset: Phase,
         geometry: &Geometry,
+        env: &Environment,
     ) {
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
@@ -137,7 +145,7 @@ mod tests {
                     let r = rot * r;
                     let dist = theta.radian().sin() * (r.x * r.x + r.y * r.y).sqrt()
                         - theta.radian().cos() * r.z;
-                    Phase::from(-dist * geometry[0].wavenumber() * rad) + phase_offset
+                    Phase::from(-dist * env.wavenumber() * rad) + phase_offset
                 };
                 let d = d.calc(tr);
                 assert_eq!(expected_phase, d.phase);
@@ -151,6 +159,7 @@ mod tests {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
+        let env = Environment::new();
 
         let g = Bessel::new(
             Point3::origin(),
@@ -176,13 +185,15 @@ mod tests {
             },
         };
         bessel_check(
-            g.init(&geometry, &TransducerFilter::all_enabled()).unwrap(),
+            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+                .unwrap(),
             pos,
             dir,
             theta,
             intensity,
             phase_offset,
             &geometry,
+            &env,
         );
 
         Ok(())

@@ -8,10 +8,9 @@ mod pulse_width_encoder;
 mod stm;
 mod tuple;
 
-use crate::{
-    firmware::driver::{Operation, Version},
-    geometry::Device,
-};
+use crate::firmware::driver::{Operation, Version};
+
+use autd3_core::geometry::Device;
 
 #[doc(hidden)]
 pub trait OperationGenerator {
@@ -82,25 +81,25 @@ macro_rules! impl_auto_op {
                             inner: match version {
                                 Version::V10 => [<$op Inner>]::V10(
                                     crate::firmware::v10::operation::OperationGenerator::generate(
-                                        self, device,
+                                        self, device
                                     )?
                                     .0,
                                 ),
                                 Version::V11 => [<$op Inner>]::V11(
                                     crate::firmware::v11::operation::OperationGenerator::generate(
-                                        self, device,
+                                        self, device
                                     )?
                                     .0,
                                 ),
                                 Version::V12 => [<$op Inner>]::V12(
                                     crate::firmware::v12::operation::OperationGenerator::generate(
-                                        self, device,
+                                        self, device
                                     )?
                                     .0,
                                 ),
                                 Version::V12_1 => [<$op Inner>]::V12_1(
                                     crate::firmware::v12_1::operation::OperationGenerator::generate(
-                                        self, device,
+                                        self, device
                                     )?
                                     .0,
                                 ),
@@ -175,31 +174,31 @@ macro_rules! impl_auto_op {
                 type O1 = [<$op Op>];
                 type O2 = crate::firmware::driver::NullOp;
 
-                fn generate(&mut self, device: &Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+                fn generate(&mut self, device: &Device ,version: Version) -> Option<(Self::O1, Self::O2)> {
                     Some((
                         Self::O1 {
                             inner: match version {
                                 Version::V10 => [<$op Inner>]::V10(
                                     <Self as crate::firmware::v10::operation::OperationGenerator>::generate(
-                                        self, device,
+                                        self, device
                                     )?
                                     .0,
                                 ),
                                 Version::V11 => [<$op Inner>]::V11(
                                     crate::firmware::v11::operation::OperationGenerator::generate(
-                                        self, device,
+                                        self, device
                                     )?
                                     .0,
                                 ),
                                 Version::V12 => [<$op Inner>]::V12(
                                     crate::firmware::v12::operation::OperationGenerator::generate(
-                                        self, device,
+                                        self, device
                                     )?
                                     .0,
                                 ),
                                 Version::V12_1 => [<$op Inner>]::V12_1(
                                     crate::firmware::v12_1::operation::OperationGenerator::generate(
-                                        self, device,
+                                        self, device
                                     )?
                                     .0,
                                 ),

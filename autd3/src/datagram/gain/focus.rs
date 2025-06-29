@@ -38,6 +38,7 @@ impl Focus {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Impl {
     pub(crate) pos: Point3,
     pub(crate) intensity: Intensity,
@@ -55,24 +56,29 @@ impl GainCalculator for Impl {
     }
 }
 
-impl GainCalculatorGenerator for Focus {
+impl GainCalculatorGenerator for Impl {
     type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Calculator {
-        Impl {
-            pos: self.pos,
-            intensity: self.option.intensity,
-            phase_offset: self.option.phase_offset,
-            wavenumber: device.wavenumber(),
-        }
+    fn generate(&mut self, _: &Device) -> Self::Calculator {
+        *self
     }
 }
 
 impl Gain for Focus {
-    type G = Focus;
+    type G = Impl;
 
-    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
-        Ok(self)
+    fn init(
+        self,
+        _: &Geometry,
+        env: &Environment,
+        _: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
+        Ok(Impl {
+            pos: self.pos,
+            intensity: self.option.intensity,
+            phase_offset: self.option.phase_offset,
+            wavenumber: env.wavenumber(),
+        })
     }
 }
 
@@ -83,17 +89,18 @@ mod tests {
     use super::*;
     use rand::Rng;
     fn focus_check(
-        mut b: Focus,
+        mut b: Impl,
         pos: Point3,
         intensity: Intensity,
         phase_offset: Phase,
         geometry: &Geometry,
+        env: &Environment,
     ) {
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
                 let expected_phase =
-                    Phase::from(-(tr.position() - pos).norm() * dev.wavenumber() * rad)
+                    Phase::from(-(tr.position() - pos).norm() * env.wavenumber() * rad)
                         + phase_offset;
                 let d = d.calc(tr);
                 assert_eq!(expected_phase, d.phase);
@@ -107,15 +114,18 @@ mod tests {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
+        let env = Environment::new();
 
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let g = Focus::new(pos, Default::default());
         focus_check(
-            g.init(&geometry, &TransducerFilter::all_enabled()).unwrap(),
+            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+                .unwrap(),
             pos,
             Intensity::MAX,
             Phase::ZERO,
             &geometry,
+            &env,
         );
 
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
@@ -129,11 +139,13 @@ mod tests {
             },
         };
         focus_check(
-            g.init(&geometry, &TransducerFilter::all_enabled()).unwrap(),
+            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+                .unwrap(),
             pos,
             intensity,
             phase_offset,
             &geometry,
+            &env,
         );
     }
 }

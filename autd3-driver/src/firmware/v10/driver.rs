@@ -1,4 +1,4 @@
-use autd3_core::{link::Link, sleep::Sleep};
+use autd3_core::{environment::Environment, link::Link, sleep::Sleep};
 
 use crate::{
     datagram::{
@@ -120,6 +120,7 @@ impl Driver for V10 {
         geometry: &'a autd3_core::derive::Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [autd3_core::link::RxMessage],
+        env: &'a Environment,
         option: crate::firmware::driver::SenderOption,
         timer_strategy: T,
     ) -> Self::Sender<'a, L, S, T>
@@ -134,6 +135,7 @@ impl Driver for V10 {
             geometry,
             sent_flags,
             rx,
+            env,
             option,
             timer_strategy,
             _phantom: std::marker::PhantomData,

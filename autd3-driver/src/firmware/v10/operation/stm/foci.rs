@@ -8,13 +8,13 @@ use crate::{
         driver::{NullOp, write_to_tx},
         tag::TypeTag,
     },
-    geometry::Device,
 };
 
 use autd3_core::{
     common::{FOCI_STM_FOCI_NUM_MIN, METER, STM_BUF_SIZE_MIN},
     datagram::{LoopBehavior, Segment, TRANSITION_MODE_NONE, TransitionMode},
     derive::FirmwareLimits,
+    geometry::Device,
     sampling_config::SamplingConfig,
 };
 
@@ -63,6 +63,7 @@ pub struct FociSTMOp<const N: usize, Iterator: FociSTMIterator<N>> {
     size: usize,
     sent: usize,
     config: SamplingConfig,
+    sound_speed: f32,
     limits: FirmwareLimits,
     loop_behavior: LoopBehavior,
     segment: Segment,
@@ -70,10 +71,12 @@ pub struct FociSTMOp<const N: usize, Iterator: FociSTMIterator<N>> {
 }
 
 impl<const N: usize, Iterator: FociSTMIterator<N>> FociSTMOp<N, Iterator> {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) const fn new(
         iter: Iterator,
         size: usize,
         config: SamplingConfig,
+        sound_speed: f32,
         limits: FirmwareLimits,
         loop_behavior: LoopBehavior,
         segment: Segment,
@@ -84,6 +87,7 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> FociSTMOp<N, Iterator> {
             size,
             sent: 0,
             config,
+            sound_speed,
             limits,
             loop_behavior,
             segment,
@@ -173,7 +177,7 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> Operation for FociSTMOp<N, It
                     send_num: send_num as _,
                     num_foci: N as u8,
                     freq_div: self.config.divide()?,
-                    sound_speed: (device.sound_speed / METER * 64.0).round() as u16,
+                    sound_speed: (self.sound_speed / METER * 64.0).round() as u16,
                     rep: self.loop_behavior.rep(),
                     __: [0; 4],
                 },
@@ -218,6 +222,7 @@ impl<const N: usize, G: FociSTMIteratorGenerator<N>> OperationGenerator
                 self.generator.generate(device),
                 self.size,
                 self.config,
+                self.sound_speed,
                 self.limits,
                 self.loop_behavior,
                 self.segment,
@@ -301,6 +306,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            340.,
             limits,
             LoopBehavior::Infinite,
             segment,
@@ -333,7 +339,7 @@ mod tests {
         assert_eq!(segment as u8, tx[3]);
         assert_eq!(transition_mode.mode(), tx[4]);
         assert_eq!(1, tx[5]);
-        let sound_speed = (device.sound_speed / METER * 64.0).round() as u16;
+        let sound_speed = (340. / METER * 64.0).round() as u16;
         assert_eq!(sound_speed as u8, tx[6]);
         assert_eq!((sound_speed >> 8) as u8, tx[7]);
         assert_eq!(freq_div as u8, tx[8]);
@@ -405,6 +411,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            340.,
             limits,
             LoopBehavior::Infinite,
             segment,
@@ -434,7 +441,7 @@ mod tests {
         assert_eq!(segment as u8, tx[3]);
         assert_eq!(transition_mode.mode(), tx[4]);
         assert_eq!(N as u8, tx[5]);
-        let sound_speed = (device.sound_speed / METER * 64.0).round() as u16;
+        let sound_speed = (340. / METER * 64.0).round() as u16;
         assert_eq!(sound_speed as u8, tx[6]);
         assert_eq!((sound_speed >> 8) as u8, tx[7]);
         assert_eq!(freq_div as u8, tx[8]);
@@ -509,6 +516,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            340.,
             limits,
             LoopBehavior::Finite(NonZeroU16::new(rep + 1).unwrap()),
             segment,
@@ -541,7 +549,7 @@ mod tests {
             );
             assert_eq!(segment as u8, tx[3]);
             assert_eq!(1, tx[5]);
-            let sound_speed = (device.sound_speed / METER * 64.0).round() as u16;
+            let sound_speed = (340. / METER * 64.0).round() as u16;
             assert_eq!(sound_speed as u8, tx[6]);
             assert_eq!((sound_speed >> 8) as u8, tx[7]);
             assert_eq!(freq_div as u8, tx[8]);
@@ -673,6 +681,7 @@ mod tests {
             },
             FOCI_STM_SIZE,
             SamplingConfig::FREQ_40K,
+            340.,
             limits,
             LoopBehavior::Infinite,
             Segment::S0,
@@ -709,6 +718,7 @@ mod tests {
             },
             n,
             SamplingConfig::FREQ_40K,
+            340.,
             V10.firmware_limits(),
             LoopBehavior::Infinite,
             Segment::S0,
@@ -734,6 +744,7 @@ mod tests {
                 },
                 2,
                 SamplingConfig::FREQ_40K,
+                340.,
                 limits,
                 LoopBehavior::Infinite,
                 Segment::S0,
@@ -755,6 +766,7 @@ mod tests {
                 },
                 2,
                 SamplingConfig::FREQ_40K,
+                340.,
                 limits,
                 LoopBehavior::Infinite,
                 Segment::S0,
@@ -777,6 +789,7 @@ mod tests {
                 },
                 2,
                 SamplingConfig::FREQ_40K,
+                340.,
                 limits,
                 LoopBehavior::Infinite,
                 Segment::S0,
@@ -803,6 +816,7 @@ mod tests {
                 },
                 2,
                 SamplingConfig::FREQ_40K,
+                340.,
                 limits,
                 LoopBehavior::Infinite,
                 Segment::S0,

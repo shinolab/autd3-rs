@@ -60,12 +60,17 @@ impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
 impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
     type G = HoloCalculatorGenerator<Complex>;
 
-    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::G, GainError> {
+    fn init(
+        self,
+        geometry: &Geometry,
+        env: &Environment,
+        filter: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, &foci, filter)?;
+            .generate_propagation_matrix(geometry, env, &foci, filter)?;
 
         let m = foci.len();
         let n = self.backend.cols_c(&g)?;
@@ -116,14 +121,18 @@ mod tests {
         );
 
         assert_eq!(
-            g.init(&geometry, &TransducerFilter::all_enabled())
-                .map(|mut res| {
-                    let f = res.generate(&geometry[0]);
-                    geometry[0]
-                        .iter()
-                        .filter(|tr| f.calc(tr) != Drive::NULL)
-                        .count()
-                }),
+            g.init(
+                &geometry,
+                &Environment::new(),
+                &TransducerFilter::all_enabled(),
+            )
+            .map(|mut res| {
+                let f = res.generate(&geometry[0]);
+                geometry[0]
+                    .iter()
+                    .filter(|tr| f.calc(tr) != Drive::NULL)
+                    .count()
+            }),
             Ok(geometry.num_transducers()),
         );
     }
@@ -144,6 +153,7 @@ mod tests {
 
         let mut g = g.init(
             &geometry,
+            &Environment::new(),
             &TransducerFilter::new(HashMap::from([(1, None)])),
         )?;
         let f = g.generate(&geometry[1]);
@@ -179,7 +189,7 @@ mod tests {
                 None
             }
         });
-        let mut g = g.init(&geometry, &filter).unwrap();
+        let mut g = g.init(&geometry, &Environment::new(), &filter).unwrap();
         assert_eq!(
             {
                 let f = g.generate(&geometry[0]);
@@ -223,7 +233,7 @@ mod tests {
                 Some(|tr: &Transducer| tr.idx() < 100)
             }
         });
-        let mut g = g.init(&geometry, &filter)?;
+        let mut g = g.init(&geometry, &Environment::new(), &filter)?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
             geometry[1]

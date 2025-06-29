@@ -4,6 +4,7 @@ use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, ULTRASOUND_PERIOD},
     datagram::{Datagram, DeviceFilter},
     derive::FirmwareLimits,
+    environment::Environment,
     geometry::Geometry,
 };
 
@@ -134,6 +135,7 @@ impl<T: SilencerConfig> Datagram for Silencer<T> {
     fn operation_generator(
         self,
         _: &Geometry,
+        _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {

@@ -1,10 +1,6 @@
-use std::f32::consts::PI;
-
 use bvh::aabb::Aabb;
 use derive_more::{Deref, IntoIterator};
 use getset::Getters;
-
-use crate::common::{METER, ULTRASOUND_FREQ};
 
 use super::{Isometry, Point3, Quaternion, Transducer, UnitQuaternion, UnitVector3, Vector3};
 
@@ -15,8 +11,6 @@ pub struct Device {
     #[deref]
     #[into_iterator(ref)]
     pub(crate) transducers: Vec<Transducer>,
-    /// speed of sound
-    pub sound_speed: f32,
     #[getset(get = "pub")]
     /// The rotation of the device.
     rotation: UnitQuaternion,
@@ -75,7 +69,6 @@ impl Device {
         let mut dev = Self {
             idx: 0,
             transducers,
-            sound_speed: 340.0 * METER,
             rotation: rot,
             center: Point3::origin(),
             x_direction: Vector3::x_axis(),
@@ -100,30 +93,6 @@ impl Device {
         self.transducers.len()
     }
 
-    /// Sets the sound speed of devices from the temperature `t`.
-    ///
-    /// This is equivalent to `Self::set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3)`.
-    pub fn set_sound_speed_from_temp(&mut self, temp: f32) {
-        self.set_sound_speed_from_temp_with(temp, 1.4, 8.314_463, 28.9647e-3);
-    }
-
-    /// Sets the sound speed of devices from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
-    pub fn set_sound_speed_from_temp_with(&mut self, temp: f32, k: f32, r: f32, m: f32) {
-        self.sound_speed = (k * r * (273.15 + temp) / m).sqrt() * METER;
-    }
-
-    /// Gets the wavelength of the ultrasound.
-    #[must_use]
-    pub const fn wavelength(&self) -> f32 {
-        self.sound_speed / ULTRASOUND_FREQ.hz() as f32
-    }
-
-    /// Gets the wavenumber of the ultrasound.
-    #[must_use]
-    pub const fn wavenumber(&self) -> f32 {
-        2.0 * PI * ULTRASOUND_FREQ.hz() as f32 / self.sound_speed
-    }
-
     #[must_use]
     fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> UnitVector3 {
         let dir: UnitQuaternion = UnitQuaternion::from_quaternion(Quaternion::from_imag(dir));
@@ -135,7 +104,7 @@ impl Device {
 pub(crate) mod tests {
     use super::*;
     use crate::{
-        common::{PI, mm},
+        common::PI,
         geometry::tests::{TestDevice, create_device},
     };
 
@@ -202,36 +171,5 @@ pub(crate) mod tests {
     ) {
         let device: Device = TestDevice::new_autd3_with_rot(origin, rot).into();
         assert_approx_eq_vec3!(expected, device.inv.transform_point(&Point3::from(target)));
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(340.29525e3, 15.)]
-    #[case(343.23497e3, 20.)]
-    #[case(349.04013e3, 30.)]
-    fn set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
-        let mut device = create_device(249);
-        device.set_sound_speed_from_temp(temp);
-        approx::assert_abs_diff_eq!(expected * mm, device.sound_speed, epsilon = 1e-3);
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(8.5, 340e3)]
-    #[case(10., 400e3)]
-    fn wavelength(#[case] expect: f32, #[case] c: f32) {
-        let mut device = create_device(249);
-        device.sound_speed = c;
-        approx::assert_abs_diff_eq!(expect, device.wavelength());
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(0.739_198_27, 340e3)]
-    #[case(0.628_318_55, 400e3)]
-    fn wavenumber(#[case] expect: f32, #[case] c: f32) {
-        let mut device = create_device(249);
-        device.sound_speed = c;
-        approx::assert_abs_diff_eq!(expect, device.wavenumber());
     }
 }

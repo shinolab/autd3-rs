@@ -65,7 +65,12 @@ impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) ->
 {
     type G = Custom<'a, FT, F>;
 
-    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
+    fn init(
+        self,
+        _: &Geometry,
+        _: &Environment,
+        _: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }
@@ -83,6 +88,7 @@ mod tests {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(2);
+        let env = Environment::new();
 
         let test_id = rng.random_range(0..geometry[0].num_transducers());
         let test_drive = Drive {
@@ -101,7 +107,7 @@ mod tests {
         });
 
         let mut d = transducer_test
-            .init(&geometry, &TransducerFilter::all_enabled())
+            .init(&geometry, &env, &TransducerFilter::all_enabled())
             .unwrap();
         geometry.iter().for_each(|dev| {
             let d = d.generate(dev);

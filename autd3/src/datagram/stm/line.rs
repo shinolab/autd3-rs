@@ -1,5 +1,5 @@
 use autd3_core::{
-    derive::{Device, Geometry},
+    derive::{Device, Environment, Geometry},
     gain::{GainError, Intensity, Phase, TransducerFilter},
 };
 use autd3_driver::{
@@ -10,8 +10,6 @@ use autd3_driver::{
     error::AUTDDriverError,
     geometry::{Point3, Vector3},
 };
-
-use crate::gain::Focus;
 
 /// Utility for generating a line STM.
 ///
@@ -42,6 +40,7 @@ pub struct Line {
     pub intensity: Intensity,
 }
 
+#[derive(Clone, Debug)]
 pub struct LineSTMIterator {
     start: Point3,
     dir: Vector3,
@@ -84,50 +83,60 @@ impl GainSTMIterator for LineSTMIterator {
     }
 }
 
-impl FociSTMIteratorGenerator<1> for Line {
-    type Iterator = LineSTMIterator;
+impl FociSTMIteratorGenerator<1> for LineSTMIterator {
+    type Iterator = Self;
 
-    fn generate(&mut self, device: &Device) -> Self::Iterator {
-        Self::Iterator {
+    fn generate(&mut self, _: &Device) -> Self::Iterator {
+        self.clone()
+    }
+}
+
+impl GainSTMIteratorGenerator for LineSTMIterator {
+    type Gain = crate::gain::focus::Impl;
+    type Iterator = Self;
+
+    fn generate(&mut self, _: &Device) -> Self::Iterator {
+        self.clone()
+    }
+}
+
+impl GainSTMGenerator for Line {
+    type T = LineSTMIterator;
+
+    fn init(
+        self,
+        _: &Geometry,
+        env: &Environment,
+        _filter: &TransducerFilter,
+    ) -> Result<Self::T, GainError> {
+        Ok(LineSTMIterator {
             start: self.start,
             dir: self.end - self.start,
             num_points: self.num_points,
-            wavenumber: device.wavenumber(),
+            wavenumber: env.wavenumber(),
             intensity: self.intensity,
             i: 0,
-        }
+        })
     }
-}
-
-impl GainSTMIteratorGenerator for Line {
-    type Gain = Focus;
-    type Iterator = LineSTMIterator;
-
-    fn generate(&mut self, device: &Device) -> Self::Iterator {
-        FociSTMIteratorGenerator::<1>::generate(self, device)
-    }
-}
-
-impl FociSTMGenerator<1> for Line {
-    type T = Self;
-
-    // GRCOV_EXCL_START
-    fn init(self) -> Result<Self::T, AUTDDriverError> {
-        Ok(self)
-    }
-    // GRCOV_EXCL_STOP
 
     fn len(&self) -> usize {
         self.num_points
     }
 }
 
-impl GainSTMGenerator for Line {
-    type T = Self;
+impl FociSTMGenerator<1> for Line {
+    type T = LineSTMIterator;
 
     // GRCOV_EXCL_START
-    fn init(self, _: &Geometry, _filter: &TransducerFilter) -> Result<Self::T, GainError> {
-        Ok(self)
+    fn init(self) -> Result<Self::T, AUTDDriverError> {
+        Ok(LineSTMIterator {
+            start: self.start,
+            dir: self.end - self.start,
+            num_points: self.num_points,
+            wavenumber: 0.,
+            intensity: self.intensity,
+            i: 0,
+        })
     }
     // GRCOV_EXCL_STOP
 
@@ -138,20 +147,16 @@ impl GainSTMGenerator for Line {
 
 #[cfg(test)]
 mod tests {
-    use std::ops::DerefMut;
-
-    use autd3_core::sampling_config::SamplingConfig;
-    use autd3_driver::{
-        common::mm,
-        datagram::{FociSTM, GainSTM, GainSTMOption},
-    };
+    use autd3_driver::common::mm;
 
     use crate::assert_near_vector3;
 
     use super::*;
 
     #[test]
-    fn line() {
+    fn line() -> anyhow::Result<()> {
+        let env = Environment::default();
+
         let length = 30.0 * mm;
         let line = Line {
             start: Point3::new(0., -length / 2., 0.),
@@ -170,11 +175,8 @@ mod tests {
 
         let device = autd3_driver::autd3_device::AUTD3::default().into();
         {
-            let mut stm = FociSTM {
-                foci: line.clone(),
-                config: SamplingConfig::FREQ_4K,
-            };
-            let mut iterator = FociSTMIteratorGenerator::generate(stm.deref_mut(), &device);
+            let mut g = FociSTMGenerator::init(line.clone())?;
+            let mut iterator = FociSTMIteratorGenerator::generate(&mut g, &device);
             expect.iter().for_each(|e| {
                 let f = FociSTMIterator::<1>::next(&mut iterator).points[0];
                 assert_near_vector3!(e, f.point);
@@ -182,17 +184,20 @@ mod tests {
             assert!(iterator.next().is_none());
         }
         {
-            let mut stm = GainSTM {
-                gains: line.clone(),
-                config: SamplingConfig::FREQ_4K,
-                option: GainSTMOption::default(),
-            };
-            let mut iterator = GainSTMIteratorGenerator::generate(stm.deref_mut(), &device);
+            let mut g = GainSTMGenerator::init(
+                line,
+                &Geometry::new(vec![]),
+                &env,
+                &TransducerFilter::all_enabled(),
+            )?;
+            let mut iterator = GainSTMIteratorGenerator::generate(&mut g, &device);
             expect.iter().for_each(|e| {
                 let f = GainSTMIterator::next(&mut iterator).unwrap();
                 assert_near_vector3!(e, &f.pos);
             });
             assert!(iterator.next().is_none());
         }
+
+        Ok(())
     }
 }

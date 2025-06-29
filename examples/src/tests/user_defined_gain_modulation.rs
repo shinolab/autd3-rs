@@ -32,7 +32,12 @@ impl GainCalculatorGenerator for MyUniform {
 impl Gain for MyUniform {
     type G = MyUniform;
 
-    fn init(self, _geometry: &Geometry, _filter: &TransducerFilter) -> Result<Self::G, GainError> {
+    fn init(
+        self,
+        _geometry: &Geometry,
+        _env: &Environment,
+        _filter: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

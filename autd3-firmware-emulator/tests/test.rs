@@ -1,5 +1,7 @@
 use autd3_core::{
     datagram::{Datagram, DeviceFilter},
+    environment::Environment,
+    geometry::{Geometry, Point3},
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{
@@ -10,7 +12,6 @@ use autd3_driver::{
         driver::{Driver, Operation, OperationHandler},
         v12_1::{V12_1, cpu::check_firmware_err, operation::OperationGenerator},
     },
-    geometry::{Geometry, Point3},
 };
 use autd3_firmware_emulator::CPUEmulator;
 use zerocopy::FromZeros;
@@ -49,6 +50,7 @@ where
     let parallel = geometry.num_devices() > option.parallel_threshold;
     let mut generator = d.operation_generator(
         geometry,
+        &Environment::new(),
         &DeviceFilter::all_enabled(),
         &V12_1.firmware_limits(),
     )?;
@@ -110,6 +112,7 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let d = Clear::new();
     let mut generator = d.operation_generator(
         &geometry,
+        &Environment::new(),
         &DeviceFilter::all_enabled(),
         &V12_1.firmware_limits(),
     )?;
@@ -124,6 +127,7 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let d = Synchronize::new();
     let mut generator = d.operation_generator(
         &geometry,
+        &Environment::new(),
         &DeviceFilter::all_enabled(),
         &V12_1.firmware_limits(),
     )?;
@@ -149,6 +153,7 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
     let d = (Clear::new(), Synchronize::new());
     let mut generator = d.operation_generator(
         &geometry,
+        &Environment::new(),
         &DeviceFilter::all_enabled(),
         &V12_1.firmware_limits(),
     )?;
@@ -176,6 +181,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let d = (Clear::new(), Synchronize::new());
     let mut generator = d.operation_generator(
         &geometry,
+        &Environment::new(),
         &DeviceFilter::all_enabled(),
         &V12_1.firmware_limits(),
     )?;

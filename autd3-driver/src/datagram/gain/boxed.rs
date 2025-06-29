@@ -36,6 +36,7 @@ trait DGain {
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &TransducerFilter,
     ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -45,13 +46,14 @@ impl<G: DGainCalculatorGenerator + 'static, T: Gain<G = G>> DGain for MaybeUnini
     fn dyn_init(
         &mut self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &TransducerFilter,
     ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Gain::init`.
         let g = unsafe { tmp.assume_init() };
-        Ok(Box::new(g.init(geometry, filter)?) as _)
+        Ok(Box::new(g.init(geometry, env, filter)?) as _)
     }
 
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -88,10 +90,15 @@ impl std::fmt::Debug for BoxedGain {
 impl Gain for BoxedGain {
     type G = DynGainCalculatorGenerator;
 
-    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::G, GainError> {
+    fn init(
+        self,
+        geometry: &Geometry,
+        env: &Environment,
+        filter: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
         let Self { mut g, .. } = self;
         Ok(DynGainCalculatorGenerator {
-            g: g.dyn_init(geometry, filter)?,
+            g: g.dyn_init(geometry, env, filter)?,
         })
     }
 }
@@ -154,7 +161,11 @@ pub mod tests {
             &geometry,
         ));
 
-        let mut f = g.init(&geometry, &TransducerFilter::all_enabled())?;
+        let mut f = g.init(
+            &geometry,
+            &Environment::new(),
+            &TransducerFilter::all_enabled(),
+        )?;
         assert_eq!(
             expect,
             geometry

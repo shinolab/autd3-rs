@@ -4,6 +4,7 @@ use autd3_core::{
         LoopBehavior, Segment, TransitionMode,
     },
     derive::FirmwareLimits,
+    environment::Environment,
     geometry::Geometry,
 };
 
@@ -50,12 +51,14 @@ impl<D: DatagramL> Datagram for WithLoopBehavior<D> {
     fn operation_generator(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramL>::operation_generator_with_loop_behavior(
             self.inner,
             geometry,
+            env,
             filter,
             limits,
             self.segment,
@@ -90,11 +93,15 @@ where
     fn inspect(
         self,
         geometry: &Geometry,
+        env: &autd3_core::environment::Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
-        Ok(self.inner.inspect(geometry, filter, limits)?.modify(|t| {
-            t.with_loop_behavior(self.loop_behavior, self.segment, self.transition_mode)
-        }))
+        Ok(self
+            .inner
+            .inspect(geometry, env, filter, limits)?
+            .modify(|t| {
+                t.with_loop_behavior(self.loop_behavior, self.segment, self.transition_mode)
+            }))
     }
 }

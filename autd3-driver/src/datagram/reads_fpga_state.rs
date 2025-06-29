@@ -3,6 +3,7 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DeviceFilter},
     derive::FirmwareLimits,
+    environment::Environment,
     geometry::{Device, Geometry},
 };
 
@@ -31,6 +32,7 @@ impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
     fn operation_generator(
         self,
         _: &Geometry,
+        _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {

@@ -1,7 +1,7 @@
 use autd3_core::derive::*;
 
 /// [`Gain`] that output uniform phase and intensity
-#[derive(Gain, Clone, PartialEq, Debug)]
+#[derive(Gain, Clone, Copy, PartialEq, Debug)]
 pub struct Uniform {
     /// The intensity of all transducers.
     pub intensity: Intensity,
@@ -30,14 +30,19 @@ impl GainCalculatorGenerator for Uniform {
     type Calculator = Uniform;
 
     fn generate(&mut self, _: &Device) -> Self::Calculator {
-        self.clone()
+        *self
     }
 }
 
 impl Gain for Uniform {
     type G = Uniform;
 
-    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
+    fn init(
+        self,
+        _: &Geometry,
+        _: &Environment,
+        _: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

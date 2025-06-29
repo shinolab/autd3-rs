@@ -4,6 +4,7 @@ use autd3_core::{
         TransitionMode,
     },
     derive::FirmwareLimits,
+    environment::Environment,
     geometry::Geometry,
 };
 
@@ -40,12 +41,14 @@ impl<D: DatagramS> Datagram for WithSegment<D> {
     fn operation_generator(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramS>::operation_generator_with_segment(
             self.inner,
             geometry,
+            env,
             filter,
             limits,
             self.segment,
@@ -74,12 +77,13 @@ where
     fn inspect(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
         Ok(self
             .inner
-            .inspect(geometry, filter, limits)?
+            .inspect(geometry, env, filter, limits)?
             .modify(|t| t.with_segment(self.segment, self.transition_mode)))
     }
 }

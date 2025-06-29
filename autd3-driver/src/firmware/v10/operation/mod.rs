@@ -32,7 +32,9 @@ pub(crate) use silencer::*;
 pub(crate) use stm::*;
 pub(crate) use sync::*;
 
-use crate::{firmware::driver::Operation, geometry::Device};
+use crate::firmware::driver::Operation;
+
+use autd3_core::geometry::Device;
 
 #[doc(hidden)]
 pub trait OperationGenerator {
