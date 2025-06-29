@@ -1,13 +1,13 @@
 use autd3_core::{
     derive::GainOperationGenerator,
     gain::{GainCalculator, GainCalculatorGenerator},
+    geometry::Device,
 };
 
 use super::OperationGenerator;
 use crate::{
     error::AUTDDriverError,
     firmware::driver::{Operation, Version},
-    geometry::Device,
 };
 
 enum Inner<Calculator: GainCalculator> {

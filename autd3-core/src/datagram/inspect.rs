@@ -1,6 +1,7 @@
 use super::{Datagram, DeviceFilter};
 use crate::{
     datagram::FirmwareLimits,
+    environment::Environment,
     geometry::{Device, Geometry},
 };
 
@@ -48,6 +49,7 @@ pub trait Inspectable: Datagram {
     fn inspect(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error>;

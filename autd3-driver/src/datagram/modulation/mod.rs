@@ -65,6 +65,7 @@ pub mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?
@@ -99,6 +100,7 @@ pub mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?
@@ -134,6 +136,7 @@ pub mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?

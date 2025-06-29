@@ -1,11 +1,9 @@
 use std::convert::Infallible;
 
-use crate::geometry::Device;
-
 use autd3_core::{
-    datagram::{CpuGPIOPort, Datagram, DeviceFilter},
-    derive::FirmwareLimits,
-    geometry::Geometry,
+    datagram::{CpuGPIOPort, Datagram, DeviceFilter, FirmwareLimits},
+    environment::Environment,
+    geometry::{Device, Geometry},
 };
 
 use derive_more::Debug;
@@ -32,6 +30,7 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram for CpuGPIOOutputs<F>
     fn operation_generator(
         self,
         _: &Geometry,
+        _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {

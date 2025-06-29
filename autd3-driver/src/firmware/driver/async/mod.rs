@@ -5,6 +5,7 @@ use crate::{error::AUTDDriverError, firmware::version::FirmwareVersion};
 
 use autd3_core::{
     derive::FirmwareLimits,
+    environment::Environment,
     geometry::Geometry,
     link::{MsgId, RxMessage},
 };
@@ -42,6 +43,7 @@ mod internal {
             _geometry: &'a autd3_core::derive::Geometry,
             _sent_flags: &'a mut [bool],
             _rx: &'a mut [autd3_core::link::RxMessage],
+            _env: &'a autd3_core::environment::Environment,
         ) -> Result<(), AUTDDriverError>
         where
             L: autd3_core::link::AsyncLink + 'a,
@@ -57,6 +59,7 @@ mod internal {
             geometry: &'a Geometry,
             sent_flags: &'a mut [bool],
             rx: &'a mut [RxMessage],
+            env: &'a Environment,
             option: SenderOption,
             timer_strategy: T,
         ) -> Self::Sender<'a, L, S, T>
@@ -101,6 +104,7 @@ mod internal {
             _geometry: &'a autd3_core::derive::Geometry,
             _sent_flags: &'a mut [bool],
             _rx: &'a mut [autd3_core::link::RxMessage],
+            _env: &'a Environment,
         ) -> impl std::future::Future<Output = Result<(), AUTDDriverError>>
         where
             L: autd3_core::link::AsyncLink + 'a,
@@ -116,6 +120,7 @@ mod internal {
             geometry: &'a Geometry,
             sent_flags: &'a mut [bool],
             rx: &'a mut [RxMessage],
+            env: &'a Environment,
             option: SenderOption,
             timer_strategy: T,
         ) -> Self::Sender<'a, L, S, T>

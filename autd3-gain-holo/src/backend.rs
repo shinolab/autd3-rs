@@ -1,5 +1,6 @@
 use autd3_core::{
     acoustics::directivity::Directivity,
+    environment::Environment,
     gain::TransducerFilter,
     geometry::{Geometry, Point3},
 };
@@ -37,6 +38,7 @@ pub trait LinAlgBackend<D: Directivity> {
     fn generate_propagation_matrix(
         &self,
         geometry: &Geometry,
+        env: &Environment,
         foci: &[Point3],
         filter: &TransducerFilter,
     ) -> Result<Self::MatrixXc, HoloError>;

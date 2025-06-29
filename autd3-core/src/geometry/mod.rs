@@ -82,24 +82,6 @@ impl Geometry {
         )
     }
 
-    /// Sets the sound speed of devices.
-    pub fn set_sound_speed(&mut self, c: f32) {
-        self.iter_mut().for_each(|dev| dev.sound_speed = c);
-    }
-
-    /// Sets the sound speed of devices from the temperature `t`.
-    ///
-    /// This is equivalent to `Self::set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3)`.
-    pub fn set_sound_speed_from_temp(&mut self, t: f32) {
-        self.set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3);
-    }
-
-    /// Sets the sound speed of devices from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
-    pub fn set_sound_speed_from_temp_with(&mut self, t: f32, k: f32, r: f32, m: f32) {
-        self.iter_mut()
-            .for_each(|dev| dev.set_sound_speed_from_temp_with(t, k, r, m));
-    }
-
     /// Axis Aligned Bounding Box of devices.
     #[must_use]
     pub fn aabb(&self) -> Aabb<f32, 3> {
@@ -110,9 +92,7 @@ impl Geometry {
     /// Reconfigure the geometry.
     pub fn reconfigure<D: Into<Device>, F: Fn(&Device) -> D>(&mut self, f: F) {
         self.devices.iter_mut().for_each(|dev| {
-            let sound_speed = dev.sound_speed;
             *dev = f(dev).into();
-            dev.sound_speed = sound_speed;
         });
         self.assign_idx();
         self.version += 1;
@@ -236,42 +216,12 @@ pub(crate) mod tests {
         assert_eq!(0, geometry.version());
     }
 
-    #[rstest::rstest]
-    #[test]
-    #[case(340.29525e3, 15.)]
-    #[case(343.23497e3, 20.)]
-    #[case(349.04013e3, 30.)]
-    fn test_set_sound_speed_from_temp(#[case] expected: f32, #[case] temp: f32) {
-        let mut geometry = create_geometry(2, 1);
-        assert_eq!(0, geometry.version());
-        geometry.set_sound_speed_from_temp(temp);
-        assert_eq!(1, geometry.version());
-        geometry.iter().for_each(|dev| {
-            approx::assert_abs_diff_eq!(expected * mm, dev.sound_speed, epsilon = 1e-3);
-        });
-    }
-
-    #[rstest::rstest]
-    #[test]
-    #[case(3.402_952_8e5)]
-    #[case(3.432_35e5)]
-    #[case(3.490_401_6e5)]
-    fn test_set_sound_speed(#[case] temp: f32) {
-        let mut geometry = create_geometry(2, 1);
-        assert_eq!(0, geometry.version());
-        geometry.set_sound_speed(temp * mm);
-        assert_eq!(1, geometry.version());
-        geometry.iter().for_each(|dev| {
-            assert_eq!(dev.sound_speed, temp * mm);
-        });
-    }
-
     #[test]
     fn into_iter() {
         let mut geometry = create_geometry(1, 1);
         assert_eq!(0, geometry.version());
         for dev in &mut geometry {
-            dev.sound_speed = 0.;
+            _ = dev;
         }
         assert_eq!(1, geometry.version());
     }

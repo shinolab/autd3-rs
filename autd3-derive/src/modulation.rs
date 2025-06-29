@@ -13,7 +13,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             type G = ModulationOperationGenerator;
             type Error = ModulationError;
 
-            fn operation_generator_with_loop_behavior(self, _: &Geometry, _: &DeviceFilter, limits: &FirmwareLimits, segment: Segment, transition_mode: Option<TransitionMode>, loop_behavior: LoopBehavior) -> Result<Self::G, Self::Error> {
+            fn operation_generator_with_loop_behavior(self, _: &Geometry, _: &Environment, _: &DeviceFilter, limits: &FirmwareLimits, segment: Segment, transition_mode: Option<TransitionMode>, loop_behavior: LoopBehavior) -> Result<Self::G, Self::Error> {
                 let config = <Self as Modulation>::sampling_config(&self);
                 let g = self.calc(limits)?;
                 Ok(Self::G {
@@ -39,7 +39,13 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
         impl <#(#lifetimes,)* #(#type_params,)* > Inspectable for #name #ty_generics #where_clause {
             type Result = ModulationInspectionResult;
 
-            fn inspect(self, geometry: &Geometry, filter: &DeviceFilter, limits: &FirmwareLimits) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
+            fn inspect(
+                self,
+                geometry: &Geometry,
+                _: &Environment,
+                filter: &DeviceFilter,
+                limits: &FirmwareLimits
+            ) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
                 let sampling_config = self.sampling_config();
                 sampling_config.divide()?;
                 let data = self.calc(limits)?;

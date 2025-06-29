@@ -7,13 +7,13 @@ use crate::{
         driver::{NullOp, Operation},
         tag::TypeTag,
     },
-    geometry::Device,
 };
 
 use autd3_core::{
     common::MOD_BUF_SIZE_MIN,
     datagram::{LoopBehavior, Segment, TRANSITION_MODE_NONE, TransitionMode},
     derive::FirmwareLimits,
+    geometry::Device,
     modulation::ModulationOperationGenerator,
     sampling_config::SamplingConfig,
 };

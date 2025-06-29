@@ -3,8 +3,9 @@ use crate::{
     datagram::Nop,
     error::AUTDDriverError,
     firmware::driver::{Operation, Version},
-    geometry::Device,
 };
+
+use autd3_core::geometry::Device;
 
 enum Inner {
     V10,

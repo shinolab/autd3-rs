@@ -1,7 +1,9 @@
 use std::{fmt::Debug, hash::Hash};
 
 use super::OperationGenerator;
-use crate::{datagram::GroupOpGenerator, geometry::Device};
+use crate::datagram::GroupOpGenerator;
+
+use autd3_core::geometry::Device;
 
 impl<K, F, G> OperationGenerator for GroupOpGenerator<K, F, G>
 where
@@ -12,9 +14,11 @@ where
     type O1 = <G as OperationGenerator>::O1;
     type O2 = <G as OperationGenerator>::O2;
 
-    fn generate(&mut self, dev: &Device) -> Option<(Self::O1, Self::O2)> {
-        let key = (self.key_map)(dev)?;
-        self.generators.get_mut(&key).and_then(|g| g.generate(dev))
+    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+        let key = (self.key_map)(device)?;
+        self.generators
+            .get_mut(&key)
+            .and_then(|g| g.generate(device))
     }
 }
 
@@ -34,6 +38,7 @@ mod tests {
         datagram::{
             Datagram, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
         },
+        environment::Environment,
         geometry::Geometry,
     };
 
@@ -63,6 +68,7 @@ mod tests {
             fn operation_generator(
                 self,
                 _: &Geometry,
+                _: &Environment,
                 _: &DeviceFilter,
                 _: &FirmwareLimits,
             ) -> Result<Self::G, Self::Error> {
@@ -113,6 +119,7 @@ mod tests {
             fn operation_generator(
                 self,
                 geometry: &Geometry,
+                _: &Environment,
                 filter: &DeviceFilter,
                 _: &FirmwareLimits,
             ) -> Result<Self::G, Self::Error> {
@@ -135,6 +142,7 @@ mod tests {
         )
         .operation_generator(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?;
@@ -159,6 +167,7 @@ mod tests {
             fn operation_generator(
                 self,
                 _: &Geometry,
+                _: &Environment,
                 _: &DeviceFilter,
                 _: &FirmwareLimits,
             ) -> Result<Self::G, Self::Error> {
@@ -173,6 +182,7 @@ mod tests {
             fn inspect(
                 self,
                 geometry: &Geometry,
+                _: &Environment,
                 filter: &DeviceFilter,
                 _: &FirmwareLimits,
             ) -> Result<InspectionResult<Self::Result>, Self::Error> {
@@ -190,6 +200,7 @@ mod tests {
         )
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?;

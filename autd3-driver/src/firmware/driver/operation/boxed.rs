@@ -8,6 +8,7 @@ use crate::{
 use autd3_core::{
     datagram::{DatagramOption, DeviceFilter},
     derive::{Datagram, FirmwareLimits},
+    environment::Environment,
     geometry::{Device, Geometry},
 };
 
@@ -42,6 +43,7 @@ pub trait DDatagram: std::fmt::Debug {
     fn dyn_operation_generator(
         &mut self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError>;
@@ -58,13 +60,16 @@ where
     fn dyn_operation_generator(
         &mut self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError> {
         let mut tmp = MaybeUninit::<T>::uninit();
         std::mem::swap(&mut tmp, self);
         let d = unsafe { tmp.assume_init() };
-        Ok(Box::new(d.operation_generator(geometry, filter, limits)?))
+        Ok(Box::new(
+            d.operation_generator(geometry, env, filter, limits)?,
+        ))
     }
 
     fn dyn_option(&self) -> DatagramOption {
@@ -108,12 +113,13 @@ impl Datagram for BoxedDatagram {
     fn operation_generator(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         let Self { mut d } = self;
         Ok(DynOperationGenerator {
-            g: d.dyn_operation_generator(geometry, filter, limits)?,
+            g: d.dyn_operation_generator(geometry, env, filter, limits)?,
         })
     }
 

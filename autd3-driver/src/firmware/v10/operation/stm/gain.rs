@@ -11,17 +11,15 @@ use crate::{
         driver::{NullOp, write_to_tx},
         tag::TypeTag,
     },
-    geometry::Device,
 };
 
 use autd3_core::{
     datagram::{LoopBehavior, Segment, TRANSITION_MODE_NONE, TransitionMode},
     derive::FirmwareLimits,
-    gain::{Drive, GainCalculatorGenerator},
+    gain::{Drive, GainCalculator, GainCalculatorGenerator},
+    geometry::Device,
     sampling_config::SamplingConfig,
 };
-
-use autd3_core::gain::GainCalculator;
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout};
 
 #[derive(Clone, Copy, IntoBytes, Immutable)]

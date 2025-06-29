@@ -48,6 +48,7 @@ impl Driver for V11 {
         geometry: &'a autd3_core::derive::Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [autd3_core::link::RxMessage],
+        env: &'a autd3_core::environment::Environment,
         option: crate::firmware::driver::SenderOption,
         timer_strategy: T,
     ) -> Self::Sender<'a, L, S, T>
@@ -63,6 +64,7 @@ impl Driver for V11 {
                 geometry,
                 sent_flags,
                 rx,
+                env,
                 option,
                 timer_strategy,
                 _phantom: std::marker::PhantomData,

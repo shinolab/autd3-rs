@@ -12,6 +12,7 @@ use crate::{
 };
 use autd3_core::{
     datagram::{Datagram, DeviceFilter},
+    environment::Environment,
     geometry::Geometry,
     link::{AsyncLink, MsgId, RxMessage, TxMessage},
     sleep::r#async::Sleep,
@@ -22,6 +23,7 @@ pub struct Sender<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> {
     pub(crate) msg_id: &'a mut MsgId,
     pub(crate) link: &'a mut L,
     pub(crate) geometry: &'a Geometry,
+    pub(crate) env: &'a Environment,
     pub(crate) sent_flags: &'a mut [bool],
     pub(crate) rx: &'a mut [RxMessage],
     pub(crate) option: SenderOption,
@@ -43,6 +45,7 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
 
         let mut g = s.operation_generator(
             self.geometry,
+            self.env,
             &DeviceFilter::all_enabled(),
             &V10.firmware_limits(),
         )?;

@@ -3,8 +3,9 @@ use crate::{
     datagram::{FociSTMIterator, FociSTMIteratorGenerator, FociSTMOperationGenerator},
     error::AUTDDriverError,
     firmware::driver::{Operation, Version},
-    geometry::Device,
 };
+
+use autd3_core::geometry::Device;
 
 enum Inner<const N: usize, Iterator: FociSTMIterator<N>> {
     V10(crate::firmware::v10::operation::FociSTMOp<N, Iterator>),

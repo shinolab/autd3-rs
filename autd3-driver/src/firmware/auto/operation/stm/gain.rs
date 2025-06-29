@@ -1,11 +1,13 @@
-use autd3_core::gain::{GainCalculator, GainCalculatorGenerator};
+use autd3_core::{
+    gain::{GainCalculator, GainCalculatorGenerator},
+    geometry::Device,
+};
 
 use super::super::OperationGenerator;
 use crate::{
     datagram::{GainSTMIterator, GainSTMIteratorGenerator, GainSTMOperationGenerator},
     error::AUTDDriverError,
     firmware::driver::{Operation, Version},
-    geometry::Device,
 };
 
 enum Inner<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> {

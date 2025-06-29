@@ -1,7 +1,9 @@
 use std::{fmt::Debug, hash::Hash};
 
 use super::OperationGenerator;
-use crate::{datagram::GroupOpGenerator, firmware::driver::Version, geometry::Device};
+use crate::{datagram::GroupOpGenerator, firmware::driver::Version};
+
+use autd3_core::geometry::Device;
 
 impl<K, F, G> OperationGenerator for GroupOpGenerator<K, F, G>
 where

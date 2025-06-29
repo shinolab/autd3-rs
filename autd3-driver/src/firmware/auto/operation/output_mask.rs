@@ -3,8 +3,9 @@ use crate::{
     datagram::OutputMask,
     error::AUTDDriverError,
     firmware::driver::{Operation, Version},
-    geometry::{Device, Transducer},
 };
+
+use autd3_core::geometry::{Device, Transducer};
 
 enum Inner<F> {
     V10,

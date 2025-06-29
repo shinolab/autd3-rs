@@ -12,6 +12,7 @@ pub use phase::Phase;
 
 use crate::{
     datagram::{DeviceFilter, Segment, TransitionMode},
+    environment::Environment,
     geometry::{Device, Geometry, Transducer},
 };
 
@@ -142,7 +143,12 @@ pub trait Gain: std::fmt::Debug + Sized {
     ///
     /// `filter` is a hash map that holds a bit vector representing the indices of the enabled transducers for each device index.
     /// If `filter` is `None`, all transducers are enabled.
-    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::G, GainError>;
+    fn init(
+        self,
+        geometry: &Geometry,
+        env: &Environment,
+        filter: &TransducerFilter,
+    ) -> Result<Self::G, GainError>;
 }
 
 #[doc(hidden)]
@@ -156,12 +162,13 @@ impl<G: GainCalculatorGenerator> GainOperationGenerator<G> {
     pub fn new<T: Gain<G = G>>(
         gain: T,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         segment: Segment,
         transition: Option<TransitionMode>,
     ) -> Result<Self, GainError> {
         Ok(Self {
-            generator: gain.init(geometry, &TransducerFilter::from(filter))?,
+            generator: gain.init(geometry, env, &TransducerFilter::from(filter))?,
             segment,
             transition,
         })

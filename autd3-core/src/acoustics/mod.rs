@@ -35,7 +35,7 @@ mod tests {
     use rand::Rng;
 
     use crate::{
-        common::mm,
+        common::{ULTRASOUND_FREQ, mm},
         geometry::{Device, UnitQuaternion, Vector3},
     };
     use directivity::tests::TestDirectivity;
@@ -91,9 +91,9 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_propagate(tr: Transducer, rot: UnitQuaternion, target: Point3, sound_speed: f32) {
-        let mut device = Device::new(rot, vec![tr.clone()]);
-        device.sound_speed = sound_speed;
-        let wavenumber = device.wavenumber();
+        let device = Device::new(rot, vec![tr.clone()]);
+        let wavelength = sound_speed / ULTRASOUND_FREQ.hz() as f32;
+        let wavenumber = 2. * PI / wavelength;
         assert_complex_approx_eq!(
             {
                 let diff = target - tr.position();

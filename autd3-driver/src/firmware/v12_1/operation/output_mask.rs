@@ -7,10 +7,12 @@ use crate::{
         driver::{NullOp, Operation},
         tag::TypeTag,
     },
-    geometry::{Device, Transducer},
 };
 
-use autd3_core::datagram::Segment;
+use autd3_core::{
+    datagram::Segment,
+    geometry::{Device, Transducer},
+};
 
 use itertools::Itertools;
 use zerocopy::{Immutable, IntoBytes};

@@ -23,6 +23,7 @@ use autd3_core::{
         LoopBehavior, Segment, TransitionMode,
     },
     derive::FirmwareLimits,
+    environment::Environment,
     sampling_config::SamplingConfig,
 };
 use derive_more::{Deref, DerefMut};
@@ -113,6 +114,7 @@ pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMIteratorGenerator
     pub(crate) generator: G,
     pub(crate) size: usize,
     pub(crate) config: SamplingConfig,
+    pub(crate) sound_speed: f32,
     pub(crate) limits: FirmwareLimits,
     pub(crate) loop_behavior: LoopBehavior,
     pub(crate) segment: Segment,
@@ -128,6 +130,7 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + std::fmt::Debu
     fn operation_generator_with_loop_behavior(
         self,
         _: &Geometry,
+        env: &Environment,
         _: &DeviceFilter,
         limits: &FirmwareLimits,
         segment: Segment,
@@ -141,6 +144,7 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + std::fmt::Debu
             generator: self.foci.init()?,
             size,
             config: sampling_config,
+            sound_speed: env.sound_speed,
             limits: *limits,
             loop_behavior,
             segment,
@@ -204,6 +208,7 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Debug> 
     fn inspect(
         self,
         geometry: &Geometry,
+        _: &Environment,
         filter: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
@@ -261,6 +266,7 @@ mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?
@@ -320,6 +326,7 @@ mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?
@@ -380,6 +387,7 @@ mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?

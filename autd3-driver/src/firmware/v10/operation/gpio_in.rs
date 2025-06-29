@@ -7,10 +7,9 @@ use crate::{
         driver::{NullOp, Operation},
         tag::TypeTag,
     },
-    geometry::Device,
 };
 
-use autd3_core::datagram::GPIOIn;
+use autd3_core::{datagram::GPIOIn, geometry::Device};
 
 use zerocopy::{Immutable, IntoBytes};
 

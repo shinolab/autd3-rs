@@ -4,6 +4,7 @@ use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     datagram::{Datagram, GPIOIn, LoopBehavior, Segment, TransitionMode},
     derive::DeviceFilter,
+    environment::Environment,
     gain::{Drive, Intensity, Phase},
     link::{MsgId, TxMessage},
     sampling_config::SamplingConfig,
@@ -555,6 +556,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
 
     let mut generator = d.operation_generator(
         &geometry,
+        &Environment::new(),
         &DeviceFilter::all_enabled(),
         &V12_1.firmware_limits(),
     )?;
