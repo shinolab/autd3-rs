@@ -155,6 +155,7 @@ pub mod derive {
                 DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
                 Segment, TransitionMode,
             },
+            environment::Environment,
             geometry::Geometry,
         };
         pub use num_cpus;
@@ -167,7 +168,6 @@ pub mod derive {
     mod gain {
         pub use crate::{
             datagram::DatagramS,
-            environment::Environment,
             gain::{
                 Drive, Gain, GainCalculator, GainCalculatorGenerator, GainError,
                 GainInspectionResult, GainOperationGenerator, Intensity, Phase, TransducerFilter,

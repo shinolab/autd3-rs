@@ -23,7 +23,7 @@ pub use tuple::{CombinedError, CombinedOperationGenerator};
 pub use filter::DeviceFilter;
 pub use option::DatagramOption;
 
-use crate::{derive::Environment, geometry::Geometry};
+use crate::{environment::Environment, geometry::Geometry};
 
 /// [`DatagramL`] is a [`Datagram`] with [`LoopBehavior`].
 pub trait DatagramL: std::fmt::Debug {
