@@ -31,6 +31,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
 
         let mut g = s.operation_generator(
             self.inner.geometry,
+            self.inner.env,
             &DeviceFilter::all_enabled(),
             &V11.firmware_limits(),
         )?;

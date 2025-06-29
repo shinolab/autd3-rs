@@ -56,6 +56,7 @@ impl Focus {
     }
 }
 
+#[derive(Clone, Copy)]
 struct Impl {
     pos: Point3,
     intensity: Intensity,
@@ -73,24 +74,29 @@ impl GainCalculator for Impl {
     }
 }
 
-impl GainCalculatorGenerator for Focus {
+impl GainCalculatorGenerator for Impl {
     type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Calculator {
-        Impl {
-            pos: self.pos,
-            intensity: self.option.intensity,
-            phase_offset: self.option.phase_offset,
-            wavenumber: device.wavenumber(),
-        }
+    fn generate(&mut self, _: &Device) -> Self::Calculator {
+        *self
     }
 }
 
 impl Gain for Focus {
-    type G = Focus;
+    type G = Impl;
 
-    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
-        Ok(self)
+    fn init(
+        self,
+        _: &Geometry,
+        env: &Environment,
+        _: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
+        Ok(Impl {
+            pos: self.pos,
+            intensity: self.option.intensity,
+            phase_offset: self.option.phase_offset,
+            wavenumber: env.wavenumber(),
+        })
     }
 }
 
@@ -111,6 +117,7 @@ fn focus(c: &mut Criterion) {
                     let mut generator = g
                         .operation_generator(
                             geometry,
+                            &Environment::default(),
                             &DeviceFilter::all_enabled(),
                             &V12_1.firmware_limits(),
                         )
@@ -149,6 +156,7 @@ fn focus_parallel(c: &mut Criterion) {
                     let mut generator = g
                         .operation_generator(
                             geometry,
+                            &Environment::default(),
                             &DeviceFilter::all_enabled(),
                             &V12_1.firmware_limits(),
                         )
@@ -190,6 +198,7 @@ fn focus_boxed(c: &mut Criterion) {
                     let mut generator = g
                         .operation_generator(
                             geometry,
+                            &Environment::default(),
                             &DeviceFilter::all_enabled(),
                             &V12_1.firmware_limits(),
                         )

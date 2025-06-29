@@ -38,6 +38,7 @@ impl Plane {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct Impl {
     dir: UnitVector3,
     intensity: Intensity,
@@ -55,24 +56,29 @@ impl GainCalculator for Impl {
     }
 }
 
-impl GainCalculatorGenerator for Plane {
+impl GainCalculatorGenerator for Impl {
     type Calculator = Impl;
 
-    fn generate(&mut self, device: &Device) -> Self::Calculator {
-        Impl {
-            dir: self.dir,
-            intensity: self.option.intensity,
-            phase_offset: self.option.phase_offset,
-            wavenumber: device.wavenumber(),
-        }
+    fn generate(&mut self, _: &Device) -> Self::Calculator {
+        *self
     }
 }
 
 impl Gain for Plane {
-    type G = Plane;
+    type G = Impl;
 
-    fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
-        Ok(self)
+    fn init(
+        self,
+        _: &Geometry,
+        env: &Environment,
+        _: &TransducerFilter,
+    ) -> Result<Self::G, GainError> {
+        Ok(Impl {
+            dir: self.dir,
+            intensity: self.option.intensity,
+            phase_offset: self.option.phase_offset,
+            wavenumber: env.wavenumber(),
+        })
     }
 }
 
@@ -85,17 +91,18 @@ mod tests {
     use crate::tests::{create_geometry, random_vector3};
 
     fn plane_check(
-        mut b: Plane,
+        mut b: Impl,
         dir: UnitVector3,
         intensity: Intensity,
         phase_offset: Phase,
         geometry: &Geometry,
+        env: &Environment,
     ) {
         geometry.iter().for_each(|dev| {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
                 let expected_phase =
-                    Phase::from(-dir.dot(&tr.position().coords) * dev.wavenumber() * rad)
+                    Phase::from(-dir.dot(&tr.position().coords) * env.wavenumber() * rad)
                         + phase_offset;
                 let d = d.calc(tr);
                 assert_eq!(expected_phase, d.phase);
@@ -109,10 +116,19 @@ mod tests {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
+        let env = Environment::new();
 
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let g = Plane::new(dir, PlaneOption::default());
-        plane_check(g, dir, Intensity::MAX, Phase::ZERO, &geometry);
+        plane_check(
+            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+                .unwrap(),
+            dir,
+            Intensity::MAX,
+            Phase::ZERO,
+            &geometry,
+            &env,
+        );
 
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let intensity = Intensity(rng.random());
@@ -125,11 +141,13 @@ mod tests {
             },
         };
         plane_check(
-            g.init(&geometry, &TransducerFilter::all_enabled()).unwrap(),
+            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+                .unwrap(),
             dir,
             intensity,
             phase_offset,
             &geometry,
+            &env,
         );
     }
 }

@@ -7,10 +7,9 @@ use super::{
 use crate::{
     datagram::PulseWidthEncoder,
     firmware::{driver::NullOp, tag::TypeTag},
-    geometry::Device,
 };
 
-use autd3_core::{datagram::PulseWidth, gain::Intensity};
+use autd3_core::{datagram::PulseWidth, gain::Intensity, geometry::Device};
 
 use zerocopy::{Immutable, IntoBytes};
 

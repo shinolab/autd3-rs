@@ -1,11 +1,13 @@
-use autd3_core::{gain::Phase, geometry::Transducer};
-
 use super::OperationGenerator;
 use crate::{
     datagram::PhaseCorrection,
     error::AUTDDriverError,
     firmware::driver::{Operation, Version},
-    geometry::Device,
+};
+
+use autd3_core::{
+    gain::Phase,
+    geometry::{Device, Transducer},
 };
 
 enum Inner<F: Fn(&Transducer) -> Phase> {

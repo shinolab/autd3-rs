@@ -75,7 +75,12 @@ pub mod tests {
     impl Gain for TestGain {
         type G = Self;
 
-        fn init(self, _: &Geometry, _: &TransducerFilter) -> Result<Self::G, GainError> {
+        fn init(
+            self,
+            _: &Geometry,
+            _env: &Environment,
+            _: &TransducerFilter,
+        ) -> Result<Self::G, GainError> {
             Ok(self)
         }
     }
@@ -127,7 +132,11 @@ pub mod tests {
             },
             &geometry,
         );
-        let mut f = g.init(&geometry, &TransducerFilter::all_enabled())?;
+        let mut f = g.init(
+            &geometry,
+            &Environment::new(),
+            &TransducerFilter::all_enabled(),
+        )?;
         assert_eq!(
             expect,
             geometry
@@ -157,6 +166,7 @@ pub mod tests {
         )
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?
@@ -201,6 +211,7 @@ pub mod tests {
         }
         .inspect(
             &geometry,
+            &Environment::default(),
             &DeviceFilter::all_enabled(),
             &FirmwareLimits::unused(),
         )?

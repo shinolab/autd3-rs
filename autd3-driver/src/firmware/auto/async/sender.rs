@@ -42,6 +42,15 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
         }
     }
 
+    fn env(&self) -> &autd3_core::environment::Environment {
+        match self {
+            Inner::V10(inner) => inner.env,
+            Inner::V11(inner) => inner.inner.env,
+            Inner::V12(inner) => inner.env,
+            Inner::V12_1(inner) => inner.inner.env,
+        }
+    }
+
     async fn send_impl<O1, O2>(
         &mut self,
         timeout: Duration,
@@ -100,6 +109,7 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
         let parallel_threshold = s.option().parallel_threshold;
         let mut g = s.operation_generator(
             self.inner.geometry(),
+            self.inner.env(),
             &DeviceFilter::all_enabled(),
             &self.limits,
         )?;

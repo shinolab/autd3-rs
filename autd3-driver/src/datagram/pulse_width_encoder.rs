@@ -1,13 +1,12 @@
 use std::{convert::Infallible, f32::consts::PI};
 
-use crate::geometry::Device;
-
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
     datagram::{Datagram, DatagramOption, DeviceFilter, PulseWidth},
     derive::FirmwareLimits,
+    environment::Environment,
     gain::Intensity,
-    geometry::Geometry,
+    geometry::{Device, Geometry},
 };
 
 use derive_more::Debug;
@@ -74,6 +73,7 @@ impl<
     fn operation_generator(
         self,
         _: &Geometry,
+        _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {

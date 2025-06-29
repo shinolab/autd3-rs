@@ -1,6 +1,7 @@
 mod sender;
 
 use autd3_core::{
+    environment::Environment,
     link::AsyncLink,
     sleep::r#async::{AsyncSleeper, Sleep},
 };
@@ -73,6 +74,7 @@ impl Driver for Auto {
         geometry: &'a autd3_core::derive::Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [autd3_core::link::RxMessage],
+        env: &'a autd3_core::environment::Environment,
     ) -> Result<(), AUTDDriverError>
     where
         L: AsyncLink + 'a,
@@ -83,6 +85,7 @@ impl Driver for Auto {
             geometry,
             sent_flags,
             rx,
+            env,
             crate::firmware::driver::SenderOption {
                 timeout: Some(std::time::Duration::from_secs(1)),
                 ..Default::default()
@@ -136,6 +139,7 @@ impl Driver for Auto {
         geometry: &'a autd3_core::derive::Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [autd3_core::link::RxMessage],
+        env: &'a Environment,
         option: crate::firmware::driver::SenderOption,
         timer_strategy: T,
     ) -> Self::Sender<'a, L, S, T>
@@ -152,6 +156,7 @@ impl Driver for Auto {
                     geometry,
                     sent_flags,
                     rx,
+                    env,
                     option,
                     timer_strategy,
                     _phantom: std::marker::PhantomData,
@@ -163,6 +168,7 @@ impl Driver for Auto {
                         geometry,
                         sent_flags,
                         rx,
+                        env,
                         option,
                         timer_strategy,
                         _phantom: std::marker::PhantomData,
@@ -174,6 +180,7 @@ impl Driver for Auto {
                     geometry,
                     sent_flags,
                     rx,
+                    env,
                     option,
                     timer_strategy,
                     _phantom: std::marker::PhantomData,
@@ -186,6 +193,7 @@ impl Driver for Auto {
                             geometry,
                             sent_flags,
                             rx,
+                            env,
                             option,
                             timer_strategy,
                             _phantom: std::marker::PhantomData,

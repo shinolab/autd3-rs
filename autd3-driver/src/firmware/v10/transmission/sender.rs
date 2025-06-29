@@ -11,6 +11,7 @@ use crate::{
 
 use autd3_core::{
     datagram::{Datagram, DeviceFilter},
+    environment::Environment,
     geometry::Geometry,
     link::{Link, MsgId, RxMessage, TxMessage},
     sleep::Sleep,
@@ -23,6 +24,7 @@ pub struct Sender<'a, L, S, T> {
     pub(crate) geometry: &'a Geometry,
     pub(crate) sent_flags: &'a mut [bool],
     pub(crate) rx: &'a mut [RxMessage],
+    pub(crate) env: &'a Environment,
     pub(crate) option: SenderOption,
     pub(crate) timer_strategy: T,
     pub(crate) _phantom: std::marker::PhantomData<S>,
@@ -42,6 +44,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
 
         let mut g = s.operation_generator(
             self.geometry,
+            self.env,
             &DeviceFilter::all_enabled(),
             &V10.firmware_limits(),
         )?;
@@ -267,6 +270,7 @@ mod tests {
             geometry: &mut geometry,
             sent_flags: &mut sent_flags,
             rx: &mut rx,
+            env: &Environment::new(),
             option: SenderOption {
                 send_interval: Duration::from_millis(1),
                 receive_interval: Duration::from_millis(1),
@@ -314,6 +318,7 @@ mod tests {
             geometry: &mut geometry,
             sent_flags: &mut sent_flags,
             rx: &mut rx,
+            env: &Environment::new(),
             option: SenderOption {
                 send_interval: Duration::from_millis(1),
                 receive_interval: Duration::from_millis(1),

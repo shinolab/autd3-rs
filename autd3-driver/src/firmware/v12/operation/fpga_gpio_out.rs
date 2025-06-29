@@ -3,10 +3,9 @@ use crate::firmware::driver::NullOp;
 use crate::{
     datagram::{GPIOOutputType, GPIOOutputs},
     firmware::v11::operation::GPIOOutputsOp,
-    geometry::Device,
 };
 
-use autd3_core::datagram::GPIOOut;
+use autd3_core::{datagram::GPIOOut, geometry::Device};
 
 fn convert(ty: Option<GPIOOutputType<'_>>) -> crate::firmware::v11::operation::GPIOOutValue {
     crate::firmware::v11::operation::GPIOOutValue::new()

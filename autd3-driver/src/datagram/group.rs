@@ -6,6 +6,7 @@ use autd3_core::{
     datagram::{
         Datagram, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
     },
+    environment::Environment,
     geometry::{Device, Geometry},
 };
 use derive_more::Debug as DeriveDebug;
@@ -101,6 +102,7 @@ where
     fn operation_generator(
         self,
         geometry: &Geometry,
+        env: &Environment,
         _: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
@@ -120,7 +122,7 @@ where
                 Ok((
                     k,
                     datagram
-                        .operation_generator(geometry, &filter, limits)
+                        .operation_generator(geometry, env, &filter, limits)
                         .map_err(AUTDDriverError::from)?,
                 ))
             })
@@ -161,6 +163,7 @@ where
     fn inspect(
         self,
         geometry: &Geometry,
+        env: &Environment,
         _: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, AUTDDriverError> {
@@ -181,7 +184,7 @@ where
                             .ok_or(AUTDDriverError::UnknownKey(format!("{k:?}")))?;
 
                         let r = datagram
-                            .inspect(geometry, &filter, limits)
+                            .inspect(geometry, env, &filter, limits)
                             .map_err(AUTDDriverError::from)?;
 
                         Ok(r.result)
@@ -214,6 +217,7 @@ mod tests {
             Group::new(|dev| Some(dev.idx()), HashMap::from([(0, Clear {})]))
                 .operation_generator(
                     &geometry,
+                    &Environment::default(),
                     &DeviceFilter::all_enabled(),
                     &FirmwareLimits::unused()
                 )
@@ -235,6 +239,7 @@ mod tests {
             )
             .operation_generator(
                 &geometry,
+                &Environment::default(),
                 &DeviceFilter::all_enabled(),
                 &FirmwareLimits::unused()
             )

@@ -1,8 +1,7 @@
 use super::OperationGenerator;
 use crate::firmware::driver::NullOp;
-use crate::geometry::Device;
 
-use autd3_core::datagram::CombinedOperationGenerator;
+use autd3_core::{datagram::CombinedOperationGenerator, geometry::Device};
 
 impl<O1, O2> OperationGenerator for CombinedOperationGenerator<O1, O2>
 where

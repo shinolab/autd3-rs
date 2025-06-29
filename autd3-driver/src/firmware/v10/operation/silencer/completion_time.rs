@@ -1,16 +1,17 @@
 use std::time::Duration;
 
-use super::super::{Operation, OperationGenerator};
+use super::{
+    super::{Operation, OperationGenerator},
+    SilencerControlFlags,
+};
 use crate::{
     datagram::FixedCompletionTime,
     error::AUTDDriverError,
     firmware::{driver::NullOp, tag::TypeTag},
-    geometry::Device,
 };
 
-use super::SilencerControlFlags;
+use autd3_core::{common::ULTRASOUND_FREQ, geometry::Device};
 
-use autd3_core::common::ULTRASOUND_FREQ;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]

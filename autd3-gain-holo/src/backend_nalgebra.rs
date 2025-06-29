@@ -5,6 +5,7 @@ use autd3_core::{
         directivity::{Directivity, Sphere},
         propagate,
     },
+    environment::Environment,
     gain::TransducerFilter,
     geometry::{Complex, Geometry, Point3},
 };
@@ -96,6 +97,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
     fn generate_propagation_matrix(
         &self,
         geometry: &Geometry,
+        env: &Environment,
         foci: &[Point3],
         filter: &TransducerFilter,
     ) -> Result<Self::MatrixXc, HoloError> {
@@ -121,7 +123,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                     n,
                     geometry.iter().flat_map(|dev| {
                         dev.iter().map(move |tr| {
-                            propagate::<D>(tr, dev.wavenumber(), dev.axial_direction(), f)
+                            propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), f)
                         })
                     }),
                 )
@@ -136,7 +138,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                         foci.iter().for_each(|f| {
                             ptr.write(propagate::<D>(
                                 tr,
-                                dev.wavenumber(),
+                                env.wavenumber(),
                                 dev.axial_direction(),
                                 f,
                             ));
@@ -153,7 +155,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                         n,
                         geometry.iter().filter(|dev| filter.is_enabled_device(dev)).flat_map(|dev| {
                             dev.iter().filter(|tr| filter.is_enabled(tr)).map(move |tr| {
-                                propagate::<D>(tr, dev.wavenumber(), dev.axial_direction(), f)
+                                propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), f)
                             })
                         }),
                     )
@@ -171,7 +173,7 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
                                 foci.iter().for_each(|f| {
                                     ptr.write(propagate::<D>(
                                         tr,
-                                        dev.wavenumber(),
+                                        env.wavenumber(),
                                         dev.axial_direction(),
                                         f,
                                     ));
@@ -1888,6 +1890,8 @@ mod tests {
         #[case] foci_num: usize,
         backend: NalgebraBackend<Sphere>,
     ) -> Result<(), HoloError> {
+        let env = Environment::new();
+
         let reference = |geometry: Geometry, foci: Vec<Point3>| {
             let mut g = MatrixXc::zeros(
                 foci.len(),
@@ -1904,7 +1908,7 @@ mod tests {
                 (0..transducers.len()).for_each(|j| {
                     g[(i, j)] = propagate::<Sphere>(
                         transducers[j].1,
-                        geometry[transducers[j].0].wavenumber(),
+                        env.wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
                         &foci[i],
                     )
@@ -1918,6 +1922,7 @@ mod tests {
 
         let g = backend.generate_propagation_matrix(
             &geometry,
+            &env,
             &foci,
             &TransducerFilter::all_enabled(),
         )?;
@@ -1942,6 +1947,8 @@ mod tests {
         #[case] foci_num: usize,
         backend: NalgebraBackend<Sphere>,
     ) -> Result<(), HoloError> {
+        let env = Environment::new();
+
         let reference = |geometry: Geometry, foci: Vec<Point3>, filter: TransducerFilter| {
             let mut g = MatrixXc::zeros(
                 foci.len(),
@@ -1959,7 +1966,7 @@ mod tests {
                 (0..transducers.len()).for_each(|j| {
                     g[(i, j)] = propagate::<Sphere>(
                         transducers[j].1,
-                        geometry[transducers[j].0].wavenumber(),
+                        env.wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
                         &foci[i],
                     )
@@ -1975,7 +1982,7 @@ mod tests {
 
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, &filter)?;
+        let g = backend.generate_propagation_matrix(&geometry, &env, &foci, &filter)?;
         let g = backend.to_host_cm(g)?;
         reference(geometry, foci, filter)
             .iter()
@@ -1997,6 +2004,8 @@ mod tests {
         #[case] foci_num: usize,
         backend: NalgebraBackend<Sphere>,
     ) -> Result<(), HoloError> {
+        let env = Environment::new();
+
         let filter = |geometry: &Geometry| -> TransducerFilter {
             TransducerFilter::from_fn(geometry, |dev| {
                 let num_transducers = dev.num_transducers();
@@ -2024,7 +2033,7 @@ mod tests {
                 (0..transducers.len()).for_each(|j| {
                     g[(i, j)] = propagate::<Sphere>(
                         transducers[j].1,
-                        geometry[transducers[j].0].wavenumber(),
+                        env.wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
                         &foci[i],
                     )
@@ -2037,7 +2046,7 @@ mod tests {
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
         let filter = filter(&geometry);
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, &filter)?;
+        let g = backend.generate_propagation_matrix(&geometry, &env, &foci, &filter)?;
         let g = backend.to_host_cm(g)?;
         assert_eq!(g.nrows(), foci.len());
         assert_eq!(
@@ -2067,6 +2076,8 @@ mod tests {
         #[case] foci_num: usize,
         backend: NalgebraBackend<Sphere>,
     ) -> Result<(), HoloError> {
+        let env = Environment::new();
+
         let filter = |geometry: &Geometry| {
             TransducerFilter::from_fn(geometry, |dev| {
                 if dev.idx() == 0 {
@@ -2102,7 +2113,7 @@ mod tests {
                 (0..transducers.len()).for_each(|j| {
                     g[(i, j)] = propagate::<Sphere>(
                         transducers[j].1,
-                        geometry[transducers[j].0].wavenumber(),
+                        env.wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
                         &foci[i],
                     )
@@ -2115,7 +2126,7 @@ mod tests {
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
         let filter = filter(&geometry);
 
-        let g = backend.generate_propagation_matrix(&geometry, &foci, &filter)?;
+        let g = backend.generate_propagation_matrix(&geometry, &env, &foci, &filter)?;
         let g = backend.to_host_cm(g)?;
         assert_eq!(g.nrows(), foci.len());
         assert_eq!(
@@ -2140,6 +2151,8 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn test_gen_back_prop(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let env = Environment::new();
+
         let geometry = create_geometry(1, 1);
         let foci = gen_foci(1).map(|(p, _)| p).collect::<Vec<_>>();
 
@@ -2151,6 +2164,7 @@ mod tests {
 
         let g = backend.generate_propagation_matrix(
             &geometry,
+            &env,
             &foci,
             &TransducerFilter::all_enabled(),
         )?;

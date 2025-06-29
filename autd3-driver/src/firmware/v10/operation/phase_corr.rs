@@ -7,10 +7,12 @@ use crate::{
         driver::{NullOp, Operation},
         tag::TypeTag,
     },
-    geometry::{Device, Transducer},
 };
 
-use autd3_core::gain::Phase;
+use autd3_core::{
+    gain::Phase,
+    geometry::{Device, Transducer},
+};
 
 use zerocopy::{Immutable, IntoBytes};
 

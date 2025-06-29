@@ -23,7 +23,7 @@ pub use tuple::{CombinedError, CombinedOperationGenerator};
 pub use filter::DeviceFilter;
 pub use option::DatagramOption;
 
-use crate::geometry::Geometry;
+use crate::{environment::Environment, geometry::Geometry};
 
 /// [`DatagramL`] is a [`Datagram`] with [`LoopBehavior`].
 pub trait DatagramL: std::fmt::Debug {
@@ -33,9 +33,11 @@ pub trait DatagramL: std::fmt::Debug {
     type Error;
 
     #[doc(hidden)]
+    #[allow(clippy::too_many_arguments)]
     fn operation_generator_with_loop_behavior(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
         segment: Segment,
@@ -59,6 +61,7 @@ pub trait DatagramS: std::fmt::Debug {
     fn operation_generator_with_segment(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
         segment: Segment,
@@ -77,6 +80,7 @@ impl<D: DatagramL> DatagramS for D {
     fn operation_generator_with_segment(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
         segment: Segment,
@@ -84,6 +88,7 @@ impl<D: DatagramL> DatagramS for D {
     ) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_loop_behavior(
             geometry,
+            env,
             filter,
             limits,
             segment,
@@ -108,6 +113,7 @@ pub trait Datagram: std::fmt::Debug {
     fn operation_generator(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error>;
@@ -126,11 +132,13 @@ impl<D: DatagramS> Datagram for D {
     fn operation_generator(
         self,
         geometry: &Geometry,
+        env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_segment(
             geometry,
+            env,
             filter,
             limits,
             Segment::S0,

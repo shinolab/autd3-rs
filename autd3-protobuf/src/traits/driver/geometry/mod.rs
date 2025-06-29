@@ -39,7 +39,6 @@ impl From<&autd3_core::geometry::Geometry> for Geometry {
                 .map(|dev| geometry::Autd3 {
                     pos: Some((*dev[0].position()).into()),
                     rot: Some((*dev.rotation()).into()),
-                    sound_speed: Some(dev.sound_speed as _),
                 })
                 .collect(),
         }
@@ -86,12 +85,7 @@ impl FromMessage<Geometry> for autd3_core::geometry::Geometry {
                         .map(autd3_core::geometry::UnitQuaternion::from_msg)
                         .transpose()?
                         .unwrap_or(autd3_core::geometry::UnitQuaternion::identity());
-                    let mut dev: autd3_core::geometry::Device =
-                        autd3_driver::autd3_device::AUTD3 { pos, rot }.into();
-                    if let Some(sound_speed) = dev_msg.sound_speed {
-                        dev.sound_speed = sound_speed;
-                    }
-                    Ok(dev)
+                    Ok(autd3_driver::autd3_device::AUTD3 { pos, rot }.into())
                 })
                 .collect::<Result<Vec<_>, AUTDProtoBufError>>()?,
         ))
@@ -150,12 +144,11 @@ mod tests {
     #[test]
     fn geometry() {
         let mut rng = rand::rng();
-        let mut dev: Device = AUTD3 {
+        let dev: Device = AUTD3 {
             pos: Point3::new(rng.random(), rng.random(), rng.random()),
             rot: UnitQuaternion::identity(),
         }
         .into();
-        dev.sound_speed = rng.random();
         let geometry = Geometry::new(vec![dev]);
         let msg = (&geometry).into();
         let geometry2 = Geometry::from_msg(msg).unwrap();
@@ -163,7 +156,6 @@ mod tests {
             .into_iter()
             .zip(geometry2.iter())
             .for_each(|(dev, dev2)| {
-                approx::assert_abs_diff_eq!(dev.sound_speed, dev2.sound_speed);
                 approx::assert_abs_diff_eq!(dev.rotation().w, dev2.rotation().w);
                 approx::assert_abs_diff_eq!(dev.rotation().i, dev2.rotation().i);
                 approx::assert_abs_diff_eq!(dev.rotation().j, dev2.rotation().j);

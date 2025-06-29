@@ -1,10 +1,10 @@
 use std::iter::Peekable;
 
-use autd3_core::gain::{
-    Gain, GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter,
+use autd3_core::{
+    environment::Environment,
+    gain::{Gain, GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter},
+    geometry::{Device, Geometry},
 };
-
-use crate::geometry::{Device, Geometry};
 
 use super::{GainSTMGenerator, GainSTMIterator, GainSTMIteratorGenerator};
 
@@ -39,9 +39,14 @@ impl<G: GainCalculatorGenerator> GainSTMIteratorGenerator for Vec<G> {
 impl<G: Gain> GainSTMGenerator for Vec<G> {
     type T = Vec<G::G>;
 
-    fn init(self, geometry: &Geometry, filter: &TransducerFilter) -> Result<Self::T, GainError> {
+    fn init(
+        self,
+        geometry: &Geometry,
+        env: &Environment,
+        filter: &TransducerFilter,
+    ) -> Result<Self::T, GainError> {
         self.into_iter()
-            .map(|g| g.init(geometry, filter))
+            .map(|g| g.init(geometry, env, filter))
             .collect::<Result<Vec<_>, _>>()
     }
     fn len(&self) -> usize {

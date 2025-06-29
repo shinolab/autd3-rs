@@ -4,11 +4,10 @@ pub use gpio_out::GPIOOutputType;
 
 use std::convert::Infallible;
 
-use crate::geometry::Device;
-
 use autd3_core::{
     datagram::{Datagram, DeviceFilter, FirmwareLimits, GPIOOut},
-    geometry::Geometry,
+    environment::Environment,
+    geometry::{Device, Geometry},
 };
 
 use derive_more::Debug;
@@ -49,6 +48,7 @@ impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> Datagram f
     fn operation_generator(
         self,
         _: &Geometry,
+        _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {

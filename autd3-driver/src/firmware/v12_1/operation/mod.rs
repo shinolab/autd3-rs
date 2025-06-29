@@ -3,7 +3,9 @@ mod output_mask;
 pub(crate) use crate::firmware::v12::operation::*;
 pub(crate) use output_mask::OutputMaskOp;
 
-use crate::{firmware::driver::Operation, geometry::Device};
+use crate::firmware::driver::Operation;
+
+use autd3_core::geometry::Device;
 
 #[doc(hidden)]
 pub trait OperationGenerator {
@@ -78,6 +80,6 @@ impl OperationGenerator for crate::firmware::driver::DynOperationGenerator {
 
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
         self.g
-            .dyn_generate(device, crate::firmware::driver::Version::V12)
+            .dyn_generate(device, crate::firmware::driver::Version::V12_1)
     }
 }

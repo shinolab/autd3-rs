@@ -17,6 +17,10 @@ pub mod common;
 #[cfg(feature = "datagram")]
 /// Core traits for Datagram.
 pub mod datagram;
+#[cfg_attr(docsrs, doc(cfg(feature = "environment")))]
+#[cfg(feature = "environment")]
+#[doc(hidden)]
+pub mod environment;
 #[cfg_attr(docsrs, doc(cfg(feature = "ethercat")))]
 #[cfg(feature = "ethercat")]
 /// Definitions for EtherCAT.
@@ -70,6 +74,7 @@ pub use async_trait::async_trait;
 ///     pos: Point3,
 /// }
 ///
+/// #[derive(Clone, Copy)]
 /// pub struct Impl {
 ///     pos: Point3,
 ///     wavenumber: f32,
@@ -84,26 +89,27 @@ pub use async_trait::async_trait;
 ///     }
 /// }
 ///
-/// impl GainCalculatorGenerator for FocalPoint {
-///     type Calculator = Impl;
+/// impl GainCalculatorGenerator for Impl {
+///     type Calculator = Self;
 ///
-///     fn generate(&mut self, device: &Device) -> Self::Calculator {
-///         Impl {
-///             pos: self.pos,
-///             wavenumber: device.wavenumber(),
-///         }
+///     fn generate(&mut self, _: &Device) -> Self::Calculator {
+///        *self
 ///     }
 /// }
 ///
 /// impl Gain for FocalPoint {
-///     type G = FocalPoint;
+///     type G = Impl;
 ///
 ///     fn init(
 ///         self,
 ///         _geometry: &Geometry,
+///         env: &Environment,
 ///         _filter: &TransducerFilter,
 ///     ) -> Result<Self::G, GainError> {
-///         Ok(self)
+///         Ok(Impl {
+///             pos: self.pos,
+///             wavenumber: env.wavenumber(),
+///         })
 ///     }
 /// }
 /// ```
@@ -149,6 +155,7 @@ pub mod derive {
                 DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
                 Segment, TransitionMode,
             },
+            environment::Environment,
             geometry::Geometry,
         };
         pub use num_cpus;
