@@ -3,6 +3,7 @@ use std::{collections::HashMap, num::NonZeroU16, time::Duration};
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     datagram::{LoopBehavior, Segment, TransitionMode},
+    environment::Environment,
     gain::{Drive, Intensity, Phase},
     link::{MsgId, TxMessage},
     sampling_config::SamplingConfig,
@@ -68,6 +69,7 @@ fn test_send_foci_stm_unsafe(
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
+    let env = Environment::new();
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -114,7 +116,7 @@ fn test_send_foci_stm_unsafe(
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
     }
     assert_eq!(
-        (340e3 / METER * 64.0).round() as u16,
+        (env.sound_speed / METER * 64.0).round() as u16,
         cpu.fpga().sound_speed(segment)
     );
     foci.iter().enumerate().for_each(|(focus_idx, focus)| {
@@ -435,6 +437,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
+    let env = Environment::new();
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
@@ -470,7 +473,7 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
         assert_eq!(freq_div, cpu.fpga().stm_freq_divide(Segment::S0));
         assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
         assert_eq!(
-            (340e3 / METER * 64.0).round() as u16,
+            (env.sound_speed / METER * 64.0).round() as u16,
             cpu.fpga().sound_speed(Segment::S0)
         );
         foci.iter().enumerate().for_each(|(focus_idx, focus)| {
