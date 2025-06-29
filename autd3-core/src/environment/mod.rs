@@ -3,6 +3,8 @@ use std::f32::consts::PI;
 use crate::common::{METER, ULTRASOUND_FREQ};
 
 #[non_exhaustive]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Environment {
     pub sound_speed: f32,
 }
