@@ -17,7 +17,7 @@ all = ["async", "twincat", "remote_twincat", "simulator"]
 
 [dependencies]
 anyhow = { workspace = true }
-autd3 = { workspace = true }
+autd3 = { workspace = true, features = ["gain", "modulation", "stm"] }
 autd3-gain-holo = { workspace = true }
 autd3-link-simulator = { workspace = true, optional = true, features = ["blocking"] }
 autd3-link-twincat = { workspace = true, optional = true }
