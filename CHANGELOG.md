@@ -1,6 +1,25 @@
 # Changelog
 
 
+# 35.0.0 (2025-06-30)
+
+## 🚀 Features
+
+- Add `OutputMask` datagram
+- [**breaking**] Support firmware v12.1
+- [**breaking**] Transfer `sound_speed` from `Device` to `Environment` (#305)
+- [**breaking**] Make `link::Audit` and `link::Nop` optional
+
+## 🚜 Refactor
+
+- [**breaking**] Rename from `FixedCompletionTime::strict_mode` to `FixedCompletionTime::strict`
+- [**breaking**] Change some `Datagram`s trait bound to remove boilerplates
+
+## ⚡ Performance
+
+- [**breaking**] Pass buffer to avoid allocation in firmware-emulator
+
+
 # 34.0.0 (2025-06-23)
 
 ## 🚀 Features
