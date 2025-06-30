@@ -32,7 +32,9 @@ pub mod r#async;
 
 pub use autd3_core as core;
 pub use autd3_driver as driver;
+#[cfg(feature = "gain")]
 pub use datagram::gain;
+#[cfg(feature = "modulation")]
 pub use datagram::modulation;
 
 pub use controller::Controller;
