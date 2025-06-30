@@ -1,6 +1,13 @@
 # Changelog
 
 
+# 35.0.1 (2025-06-30)
+
+## 🐛 Bug Fixes
+
+- Sending a gain causes `ConfirmResponseFailed` error with `Simulator` link (#310)
+
+
 # 35.0.0 (2025-06-30)
 
 ## 🚀 Features
@@ -24,13 +31,19 @@
 
 ## 🚀 Features
 
+- Add `left_handed` and `use_meter` features to `autd3` crate
+
+
+# 34.0.0-rc.0 (2025-06-19)
+
+## 🚀 Features
+
 - Add `thread-safe` feature to make `CPUEmulator` `Sync` (#272)
 - Introduce `GainGroup` alias for gain::Group`
 - Add `SpinWaitSleeper`
 - [**breaking**] Add `TimerStrategy` (#282)
 - Support firmware v12.0.0 (#289)
 - Add supports for old firmwares
-- Add `left_handed` and `use_meter` features to `autd3` crate
 
 ## 🗑️ Removals
 
