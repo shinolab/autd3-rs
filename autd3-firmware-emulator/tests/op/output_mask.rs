@@ -36,7 +36,11 @@ fn output_mask_unsafe(#[case] segment: Segment) -> anyhow::Result<()> {
         send(
             &mut msg_id,
             &mut cpu,
-            OutputMask::new(|_| |tr| buf[tr.idx()], segment),
+            WithSegment {
+                inner: OutputMask::new(|_| |tr| buf[tr.idx()]),
+                segment,
+                transition_mode: None
+            },
             &mut geometry,
             &mut tx
         )

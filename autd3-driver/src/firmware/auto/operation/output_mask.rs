@@ -1,6 +1,6 @@
 use super::OperationGenerator;
 use crate::{
-    datagram::OutputMask,
+    datagram::OutputMaskOperationGenerator,
     error::AUTDDriverError,
     firmware::driver::{Operation, Version},
 };
@@ -46,7 +46,7 @@ impl<FT: Fn(&Transducer) -> bool + Send + Sync> Operation for OutputMaskOp<FT> {
 }
 
 impl<FT: Fn(&Transducer) -> bool + Send + Sync, F: Fn(&Device) -> FT> OperationGenerator
-    for OutputMask<F>
+    for OutputMaskOperationGenerator<F>
 {
     type O1 = OutputMaskOp<FT>;
     type O2 = crate::firmware::driver::NullOp;

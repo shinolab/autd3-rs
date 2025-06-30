@@ -2,7 +2,7 @@ use std::{convert::Infallible, mem::size_of};
 
 use super::OperationGenerator;
 use crate::{
-    datagram::OutputMask,
+    datagram::OutputMaskOperationGenerator,
     firmware::{
         driver::{NullOp, Operation},
         tag::TypeTag,
@@ -80,7 +80,7 @@ impl<F: Fn(&Transducer) -> bool + Send + Sync> Operation for OutputMaskOp<F> {
 }
 
 impl<FT: Fn(&Transducer) -> bool + Send + Sync, F: Fn(&Device) -> FT> OperationGenerator
-    for OutputMask<F>
+    for OutputMaskOperationGenerator<F>
 {
     type O1 = OutputMaskOp<FT>;
     type O2 = NullOp;

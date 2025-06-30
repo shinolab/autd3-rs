@@ -50,6 +50,7 @@ pub use with_segment::WithSegment;
 
 pub(crate) use group::GroupOpGenerator;
 pub(crate) use info::FetchFirmwareInfoOpGenerator;
+pub(crate) use output_mask::OutputMaskOperationGenerator;
 pub(crate) use stm::{FociSTMOperationGenerator, GainSTMOperationGenerator};
 pub(crate) use with_loop_behavior::InspectionResultWithLoopBehavior;
 pub(crate) use with_segment::InspectionResultWithSegment;
