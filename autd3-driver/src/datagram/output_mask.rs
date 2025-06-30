@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter, FirmwareLimits, Segment},
+    datagram::{DatagramOption, DatagramS, DeviceFilter, FirmwareLimits, Segment},
     environment::Environment,
     geometry::{Device, Geometry, Transducer},
 };
@@ -17,7 +17,7 @@ use derive_more::Debug;
 /// ```
 /// # use autd3_core::datagram::Segment;
 /// # use autd3_driver::datagram::OutputMask;
-/// OutputMask::new(|_dev| |_tr| true, Segment::S0);
+/// OutputMask::new(|_dev| |_tr| true);
 /// ```
 ///
 /// [`Gain`]: autd3_core::gain::Gain
@@ -28,29 +28,38 @@ pub struct OutputMask<F> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
-    #[doc(hidden)]
-    pub segment: Segment,
 }
 
 impl<FT: Fn(&Transducer) -> bool, F: Fn(&Device) -> FT> OutputMask<F> {
     /// Creates a new [`OutputMask`].
     #[must_use]
-    pub const fn new(f: F, segment: Segment) -> Self {
-        Self { f, segment }
+    pub const fn new(f: F) -> Self {
+        Self { f }
     }
 }
 
-impl<FT: Fn(&Transducer) -> bool + Send + Sync, F: Fn(&Device) -> FT> Datagram for OutputMask<F> {
-    type G = Self;
+pub struct OutputMaskOperationGenerator<F> {
+    pub(crate) f: F,
+    pub(crate) segment: Segment,
+}
+
+impl<FT: Fn(&Transducer) -> bool + Send + Sync, F: Fn(&Device) -> FT> DatagramS for OutputMask<F> {
+    type G = OutputMaskOperationGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator(
+    fn operation_generator_with_segment(
         self,
         _: &Geometry,
         _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
+        segment: Segment,
+        _: Option<autd3_core::derive::TransitionMode>,
     ) -> Result<Self::G, Self::Error> {
-        Ok(self)
+        Ok(OutputMaskOperationGenerator { f: self.f, segment })
+    }
+
+    fn option(&self) -> DatagramOption {
+        DatagramOption::default()
     }
 }
