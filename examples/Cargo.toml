@@ -8,8 +8,8 @@ repository = { workspace = true }
 
 [features]
 default = []
-nop = []
-async = ["autd3/async", "tokio"]
+nop = ["autd3/link-nop"]
+async = ["autd3/async", "autd3/link-nop", "tokio"]
 simulator = ["autd3-link-simulator"]
 twincat = ["autd3-link-twincat/local"]
 remote_twincat = ["autd3-link-twincat/remote"]
