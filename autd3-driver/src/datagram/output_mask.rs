@@ -10,16 +10,16 @@ use derive_more::Debug;
 
 /// [`Datagram`] to mask output.
 ///
-/// The transducers set to `false` in [`OutputMask`] will not output regardless of the intensity settings by [`Gain`], [`FociSTM`], and [`GainSTM`].
+/// The transducers set to `false` in [`OutputMask`] will not output ultrasound regardless of the intensity settings by [`Gain`], [`FociSTM`], and [`GainSTM`].
 ///
 /// # Example
 ///
 /// ```
-/// # use autd3_core::datagram::Segment;
 /// # use autd3_driver::datagram::OutputMask;
 /// OutputMask::new(|_dev| |_tr| true);
 /// ```
 ///
+/// [`Datagram`]: autd3_core::datagram::Datagram
 /// [`Gain`]: autd3_core::gain::Gain
 /// [`FociSTM`]: crate::datagram::FociSTM
 /// [`GainSTM`]: crate::datagram::GainSTM
