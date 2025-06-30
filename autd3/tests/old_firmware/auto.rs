@@ -364,7 +364,7 @@ fn firmware_v12_by_auto_driver_output_mask() {
 
     assert_eq!(
         Err(AUTDDriverError::UnsupportedOperation),
-        autd.send(OutputMask::new(|_| |_| true, Segment::S0))
+        autd.send(OutputMask::new(|_| |_| true))
     );
 }
 
