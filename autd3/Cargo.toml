@@ -41,7 +41,7 @@ smallvec = { workspace = true }
 tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = true }
 
 [dev-dependencies]
-autd3 = { workspace = true, features = ["link-audit", "link-nop"] }
+autd3 = { path = ".", features = ["link-audit", "link-nop"] }
 anyhow = { workspace = true }
 criterion = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
