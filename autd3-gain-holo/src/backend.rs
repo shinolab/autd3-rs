@@ -116,6 +116,11 @@ pub trait LinAlgBackend<D: Directivity> {
     ) -> Result<(), HoloError>;
 
     fn max_v(&self, m: &Self::VectorX) -> Result<f32, HoloError>;
+    // GRCOV_EXCL_START
+    fn max_abs_v(&self, m: &Self::VectorX) -> Result<f32, HoloError> {
+        self.max_v(m) // TODO@v36: remove this default implementation
+    }
+    // GRCOV_EXCL_STOP
 
     fn hadamard_product_cm(
         &self,

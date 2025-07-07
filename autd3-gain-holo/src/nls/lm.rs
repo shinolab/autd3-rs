@@ -230,7 +230,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain for LM<D, B> {
         let mut tmp_mat = self.backend.alloc_m(n_param, n_param)?;
         let mut tmp_vec = self.backend.alloc_v(n_param)?;
         for _ in 0..self.option.k_max.get() {
-            if self.backend.max_v(&g)? <= self.option.eps_1 {
+            if self.backend.max_abs_v(&g)? <= self.option.eps_1 {
                 break; // GRCOV_EXCL_LINE
             }
 
