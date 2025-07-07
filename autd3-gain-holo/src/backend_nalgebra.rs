@@ -459,6 +459,10 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(m.max())
     }
 
+    fn max_abs_v(&self, m: &Self::VectorX) -> Result<f32, HoloError> {
+        Ok(m.abs().max())
+    }
+
     fn hadamard_product_cm(
         &self,
         x: &Self::MatrixXc,
