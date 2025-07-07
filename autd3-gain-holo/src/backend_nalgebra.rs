@@ -459,6 +459,10 @@ impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
         Ok(m.max())
     }
 
+    fn max_abs_v(&self, m: &Self::VectorX) -> Result<f32, HoloError> {
+        Ok(m.abs().max())
+    }
+
     fn hadamard_product_cm(
         &self,
         x: &Self::MatrixXc,
@@ -581,6 +585,20 @@ mod tests {
         let v: Vec<f32> = (&mut rng)
             .sample_iter(rand::distr::StandardUniform)
             .take(size)
+            .collect();
+        backend.from_slice_v(&v)
+    }
+
+    fn make_random_sign_v(
+        backend: &NalgebraBackend<Sphere>,
+        size: usize,
+        range: std::ops::Range<f32>,
+    ) -> Result<VectorX, HoloError> {
+        let mut rng = rand::rng();
+        let v: Vec<f32> = (&mut rng)
+            .sample_iter(rand::distr::StandardUniform)
+            .take(size)
+            .map(|x: f32| x * (range.end - range.start) + range.start)
             .collect();
         backend.from_slice_v(&v)
     }
@@ -1195,6 +1213,24 @@ mod tests {
         let v = backend.to_host_v(v)?;
         assert_eq!(
             *v.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap(),
+            max
+        );
+        Ok(())
+    }
+
+    #[rstest::rstest]
+    #[test]
+    fn test_max_abs_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+        let v = make_random_sign_v(&backend, N, -100.0..0.0)?;
+
+        let max = backend.max_abs_v(&v)?;
+
+        let v = backend.to_host_v(v)?;
+        assert_eq!(
+            v.iter()
+                .max_by(|a, b| a.abs().partial_cmp(&b.abs()).unwrap())
+                .unwrap()
+                .abs(),
             max
         );
         Ok(())
