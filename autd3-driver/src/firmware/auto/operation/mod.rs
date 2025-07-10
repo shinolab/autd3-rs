@@ -164,11 +164,11 @@ macro_rules! impl_auto_op {
                 Self: crate::firmware::v10::operation::OperationGenerator<
                         O1 = crate::firmware::v10::operation::[<$op Op>],
                     > + crate::firmware::v11::operation::OperationGenerator<
-                        O1 = crate::firmware::v10::operation::[<$op Op>],
+                        O1 = crate::firmware::v11::operation::[<$op Op>],
                     > + crate::firmware::v12::operation::OperationGenerator<
-                        O1 = crate::firmware::v10::operation::[<$op Op>],
+                        O1 = crate::firmware::v12::operation::[<$op Op>],
                     > + crate::firmware::v12_1::operation::OperationGenerator<
-                        O1 = crate::firmware::v10::operation::[<$op Op>],
+                        O1 = crate::firmware::v12_1::operation::[<$op Op>],
                     >,
             {
                 type O1 = [<$op Op>];

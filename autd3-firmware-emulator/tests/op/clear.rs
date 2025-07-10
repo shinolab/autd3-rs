@@ -99,7 +99,7 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
 
-        let d = PulseWidthEncoder::new(|_| |_| PulseWidth::new(0xFF).unwrap());
+        let d = PulseWidthEncoder::new(|_| |_| PulseWidth::new(0xFF));
         assert_eq!(
             Ok(()),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
@@ -173,7 +173,7 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
     assert_eq!(
         include_bytes!("asin.dat")
             .chunks(2)
-            .map(|v| PulseWidth::new(u16::from_le_bytes([v[1], v[0]])).unwrap())
+            .map(|v| PulseWidth::new(u16::from_le_bytes([v[1], v[0]]) as _))
             .collect::<Vec<_>>(),
         cpu.fpga().pulse_width_encoder_table()
     );

@@ -2,7 +2,7 @@ use std::{convert::Infallible, time::Duration};
 
 use autd3_core::{
     common::{FOCI_STM_FOCI_NUM_MIN, MOD_BUF_SIZE_MIN, STM_BUF_SIZE_MIN},
-    datagram::CombinedError,
+    datagram::{CombinedError, PulseWidthError},
     derive::FirmwareLimits,
     gain::GainError,
     link::LinkError,
@@ -58,6 +58,10 @@ pub enum AUTDDriverError {
     /// GPIO output type is not supported.
     #[error("GPIO output type ({0}) is not supported")]
     UnsupportedGPIOOutputType(String),
+
+    /// Pulse width error.
+    #[error("{0}")]
+    PulseWidth(#[from] PulseWidthError),
 
     /// Error in the modulation.
     #[error("{0}")]
