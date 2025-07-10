@@ -26,6 +26,7 @@ pub(crate) use gpio_in::*;
 pub(crate) use info::*;
 pub(crate) use modulation::*;
 pub(crate) use phase_corr::*;
+pub(crate) use pulse_width_encoder::*;
 pub(crate) use reads_fpga_state::*;
 pub(crate) use segment::*;
 pub(crate) use silencer::*;

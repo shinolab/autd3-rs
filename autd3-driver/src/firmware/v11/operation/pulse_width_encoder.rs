@@ -1,12 +1,14 @@
-use std::{convert::Infallible, mem::size_of};
+use std::mem::size_of;
 
-use super::{
-    super::fpga::{PWE_BUF_SIZE, ULTRASOUND_PERIOD_COUNT_BITS},
-    Operation, OperationGenerator,
+use super::{super::fpga::PWE_BUF_SIZE, Operation, OperationGenerator};
+use crate::{datagram::PulseWidthEncoderOperationGenerator, firmware::tag::TypeTag};
+
+use autd3_core::{
+    datagram::{PulseWidth, PulseWidthError},
+    derive::FirmwareLimits,
+    gain::Intensity,
+    geometry::Device,
 };
-use crate::{datagram::PulseWidthEncoder, firmware::tag::TypeTag};
-
-use autd3_core::{datagram::PulseWidth, gain::Intensity, geometry::Device};
 
 use zerocopy::{Immutable, IntoBytes};
 
@@ -17,21 +19,24 @@ struct PweMsg {
     __: u8,
 }
 
-pub struct PulseWidthEncoderOp<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16>> {
+pub struct PulseWidthEncoderOp<F: Fn(Intensity) -> PulseWidth> {
     is_done: bool,
     f: F,
+    limits: FirmwareLimits,
 }
 
-impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16>> PulseWidthEncoderOp<F> {
-    pub(crate) const fn new(f: F) -> Self {
-        Self { is_done: false, f }
+impl<F: Fn(Intensity) -> PulseWidth> PulseWidthEncoderOp<F> {
+    pub(crate) const fn new(f: F, limits: FirmwareLimits) -> Self {
+        Self {
+            is_done: false,
+            f,
+            limits,
+        }
     }
 }
 
-impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync> Operation
-    for PulseWidthEncoderOp<F>
-{
-    type Error = Infallible;
+impl<F: Fn(Intensity) -> PulseWidth + Send + Sync> Operation for PulseWidthEncoderOp<F> {
+    type Error = PulseWidthError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         crate::firmware::driver::write_to_tx(
@@ -46,12 +51,14 @@ impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + 
             .chunks_mut(size_of::<u16>())
             .take(PWE_BUF_SIZE)
             .enumerate()
-            .for_each(|(i, dst)| {
+            .try_for_each(|(i, dst)| {
                 crate::firmware::driver::write_to_tx(
                     dst,
-                    (self.f)(Intensity(i as u8)).pulse_width(),
+                    (self.f)(Intensity(i as u8))
+                        .pulse_width::<u16>(self.limits.ultrasound_period)?,
                 );
-            });
+                Ok(())
+            })?;
 
         self.is_done = true;
 
@@ -67,16 +74,14 @@ impl<F: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + 
     }
 }
 
-impl<
-    H: Fn(Intensity) -> PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16> + Send + Sync,
-    F: Fn(&Device) -> H,
-> OperationGenerator for PulseWidthEncoder<PulseWidth<ULTRASOUND_PERIOD_COUNT_BITS, u16>, F>
+impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
+    for PulseWidthEncoderOperationGenerator<F>
 {
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = crate::firmware::driver::NullOp;
 
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        Some((Self::O1::new((self.f)(device)), Self::O2 {}))
+        Some((Self::O1::new((self.f)(device), self.limits), Self::O2 {}))
     }
 }
 
@@ -84,7 +89,8 @@ impl<
 mod tests {
     use std::mem::size_of;
 
-    use super::*;
+    use super::{super::super::V11, *};
+    use crate::firmware::driver::Driver;
 
     #[test]
     fn test() {
@@ -92,7 +98,7 @@ mod tests {
 
         let mut tx = [0x00u8; 2 * (size_of::<PweMsg>() + PWE_BUF_SIZE * size_of::<u16>())];
 
-        let mut op = PulseWidthEncoderOp::new(|i| PulseWidth::new(i.0 as u16).unwrap());
+        let mut op = PulseWidthEncoderOp::new(|i| PulseWidth::new(i.0 as _), V11.firmware_limits());
 
         assert_eq!(
             size_of::<PweMsg>() + PWE_BUF_SIZE * size_of::<u8>(),

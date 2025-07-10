@@ -22,7 +22,7 @@ fn config_pwe_unsafe() -> anyhow::Result<()> {
 
     {
         let buf: Vec<_> = (0..256)
-            .map(|_| PulseWidth::new(rng.random_range(0..512)).unwrap())
+            .map(|_| PulseWidth::new(rng.random_range(0..512)))
             .collect();
 
         let d = PulseWidthEncoder::new(|_| |i| buf[i.0 as usize]);
@@ -39,9 +39,8 @@ fn config_pwe_unsafe() -> anyhow::Result<()> {
         let default_table: Vec<_> = (0..256)
             .map(|i| {
                 PulseWidth::new(
-                    ((i as f64 / 255.).asin() / std::f64::consts::PI * 512.0).round() as u16,
+                    ((i as f64 / 255.).asin() / std::f64::consts::PI * 512.0).round() as _,
                 )
-                .unwrap()
             })
             .collect();
 

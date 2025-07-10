@@ -15,7 +15,7 @@ pub use fpga_gpio::{GPIOIn, GPIOOut};
 pub use inspect::{Inspectable, InspectionResult};
 pub use limits::FirmwareLimits;
 pub use loop_behavior::LoopBehavior;
-pub use pulse_width::PulseWidth;
+pub use pulse_width::{PulseWidth, PulseWidthError};
 pub use segment::Segment;
 pub use transition_mode::{TRANSITION_MODE_NONE, TransitionMode};
 pub use tuple::{CombinedError, CombinedOperationGenerator};

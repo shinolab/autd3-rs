@@ -17,7 +17,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 acoustics = ["common", "geometry"]
 async = ["tokio"]
 async-trait = ["async", "dep:async-trait"]
-datagram = ["common", "geometry", "ethercat", "smallvec", "num", "environment"]
+datagram = ["common", "geometry", "ethercat", "smallvec", "environment"]
 common = ["derive_more", "derive_more/add", "derive_more/mul", "derive_more/debug"]
 derive = ["autd3-derive", "tynm", "num_cpus"]
 ethercat = ["time", "thiserror"]
@@ -41,7 +41,6 @@ bvh = { workspace = true, optional = true }
 derive_more = { workspace = true, optional = true }
 getset = { workspace = true, optional = true }
 nalgebra = { workspace = true, optional = true }
-num = { workspace = true, optional = true }
 num_cpus = { workspace = true, optional = true }
 paste = { workspace = true, optional = true }
 smallvec = { workspace = true, optional = true }
