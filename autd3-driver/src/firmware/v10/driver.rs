@@ -13,7 +13,7 @@ use crate::{
 
 use super::fpga::{
     FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_WIDTH,
-    FOCI_STM_FOCI_NUM_MAX, GAIN_STM_BUF_SIZE_MAX, MOD_BUF_SIZE_MAX,
+    FOCI_STM_FOCI_NUM_MAX, GAIN_STM_BUF_SIZE_MAX, MOD_BUF_SIZE_MAX, ULTRASOUND_PERIOD_COUNT_BITS,
 };
 
 /// A driver for firmware version 10.
@@ -110,6 +110,7 @@ impl Driver for V10 {
             num_foci_max: FOCI_STM_FOCI_NUM_MAX as _,
             foci_stm_fixed_num_unit: FOCI_STM_FIXED_NUM_UNIT,
             foci_stm_fixed_num_width: FOCI_STM_FIXED_NUM_WIDTH as _,
+            ultrasound_period: 1 << ULTRASOUND_PERIOD_COUNT_BITS as u32,
         }
     }
 

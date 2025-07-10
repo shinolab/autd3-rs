@@ -10,7 +10,6 @@ use autd3_core::{
 };
 
 use derive_more::Debug;
-use num::Zero;
 
 /// [`Datagram`] to configure pulse width encoder table.
 ///
@@ -29,45 +28,28 @@ use num::Zero;
 /// ```
 /// # use autd3_driver::datagram::PulseWidthEncoder;
 /// # use autd3_core::datagram::PulseWidth;
-/// // For firmware version 11 or later
-/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::<9, u16>::from_duty(i.0 as f32 / 510.).unwrap());
-/// // For firmware version 10
-/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::<8, u8>::from_duty(i.0 as f32 / 510.).unwrap());
+/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::from_duty(i.0 as f32 / 510.).unwrap());
 /// ```
 ///
 /// [`Intensity`]: autd3_core::gain::Intensity
 #[derive(Clone, Debug)]
-pub struct PulseWidthEncoder<P, F> {
+pub struct PulseWidthEncoder<F> {
     #[debug(ignore)]
     pub(crate) f: F,
-    phantom: std::marker::PhantomData<P>,
 }
 
-impl<
-    const BITS: usize,
-    T: Copy + TryFrom<usize> + Zero + PartialOrd,
-    H: Fn(Intensity) -> PulseWidth<BITS, T> + Send + Sync,
-    F: Fn(&Device) -> H,
-> PulseWidthEncoder<PulseWidth<BITS, T>, F>
-{
+impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> PulseWidthEncoder<F> {
     /// Creates a new [`PulseWidthEncoder`].
     #[must_use]
     pub const fn new(f: F) -> Self {
-        Self {
-            f,
-            phantom: std::marker::PhantomData,
-        }
+        Self { f }
     }
 }
 
-impl<
-    const BITS: usize,
-    T: Copy + TryFrom<usize> + Zero + PartialOrd,
-    H: Fn(Intensity) -> PulseWidth<BITS, T> + Send + Sync,
-    F: Fn(&Device) -> H,
-> Datagram for PulseWidthEncoder<PulseWidth<BITS, T>, F>
+impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> Datagram
+    for PulseWidthEncoder<F>
 {
-    type G = Self;
+    type G = PulseWidthEncoderOperationGenerator<F>;
     type Error = Infallible;
 
     fn operation_generator(
@@ -75,9 +57,12 @@ impl<
         _: &Geometry,
         _: &Environment,
         _: &DeviceFilter,
-        _: &FirmwareLimits,
+        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
-        Ok(self)
+        Ok(Self::G {
+            f: self.f,
+            limits: *limits,
+        })
     }
 
     fn option(&self) -> DatagramOption {
@@ -88,12 +73,16 @@ impl<
     }
 }
 
-impl<const BITS: usize, T: Copy + TryFrom<usize> + Zero + PartialOrd> Default
-    for PulseWidthEncoder<PulseWidth<BITS, T>, fn(&Device) -> fn(Intensity) -> PulseWidth<BITS, T>>
-{
+impl Default for PulseWidthEncoder<fn(&Device) -> fn(Intensity) -> PulseWidth> {
     fn default() -> Self {
         Self::new(|_| {
             |intensity| PulseWidth::from_duty((intensity.0 as f32 / 255.).asin() / PI).unwrap()
         })
     }
+}
+
+#[doc(hidden)]
+pub struct PulseWidthEncoderOperationGenerator<F> {
+    pub f: F,
+    pub limits: FirmwareLimits,
 }

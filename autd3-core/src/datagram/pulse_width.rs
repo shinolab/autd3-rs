@@ -1,37 +1,63 @@
-use getset::CopyGetters;
-use num::Zero;
+use thiserror::Error;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, CopyGetters)]
-/// The pulse width.
-pub struct PulseWidth<const BITS: usize, T: Copy> {
-    #[getset(get_copy = "pub")]
-    /// The pulse width in period of 2^`BITS`.
-    pulse_width: T,
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+enum PulseWidthInner {
+    Duty(f32),
+    Raw(u32),
 }
 
-impl<const BITS: usize, T> PulseWidth<BITS, T>
-where
-    T: Copy + TryFrom<usize> + Zero + PartialOrd,
-{
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+/// The pulse width.
+pub struct PulseWidth {
+    inner: PulseWidthInner,
+}
+
+#[derive(Debug, Error, PartialEq, Copy, Clone)]
+/// Error type for [`PulseWidth`].
+pub enum PulseWidthError {
+    /// Error when the pulse width is out of range.
+    #[error("Pulse width ({0}) is out of range [0, {1})")]
+    PulseWidthOutOfRange(u32, u32),
+    /// Error when the duty ratio is out of range.
+    #[error("Duty ratio ({0}) is out of range [0, 1)")]
+    DutyRatioOutOfRange(f32),
+}
+
+impl PulseWidth {
     /// Creates a new [`PulseWidth`].
-    pub fn new(pulse_width: T) -> Option<Self> {
-        if pulse_width < T::zero()
-            || T::try_from(1 << BITS)
-                .map(|period| period <= pulse_width)
-                .unwrap_or(false)
-        {
-            return None;
+    ///
+    /// Note that the period depends on the firmware version, so it is recommended to use [`PulseWidth::from_duty`] instead.
+    #[must_use]
+    pub fn new(pulse_width: u32) -> Self {
+        Self {
+            inner: PulseWidthInner::Raw(pulse_width),
         }
-        Some(Self { pulse_width })
     }
 
     /// Creates a new [`PulseWidth`] from duty ratio.
-    #[must_use]
-    pub fn from_duty(duty: f32) -> Option<Self> {
-        if !(0.0..=1.0).contains(&duty) {
-            return None;
+    pub fn from_duty(duty: f32) -> Result<Self, PulseWidthError> {
+        if !(0.0..1.0).contains(&duty) {
+            return Err(PulseWidthError::DutyRatioOutOfRange(duty));
         };
-        Self::new(T::try_from(((1 << BITS) as f32 * duty).round() as usize).ok()?)
+        Ok(Self {
+            inner: PulseWidthInner::Duty(duty),
+        })
+    }
+
+    /// Returns the pulse width.
+    pub fn pulse_width<T>(self, period: u32) -> Result<T, PulseWidthError>
+    where
+        T: TryFrom<u32> + TryInto<u32>,
+    {
+        let pulse_width = match self.inner {
+            PulseWidthInner::Duty(duty) => (duty * period as f32).round() as u32,
+            PulseWidthInner::Raw(raw) => raw,
+        };
+        if pulse_width >= period {
+            return Err(PulseWidthError::PulseWidthOutOfRange(pulse_width, period));
+        }
+        T::try_from(pulse_width)
+            .map_err(|_| PulseWidthError::PulseWidthOutOfRange(pulse_width, period))
     }
 }
 
@@ -40,48 +66,45 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[case(Some(0), 0)]
-    #[case(Some(256), 256)]
-    #[case(Some(511), 511)]
-    #[case(None, 512)]
+    #[case(Ok(0), 0, 256)]
+    #[case(Ok(128), 128, 256)]
+    #[case(Ok(255), 255, 256)]
+    #[case(Err(PulseWidthError::PulseWidthOutOfRange(256, 256)), 256, 256)]
+    #[case(Ok(0), 0, 512)]
+    #[case(Ok(256), 256, 512)]
+    #[case(Ok(511), 511, 512)]
+    #[case(Err(PulseWidthError::PulseWidthOutOfRange(512, 512)), 512, 512)]
     #[test]
-    fn test_pulse_width_new(#[case] expected: Option<u16>, #[case] pulse_width: u16) {
-        let pulse_width = PulseWidth::<9, u16>::new(pulse_width);
-        assert_eq!(expected, pulse_width.map(|p| p.pulse_width()));
+    fn test_pulse_width_new(
+        #[case] expected: Result<u16, PulseWidthError>,
+        #[case] pulse_width: u32,
+        #[case] period: u32,
+    ) {
+        assert_eq!(expected, PulseWidth::new(pulse_width).pulse_width(period));
     }
 
     #[rstest::rstest]
-    #[case(Some(0), 0.0)]
-    #[case(Some(256), 0.5)]
-    #[case(Some(511), 511.0 / 512.0)]
-    #[case(None, -0.5)]
-    #[case(None, 1.0)]
-    #[case(None, 1.5)]
+    #[case(Ok(0), 0.0, 256)]
+    #[case(Ok(128), 0.5, 256)]
+    #[case(Ok(255), 255.0 / 256.0, 256)]
+    #[case(Err(PulseWidthError::DutyRatioOutOfRange(-0.5)), -0.5, 256)]
+    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.0)), 1.0, 256)]
+    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.5)), 1.5, 256)]
+    #[case(Ok(0), 0.0, 512)]
+    #[case(Ok(256), 0.5, 512)]
+    #[case(Ok(511), 511.0 / 512.0, 512)]
+    #[case(Err(PulseWidthError::DutyRatioOutOfRange(-0.5)), -0.5, 512)]
+    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.0)), 1.0, 512)]
+    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.5)), 1.5, 512)]
     #[test]
-    fn test_pulse_width_from_duty(#[case] expected: Option<u16>, #[case] duty: f32) {
-        let pulse_width = PulseWidth::<9, u16>::from_duty(duty);
-        assert_eq!(expected, pulse_width.map(|p| p.pulse_width()));
-    }
-
-    #[rstest::rstest]
-    #[case(Some(0), 0)]
-    #[case(Some(255), 255)]
-    #[test]
-    fn test_pulse_width_new_u8(#[case] expected: Option<u8>, #[case] pulse_width: u8) {
-        let pulse_width = PulseWidth::<8, u8>::new(pulse_width);
-        assert_eq!(expected, pulse_width.map(|p| p.pulse_width()));
-    }
-
-    #[rstest::rstest]
-    #[case(Some(0), 0.0)]
-    #[case(Some(128), 0.5)]
-    #[case(Some(255), 255.0 / 256.0)]
-    #[case(None, -0.5)]
-    #[case(None, 1.0)]
-    #[case(None, 1.5)]
-    #[test]
-    fn test_pulse_width_from_duty_u8(#[case] expected: Option<u8>, #[case] duty: f32) {
-        let pulse_width = PulseWidth::<8, u8>::from_duty(duty);
-        assert_eq!(expected, pulse_width.map(|p| p.pulse_width()));
+    fn test_pulse_width_from_duty(
+        #[case] expected: Result<u16, PulseWidthError>,
+        #[case] duty: f32,
+        #[case] period: u32,
+    ) {
+        assert_eq!(
+            expected,
+            PulseWidth::from_duty(duty).and_then(|p| p.pulse_width(period))
+        );
     }
 }
