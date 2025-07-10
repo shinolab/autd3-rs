@@ -54,7 +54,7 @@ impl_v12_op!(autd3_core::modulation::ModulationOperationGenerator);
 impl_v12_op!(G; autd3_core::gain::GainOperationGenerator<G>);
 impl_v12_op!(F; crate::datagram::CpuGPIOOutputs<F>);
 impl_v12_op!(F; crate::datagram::ForceFan<F>);
-impl_v12_op!(F; crate::datagram::PulseWidthEncoder<autd3_core::datagram::PulseWidth<{ super::fpga::ULTRASOUND_PERIOD_COUNT_BITS }, u16>, F>);
+impl_v12_op!(F; crate::datagram::PulseWidthEncoderOperationGenerator<F>);
 impl_v12_op!(F; crate::datagram::ReadsFPGAState<F>);
 impl_v12_op!(F; crate::datagram::PhaseCorrection<F>);
 impl_v12_op!(F; crate::datagram::EmulateGPIOIn<F>);

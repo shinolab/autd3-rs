@@ -1,6 +1,7 @@
 mod pulse_width_encoder;
 
 pub(crate) use crate::firmware::v10::operation::*;
+pub(crate) use pulse_width_encoder::PulseWidthEncoderOp;
 
 use crate::firmware::driver::Operation;
 

@@ -15,6 +15,8 @@ pub struct FirmwareLimits {
     pub foci_stm_fixed_num_unit: f32,
     /// Width of the fixed-point number for FociSTM.
     pub foci_stm_fixed_num_width: u32,
+    /// Ultrasound period.
+    pub ultrasound_period: u32,
 }
 
 #[doc(hidden)]
@@ -27,6 +29,7 @@ impl FirmwareLimits {
             num_foci_max: 0,
             foci_stm_fixed_num_unit: 0.0,
             foci_stm_fixed_num_width: 0,
+            ultrasound_period: 0,
         }
     }
 
