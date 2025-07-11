@@ -125,7 +125,6 @@ impl Simulator {
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLink for Simulator {
     async fn open(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
         self.inner = Some(SimulatorInner::open(&self.addr, geometry).await?);

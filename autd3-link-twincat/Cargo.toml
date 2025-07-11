@@ -18,7 +18,6 @@ default = ["local"]
 local = ["libloading"]
 remote = ["itertools", "cc"]
 async = ["autd3-core/async"]
-async-trait = ["async", "autd3-core/async-trait"]
 all = ["local", "remote"]
 
 [dependencies]

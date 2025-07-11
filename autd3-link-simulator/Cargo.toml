@@ -16,7 +16,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = ["blocking"]
 blocking = ["tokio"]
-async-trait = ["autd3-core/async-trait", "autd3-protobuf/async-trait"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["link", "async"] }

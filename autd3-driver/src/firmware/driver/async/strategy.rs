@@ -3,42 +3,19 @@ use std::time::{Duration, Instant};
 use crate::firmware::driver::{FixedDelay, FixedSchedule};
 use autd3_core::sleep::r#async::Sleep;
 
-#[cfg(feature = "async-trait")]
-mod internal {
-    use super::*;
-
-    /// A trait for timer strategies.
-    #[autd3_core::async_trait]
-    pub trait TimerStrategy<S: Sleep>: Send + Sync {
-        /// Returns the initial instant.
-        fn initial(&self) -> Instant;
-        /// Sleep until the specified time.
-        /// The first call receives the return value of [`TimerStrategy::initial`] as `old`, and subsequent calls receive the previous return value.
-        async fn sleep(&self, old: Instant, interval: Duration) -> Instant;
-    }
+/// A trait for timer strategies.
+pub trait TimerStrategy<S: Sleep>: Send {
+    /// Returns the initial instant.
+    fn initial(&self) -> Instant;
+    /// Sleep until the specified time.
+    /// The first call receives the return value of [`TimerStrategy::initial`] as `old`, and subsequent calls receive the previous return value.
+    fn sleep(
+        &self,
+        old: Instant,
+        interval: Duration,
+    ) -> impl std::future::Future<Output = Instant> + Send;
 }
 
-#[cfg(not(feature = "async-trait"))]
-mod internal {
-    use super::*;
-
-    /// A trait for timer strategies.
-    pub trait TimerStrategy<S: Sleep>: Send {
-        /// Returns the initial instant.
-        fn initial(&self) -> Instant;
-        /// Sleep until the specified time.
-        /// The first call receives the return value of [`TimerStrategy::initial`] as `old`, and subsequent calls receive the previous return value.
-        fn sleep(
-            &self,
-            old: Instant,
-            interval: Duration,
-        ) -> impl std::future::Future<Output = Instant> + Send;
-    }
-}
-
-pub use internal::*;
-
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl<S: Sleep> TimerStrategy<S> for FixedSchedule<S> {
     fn initial(&self) -> Instant {
         Instant::now()
@@ -53,7 +30,6 @@ impl<S: Sleep> TimerStrategy<S> for FixedSchedule<S> {
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl<S: Sleep> TimerStrategy<S> for FixedDelay<S> {
     fn initial(&self) -> Instant {
         Instant::now()
@@ -78,7 +54,6 @@ mod tests {
         sleep: Arc<RwLock<Vec<Duration>>>,
     }
 
-    #[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
     impl Sleep for DebugSleep {
         async fn sleep(&self, duration: Duration) {
             self.sleep.write().unwrap().push(duration);

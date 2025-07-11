@@ -16,7 +16,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 acoustics = ["common", "geometry"]
 async = ["tokio"]
-async-trait = ["async", "dep:async-trait"]
 datagram = ["common", "geometry", "ethercat", "smallvec", "environment"]
 common = ["derive_more", "derive_more/add", "derive_more/mul", "derive_more/debug"]
 derive = ["autd3-derive", "tynm", "num_cpus"]
@@ -33,7 +32,6 @@ sleep = ["spin_sleep"]
 environment = []
 
 [dependencies]
-async-trait = { workspace = true, optional = true }
 autd3-derive = { workspace = true, optional = true }
 bit-vec = { workspace = true, optional = true }
 bitfield-struct = { workspace = true, optional = true }
