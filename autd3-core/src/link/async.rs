@@ -3,132 +3,49 @@ use crate::{
     link::{LinkError, RxMessage, TxMessage},
 };
 
-pub use internal::AsyncLink;
+/// A trait that provides the interface with the device.
+pub trait AsyncLink: Send {
+    /// Opens the link.
+    fn open(
+        &mut self,
+        geometry: &Geometry,
+    ) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
-#[cfg(feature = "async-trait")]
-mod internal {
-    use super::*;
+    /// Closes the link.
+    fn close(&mut self) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
-    /// A trait that provides the interface with the device.
-    #[async_trait::async_trait]
-    pub trait AsyncLink: Send {
-        /// Opens the link.
-        async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError>;
+    #[doc(hidden)]
+    fn update(&mut self, _: &Geometry) -> impl std::future::Future<Output = Result<(), LinkError>> {
+        async { Ok(()) }
+    }
 
-        /// Closes the link.
-        async fn close(&mut self) -> Result<(), LinkError>;
+    /// Allocate a sending buffer for the link.
+    fn alloc_tx_buffer(
+        &mut self,
+    ) -> impl std::future::Future<Output = Result<Vec<TxMessage>, LinkError>>;
 
-        #[doc(hidden)]
-        async fn update(&mut self, _: &Geometry) -> Result<(), LinkError> {
+    /// Sends a message to the device.
+    fn send(
+        &mut self,
+        tx: Vec<TxMessage>,
+    ) -> impl std::future::Future<Output = Result<(), LinkError>>;
+
+    /// Receives a message from the device.
+    fn receive(
+        &mut self,
+        rx: &mut [RxMessage],
+    ) -> impl std::future::Future<Output = Result<(), LinkError>>;
+
+    /// Checks if the link is open.
+    #[must_use]
+    fn is_open(&self) -> bool;
+
+    /// Ensures that the link is open, returning an error if it is not.
+    fn ensure_is_open(&self) -> Result<(), LinkError> {
+        if self.is_open() {
             Ok(())
-        }
-
-        /// Allocate a sending buffer for the link.
-        async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError>;
-
-        /// Sends a message to the device.
-        async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError>;
-
-        /// Receives a message from the device.
-        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError>;
-
-        /// Checks if the link is open.
-        #[must_use]
-        fn is_open(&self) -> bool;
-
-        /// Ensures that the link is open, returning an error if it is not.
-        fn ensure_is_open(&self) -> Result<(), LinkError> {
-            if self.is_open() {
-                Ok(())
-            } else {
-                Err(LinkError::closed())
-            }
-        }
-    }
-
-    #[async_trait::async_trait]
-    impl AsyncLink for Box<dyn AsyncLink> {
-        async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
-            self.as_mut().open(geometry).await
-        }
-
-        async fn close(&mut self) -> Result<(), LinkError> {
-            self.as_mut().close().await
-        }
-
-        async fn update(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
-            self.as_mut().update(geometry).await
-        }
-
-        async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
-            self.as_mut().alloc_tx_buffer().await
-        }
-
-        async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
-            self.as_mut().send(tx).await
-        }
-
-        async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
-            self.as_mut().receive(rx).await
-        }
-
-        fn is_open(&self) -> bool {
-            self.as_ref().is_open()
-        }
-    }
-}
-
-#[cfg(not(feature = "async-trait"))]
-mod internal {
-    use super::*;
-
-    /// A trait that provides the interface with the device.
-    pub trait AsyncLink: Send {
-        /// Opens the link.
-        fn open(
-            &mut self,
-            geometry: &Geometry,
-        ) -> impl std::future::Future<Output = Result<(), LinkError>>;
-
-        /// Closes the link.
-        fn close(&mut self) -> impl std::future::Future<Output = Result<(), LinkError>>;
-
-        #[doc(hidden)]
-        fn update(
-            &mut self,
-            _: &Geometry,
-        ) -> impl std::future::Future<Output = Result<(), LinkError>> {
-            async { Ok(()) }
-        }
-
-        /// Allocate a sending buffer for the link.
-        fn alloc_tx_buffer(
-            &mut self,
-        ) -> impl std::future::Future<Output = Result<Vec<TxMessage>, LinkError>>;
-
-        /// Sends a message to the device.
-        fn send(
-            &mut self,
-            tx: Vec<TxMessage>,
-        ) -> impl std::future::Future<Output = Result<(), LinkError>>;
-
-        /// Receives a message from the device.
-        fn receive(
-            &mut self,
-            rx: &mut [RxMessage],
-        ) -> impl std::future::Future<Output = Result<(), LinkError>>;
-
-        /// Checks if the link is open.
-        #[must_use]
-        fn is_open(&self) -> bool;
-
-        /// Ensures that the link is open, returning an error if it is not.
-        fn ensure_is_open(&self) -> Result<(), LinkError> {
-            if self.is_open() {
-                Ok(())
-            } else {
-                Err(LinkError::closed())
-            }
+        } else {
+            Err(LinkError::closed())
         }
     }
 }

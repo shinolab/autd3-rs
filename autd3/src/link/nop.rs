@@ -73,7 +73,6 @@ use autd3_core::link::AsyncLink;
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl AsyncLink for Nop {
     async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
         <Self as Link>::open(self, geometry)
