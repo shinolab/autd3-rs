@@ -210,7 +210,6 @@ use autd3_core::link::AsyncLink;
 
 #[cfg(feature = "async")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-
 impl AsyncLink for RemoteTwinCAT {
     async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
         <Self as Link>::open(self, geometry)
