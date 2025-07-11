@@ -13,7 +13,6 @@ use crate::{
 };
 use autd3_core::{environment::Environment, link::AsyncLink, sleep::r#async::Sleep};
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
     for sender::Sender<'a, L, S, T>
 {
@@ -79,7 +78,6 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl Driver for V10 {
     type Sender<'a, L, S, T>
         = sender::Sender<'a, L, S, T>
