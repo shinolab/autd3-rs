@@ -42,7 +42,7 @@ jobs:
           - os: ubuntu-latest
             features: "async remote twincat remote_twincat simulator"
           - os: ubuntu-latest
-            features: "async async-trait thread-safe"
+            features: "async thread-safe"
           - os: ubuntu-latest
             features: "use_meter left_handed"
     steps:

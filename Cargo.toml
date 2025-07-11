@@ -26,7 +26,6 @@ keywords = ["autd"]
 [workspace.dependencies]
 anyhow = { version = "1.0.98", default-features = false }
 approx = { version = "0.5.1", default-features = false }
-async-trait = { version = "0.1.88", default-features = false }
 autd3 = { path = "./autd3", version = "35.0.1", default-features = false }
 autd3-core = { path = "./autd3-core", version = "35.0.1", default-features = false }
 autd3-derive = { path = "./autd3-derive", version = "35.0.1", default-features = false }

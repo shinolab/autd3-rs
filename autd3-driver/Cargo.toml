@@ -15,7 +15,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 async = ["autd3-core/async"]
-async-trait = ["autd3-core/async-trait"]
 default = []
 
 [dependencies]

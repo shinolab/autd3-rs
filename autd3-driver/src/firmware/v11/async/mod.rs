@@ -4,7 +4,6 @@ use super::V11;
 use crate::firmware::driver::r#async::{Driver, Sender, TimerStrategy};
 use autd3_core::{link::AsyncLink, sleep::r#async::Sleep};
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
     for sender::Sender<'a, L, S, T>
 {
@@ -23,7 +22,6 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>
     }
 }
 
-#[cfg_attr(feature = "async-trait", autd3_core::async_trait)]
 impl Driver for V11 {
     type Sender<'a, L, S, T>
         = sender::Sender<'a, L, S, T>

@@ -10,13 +10,11 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = ["async-trait"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
 tonic-build = ["dep:tonic-build"]
-async-trait = ["autd3-core/async-trait", "autd3/async-trait"]
 
 [dependencies]
 autd3 = { workspace = true, optional = true }
