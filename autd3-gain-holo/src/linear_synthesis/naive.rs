@@ -57,7 +57,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Gain for Naive<D, B> {
+impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_, '_, '_> for Naive<D, B> {
     type G = HoloCalculatorGenerator<Complex>;
 
     fn init(

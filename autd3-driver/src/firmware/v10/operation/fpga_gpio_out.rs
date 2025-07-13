@@ -85,7 +85,7 @@ impl GPIOOutputsOp {
     }
 }
 
-impl Operation for GPIOOutputsOp {
+impl Operation<'_> for GPIOOutputsOp {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -116,7 +116,7 @@ impl Operation for GPIOOutputsOp {
     }
 }
 
-impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator
+impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator<'_>
     for GPIOOutputs<F>
 {
     type O1 = GPIOOutputsOp;

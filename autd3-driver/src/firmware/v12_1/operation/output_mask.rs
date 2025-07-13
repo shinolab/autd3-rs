@@ -30,7 +30,7 @@ pub struct OutputMaskOp<F> {
     segment: Segment,
 }
 
-impl<F: Fn(&Transducer) -> bool> OutputMaskOp<F> {
+impl<'tr, F: Fn(&'tr Transducer) -> bool> OutputMaskOp<F> {
     pub(crate) const fn new(f: F, segment: Segment) -> Self {
         Self {
             is_done: false,
@@ -40,10 +40,13 @@ impl<F: Fn(&Transducer) -> bool> OutputMaskOp<F> {
     }
 }
 
-impl<F: Fn(&Transducer) -> bool + Send + Sync> Operation for OutputMaskOp<F> {
+impl<'dev, 'tr, F: Fn(&'tr Transducer) -> bool + Send + Sync> Operation<'dev> for OutputMaskOp<F>
+where
+    'dev: 'tr,
+{
     type Error = Infallible;
 
-    fn pack(&mut self, dev: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, dev: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         crate::firmware::driver::write_to_tx(
             tx,
             OutputMaskT {
@@ -79,13 +82,15 @@ impl<F: Fn(&Transducer) -> bool + Send + Sync> Operation for OutputMaskOp<F> {
     }
 }
 
-impl<FT: Fn(&Transducer) -> bool + Send + Sync, F: Fn(&Device) -> FT> OperationGenerator
-    for OutputMaskOperationGenerator<F>
+impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> bool + Send + Sync, F: Fn(&'dev Device) -> FT>
+    OperationGenerator<'dev> for OutputMaskOperationGenerator<F>
+where
+    'dev: 'tr,
 {
     type O1 = OutputMaskOp<FT>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
         Some((Self::O1::new((self.f)(device), self.segment), Self::O2 {}))
     }
 }

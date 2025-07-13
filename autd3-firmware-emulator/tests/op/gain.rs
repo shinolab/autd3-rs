@@ -22,13 +22,13 @@ pub struct Impl {
     data: Vec<Drive>,
 }
 
-impl GainCalculator for Impl {
+impl GainCalculator<'_> for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         self.data[tr.idx()]
     }
 }
 
-impl GainCalculatorGenerator for TestGain {
+impl GainCalculatorGenerator<'_, '_> for TestGain {
     type Calculator = Impl;
 
     fn generate(&mut self, device: &Device) -> Self::Calculator {
@@ -38,7 +38,7 @@ impl GainCalculatorGenerator for TestGain {
     }
 }
 
-impl Gain for TestGain {
+impl Gain<'_, '_, '_> for TestGain {
     type G = Self;
 
     fn init(

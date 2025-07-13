@@ -21,7 +21,7 @@ pub struct PulseWidthEncoderOp<F: Fn(Intensity) -> PulseWidth> {
     inner: Inner<F>,
 }
 
-impl<F: Fn(Intensity) -> PulseWidth + Send + Sync> Operation for PulseWidthEncoderOp<F> {
+impl<F: Fn(Intensity) -> PulseWidth + Send + Sync> Operation<'_> for PulseWidthEncoderOp<F> {
     type Error = PulseWidthError;
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -52,7 +52,7 @@ impl<F: Fn(Intensity) -> PulseWidth + Send + Sync> Operation for PulseWidthEncod
     }
 }
 
-impl<FT: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> FT> OperationGenerator
+impl<FT: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> FT> OperationGenerator<'_>
     for PulseWidthEncoderOperationGenerator<F>
 {
     type O1 = PulseWidthEncoderOp<FT>;

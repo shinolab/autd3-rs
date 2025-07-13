@@ -87,7 +87,7 @@ impl ModulationOp {
     }
 }
 
-impl Operation for ModulationOp {
+impl Operation<'_> for ModulationOp {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
@@ -181,7 +181,7 @@ impl Operation for ModulationOp {
     }
 }
 
-impl OperationGenerator for ModulationOperationGenerator {
+impl OperationGenerator<'_> for ModulationOperationGenerator {
     type O1 = ModulationOp;
     type O2 = NullOp;
 

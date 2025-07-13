@@ -33,10 +33,14 @@ pub mod tests {
     }
 
     impl TestGain {
-        pub fn new<FT: Fn(&Transducer) -> Drive, F: Fn(&Device) -> FT>(
+        pub fn new<'geo, 'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive, F: Fn(&'dev Device) -> FT>(
             f: F,
-            geometry: &Geometry,
-        ) -> Self {
+            geometry: &'geo Geometry,
+        ) -> Self
+        where
+            'geo: 'dev,
+            'dev: 'tr,
+        {
             Self {
                 data: geometry
                     .iter()
@@ -56,13 +60,13 @@ pub mod tests {
         data: Vec<Drive>,
     }
 
-    impl GainCalculator for Impl {
+    impl GainCalculator<'_> for Impl {
         fn calc(&self, tr: &Transducer) -> Drive {
             self.data[tr.idx()]
         }
     }
 
-    impl GainCalculatorGenerator for TestGain {
+    impl GainCalculatorGenerator<'_, '_> for TestGain {
         type Calculator = Impl;
 
         fn generate(&mut self, device: &Device) -> Self::Calculator {
@@ -72,7 +76,7 @@ pub mod tests {
         }
     }
 
-    impl Gain for TestGain {
+    impl Gain<'_, '_, '_> for TestGain {
         type G = Self;
 
         fn init(
@@ -124,10 +128,9 @@ pub mod tests {
 
         let g = TestGain::new(
             |dev| {
-                let dev_idx = dev.idx();
                 move |_| Drive {
-                    phase: Phase(dev_idx as u8 + 1),
-                    intensity: Intensity(dev_idx as u8 + 1),
+                    phase: Phase(dev.idx() as u8 + 1),
+                    intensity: Intensity(dev.idx() as u8 + 1),
                 }
             },
             &geometry,

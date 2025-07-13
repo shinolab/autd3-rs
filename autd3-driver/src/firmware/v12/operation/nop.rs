@@ -30,7 +30,7 @@ impl NopOp {
     }
 }
 
-impl Operation for NopOp {
+impl Operation<'_> for NopOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -55,7 +55,7 @@ impl Operation for NopOp {
     }
 }
 
-impl OperationGenerator for Nop {
+impl OperationGenerator<'_> for Nop {
     type O1 = NopOp;
     type O2 = NullOp;
 

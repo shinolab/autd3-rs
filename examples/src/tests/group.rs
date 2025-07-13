@@ -31,18 +31,17 @@ pub fn group_by_transducer(
 ) -> anyhow::Result<bool> {
     let pos = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
-    let g = GainGroup {
-        key_map: move |dev| {
-            let cx = dev.center().x;
+    let g = GainGroup::new(
+        move |dev| {
             move |tr| {
-                if tr.position().x < cx {
+                if tr.position().x < dev.center().x {
                     Some("focus")
                 } else {
                     Some("null")
                 }
             }
         },
-        gain_map: HashMap::from([
+        HashMap::from([
             (
                 "focus",
                 BoxedGain::new(Focus {
@@ -52,7 +51,7 @@ pub fn group_by_transducer(
             ),
             ("null", BoxedGain::new(Null {})),
         ]),
-    };
+    );
 
     let m = Sine {
         freq: 150. * Hz,

@@ -19,7 +19,7 @@ impl Synchronize {
     }
 }
 
-impl Datagram for Synchronize {
+impl Datagram<'_, '_, '_> for Synchronize {
     type G = Self;
     type Error = Infallible;
 

@@ -76,7 +76,7 @@ struct GainSTMSubseq {
     flag: GainSTMControlFlags,
 }
 
-pub struct GainSTMOp<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> {
+pub struct GainSTMOp<G, Iterator> {
     iter: Iterator,
     size: usize,
     sent: usize,
@@ -86,9 +86,12 @@ pub struct GainSTMOp<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G
     loop_behavior: LoopBehavior,
     segment: Segment,
     transition_mode: Option<TransitionMode>,
+    __phantom: std::marker::PhantomData<G>,
 }
 
-impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> GainSTMOp<G, Iterator> {
+impl<'tr, G: GainCalculator<'tr>, Iterator: GainSTMIterator<'tr, Calculator = G>>
+    GainSTMOp<G, Iterator>
+{
     #[allow(clippy::too_many_arguments)]
     pub(crate) const fn new(
         iter: Iterator,
@@ -110,16 +113,19 @@ impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> GainSTMOp<G, 
             loop_behavior,
             segment,
             transition_mode,
+            __phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> Operation
-    for GainSTMOp<G, Iterator>
+impl<'dev, 'tr, G: GainCalculator<'tr>, Iterator: GainSTMIterator<'tr, Calculator = G>>
+    Operation<'dev> for GainSTMOp<G, Iterator>
+where
+    'dev: 'tr,
 {
     type Error = AUTDDriverError;
 
-    fn required_size(&self, device: &Device) -> usize {
+    fn required_size(&self, device: &'dev Device) -> usize {
         if self.sent == 0 {
             size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>()
         } else {
@@ -127,7 +133,7 @@ impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> Operation
         }
     }
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         if !(STM_BUF_SIZE_MIN..=self.limits.gain_stm_buf_size_max as usize).contains(&self.size) {
             return Err(AUTDDriverError::GainSTMSizeOutOfRange(
                 self.size,
@@ -246,11 +252,15 @@ impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> Operation
     }
 }
 
-impl<T: GainSTMIteratorGenerator> OperationGenerator for GainSTMOperationGenerator<T> {
-    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator>::Calculator, T::Iterator>;
+impl<'dev, 'tr, T: GainSTMIteratorGenerator<'dev, 'tr>> OperationGenerator<'dev>
+    for GainSTMOperationGenerator<'tr, T>
+where
+    'dev: 'tr,
+{
+    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator<'dev, 'tr>>::Calculator, T::Iterator>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
         Some((
             Self::O1::new(
                 self.g.generate(device),
@@ -285,7 +295,7 @@ mod tests {
         g: Vec<Drive>,
     }
 
-    impl GainCalculator for Impl {
+    impl GainCalculator<'_> for Impl {
         fn calc(&self, tr: &Transducer) -> Drive {
             self.g[tr.idx()]
         }
@@ -295,7 +305,7 @@ mod tests {
         data: VecDeque<Vec<Drive>>,
     }
 
-    impl GainSTMIterator for STMIterator {
+    impl GainSTMIterator<'_> for STMIterator {
         type Calculator = Impl;
 
         fn next(&mut self) -> Option<Impl> {

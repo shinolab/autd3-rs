@@ -52,11 +52,12 @@ pub trait DDatagram: std::fmt::Debug {
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
-impl<E, G: DOperationGenerator + 'static, T: Datagram<G = G, Error = E>> DDatagram
-    for MaybeUninit<T>
+impl<'geo, 'dev, 'tr, T: Datagram<'geo, 'dev, 'tr>> DDatagram for MaybeUninit<T>
 where
-    AUTDDriverError: From<E>,
+    T::G: DOperationGenerator + 'static,
+    AUTDDriverError: From<T::Error>,
 {
+    #[allow(clippy::missing_transmute_annotations)]
     fn dyn_operation_generator(
         &mut self,
         geometry: &Geometry,
@@ -67,9 +68,12 @@ where
         let mut tmp = MaybeUninit::<T>::uninit();
         std::mem::swap(&mut tmp, self);
         let d = unsafe { tmp.assume_init() };
-        Ok(Box::new(
-            d.operation_generator(geometry, env, filter, limits)?,
-        ))
+        Ok(Box::new(d.operation_generator(
+            unsafe { std::mem::transmute(geometry) },
+            env,
+            filter,
+            limits,
+        )?))
     }
 
     fn dyn_option(&self) -> DatagramOption {
@@ -94,7 +98,14 @@ impl std::fmt::Debug for BoxedDatagram {
 
 impl BoxedDatagram {
     /// Creates a new [`BoxedDatagram`].
-    pub fn new<E, G: DOperationGenerator + 'static, D: Datagram<G = G, Error = E> + 'static>(
+    pub fn new<
+        'geo,
+        'dev,
+        'tr,
+        E,
+        G: DOperationGenerator + 'static,
+        D: Datagram<'geo, 'dev, 'tr, G = G, Error = E> + 'static,
+    >(
         d: D,
     ) -> Self
     where
@@ -106,13 +117,13 @@ impl BoxedDatagram {
     }
 }
 
-impl Datagram for BoxedDatagram {
+impl<'geo, 'dev, 'tr> Datagram<'geo, 'dev, 'tr> for BoxedDatagram {
     type G = DynOperationGenerator;
     type Error = AUTDDriverError;
 
     fn operation_generator(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -128,16 +139,18 @@ impl Datagram for BoxedDatagram {
     }
 }
 
-impl<E, O: Operation<Error = E>> DOperation for O
+impl<'dev, O: Operation<'dev>> DOperation for O
 where
-    AUTDDriverError: From<E>,
+    AUTDDriverError: From<O::Error>,
 {
+    #[allow(clippy::missing_transmute_annotations)]
     fn required_size(&self, device: &Device) -> usize {
-        O::required_size(self, device)
+        O::required_size(self, unsafe { std::mem::transmute(device) })
     }
 
+    #[allow(clippy::missing_transmute_annotations)]
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
-        Ok(O::pack(self, device, tx)?)
+        Ok(O::pack(self, unsafe { std::mem::transmute(device) }, tx)?)
     }
 
     fn is_done(&self) -> bool {
@@ -145,14 +158,14 @@ where
     }
 }
 
-impl Operation for BoxedOperation {
+impl<'dev> Operation<'dev> for BoxedOperation {
     type Error = AUTDDriverError;
 
-    fn required_size(&self, device: &Device) -> usize {
+    fn required_size(&self, device: &'dev Device) -> usize {
         self.inner.required_size(device)
     }
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         self.inner.pack(device, tx)
     }
 
@@ -176,7 +189,7 @@ pub mod tests {
         pub done: bool,
     }
 
-    impl Operation for TestOp {
+    impl Operation<'_> for TestOp {
         type Error = AUTDDriverError;
 
         fn required_size(&self, _device: &Device) -> usize {
@@ -201,23 +214,25 @@ pub mod tests {
             pack_size: rng.random::<u32>() as usize,
             done: rng.random(),
         };
-        let mut boxed_op = BoxedOperation {
-            inner: Box::new(op),
-        };
 
         let device = Device::new(
             UnitQuaternion::identity(),
             vec![Transducer::new(Point3::origin())],
         );
 
-        assert_eq!(
-            Operation::required_size(&op, &device),
-            Operation::required_size(&boxed_op, &device)
-        );
-        assert_eq!(
-            Operation::pack(&mut op, &device, &mut []),
-            Operation::pack(&mut boxed_op, &device, &mut [])
-        );
-        assert_eq!(Operation::is_done(&op), Operation::is_done(&boxed_op));
+        let mut boxed_op = BoxedOperation {
+            inner: Box::new(op),
+        };
+        {
+            assert_eq!(
+                Operation::required_size(&op, &device),
+                Operation::required_size(&boxed_op, &device)
+            );
+            assert_eq!(
+                Operation::pack(&mut op, &device, &mut []),
+                Operation::pack(&mut boxed_op, &device, &mut [])
+            );
+            assert_eq!(Operation::is_done(&op), Operation::is_done(&boxed_op));
+        }
     }
 }

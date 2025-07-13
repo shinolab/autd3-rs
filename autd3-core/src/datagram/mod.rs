@@ -26,7 +26,7 @@ pub use option::DatagramOption;
 use crate::{environment::Environment, geometry::Geometry};
 
 /// [`DatagramL`] is a [`Datagram`] with [`LoopBehavior`].
-pub trait DatagramL: std::fmt::Debug {
+pub trait DatagramL<'geo, 'dev, 'tr>: std::fmt::Debug {
     #[doc(hidden)]
     type G;
     #[doc(hidden)]
@@ -36,7 +36,7 @@ pub trait DatagramL: std::fmt::Debug {
     #[allow(clippy::too_many_arguments)]
     fn operation_generator_with_loop_behavior(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -51,7 +51,7 @@ pub trait DatagramL: std::fmt::Debug {
 }
 
 /// [`DatagramS`] is a [`Datagram`] with [`Segment`].
-pub trait DatagramS: std::fmt::Debug {
+pub trait DatagramS<'geo, 'dev, 'tr>: std::fmt::Debug {
     #[doc(hidden)]
     type G;
     #[doc(hidden)]
@@ -60,7 +60,7 @@ pub trait DatagramS: std::fmt::Debug {
     #[doc(hidden)]
     fn operation_generator_with_segment(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -73,13 +73,13 @@ pub trait DatagramS: std::fmt::Debug {
     fn option(&self) -> DatagramOption;
 }
 
-impl<D: DatagramL> DatagramS for D {
+impl<'geo, 'dev, 'tr, D: DatagramL<'geo, 'dev, 'tr>> DatagramS<'geo, 'dev, 'tr> for D {
     type G = D::G;
     type Error = D::Error;
 
     fn operation_generator_with_segment(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -103,7 +103,7 @@ impl<D: DatagramL> DatagramS for D {
 }
 
 /// [`Datagram`] represents the data sent to the device.
-pub trait Datagram: std::fmt::Debug {
+pub trait Datagram<'geo, 'dev, 'tr>: std::fmt::Debug {
     #[doc(hidden)]
     type G;
     #[doc(hidden)]
@@ -112,7 +112,7 @@ pub trait Datagram: std::fmt::Debug {
     #[doc(hidden)]
     fn operation_generator(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -125,13 +125,13 @@ pub trait Datagram: std::fmt::Debug {
     }
 }
 
-impl<D: DatagramS> Datagram for D {
+impl<'geo, 'dev, 'tr, D: DatagramS<'geo, 'dev, 'tr>> Datagram<'geo, 'dev, 'tr> for D {
     type G = D::G;
     type Error = D::Error;
 
     fn operation_generator(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
