@@ -37,14 +37,14 @@ struct Gain {
     __: u8,
 }
 
-pub struct GainOp<Calculator: GainCalculator> {
+pub struct GainOp<Calculator> {
     is_done: bool,
     segment: Segment,
     transition: Option<TransitionMode>,
     calculator: Calculator,
 }
 
-impl<Calculator: GainCalculator> GainOp<Calculator> {
+impl<'tr, Calculator: GainCalculator<'tr>> GainOp<Calculator> {
     pub(crate) const fn new(
         segment: Segment,
         transition: Option<TransitionMode>,
@@ -59,14 +59,17 @@ impl<Calculator: GainCalculator> GainOp<Calculator> {
     }
 }
 
-impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {
+impl<'dev, 'tr, Calculator: GainCalculator<'tr>> Operation<'dev> for GainOp<Calculator>
+where
+    'dev: 'tr,
+{
     type Error = AUTDDriverError;
 
-    fn required_size(&self, device: &Device) -> usize {
+    fn required_size(&self, device: &'dev Device) -> usize {
         size_of::<Gain>() + device.num_transducers() * size_of::<Drive>()
     }
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         crate::firmware::driver::write_to_tx(
             tx,
             Gain {
@@ -100,11 +103,15 @@ impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {
     }
 }
 
-impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G> {
+impl<'dev, 'tr, G: GainCalculatorGenerator<'dev, 'tr>> OperationGenerator<'dev>
+    for GainOperationGenerator<'tr, G>
+where
+    'dev: 'tr,
+{
     type O1 = GainOp<G::Calculator>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
         let c = self.generator.generate(device);
         Some((Self::O1::new(self.segment, self.transition, c), Self::O2 {}))
     }
@@ -125,7 +132,7 @@ mod tests {
         data: Vec<Drive>,
     }
 
-    impl GainCalculator for Impl {
+    impl GainCalculator<'_> for Impl {
         fn calc(&self, tr: &Transducer) -> Drive {
             self.data[tr.idx()]
         }

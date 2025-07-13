@@ -13,12 +13,12 @@ use crate::firmware::driver::{Operation, Version};
 use autd3_core::geometry::Device;
 
 #[doc(hidden)]
-pub trait OperationGenerator {
-    type O1: Operation;
-    type O2: Operation;
+pub trait OperationGenerator<'dev> {
+    type O1: Operation<'dev>;
+    type O2: Operation<'dev>;
 
     #[must_use]
-    fn generate(&mut self, device: &Device, version: Version) -> Option<(Self::O1, Self::O2)>;
+    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)>;
 }
 
 macro_rules! impl_auto_op {
@@ -36,7 +36,7 @@ macro_rules! impl_auto_op {
                 inner: [<$op Inner>] ,
             }
 
-            impl Operation for [<$op Op>] {
+            impl Operation<'_,> for  [<$op Op>] {
                 type Error = crate::error::AUTDDriverError;
 
                 fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -67,7 +67,7 @@ macro_rules! impl_auto_op {
                 }
             }
 
-            impl OperationGenerator for $gen {
+            impl OperationGenerator<'_,> for  $gen {
                 type O1 = [<$op Op>];
                 type O2 = crate::firmware::driver::NullOp;
 
@@ -128,7 +128,7 @@ macro_rules! impl_auto_op {
                 inner: [<$op Inner>] ,
             }
 
-            impl Operation for [<$op Op>] {
+            impl Operation<'_,> for  [<$op Op>] {
                 type Error = crate::error::AUTDDriverError;
 
                 fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -159,22 +159,22 @@ macro_rules! impl_auto_op {
                 }
             }
 
-            impl<$($generics),*> OperationGenerator for $gen
+            impl<'dev, $($generics),*> OperationGenerator<'dev> for  $gen
             where
-                Self: crate::firmware::v10::operation::OperationGenerator<
+                Self: crate::firmware::v10::operation::OperationGenerator<'dev,
                         O1 = crate::firmware::v10::operation::[<$op Op>],
-                    > + crate::firmware::v11::operation::OperationGenerator<
+                    > + crate::firmware::v11::operation::OperationGenerator<'dev,
                         O1 = crate::firmware::v11::operation::[<$op Op>],
-                    > + crate::firmware::v12::operation::OperationGenerator<
+                    > + crate::firmware::v12::operation::OperationGenerator<'dev,
                         O1 = crate::firmware::v12::operation::[<$op Op>],
-                    > + crate::firmware::v12_1::operation::OperationGenerator<
+                    > + crate::firmware::v12_1::operation::OperationGenerator<'dev,
                         O1 = crate::firmware::v12_1::operation::[<$op Op>],
                     >,
             {
                 type O1 = [<$op Op>];
                 type O2 = crate::firmware::driver::NullOp;
 
-                fn generate(&mut self, device: &Device ,version: Version) -> Option<(Self::O1, Self::O2)> {
+                fn generate(&mut self, device: &'dev Device ,version: Version) -> Option<(Self::O1, Self::O2)> {
                     Some((
                         Self::O1 {
                             inner: match version {

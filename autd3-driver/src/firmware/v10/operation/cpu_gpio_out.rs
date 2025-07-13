@@ -36,7 +36,7 @@ impl CpuGPIOOutputsOp {
     }
 }
 
-impl Operation for CpuGPIOOutputsOp {
+impl Operation<'_> for CpuGPIOOutputsOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -61,7 +61,7 @@ impl Operation for CpuGPIOOutputsOp {
     }
 }
 
-impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator for CpuGPIOOutputs<F> {
+impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator<'_> for CpuGPIOOutputs<F> {
     type O1 = CpuGPIOOutputsOp;
     type O2 = NullOp;
 

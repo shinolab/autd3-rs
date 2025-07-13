@@ -41,7 +41,9 @@ impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> GPIOOutput
     }
 }
 
-impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> Datagram for GPIOOutputs<F> {
+impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> Datagram<'_, '_, '_>
+    for GPIOOutputs<F>
+{
     type G = Self;
     type Error = Infallible;
 

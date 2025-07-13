@@ -44,7 +44,7 @@ fn convert(ty: Option<GPIOOutputType<'_>>) -> crate::firmware::v11::operation::G
         })
 }
 
-impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator
+impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator<'_>
     for GPIOOutputs<F>
 {
     type O1 = GPIOOutputsOp;

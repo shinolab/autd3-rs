@@ -46,7 +46,7 @@ impl SwapSegmentOp {
     }
 }
 
-impl Operation for SwapSegmentOp {
+impl Operation<'_> for SwapSegmentOp {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -106,7 +106,7 @@ impl Operation for SwapSegmentOp {
     }
 }
 
-impl OperationGenerator for SwapSegment {
+impl OperationGenerator<'_> for SwapSegment {
     type O1 = SwapSegmentOp;
     type O2 = NullOp;
 

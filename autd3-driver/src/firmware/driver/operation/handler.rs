@@ -13,10 +13,10 @@ pub struct OperationHandler {}
 
 impl OperationHandler {
     #[must_use]
-    pub fn is_done<O1, O2>(operations: &[Option<(O1, O2)>]) -> bool
+    pub fn is_done<'dev, O1, O2>(operations: &[Option<(O1, O2)>]) -> bool
     where
-        O1: Operation,
-        O2: Operation,
+        O1: Operation<'dev>,
+        O2: Operation<'dev>,
     {
         operations.iter().all(|op| {
             op.as_ref()
@@ -24,17 +24,18 @@ impl OperationHandler {
         })
     }
 
-    pub fn pack<O1, O2>(
+    pub fn pack<'geo, 'dev, O1, O2>(
         msg_id: MsgId,
         operations: &mut [Option<(O1, O2)>],
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         tx: &mut [TxMessage],
         parallel: bool,
     ) -> Result<(), AUTDDriverError>
     where
-        O1: Operation,
-        O2: Operation,
+        O1: Operation<'dev>,
+        O2: Operation<'dev>,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
+        'geo: 'dev,
     {
         if parallel {
             geometry
@@ -64,16 +65,16 @@ impl OperationHandler {
         }
     }
 
-    fn pack_op2<O1, O2>(
+    fn pack_op2<'dev, O1, O2>(
         msg_id: MsgId,
         op1: &mut O1,
         op2: &mut O2,
-        dev: &Device,
+        dev: &'dev Device,
         tx: &mut TxMessage,
     ) -> Result<(), AUTDDriverError>
     where
-        O1: Operation,
-        O2: Operation,
+        O1: Operation<'dev>,
+        O2: Operation<'dev>,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
     {
         match (op1.is_done(), op2.is_done()) {
@@ -91,14 +92,14 @@ impl OperationHandler {
         }
     }
 
-    fn pack_op<O>(
+    fn pack_op<'dev, O>(
         msg_id: MsgId,
         op: &mut O,
-        dev: &Device,
+        dev: &'dev Device,
         tx: &mut TxMessage,
     ) -> Result<usize, AUTDDriverError>
     where
-        O: Operation,
+        O: Operation<'dev>,
         AUTDDriverError: From<O::Error>,
     {
         debug_assert!(tx.payload().len() >= op.required_size(dev));
@@ -125,7 +126,7 @@ pub(crate) mod tests {
         pub broken: bool,
     }
 
-    impl Operation for OperationMock {
+    impl Operation<'_> for OperationMock {
         type Error = AUTDDriverError;
 
         fn required_size(&self, _: &Device) -> usize {

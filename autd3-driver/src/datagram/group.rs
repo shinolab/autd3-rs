@@ -37,10 +37,7 @@ use itertools::Itertools;
 #[derive(Default, DeriveDebug)]
 pub struct Group<K, D, F>
 where
-    K: Hash + Eq + Debug,
-    D: Datagram,
     F: Fn(&Device) -> Option<K>,
-    AUTDDriverError: From<<D as Datagram>::Error>,
 {
     /// Mapping function from device to group key.
     #[debug(ignore)]
@@ -50,12 +47,12 @@ where
     pub datagram_map: HashMap<K, D>,
 }
 
-impl<K, D, F> Group<K, D, F>
+impl<'geo, 'dev, 'tr, K, D, F> Group<K, D, F>
 where
     K: Hash + Eq + Debug,
-    D: Datagram,
+    D: Datagram<'geo, 'dev, 'tr>,
     F: Fn(&Device) -> Option<K>,
-    AUTDDriverError: From<<D as Datagram>::Error>,
+    AUTDDriverError: From<<D as Datagram<'geo, 'dev, 'tr>>::Error>,
 {
     /// Creates a new [`Group`].
     #[must_use]
@@ -89,19 +86,19 @@ pub struct GroupOpGenerator<K, F, G> {
     pub(crate) generators: HashMap<K, G>,
 }
 
-impl<K, D, F> Datagram for Group<K, D, F>
+impl<'geo, 'dev, 'tr, K, D, F> Datagram<'geo, 'dev, 'tr> for Group<K, D, F>
 where
     K: Hash + Eq + Debug,
-    D: Datagram,
+    D: Datagram<'geo, 'dev, 'tr>,
     F: Fn(&Device) -> Option<K>,
-    AUTDDriverError: From<<D as Datagram>::Error>,
+    AUTDDriverError: From<<D as Datagram<'geo, 'dev, 'tr>>::Error>,
 {
     type G = GroupOpGenerator<K, F, D::G>;
     type Error = AUTDDriverError;
 
     fn operation_generator(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         _: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -151,18 +148,20 @@ where
     }
 }
 
-impl<K, D, F> Inspectable for Group<K, D, F>
+impl<'geo, 'dev, 'tr, K, D, F> Inspectable<'geo, 'dev, 'tr> for Group<K, D, F>
 where
     K: Hash + Eq + Debug,
-    D: Datagram + Inspectable,
+    D: Datagram<'geo, 'dev, 'tr> + Inspectable<'geo, 'dev, 'tr>,
     F: Fn(&Device) -> Option<K>,
-    AUTDDriverError: From<<D as Datagram>::Error>,
+    AUTDDriverError: From<<D as Datagram<'geo, 'dev, 'tr>>::Error>,
+    'geo: 'dev,
+    'dev: 'tr,
 {
     type Result = D::Result;
 
     fn inspect(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         _: &DeviceFilter,
         limits: &FirmwareLimits,

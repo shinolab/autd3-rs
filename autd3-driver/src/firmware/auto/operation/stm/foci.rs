@@ -18,7 +18,7 @@ pub struct FociSTMOp<const N: usize, Iterator: FociSTMIterator<N>> {
     inner: Inner<N, Iterator>,
 }
 
-impl<const N: usize, Iterator: FociSTMIterator<N>> Operation for FociSTMOp<N, Iterator> {
+impl<const N: usize, Iterator: FociSTMIterator<N>> Operation<'_> for FociSTMOp<N, Iterator> {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -49,7 +49,7 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> Operation for FociSTMOp<N, It
     }
 }
 
-impl<const N: usize, G: FociSTMIteratorGenerator<N>> OperationGenerator
+impl<const N: usize, G: FociSTMIteratorGenerator<N>> OperationGenerator<'_>
     for FociSTMOperationGenerator<N, G>
 {
     type O1 = FociSTMOp<N, G::Iterator>;

@@ -12,7 +12,7 @@ impl MyUniform {
     }
 }
 
-impl GainCalculator for MyUniform {
+impl GainCalculator<'_> for MyUniform {
     fn calc(&self, _: &Transducer) -> Drive {
         Drive {
             intensity: Intensity::MAX,
@@ -21,7 +21,7 @@ impl GainCalculator for MyUniform {
     }
 }
 
-impl GainCalculatorGenerator for MyUniform {
+impl GainCalculatorGenerator<'_, '_> for MyUniform {
     type Calculator = MyUniform;
 
     fn generate(&mut self, _device: &Device) -> Self::Calculator {
@@ -29,7 +29,7 @@ impl GainCalculatorGenerator for MyUniform {
     }
 }
 
-impl Gain for MyUniform {
+impl Gain<'_, '_, '_> for MyUniform {
     type G = MyUniform;
 
     fn init(

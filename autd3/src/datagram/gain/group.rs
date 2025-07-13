@@ -21,8 +21,8 @@ use derive_more::Debug;
 /// use autd3::prelude::*;
 /// use autd3::gain::Group;
 ///
-/// Group {
-///     key_map: |dev| {
+/// Group::new(
+///     |dev| {
 ///         |tr| {
 ///             if tr.idx() < 100 {
 ///                 Some("null")
@@ -31,7 +31,7 @@ use derive_more::Debug;
 ///             }
 ///         }
 ///     },
-///     gain_map: HashMap::from([
+///     HashMap::from([
 ///         ("null", BoxedGain::new(Null {})),
 ///         (
 ///             "focus",
@@ -41,14 +41,15 @@ use derive_more::Debug;
 ///             }),
 ///         ),
 ///     ]),
-/// };
+/// );
 /// ```
 #[derive(Gain, Debug)]
-pub struct Group<K, FK, F, G: Gain>
+pub struct Group<'dev, 'tr, K, FK, F, G>
 where
     K: Hash + Eq + std::fmt::Debug,
-    FK: Fn(&Transducer) -> Option<K>,
-    F: Fn(&Device) -> FK,
+    FK: Fn(&'tr Transducer) -> Option<K>,
+    F: Fn(&'dev Device) -> FK,
+    'dev: 'tr,
 {
     /// Mapping function from transducer to group key.
     #[debug(ignore)]
@@ -56,24 +57,31 @@ where
     /// Map from group key to [`Gain`].
     #[debug(ignore)]
     pub gain_map: HashMap<K, G>,
+    _phantom: std::marker::PhantomData<(&'dev (), &'tr ())>,
 }
 
-impl<K, FK, F, G: Gain> Group<K, FK, F, G>
+impl<'geo, 'dev, 'tr, K, FK, F, G: Gain<'geo, 'dev, 'tr>> Group<'dev, 'tr, K, FK, F, G>
 where
     K: Hash + Eq + std::fmt::Debug,
-    FK: Fn(&Transducer) -> Option<K>,
-    F: Fn(&Device) -> FK,
+    FK: Fn(&'tr Transducer) -> Option<K>,
+    F: Fn(&'dev Device) -> FK,
+    'geo: 'dev,
+    'dev: 'tr,
 {
     /// Create a new [`Group`]
     #[must_use]
     pub const fn new(key_map: F, gain_map: HashMap<K, G>) -> Self {
-        Self { key_map, gain_map }
+        Self {
+            key_map,
+            gain_map,
+            _phantom: std::marker::PhantomData,
+        }
     }
 
     #[must_use]
     fn get_filters(
         &self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         device_filter: &TransducerFilter,
     ) -> HashMap<K, TransducerFilter> {
         let mut filters: HashMap<K, HashMap<usize, bit_vec::BitVec<u32>>> = HashMap::new();
@@ -128,7 +136,7 @@ pub struct Impl {
     g: Vec<Drive>,
 }
 
-impl GainCalculator for Impl {
+impl GainCalculator<'_> for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         self.g[tr.idx()]
     }
@@ -138,7 +146,7 @@ pub struct Generator {
     g: HashMap<usize, Vec<Drive>>,
 }
 
-impl GainCalculatorGenerator for Generator {
+impl GainCalculatorGenerator<'_, '_> for Generator {
     type Calculator = Impl;
 
     fn generate(&mut self, device: &Device) -> Self::Calculator {
@@ -148,17 +156,20 @@ impl GainCalculatorGenerator for Generator {
     }
 }
 
-impl<K, FK, F, G: Gain> Gain for Group<K, FK, F, G>
+impl<'geo, 'dev, 'tr, K, FK, F, G: Gain<'geo, 'dev, 'tr>> Gain<'geo, 'dev, 'tr>
+    for Group<'dev, 'tr, K, FK, F, G>
 where
     K: Hash + Eq + std::fmt::Debug,
-    FK: Fn(&Transducer) -> Option<K>,
-    F: Fn(&Device) -> FK,
+    FK: Fn(&'tr Transducer) -> Option<K>,
+    F: Fn(&'dev Device) -> FK,
+    'geo: 'dev,
+    'dev: 'tr,
 {
     type G = Generator;
 
     fn init(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         device_filter: &TransducerFilter,
     ) -> Result<Self::G, GainError> {
@@ -244,8 +255,7 @@ mod tests {
 
         let gain = Group::new(
             |dev| {
-                let dev_idx = dev.idx();
-                move |tr| match (dev_idx, tr.idx()) {
+                move |tr| match (dev.idx(), tr.idx()) {
                     (0, 0..=99) => Some("null"),
                     (0, 100..=199) => Some("test"),
                     (1, 200..) => Some("test2"),
@@ -315,10 +325,7 @@ mod tests {
 
     #[test]
     fn unknown_key() -> anyhow::Result<()> {
-        let gain = Group {
-            key_map: |_dev| |_tr| Some("test"),
-            gain_map: HashMap::<_, Null>::new(),
-        };
+        let gain = Group::new(|_dev| |_tr| Some("test"), HashMap::<_, Null>::new());
         let geometry = create_geometry(1);
         let env = Environment::new();
         assert_eq!(
@@ -332,10 +339,10 @@ mod tests {
 
     #[test]
     fn unused_key() -> anyhow::Result<()> {
-        let gain = Group {
-            key_map: |_dev| |_tr| Some(1),
-            gain_map: HashMap::from([(1, Null {}), (2, Null {})]),
-        };
+        let gain = Group::new(
+            |_dev| |_tr| Some(1),
+            HashMap::from([(1, Null {}), (2, Null {})]),
+        );
 
         let geometry = create_geometry(1);
         let env = Environment::new();

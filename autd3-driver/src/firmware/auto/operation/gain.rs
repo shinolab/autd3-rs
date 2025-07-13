@@ -10,21 +10,24 @@ use crate::{
     firmware::driver::{Operation, Version},
 };
 
-enum Inner<Calculator: GainCalculator> {
+enum Inner<Calculator> {
     V10(crate::firmware::v10::operation::GainOp<Calculator>),
     V11(crate::firmware::v11::operation::GainOp<Calculator>),
     V12(crate::firmware::v12::operation::GainOp<Calculator>),
     V12_1(crate::firmware::v12_1::operation::GainOp<Calculator>),
 }
 
-pub struct GainOp<Calculator: GainCalculator> {
+pub struct GainOp<Calculator> {
     inner: Inner<Calculator>,
 }
 
-impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {
+impl<'dev, 'tr, Calculator: GainCalculator<'tr>> Operation<'dev> for GainOp<Calculator>
+where
+    'dev: 'tr,
+{
     type Error = AUTDDriverError;
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         Ok(match &mut self.inner {
             Inner::V10(inner) => Operation::pack(inner, device, tx)?,
             Inner::V11(inner) => Operation::pack(inner, device, tx)?,
@@ -33,7 +36,7 @@ impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {
         })
     }
 
-    fn required_size(&self, device: &Device) -> usize {
+    fn required_size(&self, device: &'dev Device) -> usize {
         match &self.inner {
             Inner::V10(inner) => Operation::required_size(inner, device),
             Inner::V11(inner) => Operation::required_size(inner, device),
@@ -52,11 +55,15 @@ impl<Calculator: GainCalculator> Operation for GainOp<Calculator> {
     }
 }
 
-impl<G: GainCalculatorGenerator> OperationGenerator for GainOperationGenerator<G> {
+impl<'dev, 'tr, G: GainCalculatorGenerator<'dev, 'tr>> OperationGenerator<'dev>
+    for GainOperationGenerator<'tr, G>
+where
+    'dev: 'tr,
+{
     type O1 = GainOp<G::Calculator>;
     type O2 = crate::firmware::driver::NullOp;
 
-    fn generate(&mut self, device: &Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)> {
         Some((
             GainOp {
                 inner: match version {

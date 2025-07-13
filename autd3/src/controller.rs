@@ -129,7 +129,10 @@ impl<L: Link, V: Driver> Controller<L, V> {
     }
 
     /// Returns the inspection result.
-    pub fn inspect<I: Inspectable>(&self, s: I) -> Result<InspectionResult<I::Result>, I::Error> {
+    pub fn inspect<'geo, 'dev, 'tr, I: Inspectable<'geo, 'dev, 'tr>>(
+        &'geo self,
+        s: I,
+    ) -> Result<InspectionResult<I::Result>, I::Error> {
         s.inspect(
             &self.geometry,
             &self.environment,
@@ -276,12 +279,14 @@ impl<L: Link> Controller<L, firmware::v12_1::V12_1> {
     /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
     ///
     /// [`Sender::send`]: autd3_driver::firmware::v12_1::transmission::Sender::send
-    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    pub fn send<'geo, 'dev, 'tr, D: Datagram<'geo, 'dev, 'tr>>(&'geo mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
-        D::G: autd3_driver::firmware::v12_1::operation::OperationGenerator,
-        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v12_1::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
-            + From<<<D::G as autd3_driver::firmware::v12_1::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
+        D::G: autd3_driver::firmware::v12_1::operation::OperationGenerator<'dev>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v12_1::operation::OperationGenerator<'dev>>::O1 as autd3_driver::firmware::driver::Operation<'dev>>::Error>
+            + From<<<D::G as autd3_driver::firmware::v12_1::operation::OperationGenerator<'dev>>::O2 as autd3_driver::firmware::driver::Operation<'dev>>::Error>,
+            'geo: 'dev,
+            'dev: 'tr,
     {
         self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
@@ -292,12 +297,14 @@ impl<L: Link> Controller<L, firmware::v12::V12> {
     /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
     ///
     /// [`Sender::send`]: autd3_driver::firmware::v12::transmission::Sender::send
-    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    pub fn send<'geo, 'dev, 'tr, D: Datagram<'geo, 'dev, 'tr>>(&'geo mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
-        D::G: autd3_driver::firmware::v12::operation::OperationGenerator,
-        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
-            + From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
+        D::G: autd3_driver::firmware::v12::operation::OperationGenerator<'dev>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator<'dev>>::O1 as autd3_driver::firmware::driver::Operation<'dev>>::Error>
+            + From<<<D::G as autd3_driver::firmware::v12::operation::OperationGenerator<'dev>>::O2 as autd3_driver::firmware::driver::Operation<'dev>>::Error>,
+            'geo: 'dev,
+            'dev: 'tr,
     {
         self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
@@ -308,12 +315,14 @@ impl<L: Link> Controller<L, firmware::v11::V11> {
     /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
     ///
     /// [`Sender::send`]: autd3_driver::firmware::v11::transmission::Sender::send
-    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    pub fn send<'geo, 'dev, 'tr, D: Datagram<'geo, 'dev, 'tr>>(&'geo mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
-        D::G: autd3_driver::firmware::v11::operation::OperationGenerator,
-        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
-            + From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
+        D::G: autd3_driver::firmware::v11::operation::OperationGenerator<'dev>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator<'dev>>::O1 as autd3_driver::firmware::driver::Operation<'dev>>::Error>
+            + From<<<D::G as autd3_driver::firmware::v11::operation::OperationGenerator<'dev>>::O2 as autd3_driver::firmware::driver::Operation<'dev>>::Error>,
+            'geo: 'dev,
+            'dev: 'tr,
     {
         self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
@@ -324,12 +333,14 @@ impl<L: Link> Controller<L, firmware::v10::V10> {
     /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
     ///
     /// [`Sender::send`]: autd3_driver::firmware::v10::transmission::Sender::send
-    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    pub fn send<'geo, 'dev, 'tr, D: Datagram<'geo, 'dev, 'tr>>(&'geo mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
-        D::G: autd3_driver::firmware::v10::operation::OperationGenerator,
-        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
-            + From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
+        D::G: autd3_driver::firmware::v10::operation::OperationGenerator<'dev>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator<'dev>>::O1 as autd3_driver::firmware::driver::Operation<'dev>>::Error>
+            + From<<<D::G as autd3_driver::firmware::v10::operation::OperationGenerator<'dev>>::O2 as autd3_driver::firmware::driver::Operation<'dev>>::Error>,
+            'geo: 'dev,
+            'dev: 'tr,
     {
         self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
@@ -340,12 +351,14 @@ impl<L: Link> Controller<L, firmware::auto::Auto> {
     /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
     ///
     /// [`Sender::send`]: autd3_driver::firmware::auto::transmission::Sender::send
-    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    pub fn send<'geo, 'dev, 'tr, D: Datagram<'geo, 'dev, 'tr>>(&'geo mut self, s: D) -> Result<(), AUTDDriverError>
     where
         AUTDDriverError: From<D::Error>,
-        D::G: autd3_driver::firmware::auto::operation::OperationGenerator,
-        AUTDDriverError: From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator>::O1 as autd3_driver::firmware::driver::Operation>::Error>
-            + From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator>::O2 as autd3_driver::firmware::driver::Operation>::Error>,
+        D::G: autd3_driver::firmware::auto::operation::OperationGenerator<'dev>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator<'dev>>::O1 as autd3_driver::firmware::driver::Operation<'dev>>::Error>
+            + From<<<D::G as autd3_driver::firmware::auto::operation::OperationGenerator<'dev>>::O2 as autd3_driver::firmware::driver::Operation<'dev>>::Error>,
+            'geo: 'dev,
+            'dev: 'tr,
     {
         self.sender(self.default_sender_option, FixedSchedule::default())
             .send(s)
@@ -354,8 +367,6 @@ impl<L: Link> Controller<L, firmware::auto::Auto> {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use autd3_driver::firmware::driver::BoxedDatagram;
-
     use crate::{
         core::{
             derive::*,
@@ -366,7 +377,6 @@ pub(crate) mod tests {
             autd3_device::AUTD3,
             common::Hz,
             datagram::{GainSTM, ReadsFPGAState},
-            firmware,
             firmware::v12_1::V12_1,
         },
         gain::Uniform,
@@ -732,6 +742,7 @@ pub(crate) mod tests {
     #[test]
     fn send_boxed() -> anyhow::Result<()> {
         use crate::gain::Null;
+        use autd3_driver::firmware::driver::BoxedDatagram;
 
         {
             let mut autd = Controller::<_, firmware::v12_1::V12_1>::open_with(

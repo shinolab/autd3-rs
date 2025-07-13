@@ -31,7 +31,7 @@ impl SynchronizeOp {
     }
 }
 
-impl Operation for SynchronizeOp {
+impl Operation<'_> for SynchronizeOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -56,7 +56,7 @@ impl Operation for SynchronizeOp {
     }
 }
 
-impl OperationGenerator for Synchronize {
+impl OperationGenerator<'_> for Synchronize {
     type O1 = SynchronizeOp;
     type O2 = NullOp;
 

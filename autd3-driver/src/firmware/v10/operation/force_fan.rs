@@ -34,7 +34,7 @@ impl ForceFanOp {
     }
 }
 
-impl Operation for ForceFanOp {
+impl Operation<'_> for ForceFanOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -59,7 +59,7 @@ impl Operation for ForceFanOp {
     }
 }
 
-impl<F: Fn(&Device) -> bool> OperationGenerator for ForceFan<F> {
+impl<F: Fn(&Device) -> bool> OperationGenerator<'_> for ForceFan<F> {
     type O1 = ForceFanOp;
     type O2 = NullOp;
 

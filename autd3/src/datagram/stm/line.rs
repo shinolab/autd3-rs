@@ -70,7 +70,7 @@ impl FociSTMIterator<1> for LineSTMIterator {
     }
 }
 
-impl GainSTMIterator for LineSTMIterator {
+impl GainSTMIterator<'_> for LineSTMIterator {
     type Calculator = crate::gain::focus::Impl;
 
     fn next(&mut self) -> Option<Self::Calculator> {
@@ -91,7 +91,7 @@ impl FociSTMIteratorGenerator<1> for LineSTMIterator {
     }
 }
 
-impl GainSTMIteratorGenerator for LineSTMIterator {
+impl GainSTMIteratorGenerator<'_, '_> for LineSTMIterator {
     type Gain = crate::gain::focus::Impl;
     type Iterator = Self;
 
@@ -100,7 +100,7 @@ impl GainSTMIteratorGenerator for LineSTMIterator {
     }
 }
 
-impl GainSTMGenerator for Line {
+impl GainSTMGenerator<'_, '_, '_> for Line {
     type T = LineSTMIterator;
 
     fn init(

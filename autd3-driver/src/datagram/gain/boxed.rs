@@ -6,49 +6,71 @@ pub use crate::geometry::{Device, Geometry};
 
 use autd3_core::{derive::*, gain::TransducerFilter};
 
-pub trait DGainCalculatorGenerator {
+pub trait DGainCalculatorGenerator<'dev, 'tr>
+where
+    'dev: 'tr,
+{
     #[must_use]
-    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator>;
+    fn dyn_generate(&mut self, device: &'dev Device) -> Box<dyn GainCalculator<'tr>>;
 }
 
-pub struct DynGainCalculatorGenerator {
-    g: Box<dyn DGainCalculatorGenerator>,
+pub struct DynGainCalculatorGenerator<'dev, 'tr> {
+    g: Box<dyn DGainCalculatorGenerator<'dev, 'tr>>,
 }
 
-impl GainCalculatorGenerator for DynGainCalculatorGenerator {
-    type Calculator = Box<dyn GainCalculator>;
+impl<'dev, 'tr> GainCalculatorGenerator<'dev, 'tr> for DynGainCalculatorGenerator<'dev, 'tr>
+where
+    'dev: 'tr,
+{
+    type Calculator = Box<dyn GainCalculator<'tr>>;
 
-    fn generate(&mut self, device: &Device) -> Box<dyn GainCalculator> {
+    fn generate(&mut self, device: &'dev Device) -> Box<dyn GainCalculator<'tr>> {
         self.g.dyn_generate(device)
     }
 }
 
-impl<Calculator: GainCalculator + 'static, G: GainCalculatorGenerator<Calculator = Calculator>>
-    DGainCalculatorGenerator for G
+impl<
+    'dev,
+    'tr,
+    Calculator: GainCalculator<'tr> + 'static,
+    G: GainCalculatorGenerator<'dev, 'tr, Calculator = Calculator>,
+> DGainCalculatorGenerator<'dev, 'tr> for G
+where
+    'dev: 'tr,
 {
-    fn dyn_generate(&mut self, device: &Device) -> Box<dyn GainCalculator> {
+    fn dyn_generate(&mut self, device: &'dev Device) -> Box<dyn GainCalculator<'tr>> {
         Box::new(GainCalculatorGenerator::generate(self, device))
     }
 }
 
 /// A dyn-compatible version of [`Gain`].
-trait DGain {
+trait DGain<'geo, 'dev, 'tr> {
     fn dyn_init(
         &mut self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &TransducerFilter,
-    ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError>;
+    ) -> Result<Box<dyn DGainCalculatorGenerator<'dev, 'tr>>, GainError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
-impl<G: DGainCalculatorGenerator + 'static, T: Gain<G = G>> DGain for MaybeUninit<T> {
+impl<
+    'geo,
+    'dev,
+    'tr,
+    G: DGainCalculatorGenerator<'dev, 'tr> + 'static,
+    T: Gain<'geo, 'dev, 'tr, G = G>,
+> DGain<'geo, 'dev, 'tr> for MaybeUninit<T>
+where
+    'geo: 'dev,
+    'dev: 'tr,
+{
     fn dyn_init(
         &mut self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &TransducerFilter,
-    ) -> Result<Box<dyn DGainCalculatorGenerator>, GainError> {
+    ) -> Result<Box<dyn DGainCalculatorGenerator<'dev, 'tr>>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Gain::init`.
@@ -67,32 +89,46 @@ impl<G: DGainCalculatorGenerator + 'static, T: Gain<G = G>> DGain for MaybeUnini
 /// Because [`Gain`] traits can have different associated types, it cannot simply be wrapped in a [`Box`] like `Box<dyn Gain>`.
 /// [`BoxedGain`] provides the ability to wrap any [`Gain`] in a common type.
 #[derive(Gain)]
-pub struct BoxedGain {
-    g: Box<dyn DGain>,
+pub struct BoxedGain<'geo, 'dev, 'tr> {
+    g: Box<dyn DGain<'geo, 'dev, 'tr>>,
 }
 
-impl BoxedGain {
+impl<'geo, 'dev, 'tr> BoxedGain<'geo, 'dev, 'tr>
+where
+    'geo: 'dev,
+    'dev: 'tr,
+{
     /// Creates a new [`BoxedGain`].
     #[must_use]
-    pub fn new<G: Gain + 'static>(g: G) -> Self {
+    pub fn new<
+        C: GainCalculator<'tr> + 'static,
+        GG: GainCalculatorGenerator<'dev, 'tr, Calculator = C> + 'static,
+        G: Gain<'geo, 'dev, 'tr, G = GG> + 'static,
+    >(
+        g: G,
+    ) -> Self {
         Self {
             g: Box::new(MaybeUninit::new(g)),
         }
     }
 }
 
-impl std::fmt::Debug for BoxedGain {
+impl std::fmt::Debug for BoxedGain<'_, '_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.g.as_ref().dyn_fmt(f)
     }
 }
 
-impl Gain for BoxedGain {
-    type G = DynGainCalculatorGenerator;
+impl<'geo, 'dev, 'tr> Gain<'geo, 'dev, 'tr> for BoxedGain<'geo, 'dev, 'tr>
+where
+    'geo: 'dev,
+    'dev: 'tr,
+{
+    type G = DynGainCalculatorGenerator<'dev, 'tr>;
 
     fn init(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &TransducerFilter,
     ) -> Result<Self::G, GainError> {
@@ -152,10 +188,9 @@ pub mod tests {
 
         let g = BoxedGain::new(TestGain::new(
             |dev| {
-                let dev_idx = dev.idx();
                 move |_| Drive {
-                    phase: Phase(dev_idx as u8 + 1),
-                    intensity: Intensity(dev_idx as u8 + 1),
+                    phase: Phase(dev.idx() as u8 + 1),
+                    intensity: Intensity(dev.idx() as u8 + 1),
                 }
             },
             &geometry,

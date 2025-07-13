@@ -10,23 +10,25 @@ use crate::{
     firmware::driver::{Operation, Version},
 };
 
-enum Inner<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> {
+enum Inner<G, Iterator> {
     V10(crate::firmware::v10::operation::GainSTMOp<G, Iterator>),
     V11(crate::firmware::v11::operation::GainSTMOp<G, Iterator>),
     V12(crate::firmware::v12::operation::GainSTMOp<G, Iterator>),
     V12_1(crate::firmware::v12_1::operation::GainSTMOp<G, Iterator>),
 }
 
-pub struct GainSTMOp<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> {
+pub struct GainSTMOp<G, Iterator> {
     inner: Inner<G, Iterator>,
 }
 
-impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> Operation
-    for GainSTMOp<G, Iterator>
+impl<'dev, 'tr, G: GainCalculator<'tr>, Iterator: GainSTMIterator<'tr, Calculator = G>>
+    Operation<'dev> for GainSTMOp<G, Iterator>
+where
+    'dev: 'tr,
 {
     type Error = AUTDDriverError;
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         Ok(match &mut self.inner {
             Inner::V10(inner) => Operation::pack(inner, device, tx)?,
             Inner::V11(inner) => Operation::pack(inner, device, tx)?,
@@ -35,7 +37,7 @@ impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> Operation
         })
     }
 
-    fn required_size(&self, device: &Device) -> usize {
+    fn required_size(&self, device: &'dev Device) -> usize {
         match &self.inner {
             Inner::V10(inner) => Operation::required_size(inner, device),
             Inner::V11(inner) => Operation::required_size(inner, device),
@@ -54,11 +56,15 @@ impl<G: GainCalculator, Iterator: GainSTMIterator<Calculator = G>> Operation
     }
 }
 
-impl<T: GainSTMIteratorGenerator> OperationGenerator for GainSTMOperationGenerator<T> {
-    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator>::Calculator, T::Iterator>;
+impl<'dev, 'tr, T: GainSTMIteratorGenerator<'dev, 'tr>> OperationGenerator<'dev>
+    for GainSTMOperationGenerator<'tr, T>
+where
+    'dev: 'tr,
+{
+    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator<'dev, 'tr>>::Calculator, T::Iterator>;
     type O2 = crate::firmware::driver::NullOp;
 
-    fn generate(&mut self, device: &Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)> {
         Some((
             GainSTMOp {
                 inner: match version {
