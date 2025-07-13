@@ -9,7 +9,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let datagram = quote! {
-        impl <#(#lifetimes,)* #(#type_params,)* > DatagramL for #name #ty_generics #where_clause {
+        impl <#(#lifetimes,)* #(#type_params,)* > DatagramL<'_, '_, '_> for #name #ty_generics #where_clause {
             type G = ModulationOperationGenerator;
             type Error = ModulationError;
 
@@ -36,7 +36,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let inspect = quote! {
-        impl <#(#lifetimes,)* #(#type_params,)* > Inspectable for #name #ty_generics #where_clause {
+        impl <#(#lifetimes,)* #(#type_params,)* > Inspectable<'_, '_, '_> for #name #ty_generics #where_clause {
             type Result = ModulationInspectionResult;
 
             fn inspect(
@@ -45,7 +45,7 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                 _: &Environment,
                 filter: &DeviceFilter,
                 limits: &FirmwareLimits
-            ) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
+            ) -> Result<InspectionResult<ModulationInspectionResult>, ModulationError> {
                 let sampling_config = self.sampling_config();
                 sampling_config.divide()?;
                 let data = self.calc(limits)?;

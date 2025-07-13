@@ -128,7 +128,7 @@ impl Default for Silencer<FixedCompletionSteps> {
     }
 }
 
-impl<T: SilencerConfig> Datagram for Silencer<T> {
+impl<T: SilencerConfig> Datagram<'_, '_, '_> for Silencer<T> {
     type G = T;
     type Error = Infallible;
 

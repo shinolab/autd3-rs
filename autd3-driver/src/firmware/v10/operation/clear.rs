@@ -30,7 +30,7 @@ impl ClearOp {
     }
 }
 
-impl Operation for ClearOp {
+impl Operation<'_> for ClearOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -55,7 +55,7 @@ impl Operation for ClearOp {
     }
 }
 
-impl OperationGenerator for Clear {
+impl OperationGenerator<'_> for Clear {
     type O1 = ClearOp;
     type O2 = NullOp;
 

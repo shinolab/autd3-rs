@@ -26,29 +26,36 @@ use derive_more::Debug;
 /// [`FociSTM`]: crate::datagram::FociSTM
 /// [`GainSTM`]: crate::datagram::GainSTM
 #[derive(Debug)]
-pub struct PhaseCorrection<F> {
+pub struct PhaseCorrection<F, FT> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
+    _phantom: std::marker::PhantomData<FT>,
 }
 
-impl<FT: Fn(&Transducer) -> Phase, F: Fn(&Device) -> FT> PhaseCorrection<F> {
+impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Phase, F: Fn(&'dev Device) -> FT> PhaseCorrection<F, FT>
+where
+    'dev: 'tr,
+{
     /// Creates a new [`PhaseCorrection`].
     #[must_use]
     pub const fn new(f: F) -> Self {
-        Self { f }
+        Self {
+            f,
+            _phantom: std::marker::PhantomData,
+        }
     }
 }
 
-impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> Datagram
-    for PhaseCorrection<F>
+impl<'geo, 'dev, 'tr, FT: Fn(&'tr Transducer) -> Phase + Send + Sync, F: Fn(&'dev Device) -> FT>
+    Datagram<'geo, 'dev, 'tr> for PhaseCorrection<F, FT>
 {
     type G = Self;
     type Error = Infallible;
 
     fn operation_generator(
         self,
-        _: &Geometry,
+        _: &'geo Geometry,
         _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,

@@ -18,7 +18,7 @@ pub struct NopOp {
     inner: Inner,
 }
 
-impl Operation for NopOp {
+impl Operation<'_> for NopOp {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -46,7 +46,7 @@ impl Operation for NopOp {
     }
 }
 
-impl OperationGenerator for Nop {
+impl OperationGenerator<'_> for Nop {
     type O1 = NopOp;
     type O2 = crate::firmware::driver::NullOp;
 

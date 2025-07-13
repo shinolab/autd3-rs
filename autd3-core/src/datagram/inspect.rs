@@ -18,11 +18,14 @@ pub struct InspectionResult<T> {
 impl<T> InspectionResult<T> {
     #[must_use]
     #[doc(hidden)]
-    pub fn new(
-        geometry: &Geometry,
+    pub fn new<'geo, 'dev>(
+        geometry: &'geo Geometry,
         filter: &DeviceFilter,
-        mut f: impl FnMut(&Device) -> T,
-    ) -> Self {
+        mut f: impl FnMut(&'dev Device) -> T,
+    ) -> Self
+    where
+        'geo: 'dev,
+    {
         Self {
             result: geometry
                 .iter()
@@ -41,14 +44,14 @@ impl<T> InspectionResult<T> {
 }
 
 /// Trait to inspect a [`Datagram`].
-pub trait Inspectable: Datagram {
+pub trait Inspectable<'geo, 'dev, 'tr>: Datagram<'geo, 'dev, 'tr> {
     /// The result of the inspection.
     type Result;
 
     /// Returns the inspection result.
     fn inspect(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,

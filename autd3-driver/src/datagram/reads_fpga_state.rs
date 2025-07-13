@@ -25,7 +25,7 @@ impl<F: Fn(&Device) -> bool> ReadsFPGAState<F> {
     }
 }
 
-impl<F: Fn(&Device) -> bool> Datagram for ReadsFPGAState<F> {
+impl<F: Fn(&Device) -> bool> Datagram<'_, '_, '_> for ReadsFPGAState<F> {
     type G = Self;
     type Error = Infallible;
 

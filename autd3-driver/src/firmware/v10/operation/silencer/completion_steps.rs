@@ -40,7 +40,7 @@ impl FixedCompletionStepsOp {
     }
 }
 
-impl Operation for FixedCompletionStepsOp {
+impl Operation<'_> for FixedCompletionStepsOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -71,7 +71,7 @@ impl Operation for FixedCompletionStepsOp {
     }
 }
 
-impl OperationGenerator for FixedCompletionSteps {
+impl OperationGenerator<'_> for FixedCompletionSteps {
     type O1 = FixedCompletionStepsOp;
     type O2 = NullOp;
 

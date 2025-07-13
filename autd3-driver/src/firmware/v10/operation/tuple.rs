@@ -3,15 +3,15 @@ use crate::firmware::driver::NullOp;
 
 use autd3_core::{datagram::CombinedOperationGenerator, geometry::Device};
 
-impl<O1, O2> OperationGenerator for CombinedOperationGenerator<O1, O2>
+impl<'dev, O1, O2> OperationGenerator<'dev> for CombinedOperationGenerator<O1, O2>
 where
-    O1: OperationGenerator<O2 = NullOp>,
-    O2: OperationGenerator<O2 = NullOp>,
+    O1: OperationGenerator<'dev, O2 = NullOp>,
+    O2: OperationGenerator<'dev, O2 = NullOp>,
 {
     type O1 = O1::O1;
     type O2 = O2::O1;
 
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
         match (self.o1.generate(device), self.o2.generate(device)) {
             (Some((o1, _)), Some((o2, _))) => Some((o1, o2)),
             _ => None,
@@ -27,7 +27,7 @@ mod tests {
         has: bool,
     }
 
-    impl OperationGenerator for TestOpGen {
+    impl OperationGenerator<'_> for TestOpGen {
         type O1 = NullOp;
         type O2 = NullOp;
 

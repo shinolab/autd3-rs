@@ -24,17 +24,24 @@ use derive_more::Debug;
 /// [`FociSTM`]: crate::datagram::FociSTM
 /// [`GainSTM`]: crate::datagram::GainSTM
 #[derive(Debug)]
-pub struct OutputMask<F> {
+pub struct OutputMask<F, FT> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
+    _phantom: std::marker::PhantomData<FT>,
 }
 
-impl<FT: Fn(&Transducer) -> bool, F: Fn(&Device) -> FT> OutputMask<F> {
+impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> bool, F: Fn(&'dev Device) -> FT> OutputMask<F, FT>
+where
+    'dev: 'tr,
+{
     /// Creates a new [`OutputMask`].
     #[must_use]
     pub const fn new(f: F) -> Self {
-        Self { f }
+        Self {
+            f,
+            _phantom: std::marker::PhantomData,
+        }
     }
 }
 
@@ -43,13 +50,15 @@ pub struct OutputMaskOperationGenerator<F> {
     pub(crate) segment: Segment,
 }
 
-impl<FT: Fn(&Transducer) -> bool + Send + Sync, F: Fn(&Device) -> FT> DatagramS for OutputMask<F> {
+impl<'geo, 'dev, 'tr, FT: Fn(&'tr Transducer) -> bool + Send + Sync, F: Fn(&'dev Device) -> FT>
+    DatagramS<'geo, 'dev, 'tr> for OutputMask<F, FT>
+{
     type G = OutputMaskOperationGenerator<F>;
     type Error = Infallible;
 
     fn operation_generator_with_segment(
         self,
-        _: &Geometry,
+        _: &'geo Geometry,
         _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,

@@ -76,8 +76,8 @@ pub mod utils;
 ///     wavenumber: f32,
 /// }
 ///
-/// impl GainCalculator for Impl {
-///     fn calc(&self, tr: &Transducer) -> Drive {
+/// impl<'tr> GainCalculator<'tr> for Impl {
+///     fn calc(&self, tr: &'tr Transducer) -> Drive {
 ///         Drive {
 ///             phase: Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad),
 ///             intensity: Intensity::MAX,
@@ -85,20 +85,20 @@ pub mod utils;
 ///     }
 /// }
 ///
-/// impl GainCalculatorGenerator for Impl {
+/// impl<'dev, 'tr> GainCalculatorGenerator<'dev, 'tr> for Impl {
 ///     type Calculator = Self;
 ///
-///     fn generate(&mut self, _: &Device) -> Self::Calculator {
+///     fn generate(&mut self, _: &'dev Device) -> Self::Calculator {
 ///        *self
 ///     }
 /// }
 ///
-/// impl Gain for FocalPoint {
+/// impl<'geo, 'dev, 'tr> Gain<'geo, 'dev, 'tr> for FocalPoint {
 ///     type G = Impl;
 ///
 ///     fn init(
 ///         self,
-///         _geometry: &Geometry,
+///         _geometry: &'geo Geometry,
 ///         env: &Environment,
 ///         _filter: &TransducerFilter,
 ///     ) -> Result<Self::G, GainError> {

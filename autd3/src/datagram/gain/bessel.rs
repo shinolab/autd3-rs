@@ -61,7 +61,7 @@ pub struct Impl {
     theta: f32,
 }
 
-impl GainCalculator for Impl {
+impl GainCalculator<'_> for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         let r = self.rot * (tr.position() - self.pos);
         let dist = self.theta.sin() * r.xy().norm() - self.theta.cos() * r.z;
@@ -72,7 +72,7 @@ impl GainCalculator for Impl {
     }
 }
 
-impl GainCalculatorGenerator for Impl {
+impl GainCalculatorGenerator<'_, '_> for Impl {
     type Calculator = Impl;
 
     fn generate(&mut self, _: &Device) -> Self::Calculator {
@@ -80,7 +80,7 @@ impl GainCalculatorGenerator for Impl {
     }
 }
 
-impl Gain for Bessel {
+impl Gain<'_, '_, '_> for Bessel {
     type G = Impl;
 
     fn init(

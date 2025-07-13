@@ -18,19 +18,19 @@ fn only_for_enabled() -> anyhow::Result<()> {
         |dev| (dev.idx() == 1).then_some(()),
         HashMap::from([(
             (),
-            gain::Group {
-                key_map: |dev| {
+            gain::Group::new(
+                |dev| {
                     check.lock().unwrap()[dev.idx()] = true;
                     move |_| Some(0)
                 },
-                gain_map: HashMap::from([(
+                HashMap::from([(
                     0,
                     Uniform {
                         phase: Phase(0x90),
                         intensity: Intensity(0x80),
                     },
                 )]),
-            },
+            ),
         )]),
     ))?;
 

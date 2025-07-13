@@ -35,7 +35,7 @@ impl<F: Fn(Intensity) -> PulseWidth> PulseWidthEncoderOp<F> {
     }
 }
 
-impl<F: Fn(Intensity) -> PulseWidth + Send + Sync> Operation for PulseWidthEncoderOp<F> {
+impl<F: Fn(Intensity) -> PulseWidth + Send + Sync> Operation<'_> for PulseWidthEncoderOp<F> {
     type Error = PulseWidthError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -74,7 +74,7 @@ impl<F: Fn(Intensity) -> PulseWidth + Send + Sync> Operation for PulseWidthEncod
     }
 }
 
-impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
+impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> OperationGenerator<'_>
     for PulseWidthEncoderOperationGenerator<F>
 {
     type O1 = PulseWidthEncoderOp<H>;

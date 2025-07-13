@@ -10,21 +10,25 @@ use autd3_core::{
     geometry::{Device, Transducer},
 };
 
-enum Inner<F: Fn(&Transducer) -> Phase> {
+enum Inner<F> {
     V10(crate::firmware::v10::operation::PhaseCorrectionOp<F>),
     V11(crate::firmware::v11::operation::PhaseCorrectionOp<F>),
     V12(crate::firmware::v12::operation::PhaseCorrectionOp<F>),
     V12_1(crate::firmware::v12_1::operation::PhaseCorrectionOp<F>),
 }
 
-pub struct PhaseCorrectionOp<F: Fn(&Transducer) -> Phase> {
+pub struct PhaseCorrectionOp<F> {
     inner: Inner<F>,
 }
 
-impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<F> {
+impl<'dev, 'tr, F: Fn(&'tr Transducer) -> Phase + Send + Sync> Operation<'dev>
+    for PhaseCorrectionOp<F>
+where
+    'dev: 'tr,
+{
     type Error = AUTDDriverError;
 
-    fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         Ok(match &mut self.inner {
             Inner::V10(inner) => Operation::pack(inner, device, tx)?,
             Inner::V11(inner) => Operation::pack(inner, device, tx)?,
@@ -33,7 +37,7 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
         })
     }
 
-    fn required_size(&self, device: &Device) -> usize {
+    fn required_size(&self, device: &'dev Device) -> usize {
         match &self.inner {
             Inner::V10(inner) => Operation::required_size(inner, device),
             Inner::V11(inner) => Operation::required_size(inner, device),
@@ -52,13 +56,15 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
     }
 }
 
-impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> OperationGenerator
-    for PhaseCorrection<F>
+impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Phase + Send + Sync, F: Fn(&'dev Device) -> FT>
+    OperationGenerator<'dev> for PhaseCorrection<F, FT>
+where
+    'dev: 'tr,
 {
     type O1 = PhaseCorrectionOp<FT>;
     type O2 = crate::firmware::driver::NullOp;
 
-    fn generate(&mut self, device: &Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)> {
         Some((
             PhaseCorrectionOp {
                 inner: match version {

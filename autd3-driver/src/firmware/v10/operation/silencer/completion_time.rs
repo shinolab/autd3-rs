@@ -41,7 +41,7 @@ impl FixedCompletionTimeOp {
     }
 }
 
-impl Operation for FixedCompletionTimeOp {
+impl Operation<'_> for FixedCompletionTimeOp {
     type Error = AUTDDriverError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
@@ -88,7 +88,7 @@ impl Operation for FixedCompletionTimeOp {
     }
 }
 
-impl OperationGenerator for FixedCompletionTime {
+impl OperationGenerator<'_> for FixedCompletionTime {
     type O1 = FixedCompletionTimeOp;
     type O2 = NullOp;
 

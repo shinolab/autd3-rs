@@ -4,7 +4,7 @@ use crate::geometry::Device;
 pub struct NullOp;
 
 // GRCOV_EXCL_START
-impl Operation for NullOp {
+impl Operation<'_> for NullOp {
     type Error = std::convert::Infallible;
 
     fn required_size(&self, _: &Device) -> usize {
@@ -20,7 +20,7 @@ impl Operation for NullOp {
     }
 }
 
-impl Default for Box<dyn Operation<Error = std::convert::Infallible>> {
+impl Default for Box<dyn Operation<'_, Error = std::convert::Infallible>> {
     fn default() -> Self {
         Box::new(NullOp)
     }

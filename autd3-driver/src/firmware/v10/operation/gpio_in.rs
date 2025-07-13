@@ -48,7 +48,7 @@ impl EmulateGPIOInOp {
     }
 }
 
-impl Operation for EmulateGPIOInOp {
+impl Operation<'_> for EmulateGPIOInOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -76,7 +76,7 @@ impl Operation for EmulateGPIOInOp {
     }
 }
 
-impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerator
+impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerator<'_>
     for EmulateGPIOIn<F>
 {
     type O1 = EmulateGPIOInOp;

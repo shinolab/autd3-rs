@@ -14,7 +14,7 @@ use derive_more::Deref;
 ///
 /// Note that the loop behavior only affects when switching segments.
 #[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WithLoopBehavior<D: DatagramL> {
+pub struct WithLoopBehavior<D> {
     #[deref]
     /// The original [`DatagramL`]
     pub inner: D,
@@ -26,7 +26,7 @@ pub struct WithLoopBehavior<D: DatagramL> {
     pub transition_mode: Option<TransitionMode>,
 }
 
-impl<D: DatagramL> WithLoopBehavior<D> {
+impl<'geo, 'dev, 'tr, D: DatagramL<'geo, 'dev, 'tr>> WithLoopBehavior<D> {
     /// Create a new [`WithLoopBehavior`].
     #[must_use]
     pub const fn new(
@@ -44,13 +44,15 @@ impl<D: DatagramL> WithLoopBehavior<D> {
     }
 }
 
-impl<D: DatagramL> Datagram for WithLoopBehavior<D> {
+impl<'geo, 'dev, 'tr, D: DatagramL<'geo, 'dev, 'tr>> Datagram<'geo, 'dev, 'tr>
+    for WithLoopBehavior<D>
+{
     type G = D::G;
     type Error = D::Error;
 
     fn operation_generator(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -82,17 +84,17 @@ pub trait InspectionResultWithLoopBehavior {
     ) -> Self;
 }
 
-impl<D> Inspectable for WithLoopBehavior<D>
+impl<'geo, 'dev, 'tr, D> Inspectable<'geo, 'dev, 'tr> for WithLoopBehavior<D>
 where
-    D: Inspectable + DatagramL,
+    D: Inspectable<'geo, 'dev, 'tr> + DatagramL<'geo, 'dev, 'tr>,
     D::Result: InspectionResultWithLoopBehavior,
-    <D as DatagramL>::Error: From<<D as Datagram>::Error>,
+    <D as DatagramL<'geo, 'dev, 'tr>>::Error: From<<D as Datagram<'geo, 'dev, 'tr>>::Error>,
 {
     type Result = D::Result;
 
     fn inspect(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &autd3_core::environment::Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,

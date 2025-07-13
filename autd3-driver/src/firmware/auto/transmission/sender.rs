@@ -42,7 +42,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
         }
     }
 
-    fn geometry(&self) -> &Geometry {
+    fn geometry(&self) -> &'a Geometry {
         match self {
             Inner::V10(inner) => inner.geometry,
             Inner::V11(inner) => inner.inner.geometry,
@@ -51,15 +51,16 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Inner<'a, L, S, T> {
         }
     }
 
-    fn send_impl<O1, O2>(
+    fn send_impl<'dev, O1, O2>(
         &mut self,
         timeout: Duration,
         parallel_threshold: usize,
         operations: &mut [Option<(O1, O2)>],
     ) -> Result<(), AUTDDriverError>
     where
-        O1: Operation,
-        O2: Operation,
+        'a: 'dev,
+        O1: Operation<'dev>,
+        O2: Operation<'dev>,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
     {
         match self {
@@ -84,12 +85,17 @@ pub struct Sender<'a, L: Link, S: Sleep, T: TimerStrategy<S>> {
 
 impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     /// Send the [`Datagram`] to the devices.
-    pub fn send<D: Datagram>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    pub fn send<'dev, 'tr, D: Datagram<'a, 'dev, 'tr>>(
+        &mut self,
+        s: D,
+    ) -> Result<(), AUTDDriverError>
     where
+        'a: 'dev,
+        'dev: 'tr,
         AUTDDriverError: From<D::Error>,
-        D::G: OperationGenerator,
-        AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
-            + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
+        D::G: OperationGenerator<'dev>,
+        AUTDDriverError: From<<<D::G as OperationGenerator<'dev>>::O1 as Operation<'dev>>::Error>
+            + From<<<D::G as OperationGenerator<'dev>>::O2 as Operation<'dev>>::Error>,
     {
         let timeout = self.inner.option().timeout.unwrap_or(s.option().timeout);
         let parallel_threshold = s.option().parallel_threshold;

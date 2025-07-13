@@ -29,38 +29,41 @@ use derive_more::{Deref, DerefMut};
 /// A trait to iterate a [`GainCalculator`] for [`GainSTM`].
 ///
 /// [`GainSTM`]: crate::datagram::GainSTM
-pub trait GainSTMIterator: Send + Sync {
+pub trait GainSTMIterator<'tr>: Send + Sync {
     /// The output [`GainCalculator`] type.
-    type Calculator: GainCalculator;
+    type Calculator: GainCalculator<'tr>;
 
     /// Returns the next [`GainCalculator`].
     fn next(&mut self) -> Option<Self::Calculator>;
 }
 
 /// A trait to generate the [`GainSTMIterator`].
-pub trait GainSTMIteratorGenerator {
+pub trait GainSTMIteratorGenerator<'dev, 'tr> {
     /// The element type of the gain sequence.
-    type Gain: GainCalculatorGenerator;
+    type Gain: GainCalculatorGenerator<'dev, 'tr>;
     /// [`GainSTMIterator`] that generates the sequence of [`Gain`].
     ///
     /// [`Gain`]: autd3_core::gain::Gain
-    type Iterator: GainSTMIterator<Calculator = <Self::Gain as GainCalculatorGenerator>::Calculator>;
+    type Iterator: GainSTMIterator<
+            'tr,
+            Calculator = <Self::Gain as GainCalculatorGenerator<'dev, 'tr>>::Calculator,
+        >;
 
     /// generates the iterator.
     #[must_use]
-    fn generate(&mut self, device: &Device) -> Self::Iterator;
+    fn generate(&mut self, device: &'dev Device) -> Self::Iterator;
 }
 
 /// A trait to generate the [`GainSTMIteratorGenerator`].
 #[allow(clippy::len_without_is_empty)]
-pub trait GainSTMGenerator: std::fmt::Debug {
+pub trait GainSTMGenerator<'geo, 'dev, 'tr>: std::fmt::Debug {
     /// The type of the iterator generator.
-    type T: GainSTMIteratorGenerator;
+    type T: GainSTMIteratorGenerator<'dev, 'tr>;
 
     /// Initializes and returns the iterator generator.
     fn init(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &TransducerFilter,
     ) -> Result<Self::T, GainError>;
@@ -89,7 +92,7 @@ impl Default for GainSTMOption {
 ///
 /// [`Gain`]: autd3_core::gain::Gain
 #[derive(Clone, Debug, Deref, DerefMut)]
-pub struct GainSTM<T: GainSTMGenerator, C> {
+pub struct GainSTM<T, C> {
     #[deref]
     #[deref_mut]
     /// The sequence of [`Gain`]s.
@@ -102,7 +105,7 @@ pub struct GainSTM<T: GainSTMGenerator, C> {
     pub option: GainSTMOption,
 }
 
-impl<T: GainSTMGenerator, C> GainSTM<T, C> {
+impl<'geo, 'dev, 'tr, T: GainSTMGenerator<'geo, 'dev, 'tr>, C> GainSTM<T, C> {
     /// Create a new [`GainSTM`].
     #[must_use]
     pub const fn new(gains: T, config: C, option: GainSTMOption) -> Self {
@@ -114,7 +117,7 @@ impl<T: GainSTMGenerator, C> GainSTM<T, C> {
     }
 }
 
-impl<T: GainSTMGenerator> GainSTM<T, Freq<f32>> {
+impl<'geo, 'dev, 'tr, T: GainSTMGenerator<'geo, 'dev, 'tr>> GainSTM<T, Freq<f32>> {
     /// Convert to STM with the closest frequency among the possible frequencies.
     #[must_use]
     pub fn into_nearest(self) -> GainSTM<T, FreqNearest> {
@@ -126,7 +129,7 @@ impl<T: GainSTMGenerator> GainSTM<T, Freq<f32>> {
     }
 }
 
-impl<T: GainSTMGenerator> GainSTM<T, Duration> {
+impl<'geo, 'dev, 'tr, T: GainSTMGenerator<'geo, 'dev, 'tr>> GainSTM<T, Duration> {
     /// Convert to STM with the closest frequency among the possible period.
     #[must_use]
     pub fn into_nearest(self) -> GainSTM<T, PeriodNearest> {
@@ -138,7 +141,9 @@ impl<T: GainSTMGenerator> GainSTM<T, Duration> {
     }
 }
 
-impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy> GainSTM<T, C> {
+impl<'geo, 'dev, 'tr, T: GainSTMGenerator<'geo, 'dev, 'tr>, C: Into<STMConfig> + Copy>
+    GainSTM<T, C>
+{
     /// The sampling configuration of the STM.
     pub fn sampling_config(&self) -> Result<SamplingConfig, AUTDDriverError> {
         let size = self.gains.len();
@@ -147,7 +152,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy> GainSTM<T, C> {
     }
 }
 
-pub struct GainSTMOperationGenerator<T> {
+pub struct GainSTMOperationGenerator<'tr, T> {
     pub(crate) g: T,
     pub(crate) size: usize,
     pub(crate) mode: GainSTMMode,
@@ -156,15 +161,18 @@ pub struct GainSTMOperationGenerator<T> {
     pub(crate) loop_behavior: LoopBehavior,
     pub(crate) segment: Segment,
     pub(crate) transition_mode: Option<TransitionMode>,
+    pub(crate) __phantom: std::marker::PhantomData<&'tr ()>,
 }
 
-impl<T: GainSTMGenerator, C: Into<STMConfig> + std::fmt::Debug> DatagramL for GainSTM<T, C> {
-    type G = GainSTMOperationGenerator<T::T>;
+impl<'geo, 'dev, 'tr, T: GainSTMGenerator<'geo, 'dev, 'tr>, C: Into<STMConfig> + std::fmt::Debug>
+    DatagramL<'geo, 'dev, 'tr> for GainSTM<T, C>
+{
+    type G = GainSTMOperationGenerator<'tr, T::T>;
     type Error = AUTDDriverError;
 
     fn operation_generator_with_loop_behavior(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -187,6 +195,7 @@ impl<T: GainSTMGenerator, C: Into<STMConfig> + std::fmt::Debug> DatagramL for Ga
             loop_behavior,
             segment,
             transition_mode,
+            __phantom: std::marker::PhantomData,
         })
     }
 
@@ -235,18 +244,29 @@ impl InspectionResultWithLoopBehavior for GainSTMInspectionResult {
     }
 }
 
-impl<T: GainSTMGenerator, C: Into<STMConfig> + Copy + std::fmt::Debug> Inspectable
-    for GainSTM<T, C>
+impl<
+    'geo,
+    'dev,
+    'tr,
+    T: GainSTMGenerator<'geo, 'dev, 'tr>,
+    C: Into<STMConfig> + Copy + std::fmt::Debug,
+> Inspectable<'geo, 'dev, 'tr> for GainSTM<T, C>
+where
+    'geo: 'dev,
+    'dev: 'tr,
 {
     type Result = GainSTMInspectionResult;
 
     fn inspect(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         _: &FirmwareLimits,
-    ) -> Result<InspectionResult<<Self as Inspectable>::Result>, <Self as Datagram>::Error> {
+    ) -> Result<
+        InspectionResult<<Self as Inspectable<'geo, 'dev, 'tr>>::Result>,
+        <Self as Datagram<'geo, 'dev, 'tr>>::Error,
+    > {
         let sampling_config = self.sampling_config()?;
         sampling_config.divide()?;
         let n = self.gains.len();

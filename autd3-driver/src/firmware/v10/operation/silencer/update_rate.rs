@@ -38,7 +38,7 @@ impl FixedUpdateRateOp {
     }
 }
 
-impl Operation for FixedUpdateRateOp {
+impl Operation<'_> for FixedUpdateRateOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -65,7 +65,7 @@ impl Operation for FixedUpdateRateOp {
     }
 }
 
-impl OperationGenerator for FixedUpdateRate {
+impl OperationGenerator<'_> for FixedUpdateRate {
     type O1 = FixedUpdateRateOp;
     type O2 = NullOp;
 

@@ -52,7 +52,7 @@ pub struct HoloCalculator<T: IntoDrive + Copy + Send + Sync + 'static> {
     constraint: EmissionConstraint,
 }
 
-impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculator for HoloCalculator<T> {
+impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculator<'_> for HoloCalculator<T> {
     fn calc(&self, tr: &Transducer) -> Drive {
         match &self.map {
             Either::Left(map) => map
@@ -95,7 +95,7 @@ pub struct HoloCalculatorGenerator<T: IntoDrive + Copy + Send + Sync + 'static> 
     constraint: EmissionConstraint,
 }
 
-impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculatorGenerator
+impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculatorGenerator<'_, '_>
     for HoloCalculatorGenerator<T>
 {
     type Calculator = HoloCalculator<T>;

@@ -15,18 +15,14 @@ use derive_more::Debug;
 /// ```
 #[derive(Gain, Debug)]
 #[debug("Custom (Gain)")]
-pub struct Custom<'a, FT, F>
-where
-    FT: Fn(&Transducer) -> Drive + Send + Sync + 'static,
-    F: Fn(&Device) -> FT + 'a,
-{
+pub struct Custom<FT, F> {
     /// The function to calculate the phase and intensity
     pub f: F,
-    _phantom: std::marker::PhantomData<&'a ()>,
+    _phantom: std::marker::PhantomData<FT>,
 }
 
-impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT + 'a>
-    Custom<'a, FT, F>
+impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync, F: Fn(&'dev Device) -> FT>
+    Custom<FT, F>
 {
     /// Create a new [`Custom`]
     #[must_use]
@@ -38,36 +34,38 @@ impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) ->
     }
 }
 
-pub struct Impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> {
+pub struct Impl<'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync> {
     f: FT,
+    _phantom: std::marker::PhantomData<&'tr ()>,
 }
 
-impl<FT: Fn(&Transducer) -> Drive + Send + Sync + 'static> GainCalculator for Impl<FT> {
-    fn calc(&self, tr: &Transducer) -> Drive {
+impl<'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync> GainCalculator<'tr> for Impl<'tr, FT> {
+    fn calc(&self, tr: &'tr Transducer) -> Drive {
         (self.f)(tr)
     }
 }
 
-impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT + 'a>
-    GainCalculatorGenerator for Custom<'a, FT, F>
+impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync, F: Fn(&'dev Device) -> FT>
+    GainCalculatorGenerator<'dev, 'tr> for Custom<FT, F>
 {
-    type Calculator = Impl<FT>;
+    type Calculator = Impl<'tr, FT>;
 
-    fn generate(&mut self, device: &Device) -> Self::Calculator {
+    fn generate(&mut self, device: &'dev Device) -> Self::Calculator {
         Impl {
             f: (self.f)(device),
+            _phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<'a, FT: Fn(&Transducer) -> Drive + Send + Sync + 'static, F: Fn(&Device) -> FT + 'a> Gain
-    for Custom<'a, FT, F>
+impl<'geo, 'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync, F: Fn(&'dev Device) -> FT>
+    Gain<'geo, 'dev, 'tr> for Custom<FT, F>
 {
-    type G = Custom<'a, FT, F>;
+    type G = Custom<FT, F>;
 
     fn init(
         self,
-        _: &Geometry,
+        _: &'geo Geometry,
         _: &Environment,
         _: &TransducerFilter,
     ) -> Result<Self::G, GainError> {
@@ -96,9 +94,8 @@ mod tests {
             intensity: Intensity(rng.random()),
         };
         let transducer_test = Custom::new(move |dev| {
-            let dev_idx = dev.idx();
             move |tr| {
-                if dev_idx == 0 && tr.idx() == test_id {
+                if dev.idx() == 0 && tr.idx() == test_id {
                     test_drive
                 } else {
                     Drive::NULL

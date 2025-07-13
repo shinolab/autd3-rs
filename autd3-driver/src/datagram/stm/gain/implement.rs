@@ -8,11 +8,12 @@ use autd3_core::{
 
 use super::{GainSTMGenerator, GainSTMIterator, GainSTMIteratorGenerator};
 
-pub struct VecGainSTMIterator<G: GainCalculator> {
+pub struct VecGainSTMIterator<'tr, G: GainCalculator<'tr>> {
     gains: Peekable<std::vec::IntoIter<G>>,
+    __phantom: std::marker::PhantomData<&'tr ()>,
 }
 
-impl<G: GainCalculator> GainSTMIterator for VecGainSTMIterator<G> {
+impl<'tr, G: GainCalculator<'tr>> GainSTMIterator<'tr> for VecGainSTMIterator<'tr, G> {
     type Calculator = G;
 
     fn next(&mut self) -> Option<Self::Calculator> {
@@ -20,11 +21,13 @@ impl<G: GainCalculator> GainSTMIterator for VecGainSTMIterator<G> {
     }
 }
 
-impl<G: GainCalculatorGenerator> GainSTMIteratorGenerator for Vec<G> {
+impl<'dev, 'tr, G: GainCalculatorGenerator<'dev, 'tr>> GainSTMIteratorGenerator<'dev, 'tr>
+    for Vec<G>
+{
     type Gain = G;
-    type Iterator = VecGainSTMIterator<G::Calculator>;
+    type Iterator = VecGainSTMIterator<'tr, G::Calculator>;
 
-    fn generate(&mut self, device: &Device) -> Self::Iterator {
+    fn generate(&mut self, device: &'dev Device) -> Self::Iterator {
         Self::Iterator {
             gains: self
                 .iter_mut()
@@ -32,16 +35,17 @@ impl<G: GainCalculatorGenerator> GainSTMIteratorGenerator for Vec<G> {
                 .collect::<Vec<_>>()
                 .into_iter()
                 .peekable(),
+            __phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<G: Gain> GainSTMGenerator for Vec<G> {
+impl<'geo, 'dev, 'tr, G: Gain<'geo, 'dev, 'tr>> GainSTMGenerator<'geo, 'dev, 'tr> for Vec<G> {
     type T = Vec<G::G>;
 
     fn init(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &TransducerFilter,
     ) -> Result<Self::T, GainError> {
