@@ -19,7 +19,7 @@ impl Clear {
     }
 }
 
-impl Datagram for Clear {
+impl Datagram<'_, '_, '_> for Clear {
     type G = Self;
     type Error = Infallible;
 

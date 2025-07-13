@@ -79,7 +79,7 @@ impl FociSTMIterator<1> for CircleSTMIterator {
     }
 }
 
-impl GainSTMIterator for CircleSTMIterator {
+impl GainSTMIterator<'_> for CircleSTMIterator {
     type Calculator = crate::gain::focus::Impl;
 
     fn next(&mut self) -> Option<Self::Calculator> {
@@ -100,7 +100,7 @@ impl FociSTMIteratorGenerator<1> for CircleSTMIterator {
     }
 }
 
-impl GainSTMIteratorGenerator for CircleSTMIterator {
+impl GainSTMIteratorGenerator<'_, '_> for CircleSTMIterator {
     type Gain = focus::Impl;
     type Iterator = Self;
 
@@ -109,7 +109,7 @@ impl GainSTMIteratorGenerator for CircleSTMIterator {
     }
 }
 
-impl GainSTMGenerator for Circle {
+impl GainSTMGenerator<'_, '_, '_> for Circle {
     type T = CircleSTMIterator;
 
     fn init(

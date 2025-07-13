@@ -28,16 +28,20 @@ pub struct PhaseCorrectionOp<F> {
     f: F,
 }
 
-impl<F: Fn(&Transducer) -> Phase> PhaseCorrectionOp<F> {
+impl<'tr, F: Fn(&'tr Transducer) -> Phase> PhaseCorrectionOp<F> {
     pub(crate) const fn new(f: F) -> Self {
         Self { is_done: false, f }
     }
 }
 
-impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<F> {
+impl<'dev, 'tr, F: Fn(&'tr Transducer) -> Phase + Send + Sync> Operation<'dev>
+    for PhaseCorrectionOp<F>
+where
+    'dev: 'tr,
+{
     type Error = Infallible;
 
-    fn pack(&mut self, dev: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, dev: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         crate::firmware::driver::write_to_tx(
             tx,
             PhaseCorr {
@@ -67,13 +71,15 @@ impl<F: Fn(&Transducer) -> Phase + Send + Sync> Operation for PhaseCorrectionOp<
     }
 }
 
-impl<FT: Fn(&Transducer) -> Phase + Send + Sync, F: Fn(&Device) -> FT> OperationGenerator
-    for PhaseCorrection<F>
+impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Phase + Send + Sync, F: Fn(&'dev Device) -> FT>
+    OperationGenerator<'dev> for PhaseCorrection<F, FT>
+where
+    'dev: 'tr,
 {
     type O1 = PhaseCorrectionOp<FT>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
         Some((Self::O1::new((self.f)(device)), Self::O2 {}))
     }
 }

@@ -8,36 +8,39 @@ use crate::{
 
 use autd3_core::geometry::Device;
 
-impl OperationGenerator for DynOperationGenerator {
+impl<'dev> OperationGenerator<'dev> for DynOperationGenerator {
     type O1 = BoxedOperation;
     type O2 = BoxedOperation;
 
-    fn generate(&mut self, device: &Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)> {
         self.g.dyn_generate(device, version)
     }
 }
 
-impl<G: OperationGenerator> DOperationGenerator for G
+impl<'dev, G: OperationGenerator<'dev>> DOperationGenerator for G
 where
     G::O1: 'static,
     G::O2: 'static,
-    AUTDDriverError: From<<G::O1 as Operation>::Error> + From<<G::O2 as Operation>::Error>,
+    AUTDDriverError:
+        From<<G::O1 as Operation<'dev>>::Error> + From<<G::O2 as Operation<'dev>>::Error>,
 {
+    #[allow(clippy::missing_transmute_annotations)]
     fn dyn_generate(
         &mut self,
         device: &Device,
         version: Version,
     ) -> Option<(BoxedOperation, BoxedOperation)> {
-        self.generate(device, version).map(|(o1, o2)| {
-            (
-                BoxedOperation {
-                    inner: Box::new(o1),
-                },
-                BoxedOperation {
-                    inner: Box::new(o2),
-                },
-            )
-        })
+        self.generate(unsafe { std::mem::transmute(device) }, version)
+            .map(move |(o1, o2)| {
+                (
+                    BoxedOperation {
+                        inner: Box::new(o1),
+                    },
+                    BoxedOperation {
+                        inner: Box::new(o2),
+                    },
+                )
+            })
     }
 }
 
@@ -60,7 +63,7 @@ pub mod tests {
 
     struct TestOperationGenerator;
 
-    impl OperationGenerator for TestOperationGenerator {
+    impl OperationGenerator<'_> for TestOperationGenerator {
         type O1 = TestOp;
         type O2 = TestOp;
 
@@ -80,7 +83,7 @@ pub mod tests {
         }
     }
 
-    impl Datagram for TestDatagram {
+    impl Datagram<'_, '_, '_> for TestDatagram {
         type G = TestOperationGenerator;
         type Error = AUTDDriverError;
 

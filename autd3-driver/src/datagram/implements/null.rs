@@ -12,13 +12,13 @@ impl Null {
     }
 }
 
-impl GainCalculator for Null {
+impl GainCalculator<'_> for Null {
     fn calc(&self, _: &Transducer) -> Drive {
         Drive::NULL
     }
 }
 
-impl GainCalculatorGenerator for Null {
+impl GainCalculatorGenerator<'_, '_> for Null {
     type Calculator = Null;
 
     fn generate(&mut self, _: &Device) -> Self::Calculator {
@@ -26,7 +26,7 @@ impl GainCalculatorGenerator for Null {
     }
 }
 
-impl Gain for Null {
+impl Gain<'_, '_, '_> for Null {
     type G = Null;
 
     fn init(

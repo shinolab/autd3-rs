@@ -34,7 +34,7 @@ impl ReadsFPGAStateOp {
     }
 }
 
-impl Operation for ReadsFPGAStateOp {
+impl Operation<'_> for ReadsFPGAStateOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -59,7 +59,7 @@ impl Operation for ReadsFPGAStateOp {
     }
 }
 
-impl<F: Fn(&Device) -> bool> OperationGenerator for ReadsFPGAState<F> {
+impl<F: Fn(&Device) -> bool> OperationGenerator<'_> for ReadsFPGAState<F> {
     type O1 = ReadsFPGAStateOp;
     type O2 = NullOp;
 

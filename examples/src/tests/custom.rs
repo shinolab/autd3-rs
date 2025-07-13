@@ -8,8 +8,7 @@ pub fn custom(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Resul
         sampling_config: 4. * kHz,
     };
     let g = autd3::gain::Custom::new(|dev| {
-        let dev_idx = dev.idx();
-        move |tr| match (dev_idx, tr.idx()) {
+        move |tr| match (dev.idx(), tr.idx()) {
             (0, 0) | (0, 248) => Drive {
                 intensity: Intensity::MAX,
                 phase: Phase::ZERO,

@@ -62,7 +62,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Gain for GSPAT<D, B> {
+impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_, '_, '_> for GSPAT<D, B> {
     type G = HoloCalculatorGenerator<Complex>;
 
     fn init(

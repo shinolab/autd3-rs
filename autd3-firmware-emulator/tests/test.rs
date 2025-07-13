@@ -32,19 +32,20 @@ pub fn create_geometry(n: usize) -> Geometry {
     )
 }
 
-pub fn send<D>(
+pub fn send<'geo, 'dev, 'tr, D>(
     msg_id: &mut MsgId,
     cpu: &mut CPUEmulator,
     d: D,
-    geometry: &mut Geometry,
+    geometry: &'geo mut Geometry,
     tx: &mut [TxMessage],
 ) -> Result<(), AUTDDriverError>
 where
-    D: Datagram,
+    D: Datagram<'geo, 'dev, 'tr>,
     AUTDDriverError: From<D::Error>,
-    D::G: OperationGenerator,
-    AUTDDriverError: From<<<D::G as OperationGenerator>::O1 as Operation>::Error>
-        + From<<<D::G as OperationGenerator>::O2 as Operation>::Error>,
+    D::G: OperationGenerator<'dev>,
+    AUTDDriverError: From<<<D::G as OperationGenerator<'dev>>::O1 as Operation<'dev>>::Error>
+        + From<<<D::G as OperationGenerator<'dev>>::O2 as Operation<'dev>>::Error>,
+    'geo: 'dev,
 {
     let option = d.option();
     let parallel = geometry.num_devices() > option.parallel_threshold;

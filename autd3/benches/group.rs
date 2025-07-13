@@ -167,13 +167,10 @@ fn gain_group(c: &mut Criterion) {
             |b, geometry| {
                 let mut tx = vec![TxMessage::new_zeroed(); size];
                 b.iter(|| {
-                    let g = autd3::gain::Group {
-                        key_map: |dev| {
-                            let dev_idx = dev.idx();
-                            move |_tr| Some(dev_idx)
-                        },
-                        gain_map: geometry.iter().map(|dev| (dev.idx(), Null {})).collect(),
-                    };
+                    let g = autd3::gain::Group::new(
+                        |dev| move |_tr| Some(dev.idx()),
+                        geometry.iter().map(|dev| (dev.idx(), Null {})).collect(),
+                    );
                     let mut generator = g
                         .operation_generator(
                             geometry,

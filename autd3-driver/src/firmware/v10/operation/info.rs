@@ -31,7 +31,7 @@ impl FirmInfoOp {
     }
 }
 
-impl Operation for FirmInfoOp {
+impl Operation<'_> for FirmInfoOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -55,7 +55,7 @@ impl Operation for FirmInfoOp {
     }
 }
 
-impl OperationGenerator for FetchFirmwareInfoOpGenerator {
+impl OperationGenerator<'_> for FetchFirmwareInfoOpGenerator {
     type O1 = FirmInfoOp;
     type O2 = NullOp;
 

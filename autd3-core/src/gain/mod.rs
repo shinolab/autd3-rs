@@ -108,26 +108,26 @@ impl From<&DeviceFilter> for TransducerFilter {
 /// A trait to calculate the phase and intensity for [`Gain`].
 ///
 /// [`Gain`]: crate::gain::Gain
-pub trait GainCalculator: Send + Sync {
+pub trait GainCalculator<'tr>: Send + Sync {
     /// Calculates the phase and intensity for the transducer.
     #[must_use]
-    fn calc(&self, tr: &Transducer) -> Drive;
+    fn calc(&self, tr: &'tr Transducer) -> Drive;
 }
 
-impl GainCalculator for Box<dyn GainCalculator> {
-    fn calc(&self, tr: &Transducer) -> Drive {
+impl<'tr> GainCalculator<'tr> for Box<dyn GainCalculator<'tr>> {
+    fn calc(&self, tr: &'tr Transducer) -> Drive {
         self.as_ref().calc(tr)
     }
 }
 
 /// A trait for generating a calculator for the gain operation.
-pub trait GainCalculatorGenerator {
+pub trait GainCalculatorGenerator<'dev, 'tr> {
     /// The type of the calculator that actually performs the calculation.
-    type Calculator: GainCalculator;
+    type Calculator: GainCalculator<'tr>;
 
     /// Generate a calculator for the given device.
     #[must_use]
-    fn generate(&mut self, device: &Device) -> Self::Calculator;
+    fn generate(&mut self, device: &'dev Device) -> Self::Calculator;
 }
 
 /// Trait for calculating the phase/amplitude of each transducer.
@@ -135,9 +135,9 @@ pub trait GainCalculatorGenerator {
 /// See also [`Gain`] derive macro.
 ///
 /// [`Gain`]: autd3_derive::Gain
-pub trait Gain: std::fmt::Debug + Sized {
+pub trait Gain<'geo, 'dev, 'tr>: std::fmt::Debug + Sized {
     /// The type of the calculator generator.
-    type G: GainCalculatorGenerator;
+    type G: GainCalculatorGenerator<'dev, 'tr>;
 
     /// Initialize the gain and generate the calculator generator.
     ///
@@ -145,23 +145,28 @@ pub trait Gain: std::fmt::Debug + Sized {
     /// If `filter` is `None`, all transducers are enabled.
     fn init(
         self,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &TransducerFilter,
     ) -> Result<Self::G, GainError>;
 }
 
 #[doc(hidden)]
-pub struct GainOperationGenerator<G> {
+pub struct GainOperationGenerator<'tr, G> {
     pub generator: G,
     pub segment: Segment,
     pub transition: Option<TransitionMode>,
+    pub __phantom: std::marker::PhantomData<&'tr ()>,
 }
 
-impl<G: GainCalculatorGenerator> GainOperationGenerator<G> {
-    pub fn new<T: Gain<G = G>>(
+impl<'geo, 'dev, 'tr, G: GainCalculatorGenerator<'dev, 'tr>> GainOperationGenerator<'tr, G>
+where
+    'geo: 'dev,
+    'dev: 'tr,
+{
+    pub fn new<T: Gain<'geo, 'dev, 'tr, G = G>>(
         gain: T,
-        geometry: &Geometry,
+        geometry: &'geo Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         segment: Segment,
@@ -171,6 +176,7 @@ impl<G: GainCalculatorGenerator> GainOperationGenerator<G> {
             generator: gain.init(geometry, env, &TransducerFilter::from(filter))?,
             segment,
             transition,
+            __phantom: std::marker::PhantomData,
         })
     }
 }

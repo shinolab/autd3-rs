@@ -5,16 +5,33 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let generics = &ast.generics;
 
-    let lifetimes = generics.lifetimes();
+    let lifetimes = generics.lifetimes().filter(|l| {
+        l.lifetime.ident != "geo" && l.lifetime.ident != "dev" && l.lifetime.ident != "tr"
+    });
     let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let where_clause = if let Some(w) = where_clause {
+        quote! {
+            #w
+            Self: Gain<'geo, 'dev, 'tr>,
+            'geo: 'dev,
+            'dev: 'tr,
+        }
+    } else {
+        quote! {
+            where
+                Self: Gain<'geo, 'dev, 'tr>,
+                'geo: 'dev,
+                'dev: 'tr,
+        }
+    };
     let type_params = generics.type_params();
     let datagram = quote! {
-        impl <#(#lifetimes,)* #(#type_params,)*> DatagramS for #name #ty_generics #where_clause
+        impl <'geo, 'dev, 'tr, #(#lifetimes,)* #(#type_params,)*> DatagramS<'geo, 'dev, 'tr> for #name #ty_generics #where_clause
         {
-            type G = GainOperationGenerator<<Self as Gain>::G>;
+            type G = GainOperationGenerator<'tr, <Self as Gain<'geo, 'dev, 'tr>>::G>;
             type Error = GainError;
 
-            fn operation_generator_with_segment(self, geometry: &Geometry, env: &Environment, filter: &DeviceFilter, _: &FirmwareLimits, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, Self::Error> {
+            fn operation_generator_with_segment(self, geometry: &'geo Geometry, env: &Environment, filter: &DeviceFilter, _: &FirmwareLimits, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, Self::Error> {
                 Self::G::new(
                     self,
                     geometry,
@@ -34,20 +51,38 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         }
     };
 
-    let lifetimes = generics.lifetimes();
+    let lifetimes = generics.lifetimes().filter(|l| {
+        l.lifetime.ident != "geo" && l.lifetime.ident != "dev" && l.lifetime.ident != "tr"
+    });
     let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let where_clause = if let Some(w) = where_clause {
+        quote! {
+            #w
+            Self: Gain<'geo, 'dev, 'tr>,
+            'geo: 'dev,
+            'dev: 'tr,
+        }
+    } else {
+        quote! {
+            where
+                Self: Gain<'geo, 'dev, 'tr>,
+                'geo: 'dev,
+                'dev: 'tr,
+        }
+    };
     let type_params = generics.type_params();
     let inspect = quote! {
-        impl <#(#lifetimes,)* #(#type_params,)*> Inspectable for #name #ty_generics #where_clause {
+        impl <'geo, 'dev, 'tr, #(#lifetimes,)* #(#type_params,)*> Inspectable<'geo, 'dev, 'tr> for #name #ty_generics #where_clause
+        {
             type Result = GainInspectionResult;
 
             fn inspect(
                 self,
-                geometry: &Geometry,
+                geometry: &'geo Geometry,
                 env: &Environment,
                 filter: &DeviceFilter,
                 _: &FirmwareLimits,
-            ) -> Result<InspectionResult<Self::Result>, Self::Error> {
+            ) -> Result<InspectionResult<GainInspectionResult>, GainError> {
                 let mut g = self.init(geometry, env, &TransducerFilter::from(filter))?;
                 let segment = Segment::S0;
                 let transition_mode = None;
