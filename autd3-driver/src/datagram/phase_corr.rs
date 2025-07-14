@@ -33,10 +33,7 @@ pub struct PhaseCorrection<F, FT> {
     _phantom: std::marker::PhantomData<FT>,
 }
 
-impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Phase, F: Fn(&'dev Device) -> FT> PhaseCorrection<F, FT>
-where
-    'dev: 'tr,
-{
+impl<'a, FT: Fn(&'a Transducer) -> Phase, F: Fn(&'a Device) -> FT> PhaseCorrection<F, FT> {
     /// Creates a new [`PhaseCorrection`].
     #[must_use]
     pub const fn new(f: F) -> Self {
@@ -47,15 +44,15 @@ where
     }
 }
 
-impl<'geo, 'dev, 'tr, FT: Fn(&'tr Transducer) -> Phase + Send + Sync, F: Fn(&'dev Device) -> FT>
-    Datagram<'geo, 'dev, 'tr> for PhaseCorrection<F, FT>
+impl<'a, FT: Fn(&'a Transducer) -> Phase + Send + Sync, F: Fn(&'a Device) -> FT> Datagram<'a>
+    for PhaseCorrection<F, FT>
 {
     type G = Self;
     type Error = Infallible;
 
     fn operation_generator(
         self,
-        _: &'geo Geometry,
+        _: &'a Geometry,
         _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,

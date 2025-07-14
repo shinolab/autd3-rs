@@ -100,7 +100,7 @@ impl FociSTMIteratorGenerator<1> for CircleSTMIterator {
     }
 }
 
-impl GainSTMIteratorGenerator<'_, '_> for CircleSTMIterator {
+impl GainSTMIteratorGenerator<'_> for CircleSTMIterator {
     type Gain = focus::Impl;
     type Iterator = Self;
 
@@ -109,7 +109,7 @@ impl GainSTMIteratorGenerator<'_, '_> for CircleSTMIterator {
     }
 }
 
-impl GainSTMGenerator<'_, '_, '_> for Circle {
+impl GainSTMGenerator<'_> for Circle {
     type T = CircleSTMIterator;
 
     fn init(

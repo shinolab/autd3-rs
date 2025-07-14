@@ -46,7 +46,7 @@ impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> PulseWid
     }
 }
 
-impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> Datagram<'_, '_, '_>
+impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> Datagram<'_>
     for PulseWidthEncoder<F>
 {
     type G = PulseWidthEncoderOperationGenerator<F>;

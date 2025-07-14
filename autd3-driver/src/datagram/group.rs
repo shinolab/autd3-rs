@@ -47,12 +47,12 @@ where
     pub datagram_map: HashMap<K, D>,
 }
 
-impl<'geo, 'dev, 'tr, K, D, F> Group<K, D, F>
+impl<'a, K, D, F> Group<K, D, F>
 where
     K: Hash + Eq + Debug,
-    D: Datagram<'geo, 'dev, 'tr>,
+    D: Datagram<'a>,
     F: Fn(&Device) -> Option<K>,
-    AUTDDriverError: From<<D as Datagram<'geo, 'dev, 'tr>>::Error>,
+    AUTDDriverError: From<<D as Datagram<'a>>::Error>,
 {
     /// Creates a new [`Group`].
     #[must_use]
@@ -86,19 +86,19 @@ pub struct GroupOpGenerator<K, F, G> {
     pub(crate) generators: HashMap<K, G>,
 }
 
-impl<'geo, 'dev, 'tr, K, D, F> Datagram<'geo, 'dev, 'tr> for Group<K, D, F>
+impl<'a, K, D, F> Datagram<'a> for Group<K, D, F>
 where
     K: Hash + Eq + Debug,
-    D: Datagram<'geo, 'dev, 'tr>,
+    D: Datagram<'a>,
     F: Fn(&Device) -> Option<K>,
-    AUTDDriverError: From<<D as Datagram<'geo, 'dev, 'tr>>::Error>,
+    AUTDDriverError: From<<D as Datagram<'a>>::Error>,
 {
     type G = GroupOpGenerator<K, F, D::G>;
     type Error = AUTDDriverError;
 
     fn operation_generator(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &Environment,
         _: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -148,20 +148,18 @@ where
     }
 }
 
-impl<'geo, 'dev, 'tr, K, D, F> Inspectable<'geo, 'dev, 'tr> for Group<K, D, F>
+impl<'a, K, D, F> Inspectable<'a> for Group<K, D, F>
 where
     K: Hash + Eq + Debug,
-    D: Datagram<'geo, 'dev, 'tr> + Inspectable<'geo, 'dev, 'tr>,
+    D: Datagram<'a> + Inspectable<'a>,
     F: Fn(&Device) -> Option<K>,
-    AUTDDriverError: From<<D as Datagram<'geo, 'dev, 'tr>>::Error>,
-    'geo: 'dev,
-    'dev: 'tr,
+    AUTDDriverError: From<<D as Datagram<'a>>::Error>,
 {
     type Result = D::Result;
 
     fn inspect(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &Environment,
         _: &DeviceFilter,
         limits: &FirmwareLimits,

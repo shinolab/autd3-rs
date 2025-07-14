@@ -8,21 +8,20 @@ use crate::{
 
 use autd3_core::geometry::Device;
 
-impl<'dev> OperationGenerator<'dev> for DynOperationGenerator {
+impl<'a> OperationGenerator<'a> for DynOperationGenerator {
     type O1 = BoxedOperation;
     type O2 = BoxedOperation;
 
-    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device, version: Version) -> Option<(Self::O1, Self::O2)> {
         self.g.dyn_generate(device, version)
     }
 }
 
-impl<'dev, G: OperationGenerator<'dev>> DOperationGenerator for G
+impl<'a, G: OperationGenerator<'a>> DOperationGenerator for G
 where
     G::O1: 'static,
     G::O2: 'static,
-    AUTDDriverError:
-        From<<G::O1 as Operation<'dev>>::Error> + From<<G::O2 as Operation<'dev>>::Error>,
+    AUTDDriverError: From<<G::O1 as Operation<'a>>::Error> + From<<G::O2 as Operation<'a>>::Error>,
 {
     #[allow(clippy::missing_transmute_annotations)]
     fn dyn_generate(
@@ -83,7 +82,7 @@ pub mod tests {
         }
     }
 
-    impl Datagram<'_, '_, '_> for TestDatagram {
+    impl Datagram<'_> for TestDatagram {
         type G = TestOperationGenerator;
         type Error = AUTDDriverError;
 

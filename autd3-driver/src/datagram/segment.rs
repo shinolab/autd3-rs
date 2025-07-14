@@ -30,7 +30,7 @@ pub enum SwapSegment {
     GainSTM(Segment, TransitionMode),
 }
 
-impl Datagram<'_, '_, '_> for SwapSegment {
+impl Datagram<'_> for SwapSegment {
     type G = Self;
     type Error = Infallible;
 

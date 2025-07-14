@@ -25,7 +25,7 @@ impl<F: Fn(&Device) -> bool> ForceFan<F> {
     }
 }
 
-impl<F: Fn(&Device) -> bool> Datagram<'_, '_, '_> for ForceFan<F> {
+impl<F: Fn(&Device) -> bool> Datagram<'_> for ForceFan<F> {
     type G = Self;
     type Error = Infallible;
 

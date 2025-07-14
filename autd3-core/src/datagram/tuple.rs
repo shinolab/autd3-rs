@@ -20,17 +20,17 @@ pub enum CombinedError<E1, E2> {
     E2(E2),
 }
 
-impl<'geo, 'dev, 'tr, G1, G2, D1, D2, E1, E2> Datagram<'geo, 'dev, 'tr> for (D1, D2)
+impl<'a, G1, G2, D1, D2, E1, E2> Datagram<'a> for (D1, D2)
 where
-    D1: Datagram<'geo, 'dev, 'tr, G = G1, Error = E1>,
-    D2: Datagram<'geo, 'dev, 'tr, G = G2, Error = E2>,
+    D1: Datagram<'a, G = G1, Error = E1>,
+    D2: Datagram<'a, G = G2, Error = E2>,
 {
     type G = CombinedOperationGenerator<D1::G, D2::G>;
     type Error = CombinedError<E1, E2>;
 
     fn operation_generator(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -62,7 +62,7 @@ mod tests {
         pub result: Result<(), ()>,
     }
 
-    impl Datagram<'_, '_, '_> for TestDatagram {
+    impl Datagram<'_> for TestDatagram {
         type G = ();
         type Error = ();
 

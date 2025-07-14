@@ -31,10 +31,7 @@ pub struct OutputMask<F, FT> {
     _phantom: std::marker::PhantomData<FT>,
 }
 
-impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> bool, F: Fn(&'dev Device) -> FT> OutputMask<F, FT>
-where
-    'dev: 'tr,
-{
+impl<'a, FT: Fn(&'a Transducer) -> bool, F: Fn(&'a Device) -> FT> OutputMask<F, FT> {
     /// Creates a new [`OutputMask`].
     #[must_use]
     pub const fn new(f: F) -> Self {
@@ -50,15 +47,15 @@ pub struct OutputMaskOperationGenerator<F> {
     pub(crate) segment: Segment,
 }
 
-impl<'geo, 'dev, 'tr, FT: Fn(&'tr Transducer) -> bool + Send + Sync, F: Fn(&'dev Device) -> FT>
-    DatagramS<'geo, 'dev, 'tr> for OutputMask<F, FT>
+impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync, F: Fn(&'a Device) -> FT> DatagramS<'a>
+    for OutputMask<F, FT>
 {
     type G = OutputMaskOperationGenerator<F>;
     type Error = Infallible;
 
     fn operation_generator_with_segment(
         self,
-        _: &'geo Geometry,
+        _: &'a Geometry,
         _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,

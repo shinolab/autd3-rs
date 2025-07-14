@@ -44,7 +44,7 @@ pub struct GainOp<Calculator> {
     calculator: Calculator,
 }
 
-impl<'tr, Calculator: GainCalculator<'tr>> GainOp<Calculator> {
+impl<'a, Calculator: GainCalculator<'a>> GainOp<Calculator> {
     pub(crate) const fn new(
         segment: Segment,
         transition: Option<TransitionMode>,
@@ -59,17 +59,14 @@ impl<'tr, Calculator: GainCalculator<'tr>> GainOp<Calculator> {
     }
 }
 
-impl<'dev, 'tr, Calculator: GainCalculator<'tr>> Operation<'dev> for GainOp<Calculator>
-where
-    'dev: 'tr,
-{
+impl<'a, Calculator: GainCalculator<'a>> Operation<'a> for GainOp<Calculator> {
     type Error = AUTDDriverError;
 
-    fn required_size(&self, device: &'dev Device) -> usize {
+    fn required_size(&self, device: &'a Device) -> usize {
         size_of::<Gain>() + device.num_transducers() * size_of::<Drive>()
     }
 
-    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'a Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         crate::firmware::driver::write_to_tx(
             tx,
             Gain {
@@ -103,15 +100,11 @@ where
     }
 }
 
-impl<'dev, 'tr, G: GainCalculatorGenerator<'dev, 'tr>> OperationGenerator<'dev>
-    for GainOperationGenerator<'tr, G>
-where
-    'dev: 'tr,
-{
+impl<'a, G: GainCalculatorGenerator<'a>> OperationGenerator<'a> for GainOperationGenerator<'a, G> {
     type O1 = GainOp<G::Calculator>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         let c = self.generator.generate(device);
         Some((Self::O1::new(self.segment, self.transition, c), Self::O2 {}))
     }

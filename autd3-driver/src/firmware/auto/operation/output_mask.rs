@@ -18,13 +18,10 @@ pub struct OutputMaskOp<F> {
     inner: Inner<F>,
 }
 
-impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> bool + Send + Sync> Operation<'dev> for OutputMaskOp<FT>
-where
-    'dev: 'tr,
-{
+impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync> Operation<'a> for OutputMaskOp<FT> {
     type Error = AUTDDriverError;
 
-    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'a Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         Ok(match &mut self.inner {
             Inner::V10 | Inner::V11 | Inner::V12 => {
                 return Err(AUTDDriverError::UnsupportedOperation);
@@ -33,7 +30,7 @@ where
         })
     }
 
-    fn required_size(&self, device: &'dev Device) -> usize {
+    fn required_size(&self, device: &'a Device) -> usize {
         match &self.inner {
             Inner::V12_1(inner) => Operation::required_size(inner, device),
             _ => 0,
@@ -48,15 +45,13 @@ where
     }
 }
 
-impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> bool + Send + Sync, F: Fn(&'dev Device) -> FT>
-    OperationGenerator<'dev> for OutputMaskOperationGenerator<F>
-where
-    'dev: 'tr,
+impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync, F: Fn(&'a Device) -> FT>
+    OperationGenerator<'a> for OutputMaskOperationGenerator<F>
 {
     type O1 = OutputMaskOp<FT>;
     type O2 = crate::firmware::driver::NullOp;
 
-    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device, version: Version) -> Option<(Self::O1, Self::O2)> {
         Some((
             OutputMaskOp {
                 inner: match version {

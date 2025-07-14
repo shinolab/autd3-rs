@@ -5,30 +5,24 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let generics = &ast.generics;
 
-    let lifetimes = generics.lifetimes().filter(|l| {
-        l.lifetime.ident != "geo" && l.lifetime.ident != "dev" && l.lifetime.ident != "tr"
-    });
+    let lifetimes = generics.lifetimes().filter(|l| l.lifetime.ident != "geo");
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let where_clause = if let Some(w) = where_clause {
         quote! {
             #w
-            Self: Gain<'geo, 'dev, 'tr>,
-            'geo: 'dev,
-            'dev: 'tr,
+            Self: Gain<'geo>,
         }
     } else {
         quote! {
             where
-                Self: Gain<'geo, 'dev, 'tr>,
-                'geo: 'dev,
-                'dev: 'tr,
+                Self: Gain<'geo>,
         }
     };
     let type_params = generics.type_params();
     let datagram = quote! {
-        impl <'geo, 'dev, 'tr, #(#lifetimes,)* #(#type_params,)*> DatagramS<'geo, 'dev, 'tr> for #name #ty_generics #where_clause
+        impl <'geo, #(#lifetimes,)* #(#type_params,)*> DatagramS<'geo> for #name #ty_generics #where_clause
         {
-            type G = GainOperationGenerator<'tr, <Self as Gain<'geo, 'dev, 'tr>>::G>;
+            type G = GainOperationGenerator<'geo, <Self as Gain<'geo>>::G>;
             type Error = GainError;
 
             fn operation_generator_with_segment(self, geometry: &'geo Geometry, env: &Environment, filter: &DeviceFilter, _: &FirmwareLimits, segment: Segment, transition_mode: Option<TransitionMode>) -> Result<Self::G, Self::Error> {
@@ -51,28 +45,22 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
         }
     };
 
-    let lifetimes = generics.lifetimes().filter(|l| {
-        l.lifetime.ident != "geo" && l.lifetime.ident != "dev" && l.lifetime.ident != "tr"
-    });
+    let lifetimes = generics.lifetimes().filter(|l| l.lifetime.ident != "geo");
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let where_clause = if let Some(w) = where_clause {
         quote! {
             #w
-            Self: Gain<'geo, 'dev, 'tr>,
-            'geo: 'dev,
-            'dev: 'tr,
+            Self: Gain<'geo>,
         }
     } else {
         quote! {
             where
-                Self: Gain<'geo, 'dev, 'tr>,
-                'geo: 'dev,
-                'dev: 'tr,
+                Self: Gain<'geo>,
         }
     };
     let type_params = generics.type_params();
     let inspect = quote! {
-        impl <'geo, 'dev, 'tr, #(#lifetimes,)* #(#type_params,)*> Inspectable<'geo, 'dev, 'tr> for #name #ty_generics #where_clause
+        impl <'geo, #(#lifetimes,)* #(#type_params,)*> Inspectable<'geo> for #name #ty_generics #where_clause
         {
             type Result = GainInspectionResult;
 

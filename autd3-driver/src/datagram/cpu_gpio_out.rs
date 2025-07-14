@@ -23,7 +23,7 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> CpuGPIOOutputs<F> {
     }
 }
 
-impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram<'_, '_, '_> for CpuGPIOOutputs<F> {
+impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram<'_> for CpuGPIOOutputs<F> {
     type G = Self;
     type Error = Infallible;
 

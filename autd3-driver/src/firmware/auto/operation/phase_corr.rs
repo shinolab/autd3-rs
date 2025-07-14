@@ -21,14 +21,10 @@ pub struct PhaseCorrectionOp<F> {
     inner: Inner<F>,
 }
 
-impl<'dev, 'tr, F: Fn(&'tr Transducer) -> Phase + Send + Sync> Operation<'dev>
-    for PhaseCorrectionOp<F>
-where
-    'dev: 'tr,
-{
+impl<'a, F: Fn(&'a Transducer) -> Phase + Send + Sync> Operation<'a> for PhaseCorrectionOp<F> {
     type Error = AUTDDriverError;
 
-    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'a Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         Ok(match &mut self.inner {
             Inner::V10(inner) => Operation::pack(inner, device, tx)?,
             Inner::V11(inner) => Operation::pack(inner, device, tx)?,
@@ -37,7 +33,7 @@ where
         })
     }
 
-    fn required_size(&self, device: &'dev Device) -> usize {
+    fn required_size(&self, device: &'a Device) -> usize {
         match &self.inner {
             Inner::V10(inner) => Operation::required_size(inner, device),
             Inner::V11(inner) => Operation::required_size(inner, device),
@@ -56,15 +52,13 @@ where
     }
 }
 
-impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Phase + Send + Sync, F: Fn(&'dev Device) -> FT>
-    OperationGenerator<'dev> for PhaseCorrection<F, FT>
-where
-    'dev: 'tr,
+impl<'a, FT: Fn(&'a Transducer) -> Phase + Send + Sync, F: Fn(&'a Device) -> FT>
+    OperationGenerator<'a> for PhaseCorrection<F, FT>
 {
     type O1 = PhaseCorrectionOp<FT>;
     type O2 = crate::firmware::driver::NullOp;
 
-    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device, version: Version) -> Option<(Self::O1, Self::O2)> {
         Some((
             PhaseCorrectionOp {
                 inner: match version {

@@ -121,8 +121,8 @@ pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMIteratorGenerator
     pub(crate) transition_mode: Option<TransitionMode>,
 }
 
-impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + std::fmt::Debug>
-    DatagramL<'_, '_, '_> for FociSTM<N, G, C>
+impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + std::fmt::Debug> DatagramL<'_>
+    for FociSTM<N, G, C>
 {
     type G = FociSTMOperationGenerator<N, G::T>;
     type Error = AUTDDriverError;
@@ -200,21 +200,19 @@ impl<const N: usize> InspectionResultWithLoopBehavior for FociSTMInspectionResul
     }
 }
 
-impl<'geo, 'dev, 'tr, const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Debug>
-    Inspectable<'geo, 'dev, 'tr> for FociSTM<N, G, C>
+impl<'a, const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Debug> Inspectable<'a>
+    for FociSTM<N, G, C>
 {
     type Result = FociSTMInspectionResult<N>;
 
     fn inspect(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         _: &Environment,
         filter: &DeviceFilter,
         _: &FirmwareLimits,
-    ) -> Result<
-        InspectionResult<<Self as Inspectable<'geo, 'dev, 'tr>>::Result>,
-        <Self as Datagram<'geo, 'dev, 'tr>>::Error,
-    > {
+    ) -> Result<InspectionResult<<Self as Inspectable<'a>>::Result>, <Self as Datagram<'a>>::Error>
+    {
         let sampling_config = self.sampling_config()?;
         sampling_config.divide()?;
         let n = self.foci.len();
