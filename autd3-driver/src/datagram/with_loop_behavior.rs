@@ -26,7 +26,7 @@ pub struct WithLoopBehavior<D> {
     pub transition_mode: Option<TransitionMode>,
 }
 
-impl<'geo, 'dev, 'tr, D: DatagramL<'geo, 'dev, 'tr>> WithLoopBehavior<D> {
+impl<'a, D: DatagramL<'a>> WithLoopBehavior<D> {
     /// Create a new [`WithLoopBehavior`].
     #[must_use]
     pub const fn new(
@@ -44,15 +44,13 @@ impl<'geo, 'dev, 'tr, D: DatagramL<'geo, 'dev, 'tr>> WithLoopBehavior<D> {
     }
 }
 
-impl<'geo, 'dev, 'tr, D: DatagramL<'geo, 'dev, 'tr>> Datagram<'geo, 'dev, 'tr>
-    for WithLoopBehavior<D>
-{
+impl<'a, D: DatagramL<'a>> Datagram<'a> for WithLoopBehavior<D> {
     type G = D::G;
     type Error = D::Error;
 
     fn operation_generator(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -84,17 +82,17 @@ pub trait InspectionResultWithLoopBehavior {
     ) -> Self;
 }
 
-impl<'geo, 'dev, 'tr, D> Inspectable<'geo, 'dev, 'tr> for WithLoopBehavior<D>
+impl<'a, D> Inspectable<'a> for WithLoopBehavior<D>
 where
-    D: Inspectable<'geo, 'dev, 'tr> + DatagramL<'geo, 'dev, 'tr>,
+    D: Inspectable<'a> + DatagramL<'a>,
     D::Result: InspectionResultWithLoopBehavior,
-    <D as DatagramL<'geo, 'dev, 'tr>>::Error: From<<D as Datagram<'geo, 'dev, 'tr>>::Error>,
+    <D as DatagramL<'a>>::Error: From<<D as Datagram<'a>>::Error>,
 {
     type Result = D::Result;
 
     fn inspect(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &autd3_core::environment::Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,

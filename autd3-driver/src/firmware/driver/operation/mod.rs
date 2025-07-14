@@ -13,12 +13,12 @@ use crate::geometry::Device;
 use zerocopy::{Immutable, IntoBytes};
 
 #[doc(hidden)]
-pub trait Operation<'dev>: Send + Sync {
+pub trait Operation<'a>: Send + Sync {
     type Error: std::error::Error;
 
     #[must_use]
-    fn required_size(&self, device: &'dev Device) -> usize;
-    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error>;
+    fn required_size(&self, device: &'a Device) -> usize;
+    fn pack(&mut self, device: &'a Device, tx: &mut [u8]) -> Result<usize, Self::Error>;
     #[must_use]
     fn is_done(&self) -> bool;
 }

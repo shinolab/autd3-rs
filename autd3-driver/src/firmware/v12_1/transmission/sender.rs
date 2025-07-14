@@ -17,17 +17,12 @@ pub struct Sender<'a, L: Link, S: Sleep, T: TimerStrategy<S>> {
 
 impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     /// Send the [`Datagram`] to the devices.
-    pub fn send<'dev, 'tr, D: Datagram<'a, 'dev, 'tr>>(
-        &mut self,
-        s: D,
-    ) -> Result<(), AUTDDriverError>
+    pub fn send<D: Datagram<'a>>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
-        'a: 'dev,
-        'dev: 'tr,
         AUTDDriverError: From<D::Error>,
-        D::G: OperationGenerator<'dev>,
-        AUTDDriverError: From<<<D::G as OperationGenerator<'dev>>::O1 as Operation<'dev>>::Error>
-            + From<<<D::G as OperationGenerator<'dev>>::O2 as Operation<'dev>>::Error>,
+        D::G: OperationGenerator<'a>,
+        AUTDDriverError: From<<<D::G as OperationGenerator<'a>>::O1 as Operation<'a>>::Error>
+            + From<<<D::G as OperationGenerator<'a>>::O2 as Operation<'a>>::Error>,
     {
         let timeout = self.inner.option.timeout.unwrap_or(s.option().timeout);
         let parallel_threshold = s.option().parallel_threshold;

@@ -62,7 +62,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_, '_, '_> for GS<D, B> {
+impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_> for GS<D, B> {
     type G = HoloCalculatorGenerator<Complex>;
 
     fn init(

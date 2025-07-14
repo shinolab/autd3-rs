@@ -21,13 +21,10 @@ pub struct GainOp<Calculator> {
     inner: Inner<Calculator>,
 }
 
-impl<'dev, 'tr, Calculator: GainCalculator<'tr>> Operation<'dev> for GainOp<Calculator>
-where
-    'dev: 'tr,
-{
+impl<'a, Calculator: GainCalculator<'a>> Operation<'a> for GainOp<Calculator> {
     type Error = AUTDDriverError;
 
-    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'a Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         Ok(match &mut self.inner {
             Inner::V10(inner) => Operation::pack(inner, device, tx)?,
             Inner::V11(inner) => Operation::pack(inner, device, tx)?,
@@ -36,7 +33,7 @@ where
         })
     }
 
-    fn required_size(&self, device: &'dev Device) -> usize {
+    fn required_size(&self, device: &'a Device) -> usize {
         match &self.inner {
             Inner::V10(inner) => Operation::required_size(inner, device),
             Inner::V11(inner) => Operation::required_size(inner, device),
@@ -55,15 +52,11 @@ where
     }
 }
 
-impl<'dev, 'tr, G: GainCalculatorGenerator<'dev, 'tr>> OperationGenerator<'dev>
-    for GainOperationGenerator<'tr, G>
-where
-    'dev: 'tr,
-{
+impl<'a, G: GainCalculatorGenerator<'a>> OperationGenerator<'a> for GainOperationGenerator<'a, G> {
     type O1 = GainOp<G::Calculator>;
     type O2 = crate::firmware::driver::NullOp;
 
-    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device, version: Version) -> Option<(Self::O1, Self::O2)> {
         Some((
             GainOp {
                 inner: match version {

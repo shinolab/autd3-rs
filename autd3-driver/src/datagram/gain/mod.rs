@@ -33,14 +33,11 @@ pub mod tests {
     }
 
     impl TestGain {
-        pub fn new<'geo, 'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive, F: Fn(&'dev Device) -> FT>(
+        pub fn new<'a, FT: Fn(&'a Transducer) -> Drive, F: Fn(&'a Device) -> FT>(
             f: F,
-            geometry: &'geo Geometry,
+            geometry: &'a Geometry,
         ) -> Self
-        where
-            'geo: 'dev,
-            'dev: 'tr,
-        {
+where {
             Self {
                 data: geometry
                     .iter()
@@ -66,7 +63,7 @@ pub mod tests {
         }
     }
 
-    impl GainCalculatorGenerator<'_, '_> for TestGain {
+    impl GainCalculatorGenerator<'_> for TestGain {
         type Calculator = Impl;
 
         fn generate(&mut self, device: &Device) -> Self::Calculator {
@@ -76,7 +73,7 @@ pub mod tests {
         }
     }
 
-    impl Gain<'_, '_, '_> for TestGain {
+    impl Gain<'_> for TestGain {
         type G = Self;
 
         fn init(

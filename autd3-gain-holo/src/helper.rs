@@ -95,7 +95,7 @@ pub struct HoloCalculatorGenerator<T: IntoDrive + Copy + Send + Sync + 'static> 
     constraint: EmissionConstraint,
 }
 
-impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculatorGenerator<'_, '_>
+impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculatorGenerator<'_>
     for HoloCalculatorGenerator<T>
 {
     type Calculator = HoloCalculator<T>;

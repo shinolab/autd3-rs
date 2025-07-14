@@ -18,7 +18,7 @@ impl GainCalculator<'_> for Null {
     }
 }
 
-impl GainCalculatorGenerator<'_, '_> for Null {
+impl GainCalculatorGenerator<'_> for Null {
     type Calculator = Null;
 
     fn generate(&mut self, _: &Device) -> Self::Calculator {
@@ -26,7 +26,7 @@ impl GainCalculatorGenerator<'_, '_> for Null {
     }
 }
 
-impl Gain<'_, '_, '_> for Null {
+impl Gain<'_> for Null {
     type G = Null;
 
     fn init(

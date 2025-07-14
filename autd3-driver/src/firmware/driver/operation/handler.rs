@@ -13,10 +13,10 @@ pub struct OperationHandler {}
 
 impl OperationHandler {
     #[must_use]
-    pub fn is_done<'dev, O1, O2>(operations: &[Option<(O1, O2)>]) -> bool
+    pub fn is_done<'a, O1, O2>(operations: &[Option<(O1, O2)>]) -> bool
     where
-        O1: Operation<'dev>,
-        O2: Operation<'dev>,
+        O1: Operation<'a>,
+        O2: Operation<'a>,
     {
         operations.iter().all(|op| {
             op.as_ref()
@@ -24,18 +24,17 @@ impl OperationHandler {
         })
     }
 
-    pub fn pack<'geo, 'dev, O1, O2>(
+    pub fn pack<'a, O1, O2>(
         msg_id: MsgId,
         operations: &mut [Option<(O1, O2)>],
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         tx: &mut [TxMessage],
         parallel: bool,
     ) -> Result<(), AUTDDriverError>
     where
-        O1: Operation<'dev>,
-        O2: Operation<'dev>,
+        O1: Operation<'a>,
+        O2: Operation<'a>,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
-        'geo: 'dev,
     {
         if parallel {
             geometry
@@ -65,16 +64,16 @@ impl OperationHandler {
         }
     }
 
-    fn pack_op2<'dev, O1, O2>(
+    fn pack_op2<'a, O1, O2>(
         msg_id: MsgId,
         op1: &mut O1,
         op2: &mut O2,
-        dev: &'dev Device,
+        dev: &'a Device,
         tx: &mut TxMessage,
     ) -> Result<(), AUTDDriverError>
     where
-        O1: Operation<'dev>,
-        O2: Operation<'dev>,
+        O1: Operation<'a>,
+        O2: Operation<'a>,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
     {
         match (op1.is_done(), op2.is_done()) {
@@ -92,14 +91,14 @@ impl OperationHandler {
         }
     }
 
-    fn pack_op<'dev, O>(
+    fn pack_op<'a, O>(
         msg_id: MsgId,
         op: &mut O,
-        dev: &'dev Device,
+        dev: &'a Device,
         tx: &mut TxMessage,
     ) -> Result<usize, AUTDDriverError>
     where
-        O: Operation<'dev>,
+        O: Operation<'a>,
         AUTDDriverError: From<O::Error>,
     {
         debug_assert!(tx.payload().len() >= op.required_size(dev));

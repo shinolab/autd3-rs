@@ -38,10 +38,10 @@ use crate::firmware::driver::Operation;
 use autd3_core::geometry::Device;
 
 #[doc(hidden)]
-pub trait OperationGenerator<'dev> {
-    type O1: Operation<'dev>;
-    type O2: Operation<'dev>;
+pub trait OperationGenerator<'a> {
+    type O1: Operation<'a>;
+    type O2: Operation<'a>;
 
     #[must_use]
-    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)>;
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)>;
 }

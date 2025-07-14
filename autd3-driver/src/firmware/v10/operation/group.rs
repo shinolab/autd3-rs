@@ -5,16 +5,16 @@ use crate::datagram::GroupOpGenerator;
 
 use autd3_core::geometry::Device;
 
-impl<'dev, K, F, G> OperationGenerator<'dev> for GroupOpGenerator<K, F, G>
+impl<'a, K, F, G> OperationGenerator<'a> for GroupOpGenerator<K, F, G>
 where
     K: Hash + Eq + Debug,
     F: Fn(&Device) -> Option<K>,
-    G: OperationGenerator<'dev>,
+    G: OperationGenerator<'a>,
 {
-    type O1 = <G as OperationGenerator<'dev>>::O1;
-    type O2 = <G as OperationGenerator<'dev>>::O2;
+    type O1 = <G as OperationGenerator<'a>>::O1;
+    type O2 = <G as OperationGenerator<'a>>::O2;
 
-    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         let key = (self.key_map)(device)?;
         self.generators
             .get_mut(&key)
@@ -60,7 +60,7 @@ mod tests {
             pub option: DatagramOption,
         }
 
-        impl Datagram<'_, '_, '_> for TestDatagram {
+        impl Datagram<'_> for TestDatagram {
             type G = NullOperationGenerator;
             type Error = Infallible;
 
@@ -112,7 +112,7 @@ mod tests {
             pub test: Arc<Mutex<Vec<bool>>>,
         }
 
-        impl Datagram<'_, '_, '_> for TestDatagram {
+        impl Datagram<'_> for TestDatagram {
             type G = NullOperationGenerator;
             type Error = Infallible;
 
@@ -159,7 +159,7 @@ mod tests {
         #[derive(Debug)]
         pub struct TestDatagram {}
 
-        impl Datagram<'_, '_, '_> for TestDatagram {
+        impl Datagram<'_> for TestDatagram {
             type G = NullOperationGenerator;
             type Error = Infallible;
 
@@ -176,7 +176,7 @@ mod tests {
             // GRCOV_EXCL_STOP
         }
 
-        impl Inspectable<'_, '_, '_> for TestDatagram {
+        impl Inspectable<'_> for TestDatagram {
             type Result = ();
 
             fn inspect(

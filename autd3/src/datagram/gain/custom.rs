@@ -21,9 +21,7 @@ pub struct Custom<FT, F> {
     _phantom: std::marker::PhantomData<FT>,
 }
 
-impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync, F: Fn(&'dev Device) -> FT>
-    Custom<FT, F>
-{
+impl<'a, FT: Fn(&'a Transducer) -> Drive + Send + Sync, F: Fn(&'a Device) -> FT> Custom<FT, F> {
     /// Create a new [`Custom`]
     #[must_use]
     pub const fn new(f: F) -> Self {
@@ -34,23 +32,23 @@ impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync, F: Fn(&'dev Devi
     }
 }
 
-pub struct Impl<'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync> {
+pub struct Impl<'a, FT: Fn(&'a Transducer) -> Drive + Send + Sync> {
     f: FT,
-    _phantom: std::marker::PhantomData<&'tr ()>,
+    _phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync> GainCalculator<'tr> for Impl<'tr, FT> {
-    fn calc(&self, tr: &'tr Transducer) -> Drive {
+impl<'a, FT: Fn(&'a Transducer) -> Drive + Send + Sync> GainCalculator<'a> for Impl<'a, FT> {
+    fn calc(&self, tr: &'a Transducer) -> Drive {
         (self.f)(tr)
     }
 }
 
-impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync, F: Fn(&'dev Device) -> FT>
-    GainCalculatorGenerator<'dev, 'tr> for Custom<FT, F>
+impl<'a, FT: Fn(&'a Transducer) -> Drive + Send + Sync, F: Fn(&'a Device) -> FT>
+    GainCalculatorGenerator<'a> for Custom<FT, F>
 {
-    type Calculator = Impl<'tr, FT>;
+    type Calculator = Impl<'a, FT>;
 
-    fn generate(&mut self, device: &'dev Device) -> Self::Calculator {
+    fn generate(&mut self, device: &'a Device) -> Self::Calculator {
         Impl {
             f: (self.f)(device),
             _phantom: std::marker::PhantomData,
@@ -58,14 +56,14 @@ impl<'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync, F: Fn(&'dev Devi
     }
 }
 
-impl<'geo, 'dev, 'tr, FT: Fn(&'tr Transducer) -> Drive + Send + Sync, F: Fn(&'dev Device) -> FT>
-    Gain<'geo, 'dev, 'tr> for Custom<FT, F>
+impl<'a, FT: Fn(&'a Transducer) -> Drive + Send + Sync, F: Fn(&'a Device) -> FT> Gain<'a>
+    for Custom<FT, F>
 {
     type G = Custom<FT, F>;
 
     fn init(
         self,
-        _: &'geo Geometry,
+        _: &'a Geometry,
         _: &Environment,
         _: &TransducerFilter,
     ) -> Result<Self::G, GainError> {

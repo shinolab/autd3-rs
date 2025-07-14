@@ -44,12 +44,11 @@ use derive_more::Debug;
 /// );
 /// ```
 #[derive(Gain, Debug)]
-pub struct Group<'dev, 'tr, K, FK, F, G>
+pub struct Group<'geo, K, FK, F, G>
 where
     K: Hash + Eq + std::fmt::Debug,
-    FK: Fn(&'tr Transducer) -> Option<K>,
-    F: Fn(&'dev Device) -> FK,
-    'dev: 'tr,
+    FK: Fn(&'geo Transducer) -> Option<K>,
+    F: Fn(&'geo Device) -> FK,
 {
     /// Mapping function from transducer to group key.
     #[debug(ignore)]
@@ -57,16 +56,14 @@ where
     /// Map from group key to [`Gain`].
     #[debug(ignore)]
     pub gain_map: HashMap<K, G>,
-    _phantom: std::marker::PhantomData<(&'dev (), &'tr ())>,
+    _phantom: std::marker::PhantomData<(&'geo (), &'geo ())>,
 }
 
-impl<'geo, 'dev, 'tr, K, FK, F, G: Gain<'geo, 'dev, 'tr>> Group<'dev, 'tr, K, FK, F, G>
+impl<'a, K, FK, F, G: Gain<'a>> Group<'a, K, FK, F, G>
 where
     K: Hash + Eq + std::fmt::Debug,
-    FK: Fn(&'tr Transducer) -> Option<K>,
-    F: Fn(&'dev Device) -> FK,
-    'geo: 'dev,
-    'dev: 'tr,
+    FK: Fn(&'a Transducer) -> Option<K>,
+    F: Fn(&'a Device) -> FK,
 {
     /// Create a new [`Group`]
     #[must_use]
@@ -81,7 +78,7 @@ where
     #[must_use]
     fn get_filters(
         &self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         device_filter: &TransducerFilter,
     ) -> HashMap<K, TransducerFilter> {
         let mut filters: HashMap<K, HashMap<usize, bit_vec::BitVec<u32>>> = HashMap::new();
@@ -146,7 +143,7 @@ pub struct Generator {
     g: HashMap<usize, Vec<Drive>>,
 }
 
-impl GainCalculatorGenerator<'_, '_> for Generator {
+impl GainCalculatorGenerator<'_> for Generator {
     type Calculator = Impl;
 
     fn generate(&mut self, device: &Device) -> Self::Calculator {
@@ -156,20 +153,17 @@ impl GainCalculatorGenerator<'_, '_> for Generator {
     }
 }
 
-impl<'geo, 'dev, 'tr, K, FK, F, G: Gain<'geo, 'dev, 'tr>> Gain<'geo, 'dev, 'tr>
-    for Group<'dev, 'tr, K, FK, F, G>
+impl<'a, K, FK, F, G: Gain<'a>> Gain<'a> for Group<'a, K, FK, F, G>
 where
     K: Hash + Eq + std::fmt::Debug,
-    FK: Fn(&'tr Transducer) -> Option<K>,
-    F: Fn(&'dev Device) -> FK,
-    'geo: 'dev,
-    'dev: 'tr,
+    FK: Fn(&'a Transducer) -> Option<K>,
+    F: Fn(&'a Device) -> FK,
 {
     type G = Generator;
 
     fn init(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &Environment,
         device_filter: &TransducerFilter,
     ) -> Result<Self::G, GainError> {

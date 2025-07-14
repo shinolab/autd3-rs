@@ -13,12 +13,12 @@ use crate::firmware::driver::{Operation, Version};
 use autd3_core::geometry::Device;
 
 #[doc(hidden)]
-pub trait OperationGenerator<'dev> {
-    type O1: Operation<'dev>;
-    type O2: Operation<'dev>;
+pub trait OperationGenerator<'a> {
+    type O1: Operation<'a>;
+    type O2: Operation<'a>;
 
     #[must_use]
-    fn generate(&mut self, device: &'dev Device, version: Version) -> Option<(Self::O1, Self::O2)>;
+    fn generate(&mut self, device: &'a Device, version: Version) -> Option<(Self::O1, Self::O2)>;
 }
 
 macro_rules! impl_auto_op {
@@ -159,22 +159,22 @@ macro_rules! impl_auto_op {
                 }
             }
 
-            impl<'dev, $($generics),*> OperationGenerator<'dev> for  $gen
+            impl<'a, $($generics),*> OperationGenerator<'a> for  $gen
             where
-                Self: crate::firmware::v10::operation::OperationGenerator<'dev,
+                Self: crate::firmware::v10::operation::OperationGenerator<'a,
                         O1 = crate::firmware::v10::operation::[<$op Op>],
-                    > + crate::firmware::v11::operation::OperationGenerator<'dev,
+                    > + crate::firmware::v11::operation::OperationGenerator<'a,
                         O1 = crate::firmware::v11::operation::[<$op Op>],
-                    > + crate::firmware::v12::operation::OperationGenerator<'dev,
+                    > + crate::firmware::v12::operation::OperationGenerator<'a,
                         O1 = crate::firmware::v12::operation::[<$op Op>],
-                    > + crate::firmware::v12_1::operation::OperationGenerator<'dev,
+                    > + crate::firmware::v12_1::operation::OperationGenerator<'a,
                         O1 = crate::firmware::v12_1::operation::[<$op Op>],
                     >,
             {
                 type O1 = [<$op Op>];
                 type O2 = crate::firmware::driver::NullOp;
 
-                fn generate(&mut self, device: &'dev Device ,version: Version) -> Option<(Self::O1, Self::O2)> {
+                fn generate(&mut self, device: &'a Device ,version: Version) -> Option<(Self::O1, Self::O2)> {
                     Some((
                         Self::O1 {
                             inner: match version {

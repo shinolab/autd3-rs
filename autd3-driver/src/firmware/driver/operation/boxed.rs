@@ -52,7 +52,7 @@ pub trait DDatagram: std::fmt::Debug {
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
-impl<'geo, 'dev, 'tr, T: Datagram<'geo, 'dev, 'tr>> DDatagram for MaybeUninit<T>
+impl<'a, T: Datagram<'a>> DDatagram for MaybeUninit<T>
 where
     T::G: DOperationGenerator + 'static,
     AUTDDriverError: From<T::Error>,
@@ -99,12 +99,10 @@ impl std::fmt::Debug for BoxedDatagram {
 impl BoxedDatagram {
     /// Creates a new [`BoxedDatagram`].
     pub fn new<
-        'geo,
-        'dev,
-        'tr,
+        'a,
         E,
         G: DOperationGenerator + 'static,
-        D: Datagram<'geo, 'dev, 'tr, G = G, Error = E> + 'static,
+        D: Datagram<'a, G = G, Error = E> + 'static,
     >(
         d: D,
     ) -> Self
@@ -117,13 +115,13 @@ impl BoxedDatagram {
     }
 }
 
-impl<'geo, 'dev, 'tr> Datagram<'geo, 'dev, 'tr> for BoxedDatagram {
+impl<'a> Datagram<'a> for BoxedDatagram {
     type G = DynOperationGenerator;
     type Error = AUTDDriverError;
 
     fn operation_generator(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -139,7 +137,7 @@ impl<'geo, 'dev, 'tr> Datagram<'geo, 'dev, 'tr> for BoxedDatagram {
     }
 }
 
-impl<'dev, O: Operation<'dev>> DOperation for O
+impl<'a, O: Operation<'a>> DOperation for O
 where
     AUTDDriverError: From<O::Error>,
 {
@@ -158,14 +156,14 @@ where
     }
 }
 
-impl<'dev> Operation<'dev> for BoxedOperation {
+impl<'a> Operation<'a> for BoxedOperation {
     type Error = AUTDDriverError;
 
-    fn required_size(&self, device: &'dev Device) -> usize {
+    fn required_size(&self, device: &'a Device) -> usize {
         self.inner.required_size(device)
     }
 
-    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
+    fn pack(&mut self, device: &'a Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         self.inner.pack(device, tx)
     }
 

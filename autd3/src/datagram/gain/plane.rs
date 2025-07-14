@@ -56,7 +56,7 @@ impl GainCalculator<'_> for Impl {
     }
 }
 
-impl GainCalculatorGenerator<'_, '_> for Impl {
+impl GainCalculatorGenerator<'_> for Impl {
     type Calculator = Impl;
 
     fn generate(&mut self, _: &Device) -> Self::Calculator {
@@ -64,7 +64,7 @@ impl GainCalculatorGenerator<'_, '_> for Impl {
     }
 }
 
-impl Gain<'_, '_, '_> for Plane {
+impl Gain<'_> for Plane {
     type G = Impl;
 
     fn init(

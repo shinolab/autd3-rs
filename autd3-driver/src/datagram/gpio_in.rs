@@ -23,9 +23,7 @@ impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> EmulateGPIOIn<F> {
     }
 }
 
-impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram<'_, '_, '_>
-    for EmulateGPIOIn<F>
-{
+impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> Datagram<'_> for EmulateGPIOIn<F> {
     type G = Self;
     type Error = Infallible;
 
