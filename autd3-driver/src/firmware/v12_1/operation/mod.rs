@@ -8,34 +8,34 @@ use crate::firmware::driver::Operation;
 use autd3_core::geometry::Device;
 
 #[doc(hidden)]
-pub trait OperationGenerator<'dev> {
-    type O1: Operation<'dev>;
-    type O2: Operation<'dev>;
+pub trait OperationGenerator<'a> {
+    type O1: Operation<'a>;
+    type O2: Operation<'a>;
 
     #[must_use]
-    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)>;
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)>;
 }
 
 macro_rules! impl_v12_1_op {
     ($ty:ty) => {
-        impl<'dev> OperationGenerator<'dev> for  $ty {
-            type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O1;
-            type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O2;
+        impl<'a> OperationGenerator<'a> for  $ty {
+            type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O1;
+            type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O2;
 
-            fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
+            fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
                 crate::firmware::v12::operation::OperationGenerator::generate(self, device)
             }
         }
     };
     ($($generics:tt),+; $ty:ty) => {
-           impl<'dev, $($generics),+> OperationGenerator<'dev> for  $ty
+           impl<'a, $($generics),+> OperationGenerator<'a> for  $ty
            where
-               $ty: crate::firmware::v12::operation::OperationGenerator<'dev>,
+               $ty: crate::firmware::v12::operation::OperationGenerator<'a>,
            {
-               type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O1;
-               type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O2;
+               type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O1;
+               type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O2;
 
-               fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
+               fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
                    crate::firmware::v12::operation::OperationGenerator::generate(self, device)
                }
            }
@@ -61,48 +61,48 @@ impl_v12_1_op!(F, FT; crate::datagram::PhaseCorrection<F, FT>);
 impl_v12_1_op!(O1, O2; autd3_core::datagram::CombinedOperationGenerator<O1, O2>);
 impl_v12_1_op!(K, F, G; crate::datagram::GroupOpGenerator<K, F, G>);
 
-impl<'dev, 'tr, G> OperationGenerator<'dev> for autd3_core::gain::GainOperationGenerator<'tr, G>
+impl<'a, G> OperationGenerator<'a> for autd3_core::gain::GainOperationGenerator<'a, G>
 where
-    autd3_core::gain::GainOperationGenerator<'tr, G>:
-        crate::firmware::v12::operation::OperationGenerator<'dev>,
+    autd3_core::gain::GainOperationGenerator<'a, G>:
+        crate::firmware::v12::operation::OperationGenerator<'a>,
 {
-    type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O1;
-    type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O2;
+    type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O1;
+    type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O2;
 
-    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         crate::firmware::v12::operation::OperationGenerator::generate(self, device)
     }
 }
 
-impl<'dev, 'tr, T> OperationGenerator<'dev> for crate::datagram::GainSTMOperationGenerator<'tr, T>
+impl<'a, T> OperationGenerator<'a> for crate::datagram::GainSTMOperationGenerator<'a, T>
 where
-    crate::datagram::GainSTMOperationGenerator<'tr, T>:
-        crate::firmware::v12::operation::OperationGenerator<'dev>,
+    crate::datagram::GainSTMOperationGenerator<'a, T>:
+        crate::firmware::v12::operation::OperationGenerator<'a>,
 {
-    type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O1;
-    type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O2;
+    type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O1;
+    type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O2;
 
-    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         crate::firmware::v12::operation::OperationGenerator::generate(self, device)
     }
 }
 
-impl<'dev, const N: usize, G: crate::datagram::FociSTMIteratorGenerator<N>> OperationGenerator<'dev>
+impl<'a, const N: usize, G: crate::datagram::FociSTMIteratorGenerator<N>> OperationGenerator<'a>
     for crate::datagram::FociSTMOperationGenerator<N, G>
 {
-    type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O1;
-    type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'dev>>::O2;
+    type O1 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O1;
+    type O2 = <Self as crate::firmware::v12::operation::OperationGenerator<'a>>::O2;
 
-    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         crate::firmware::v12::operation::OperationGenerator::generate(self, device)
     }
 }
 
-impl<'dev> OperationGenerator<'dev> for crate::firmware::driver::DynOperationGenerator {
+impl<'a> OperationGenerator<'a> for crate::firmware::driver::DynOperationGenerator {
     type O1 = crate::firmware::driver::BoxedOperation;
     type O2 = crate::firmware::driver::BoxedOperation;
 
-    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         self.g
             .dyn_generate(device, crate::firmware::driver::Version::V12)
     }

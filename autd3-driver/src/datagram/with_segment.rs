@@ -22,7 +22,7 @@ pub struct WithSegment<D> {
     pub transition_mode: Option<TransitionMode>,
 }
 
-impl<'geo, 'dev, 'tr, D: DatagramS<'geo, 'dev, 'tr>> WithSegment<D> {
+impl<'a, D: DatagramS<'a>> WithSegment<D> {
     /// Create a new [`WithSegment`].
     #[must_use]
     pub const fn new(inner: D, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
@@ -34,13 +34,13 @@ impl<'geo, 'dev, 'tr, D: DatagramS<'geo, 'dev, 'tr>> WithSegment<D> {
     }
 }
 
-impl<'geo, 'dev, 'tr, D: DatagramS<'geo, 'dev, 'tr>> Datagram<'geo, 'dev, 'tr> for WithSegment<D> {
+impl<'a, D: DatagramS<'a>> Datagram<'a> for WithSegment<D> {
     type G = D::G;
     type Error = D::Error;
 
     fn operation_generator(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
@@ -66,17 +66,17 @@ pub trait InspectionResultWithSegment {
     fn with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Self;
 }
 
-impl<'geo, 'dev, 'tr, D> Inspectable<'geo, 'dev, 'tr> for WithSegment<D>
+impl<'a, D> Inspectable<'a> for WithSegment<D>
 where
-    D: Inspectable<'geo, 'dev, 'tr> + DatagramS<'geo, 'dev, 'tr>,
+    D: Inspectable<'a> + DatagramS<'a>,
     D::Result: InspectionResultWithSegment,
-    <D as DatagramS<'geo, 'dev, 'tr>>::Error: From<<D as Datagram<'geo, 'dev, 'tr>>::Error>,
+    <D as DatagramS<'a>>::Error: From<<D as Datagram<'a>>::Error>,
 {
     type Result = D::Result;
 
     fn inspect(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,

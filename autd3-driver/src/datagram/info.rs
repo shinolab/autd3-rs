@@ -25,7 +25,7 @@ pub struct FetchFirmwareInfoOpGenerator {
     pub(crate) inner: FirmwareVersionType,
 }
 
-impl Datagram<'_, '_, '_> for FirmwareVersionType {
+impl Datagram<'_> for FirmwareVersionType {
     type G = FetchFirmwareInfoOpGenerator;
     type Error = Infallible;
 

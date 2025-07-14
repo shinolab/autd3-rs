@@ -12,7 +12,7 @@ use derive_more::Debug;
 #[derive(Debug)]
 pub struct Nop;
 
-impl Datagram<'_, '_, '_> for Nop {
+impl Datagram<'_> for Nop {
     type G = Nop;
     type Error = Infallible;
 

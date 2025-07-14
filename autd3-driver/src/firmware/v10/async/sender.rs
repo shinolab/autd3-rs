@@ -33,17 +33,12 @@ pub struct Sender<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> {
 
 impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
     /// Send the [`Datagram`] to the devices.
-    pub async fn send<'dev, 'tr, D: Datagram<'a, 'dev, 'tr>>(
-        &mut self,
-        s: D,
-    ) -> Result<(), AUTDDriverError>
+    pub async fn send<D: Datagram<'a>>(&mut self, s: D) -> Result<(), AUTDDriverError>
     where
-        'a: 'dev,
-        'dev: 'tr,
         AUTDDriverError: From<D::Error>,
-        D::G: OperationGenerator<'dev>,
-        AUTDDriverError: From<<<D::G as OperationGenerator<'dev>>::O1 as Operation<'dev>>::Error>
-            + From<<<D::G as OperationGenerator<'dev>>::O2 as Operation<'dev>>::Error>,
+        D::G: OperationGenerator<'a>,
+        AUTDDriverError: From<<<D::G as OperationGenerator<'a>>::O1 as Operation<'a>>::Error>
+            + From<<<D::G as OperationGenerator<'a>>::O2 as Operation<'a>>::Error>,
     {
         let timeout = self.option.timeout.unwrap_or(s.option().timeout);
         let parallel_threshold = s.option().parallel_threshold;
@@ -66,17 +61,16 @@ impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
 }
 
 impl<'a, L: AsyncLink, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
-    pub(crate) async fn send_impl<'dev, O1, O2>(
+    pub(crate) async fn send_impl<O1, O2>(
         &mut self,
         timeout: Duration,
         parallel_threshold: usize,
         operations: &mut [Option<(O1, O2)>],
     ) -> Result<(), AUTDDriverError>
     where
-        O1: Operation<'dev>,
-        O2: Operation<'dev>,
+        O1: Operation<'a>,
+        O2: Operation<'a>,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
-        'a: 'dev,
     {
         let strict = self.option.strict;
         operations

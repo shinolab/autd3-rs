@@ -8,12 +8,12 @@ use autd3_core::{
 
 use super::{GainSTMGenerator, GainSTMIterator, GainSTMIteratorGenerator};
 
-pub struct VecGainSTMIterator<'tr, G: GainCalculator<'tr>> {
+pub struct VecGainSTMIterator<'a, G: GainCalculator<'a>> {
     gains: Peekable<std::vec::IntoIter<G>>,
-    __phantom: std::marker::PhantomData<&'tr ()>,
+    __phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'tr, G: GainCalculator<'tr>> GainSTMIterator<'tr> for VecGainSTMIterator<'tr, G> {
+impl<'a, G: GainCalculator<'a>> GainSTMIterator<'a> for VecGainSTMIterator<'a, G> {
     type Calculator = G;
 
     fn next(&mut self) -> Option<Self::Calculator> {
@@ -21,13 +21,11 @@ impl<'tr, G: GainCalculator<'tr>> GainSTMIterator<'tr> for VecGainSTMIterator<'t
     }
 }
 
-impl<'dev, 'tr, G: GainCalculatorGenerator<'dev, 'tr>> GainSTMIteratorGenerator<'dev, 'tr>
-    for Vec<G>
-{
+impl<'a, G: GainCalculatorGenerator<'a>> GainSTMIteratorGenerator<'a> for Vec<G> {
     type Gain = G;
-    type Iterator = VecGainSTMIterator<'tr, G::Calculator>;
+    type Iterator = VecGainSTMIterator<'a, G::Calculator>;
 
-    fn generate(&mut self, device: &'dev Device) -> Self::Iterator {
+    fn generate(&mut self, device: &'a Device) -> Self::Iterator {
         Self::Iterator {
             gains: self
                 .iter_mut()
@@ -40,12 +38,12 @@ impl<'dev, 'tr, G: GainCalculatorGenerator<'dev, 'tr>> GainSTMIteratorGenerator<
     }
 }
 
-impl<'geo, 'dev, 'tr, G: Gain<'geo, 'dev, 'tr>> GainSTMGenerator<'geo, 'dev, 'tr> for Vec<G> {
+impl<'a, G: Gain<'a>> GainSTMGenerator<'a> for Vec<G> {
     type T = Vec<G::G>;
 
     fn init(
         self,
-        geometry: &'geo Geometry,
+        geometry: &'a Geometry,
         env: &Environment,
         filter: &TransducerFilter,
     ) -> Result<Self::T, GainError> {

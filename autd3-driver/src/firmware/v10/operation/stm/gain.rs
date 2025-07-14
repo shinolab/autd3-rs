@@ -89,7 +89,7 @@ pub struct GainSTMOp<G, Iterator> {
     __phantom: std::marker::PhantomData<G>,
 }
 
-impl<'tr, G: GainCalculator<'tr>, Iterator: GainSTMIterator<'tr, Calculator = G>>
+impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>>
     GainSTMOp<G, Iterator>
 {
     #[allow(clippy::too_many_arguments)]
@@ -118,14 +118,12 @@ impl<'tr, G: GainCalculator<'tr>, Iterator: GainSTMIterator<'tr, Calculator = G>
     }
 }
 
-impl<'dev, 'tr, G: GainCalculator<'tr>, Iterator: GainSTMIterator<'tr, Calculator = G>>
-    Operation<'dev> for GainSTMOp<G, Iterator>
-where
-    'dev: 'tr,
+impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> Operation<'a>
+    for GainSTMOp<G, Iterator>
 {
     type Error = AUTDDriverError;
 
-    fn required_size(&self, device: &'dev Device) -> usize {
+    fn required_size(&self, device: &'a Device) -> usize {
         if self.sent == 0 {
             size_of::<GainSTMHead>() + device.num_transducers() * size_of::<Drive>()
         } else {
@@ -133,7 +131,7 @@ where
         }
     }
 
-    fn pack(&mut self, device: &'dev Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
+    fn pack(&mut self, device: &'a Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError> {
         if !(STM_BUF_SIZE_MIN..=self.limits.gain_stm_buf_size_max as usize).contains(&self.size) {
             return Err(AUTDDriverError::GainSTMSizeOutOfRange(
                 self.size,
@@ -252,15 +250,13 @@ where
     }
 }
 
-impl<'dev, 'tr, T: GainSTMIteratorGenerator<'dev, 'tr>> OperationGenerator<'dev>
-    for GainSTMOperationGenerator<'tr, T>
-where
-    'dev: 'tr,
+impl<'a, T: GainSTMIteratorGenerator<'a>> OperationGenerator<'a>
+    for GainSTMOperationGenerator<'a, T>
 {
-    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator<'dev, 'tr>>::Calculator, T::Iterator>;
+    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator<'a>>::Calculator, T::Iterator>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &'dev Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         Some((
             Self::O1::new(
                 self.g.generate(device),

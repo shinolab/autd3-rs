@@ -137,7 +137,7 @@ pub struct Generator {
     g: HashMap<usize, Vec<Drive>>,
 }
 
-impl GainCalculatorGenerator<'_, '_> for Generator {
+impl GainCalculatorGenerator<'_> for Generator {
     type Calculator = Impl;
 
     fn generate(&mut self, device: &Device) -> Self::Calculator {
@@ -147,7 +147,7 @@ impl GainCalculatorGenerator<'_, '_> for Generator {
     }
 }
 
-impl<D: Directivity, F: GreedyObjectiveFn> Gain<'_, '_, '_> for Greedy<D, F> {
+impl<D: Directivity, F: GreedyObjectiveFn> Gain<'_> for Greedy<D, F> {
     type G = Generator;
 
     fn init(
