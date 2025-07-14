@@ -55,7 +55,7 @@ impl<D: Directivity> Default for LMOption<D> {
 pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
-    /// The opinion of the Gain.
+    /// The option of the Gain.
     pub option: LMOption<D>,
     #[debug("{}", tynm::type_name::<B>())]
     /// The backend of linear algebra calculation.

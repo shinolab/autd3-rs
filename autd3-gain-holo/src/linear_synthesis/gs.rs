@@ -39,7 +39,7 @@ impl<D: Directivity> Default for GSOption<D> {
 pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
-    /// The opinion of the Gain.
+    /// The option of the Gain.
     pub option: GSOption<D>,
     /// The backend of calculation.
     #[debug("{}", tynm::type_name::<B>())]

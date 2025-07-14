@@ -34,7 +34,7 @@ impl<D: Directivity> Default for NaiveOption<D> {
 pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
-    /// The opinion of the Gain.
+    /// The option of the Gain.
     pub option: NaiveOption<D>,
     /// The backend of calculation.
     #[debug("{}", tynm::type_name::<B>())]

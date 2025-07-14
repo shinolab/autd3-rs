@@ -64,7 +64,7 @@ impl Default for GreedyOption<Sphere, AbsGreedyObjectiveFn> {
 pub struct Greedy<D: Directivity, F: GreedyObjectiveFn> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
-    /// The opinion of the Gain.
+    /// The option of the Gain.
     pub option: GreedyOption<D, F>,
 }
 

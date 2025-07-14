@@ -39,7 +39,7 @@ impl<D: Directivity> Default for GSPATOption<D> {
 pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
-    /// The opinion of the Gain.
+    /// The option of the Gain.
     pub option: GSPATOption<D>,
     /// The backend of linear algebra calculation.
     #[debug("{}", tynm::type_name::<B>())]
