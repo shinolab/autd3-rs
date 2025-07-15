@@ -636,7 +636,7 @@ mod tests {
 
     #[rstest::fixture]
     fn backend() -> NalgebraBackend {
-        NalgebraBackend {}
+        NalgebraBackend::new()
     }
 
     #[rstest::rstest]
