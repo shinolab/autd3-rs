@@ -6,28 +6,28 @@ use crate::{
     helper::{HoloCalculatorGenerator, generate_result},
 };
 
-use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
+use autd3_core::{
+    acoustics::directivity::{Directivity, Sphere},
+    derive::*,
+    geometry::Point3,
+};
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`GSPAT`].
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct GSPATOption<D: Directivity> {
+pub struct GSPATOption {
     /// The number of iterations.
     pub repeat: NonZeroUsize,
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
-    #[doc(hidden)]
-    #[debug(ignore)]
-    pub __phantom: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity> Default for GSPATOption<D> {
+impl Default for GSPATOption {
     fn default() -> Self {
         Self {
             repeat: NonZeroUsize::new(100).unwrap(),
             constraint: EmissionConstraint::Clamp(Intensity::MIN, Intensity::MAX),
-            __phantom: std::marker::PhantomData,
         }
     }
 }
@@ -36,33 +36,48 @@ impl<D: Directivity> Default for GSPATOption<D> {
 ///
 /// See [Plasencia, et al., 2020](https://dl.acm.org/doi/10.1145/3386569.3392492) for more details.
 #[derive(Gain, Debug)]
-pub struct GSPAT<D: Directivity, B: LinAlgBackend<D>> {
+pub struct GSPAT<D: Directivity, B: LinAlgBackend> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
     /// The option of the Gain.
-    pub option: GSPATOption<D>,
+    pub option: GSPATOption,
     /// The backend of linear algebra calculation.
     #[debug("{}", tynm::type_name::<B>())]
     pub backend: Arc<B>,
+    /// The directivity of the transducers.
+    pub directivity: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> GSPAT<D, B> {
+impl<B: LinAlgBackend> GSPAT<Sphere, B> {
     /// Create a new [`GSPAT`].
     #[must_use]
     pub fn new(
         foci: impl IntoIterator<Item = (Point3, Amplitude)>,
-        option: GSPATOption<D>,
+        option: GSPATOption,
+        backend: Arc<B>,
+    ) -> Self {
+        Self::with_directivity(foci, option, backend)
+    }
+}
+
+impl<D: Directivity, B: LinAlgBackend> GSPAT<D, B> {
+    /// Create a new [`GSPAT`] with directivity.
+    #[must_use]
+    pub fn with_directivity(
+        foci: impl IntoIterator<Item = (Point3, Amplitude)>,
+        option: GSPATOption,
         backend: Arc<B>,
     ) -> Self {
         Self {
             foci: foci.into_iter().collect(),
             option,
             backend,
+            directivity: std::marker::PhantomData,
         }
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_> for GSPAT<D, B> {
+impl<D: Directivity, B: LinAlgBackend> Gain<'_> for GSPAT<D, B> {
     type G = HoloCalculatorGenerator<Complex>;
 
     fn init(
@@ -75,7 +90,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_> for GSPAT<D, B> {
 
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, env, &foci, filter)?;
+            .generate_propagation_matrix::<D>(geometry, env, &foci, filter)?;
 
         let m = foci.len();
         let n = self.backend.cols_c(&g)?;
@@ -150,14 +165,13 @@ mod tests {
     #[test]
     fn test_gspat_all() {
         let geometry = create_geometry(1, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = GSPAT::new(
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             GSPATOption {
                 repeat: NonZeroUsize::new(5).unwrap(),
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
-                ..Default::default()
             },
             backend,
         );
@@ -182,7 +196,7 @@ mod tests {
     #[test]
     fn test_gspat_filtered() {
         let geometry = create_geometry(2, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = GSPAT {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
@@ -190,8 +204,8 @@ mod tests {
             option: GSPATOption {
                 repeat: NonZeroUsize::new(5).unwrap(),
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
-                ..Default::default()
             },
+            directivity: std::marker::PhantomData::<Sphere>,
         };
 
         let filter = TransducerFilter::from_fn(&geometry, |dev| {

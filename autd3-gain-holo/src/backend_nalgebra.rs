@@ -1,10 +1,7 @@
 use std::mem::{ManuallyDrop, MaybeUninit};
 
 use autd3_core::{
-    acoustics::{
-        directivity::{Directivity, Sphere},
-        propagate,
-    },
+    acoustics::{directivity::Directivity, propagate},
     environment::Environment,
     gain::TransducerFilter,
     geometry::{Complex, Geometry, Point3},
@@ -16,23 +13,14 @@ use crate::{LinAlgBackend, MatrixX, MatrixXc, VectorX, VectorXc, error::HoloErro
 /// [`LinAlgBackend`] using [`nalgebra`].
 ///
 /// [`nalgebra`]: https://docs.rs/nalgebra/latest/nalgebra/
-pub struct NalgebraBackend<D: Directivity> {
-    _phantom: std::marker::PhantomData<D>,
-}
+#[derive(Debug, Clone, Copy, Default)]
+pub struct NalgebraBackend;
 
-impl<D: Directivity> NalgebraBackend<D> {
+impl NalgebraBackend {
     /// Create a new [`NalgebraBackend`].
     #[must_use]
     pub const fn new() -> Self {
-        Self {
-            _phantom: std::marker::PhantomData,
-        }
-    }
-}
-
-impl Default for NalgebraBackend<Sphere> {
-    fn default() -> Self {
-        Self::new()
+        Self {}
     }
 }
 
@@ -88,13 +76,13 @@ fn uninit_mat(row: usize, col: usize) -> MatrixXc {
     })
 }
 
-impl<D: Directivity> LinAlgBackend<D> for NalgebraBackend<D> {
+impl LinAlgBackend for NalgebraBackend {
     type MatrixXc = MatrixXc;
     type MatrixX = MatrixX;
     type VectorXc = VectorXc;
     type VectorX = VectorX;
 
-    fn generate_propagation_matrix(
+    fn generate_propagation_matrix<D: Directivity>(
         &self,
         geometry: &Geometry,
         env: &Environment,
@@ -561,7 +549,7 @@ mod tests {
 
     use super::*;
 
-    use autd3_core::derive::Transducer;
+    use autd3_core::{acoustics::directivity::Sphere, geometry::Transducer};
     use rand::Rng;
 
     const N: usize = 10;
@@ -580,7 +568,7 @@ mod tests {
         })
     }
 
-    fn make_random_v(backend: &NalgebraBackend<Sphere>, size: usize) -> Result<VectorX, HoloError> {
+    fn make_random_v(backend: &NalgebraBackend, size: usize) -> Result<VectorX, HoloError> {
         let mut rng = rand::rng();
         let v: Vec<f32> = (&mut rng)
             .sample_iter(rand::distr::StandardUniform)
@@ -590,7 +578,7 @@ mod tests {
     }
 
     fn make_random_sign_v(
-        backend: &NalgebraBackend<Sphere>,
+        backend: &NalgebraBackend,
         size: usize,
         range: std::ops::Range<f32>,
     ) -> Result<VectorX, HoloError> {
@@ -604,7 +592,7 @@ mod tests {
     }
 
     fn make_random_m(
-        backend: &NalgebraBackend<Sphere>,
+        backend: &NalgebraBackend,
         rows: usize,
         cols: usize,
     ) -> Result<MatrixX, HoloError> {
@@ -616,10 +604,7 @@ mod tests {
         backend.from_slice_m(rows, cols, &v)
     }
 
-    fn make_random_cv(
-        backend: &NalgebraBackend<Sphere>,
-        size: usize,
-    ) -> Result<VectorXc, HoloError> {
+    fn make_random_cv(backend: &NalgebraBackend, size: usize) -> Result<VectorXc, HoloError> {
         let mut rng = rand::rng();
         let real: Vec<f32> = (&mut rng)
             .sample_iter(rand::distr::StandardUniform)
@@ -633,7 +618,7 @@ mod tests {
     }
 
     fn make_random_cm(
-        backend: &NalgebraBackend<Sphere>,
+        backend: &NalgebraBackend,
         rows: usize,
         cols: usize,
     ) -> Result<MatrixXc, HoloError> {
@@ -650,15 +635,13 @@ mod tests {
     }
 
     #[rstest::fixture]
-    fn backend() -> NalgebraBackend<Sphere> {
-        NalgebraBackend {
-            _phantom: std::marker::PhantomData,
-        }
+    fn backend() -> NalgebraBackend {
+        NalgebraBackend {}
     }
 
     #[rstest::rstest]
     #[test]
-    fn test_alloc_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_alloc_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let v = backend.alloc_v(N)?;
         let v = backend.to_host_v(v)?;
 
@@ -668,7 +651,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_alloc_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_alloc_m(backend: NalgebraBackend) -> Result<(), HoloError> {
         let m = backend.alloc_m(N, 2 * N)?;
         let m = backend.to_host_m(m)?;
 
@@ -679,7 +662,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_alloc_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_alloc_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let v = backend.alloc_cv(N)?;
         let v = backend.to_host_cv(v)?;
 
@@ -689,7 +672,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_alloc_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_alloc_cm(backend: NalgebraBackend) -> Result<(), HoloError> {
         let m = backend.alloc_cm(N, 2 * N)?;
         let m = backend.to_host_cm(m)?;
 
@@ -700,7 +683,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_alloc_zeros_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_alloc_zeros_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let v = backend.alloc_v(N)?;
         let v = backend.to_host_v(v)?;
 
@@ -711,7 +694,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_alloc_zeros_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_alloc_zeros_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let v = backend.alloc_cv(N)?;
         let v = backend.to_host_cv(v)?;
 
@@ -722,7 +705,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_alloc_zeros_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_alloc_zeros_cm(backend: NalgebraBackend) -> Result<(), HoloError> {
         let m = backend.alloc_cm(N, 2 * N)?;
         let m = backend.to_host_cm(m)?;
 
@@ -734,7 +717,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_cols_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_cols_c(backend: NalgebraBackend) -> Result<(), HoloError> {
         let m = backend.alloc_cm(N, 2 * N)?;
 
         assert_eq!(2 * N, backend.cols_c(&m)?);
@@ -744,7 +727,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_from_slice_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_from_slice_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let rng = rand::rng();
 
         let v: Vec<f32> = rng
@@ -764,7 +747,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_from_slice_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_from_slice_m(backend: NalgebraBackend) -> Result<(), HoloError> {
         let rng = rand::rng();
 
         let v: Vec<f32> = rng
@@ -787,7 +770,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_from_slice_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_from_slice_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let rng = rand::rng();
 
         let real: Vec<f32> = rng
@@ -808,7 +791,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_from_slice2_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_from_slice2_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let mut rng = rand::rng();
 
         let real: Vec<f32> = (&mut rng)
@@ -836,7 +819,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_from_slice2_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_from_slice2_cm(backend: NalgebraBackend) -> Result<(), HoloError> {
         let mut rng = rand::rng();
 
         let real: Vec<f32> = (&mut rng)
@@ -864,7 +847,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_copy_from_slice_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_copy_from_slice_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         {
             let mut a = backend.alloc_zeros_v(N)?;
             let mut rng = rand::rng();
@@ -901,7 +884,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_copy_to_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_copy_to_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_v(&backend, N)?;
         let mut b = backend.alloc_v(N)?;
 
@@ -917,7 +900,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_copy_to_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_copy_to_m(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_m(&backend, N, N)?;
         let mut b = backend.alloc_m(N, N)?;
 
@@ -933,7 +916,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_clone_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_clone_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let c = make_random_v(&backend, N)?;
         let c2 = backend.clone_v(&c)?;
 
@@ -948,7 +931,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_clone_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_clone_m(backend: NalgebraBackend) -> Result<(), HoloError> {
         let c = make_random_m(&backend, N, N)?;
         let c2 = backend.clone_m(&c)?;
 
@@ -963,7 +946,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_clone_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_clone_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let c = make_random_cv(&backend, N)?;
         let c2 = backend.clone_cv(&c)?;
 
@@ -979,7 +962,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_clone_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_clone_cm(backend: NalgebraBackend) -> Result<(), HoloError> {
         let c = make_random_cm(&backend, N, N)?;
         let c2 = backend.clone_cm(&c)?;
 
@@ -995,7 +978,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_make_complex2_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_make_complex2_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let real = make_random_v(&backend, N)?;
         let imag = make_random_v(&backend, N)?;
 
@@ -1017,7 +1000,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_create_diagonal(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_create_diagonal(backend: NalgebraBackend) -> Result<(), HoloError> {
         let diagonal = make_random_v(&backend, N)?;
 
         let mut c = backend.alloc_m(N, N)?;
@@ -1040,7 +1023,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_create_diagonal_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_create_diagonal_c(backend: NalgebraBackend) -> Result<(), HoloError> {
         let diagonal = make_random_cv(&backend, N)?;
 
         let mut c = backend.alloc_cm(N, N)?;
@@ -1065,7 +1048,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_get_diagonal(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_get_diagonal(backend: NalgebraBackend) -> Result<(), HoloError> {
         let m = make_random_m(&backend, N, N)?;
         let mut diagonal = backend.alloc_v(N)?;
 
@@ -1081,7 +1064,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_norm_squared_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_norm_squared_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let v = make_random_cv(&backend, N)?;
 
         let mut abs = backend.alloc_v(N)?;
@@ -1097,7 +1080,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_real_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_real_cm(backend: NalgebraBackend) -> Result<(), HoloError> {
         let v = make_random_cm(&backend, N, N)?;
         let mut r = backend.alloc_m(N, N)?;
 
@@ -1115,7 +1098,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_imag_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_imag_cm(backend: NalgebraBackend) -> Result<(), HoloError> {
         let v = make_random_cm(&backend, N, N)?;
         let mut r = backend.alloc_m(N, N)?;
 
@@ -1133,7 +1116,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_scale_assign_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_scale_assign_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let mut v = make_random_cv(&backend, N)?;
         let vc = backend.clone_cv(&v)?;
         let mut rng = rand::rng();
@@ -1153,7 +1136,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_conj_assign_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_conj_assign_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let mut v = make_random_cv(&backend, N)?;
         let vc = backend.clone_cv(&v)?;
 
@@ -1170,7 +1153,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_exp_assign_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_exp_assign_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let mut v = make_random_cv(&backend, N)?;
         let vc = backend.clone_cv(&v)?;
 
@@ -1187,7 +1170,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_concat_col_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_concat_col_cm(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_cm(&backend, N, N)?;
         let b = make_random_cm(&backend, N, 2 * N)?;
         let mut c = backend.alloc_cm(N, N + 2 * N)?;
@@ -1205,7 +1188,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_max_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_max_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let v = make_random_v(&backend, N)?;
 
         let max = backend.max_v(&v)?;
@@ -1220,7 +1203,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_max_abs_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_max_abs_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let v = make_random_sign_v(&backend, N, -100.0..0.0)?;
 
         let max = backend.max_abs_v(&v)?;
@@ -1238,7 +1221,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_hadamard_product_cm(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_hadamard_product_cm(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_cm(&backend, N, N)?;
         let b = make_random_cm(&backend, N, N)?;
         let mut c = backend.alloc_cm(N, N)?;
@@ -1260,7 +1243,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_dot(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_dot(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_v(&backend, N)?;
         let b = make_random_v(&backend, N)?;
 
@@ -1275,7 +1258,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_dot_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_dot_c(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_cv(&backend, N)?;
         let b = make_random_cv(&backend, N)?;
 
@@ -1295,7 +1278,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_add_v(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_add_v(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_v(&backend, N)?;
         let mut b = make_random_v(&backend, N)?;
         let bc = backend.clone_v(&b)?;
@@ -1319,7 +1302,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_add_m(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_add_m(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_m(&backend, N, N)?;
         let mut b = make_random_m(&backend, N, N)?;
         let bc = backend.clone_m(&b)?;
@@ -1343,7 +1326,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_gevv_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_gevv_c(backend: NalgebraBackend) -> Result<(), HoloError> {
         let mut rng = rand::rng();
 
         {
@@ -1529,7 +1512,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_gemv_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_gemv_c(backend: NalgebraBackend) -> Result<(), HoloError> {
         let m = N;
         let n = 2 * N;
 
@@ -1602,7 +1585,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_gemm_c(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_gemm_c(backend: NalgebraBackend) -> Result<(), HoloError> {
         let m = N;
         let n = 2 * N;
         let k = 3 * N;
@@ -1826,7 +1809,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_solve_inplace(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_solve_inplace(backend: NalgebraBackend) -> Result<(), HoloError> {
         {
             let tmp = make_random_m(&backend, N, N)?;
             let tmp = backend.to_host_m(tmp)?;
@@ -1852,7 +1835,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_reduce_col(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_reduce_col(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_m(&backend, N, N)?;
 
         let mut b = backend.alloc_v(N)?;
@@ -1871,7 +1854,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_scaled_to_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_scaled_to_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_cv(&backend, N)?;
         let b = make_random_cv(&backend, N)?;
         let mut c = backend.alloc_cv(N)?;
@@ -1895,7 +1878,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_scaled_to_assign_cv(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_scaled_to_assign_cv(backend: NalgebraBackend) -> Result<(), HoloError> {
         let a = make_random_cv(&backend, N)?;
         let mut b = make_random_cv(&backend, N)?;
         let bc = backend.clone_cv(&b)?;
@@ -1924,7 +1907,7 @@ mod tests {
     fn test_generate_propagation_matrix_unsafe(
         #[case] dev_num: usize,
         #[case] foci_num: usize,
-        backend: NalgebraBackend<Sphere>,
+        backend: NalgebraBackend,
     ) -> Result<(), HoloError> {
         let env = Environment::new();
 
@@ -1956,7 +1939,7 @@ mod tests {
         let geometry = create_geometry(dev_num, dev_num);
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
 
-        let g = backend.generate_propagation_matrix(
+        let g = backend.generate_propagation_matrix::<Sphere>(
             &geometry,
             &env,
             &foci,
@@ -1981,7 +1964,7 @@ mod tests {
     fn test_generate_propagation_matrix_with_disabled_device(
         #[case] dev_num: usize,
         #[case] foci_num: usize,
-        backend: NalgebraBackend<Sphere>,
+        backend: NalgebraBackend,
     ) -> Result<(), HoloError> {
         let env = Environment::new();
 
@@ -2018,7 +2001,7 @@ mod tests {
 
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
 
-        let g = backend.generate_propagation_matrix(&geometry, &env, &foci, &filter)?;
+        let g = backend.generate_propagation_matrix::<Sphere>(&geometry, &env, &foci, &filter)?;
         let g = backend.to_host_cm(g)?;
         reference(geometry, foci, filter)
             .iter()
@@ -2038,7 +2021,7 @@ mod tests {
     fn test_generate_propagation_matrix_with_filter(
         #[case] dev_num: usize,
         #[case] foci_num: usize,
-        backend: NalgebraBackend<Sphere>,
+        backend: NalgebraBackend,
     ) -> Result<(), HoloError> {
         let env = Environment::new();
 
@@ -2082,7 +2065,7 @@ mod tests {
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
         let filter = filter(&geometry);
 
-        let g = backend.generate_propagation_matrix(&geometry, &env, &foci, &filter)?;
+        let g = backend.generate_propagation_matrix::<Sphere>(&geometry, &env, &foci, &filter)?;
         let g = backend.to_host_cm(g)?;
         assert_eq!(g.nrows(), foci.len());
         assert_eq!(
@@ -2110,7 +2093,7 @@ mod tests {
     fn test_generate_propagation_matrix_with_filter_with_disabled_devices(
         #[case] dev_num: usize,
         #[case] foci_num: usize,
-        backend: NalgebraBackend<Sphere>,
+        backend: NalgebraBackend,
     ) -> Result<(), HoloError> {
         let env = Environment::new();
 
@@ -2162,7 +2145,7 @@ mod tests {
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
         let filter = filter(&geometry);
 
-        let g = backend.generate_propagation_matrix(&geometry, &env, &foci, &filter)?;
+        let g = backend.generate_propagation_matrix::<Sphere>(&geometry, &env, &foci, &filter)?;
         let g = backend.to_host_cm(g)?;
         assert_eq!(g.nrows(), foci.len());
         assert_eq!(
@@ -2186,7 +2169,7 @@ mod tests {
 
     #[rstest::rstest]
     #[test]
-    fn test_gen_back_prop(backend: NalgebraBackend<Sphere>) -> Result<(), HoloError> {
+    fn test_gen_back_prop(backend: NalgebraBackend) -> Result<(), HoloError> {
         let env = Environment::new();
 
         let geometry = create_geometry(1, 1);
@@ -2198,7 +2181,7 @@ mod tests {
             .sum::<usize>();
         let n = foci.len();
 
-        let g = backend.generate_propagation_matrix(
+        let g = backend.generate_propagation_matrix::<Sphere>(
             &geometry,
             &env,
             &foci,

@@ -16,42 +16,28 @@ use derive_more::Debug;
 use nalgebra::ComplexField;
 use rand::prelude::*;
 
-/// The trait for the objective function of [`Greedy`].
-pub trait GreedyObjectiveFn: std::fmt::Debug + Clone + Copy + PartialEq {
-    /// The objective function for the greedy algorithm.
-    fn objective_func(c: Complex, a: Amplitude) -> f32;
-}
-
 /// The objective function for [`Greedy`] that minimizes the absolute value of the difference
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct AbsGreedyObjectiveFn;
-
-impl GreedyObjectiveFn for AbsGreedyObjectiveFn {
-    fn objective_func(c: Complex, a: Amplitude) -> f32 {
-        (a.value - c.abs()).abs()
-    }
+pub fn abs_objective_func(c: Complex, a: Amplitude) -> f32 {
+    (a.value - c.abs()).abs()
 }
 
 /// The option of [`Greedy`].
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct GreedyOption<D: Directivity, F: GreedyObjectiveFn> {
+pub struct GreedyOption {
     /// The quantization levels of the phase.
     pub phase_quantization_levels: NonZeroU8,
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
     /// The objective function.
-    pub objective_func: F,
-    #[doc(hidden)]
-    pub __phantom: std::marker::PhantomData<D>,
+    pub objective_func: fn(Complex, Amplitude) -> f32,
 }
 
-impl Default for GreedyOption<Sphere, AbsGreedyObjectiveFn> {
+impl Default for GreedyOption {
     fn default() -> Self {
         Self {
             phase_quantization_levels: NonZeroU8::new(16).unwrap(),
             constraint: EmissionConstraint::Uniform(Intensity::MAX),
-            objective_func: AbsGreedyObjectiveFn,
-            __phantom: std::marker::PhantomData,
+            objective_func: abs_objective_func,
         }
     }
 }
@@ -61,28 +47,39 @@ impl Default for GreedyOption<Sphere, AbsGreedyObjectiveFn> {
 /// [`Greedy`] is based on the method of optimizing by brute-force search and greedy algorithm by discretizing the phase.
 /// See [Suzuki, et al., 2021](https://ieeexplore.ieee.org/document/9419757) for more details.
 #[derive(Gain, Debug)]
-pub struct Greedy<D: Directivity, F: GreedyObjectiveFn> {
+pub struct Greedy<D: Directivity> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
     /// The option of the Gain.
-    pub option: GreedyOption<D, F>,
+    pub option: GreedyOption,
+    /// The directivity of the transducers.
+    pub directivity: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity, F: GreedyObjectiveFn> Greedy<D, F> {
+impl Greedy<Sphere> {
     /// Create a new [`Greedy`].
     #[must_use]
-    pub fn new(
+    pub fn new(foci: impl IntoIterator<Item = (Point3, Amplitude)>, option: GreedyOption) -> Self {
+        Self::with_directivity(foci, option)
+    }
+}
+
+impl<D: Directivity> Greedy<D> {
+    /// Create a new [`Greedy`] with directivity.
+    #[must_use]
+    pub fn with_directivity(
         foci: impl IntoIterator<Item = (Point3, Amplitude)>,
-        option: GreedyOption<D, F>,
+        option: GreedyOption,
     ) -> Self {
         Self {
             foci: foci.into_iter().collect(),
             option,
+            directivity: std::marker::PhantomData,
         }
     }
 }
 
-impl<D: Directivity, F: GreedyObjectiveFn> Greedy<D, F> {
+impl<D: Directivity> Greedy<D> {
     fn transfer_foci(
         trans: &Transducer,
         wavenumber: f32,
@@ -147,7 +144,7 @@ impl GainCalculatorGenerator<'_> for Generator {
     }
 }
 
-impl<D: Directivity, F: GreedyObjectiveFn> Gain<'_> for Greedy<D, F> {
+impl<D: Directivity> Gain<'_> for Greedy<D> {
     type G = Generator;
 
     fn init(
@@ -185,13 +182,12 @@ impl<D: Directivity, F: GreedyObjectiveFn> Gain<'_> for Greedy<D, F> {
                 phase_candidates
                     .iter()
                     .fold((Complex::ZERO, f32::INFINITY), |acc, &phase| {
-                        let v = cache
-                            .iter()
-                            .zip(amps.iter())
-                            .zip(tmp.iter())
-                            .fold(0., |acc, ((c, a), f)| {
-                                acc + F::objective_func(f * phase + c, *a)
-                            });
+                        let v = cache.iter().zip(amps.iter()).zip(tmp.iter()).fold(
+                            0.,
+                            |acc, ((c, a), f)| {
+                                acc + (self.option.objective_func)(f * phase + c, *a)
+                            },
+                        );
                         if v < acc.1 { (phase, v) } else { acc }
                     });
             cache.iter_mut().zip(tmp.iter()).for_each(|(c, a)| {
@@ -249,8 +245,7 @@ mod tests {
     ) {
         let geometry = create_geometry(2, 1);
 
-        let mut indices =
-            Greedy::<Sphere, AbsGreedyObjectiveFn>::generate_indices(&geometry, &filter);
+        let mut indices = Greedy::<Sphere>::generate_indices(&geometry, &filter);
         indices.sort();
         assert_eq!(expected, indices);
     }
@@ -264,10 +259,7 @@ mod tests {
         #[case] filter: TransducerFilter,
     ) {
         let geometry = create_geometry(2, 1);
-        assert_eq!(
-            expected,
-            Greedy::<Sphere, AbsGreedyObjectiveFn>::alloc_result(&geometry, &filter)
-        );
+        assert_eq!(expected, Greedy::<Sphere>::alloc_result(&geometry, &filter));
     }
 
     #[test]
@@ -277,6 +269,7 @@ mod tests {
         let g = Greedy {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             option: GreedyOption::default(),
+            directivity: std::marker::PhantomData::<Sphere>,
         };
 
         let filter = TransducerFilter::new(
