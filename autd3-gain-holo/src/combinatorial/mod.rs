@@ -1,3 +1,3 @@
 mod greedy;
 
-pub use greedy::{AbsGreedyObjectiveFn, Greedy, GreedyObjectiveFn, GreedyOption};
+pub use greedy::{Greedy, GreedyOption, abs_objective_func};

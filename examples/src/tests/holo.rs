@@ -8,7 +8,7 @@ pub fn holo(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
     let p = Vector3::new(30. * mm, 0., 0.);
-    let backend = std::sync::Arc::new(NalgebraBackend::default());
+    let backend = std::sync::Arc::new(NalgebraBackend);
     let target_amp = 2.5e3 * autd.num_devices() as f32 * Pa;
     let foci = [(center + p, target_amp), (center - p, target_amp)];
 
@@ -19,6 +19,7 @@ pub fn holo(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<
                 foci: foci.to_vec(),
                 option: Default::default(),
                 backend: backend.clone(),
+                directivity: std::marker::PhantomData::<Sphere>,
             }),
         ),
         (
@@ -27,6 +28,7 @@ pub fn holo(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<
                 foci: foci.to_vec(),
                 option: Default::default(),
                 backend: backend.clone(),
+                directivity: std::marker::PhantomData::<Sphere>,
             }),
         ),
         (
@@ -35,6 +37,7 @@ pub fn holo(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<
                 foci: foci.to_vec(),
                 option: Default::default(),
                 backend: backend.clone(),
+                directivity: std::marker::PhantomData::<Sphere>,
             }),
         ),
         (
@@ -43,6 +46,7 @@ pub fn holo(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<
                 foci: foci.to_vec(),
                 option: Default::default(),
                 backend: backend.clone(),
+                directivity: std::marker::PhantomData::<Sphere>,
             }),
         ),
         (
@@ -50,6 +54,7 @@ pub fn holo(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<
             BoxedGain::new(Greedy {
                 foci: foci.to_vec(),
                 option: Default::default(),
+                directivity: std::marker::PhantomData::<Sphere>,
             }),
         ),
     ];

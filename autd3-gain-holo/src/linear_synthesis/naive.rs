@@ -6,58 +6,73 @@ use crate::{
     helper::{HoloCalculatorGenerator, generate_result},
 };
 
-use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
+use autd3_core::{
+    acoustics::directivity::{Directivity, Sphere},
+    derive::*,
+    geometry::Point3,
+};
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`Naive`].
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NaiveOption<D: Directivity> {
+pub struct NaiveOption {
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
-    #[doc(hidden)]
-    #[debug(ignore)]
-    pub __phantom: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity> Default for NaiveOption<D> {
+impl Default for NaiveOption {
     fn default() -> Self {
         Self {
             constraint: EmissionConstraint::Clamp(Intensity::MIN, Intensity::MAX),
-            __phantom: std::marker::PhantomData,
         }
     }
 }
 
 /// Naive linear synthesis of simple focal solutions
 #[derive(Gain, Debug)]
-pub struct Naive<D: Directivity, B: LinAlgBackend<D>> {
+pub struct Naive<D: Directivity, B: LinAlgBackend> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
-    /// The opinion of the Gain.
-    pub option: NaiveOption<D>,
+    /// The option of the Gain.
+    pub option: NaiveOption,
     /// The backend of calculation.
     #[debug("{}", tynm::type_name::<B>())]
     pub backend: Arc<B>,
+    /// The directivity of the transducers.
+    pub directivity: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Naive<D, B> {
+impl<B: LinAlgBackend> Naive<Sphere, B> {
     /// Create a new [`Naive`].
     #[must_use]
     pub fn new(
         foci: impl IntoIterator<Item = (Point3, Amplitude)>,
-        option: NaiveOption<D>,
+        option: NaiveOption,
+        backend: Arc<B>,
+    ) -> Self {
+        Self::with_directivity(foci, option, backend)
+    }
+}
+
+impl<D: Directivity, B: LinAlgBackend> Naive<D, B> {
+    /// Create a new [`Naive`] with directivity.
+    #[must_use]
+    pub fn with_directivity(
+        foci: impl IntoIterator<Item = (Point3, Amplitude)>,
+        option: NaiveOption,
         backend: Arc<B>,
     ) -> Self {
         Self {
             foci: foci.into_iter().collect(),
             option,
             backend,
+            directivity: std::marker::PhantomData,
         }
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_> for Naive<D, B> {
+impl<D: Directivity, B: LinAlgBackend> Gain<'_> for Naive<D, B> {
     type G = HoloCalculatorGenerator<Complex>;
 
     fn init(
@@ -70,7 +85,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_> for Naive<D, B> {
 
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, env, &foci, filter)?;
+            .generate_propagation_matrix::<D>(geometry, env, &foci, filter)?;
 
         let m = foci.len();
         let n = self.backend.cols_c(&g)?;
@@ -109,13 +124,12 @@ mod tests {
     #[test]
     fn test_naive_all() {
         let geometry = create_geometry(1, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = Naive::new(
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             NaiveOption {
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
-                ..Default::default()
             },
             backend,
         );
@@ -140,15 +154,15 @@ mod tests {
     #[test]
     fn test_naive_all_disabled() -> anyhow::Result<()> {
         let geometry = create_geometry(2, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = Naive {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             backend,
             option: NaiveOption {
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
-                ..Default::default()
             },
+            directivity: std::marker::PhantomData::<Sphere>,
         };
 
         let mut g = g.init(
@@ -171,15 +185,15 @@ mod tests {
     #[test]
     fn test_naive_filtered() {
         let geometry = create_geometry(2, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = Naive {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             backend,
             option: NaiveOption {
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
-                ..Default::default()
             },
+            directivity: std::marker::PhantomData::<Sphere>,
         };
 
         let filter = TransducerFilter::from_fn(&geometry, |dev| {
@@ -215,15 +229,15 @@ mod tests {
     #[test]
     fn test_naive_filtered_disabled() -> anyhow::Result<()> {
         let geometry = create_geometry(2, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = Naive {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             backend,
             option: NaiveOption {
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
-                ..Default::default()
             },
+            directivity: std::marker::PhantomData::<Sphere>,
         };
 
         let filter = TransducerFilter::from_fn(&geometry, |dev| {
