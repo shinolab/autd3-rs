@@ -22,7 +22,7 @@ pub fn abs_objective_func(c: Complex, a: Amplitude) -> f32 {
 }
 
 /// The option of [`Greedy`].
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub struct GreedyOption {
     /// The quantization levels of the phase.
     pub phase_quantization_levels: NonZeroU8,
