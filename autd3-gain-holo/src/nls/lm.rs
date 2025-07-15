@@ -6,13 +6,17 @@ use crate::{
     helper::{HoloCalculatorGenerator, generate_result},
 };
 
-use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
+use autd3_core::{
+    acoustics::directivity::{Directivity, Sphere},
+    derive::*,
+    geometry::Point3,
+};
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`LM`].
 #[derive(Debug, Clone, PartialEq)]
-pub struct LMOption<D: Directivity> {
+pub struct LMOption {
     /// The stopping criteria.
     pub eps_1: f32,
     /// The relative step size.
@@ -25,12 +29,9 @@ pub struct LMOption<D: Directivity> {
     pub initial: Vec<f32>,
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
-    #[doc(hidden)]
-    #[debug(ignore)]
-    pub __phantom: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity> Default for LMOption<D> {
+impl Default for LMOption {
     fn default() -> Self {
         Self {
             eps_1: 1e-8,
@@ -39,7 +40,6 @@ impl<D: Directivity> Default for LMOption<D> {
             k_max: NonZeroUsize::new(5).unwrap(),
             initial: vec![],
             constraint: EmissionConstraint::Clamp(Intensity::MIN, Intensity::MAX),
-            __phantom: std::marker::PhantomData,
         }
     }
 }
@@ -52,33 +52,48 @@ impl<D: Directivity> Default for LMOption<D> {
 /// [^Marquardt, 1963]: Marquardt, Donald W. "An algorithm for least-squares estimation of nonlinear parameters." Journal of the society for Industrial and Applied Mathematics 11.2 (1963): 431-441.
 /// [^Madsen, et al., 2004]: Madsen, Kaj, Hans Bruun Nielsen, and Ole Tingleff. "Methods for non-linear least squares problems." (2004).
 #[derive(Gain, Debug)]
-pub struct LM<D: Directivity, B: LinAlgBackend<D>> {
+pub struct LM<D: Directivity, B: LinAlgBackend> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
-    /// The opinion of the Gain.
-    pub option: LMOption<D>,
+    /// The option of the Gain.
+    pub option: LMOption,
     #[debug("{}", tynm::type_name::<B>())]
     /// The backend of linear algebra calculation.
     pub backend: Arc<B>,
+    /// The directivity of the transducers.
+    pub directivity: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
+impl<B: LinAlgBackend> LM<Sphere, B> {
     /// Create a new [`LM`].
     #[must_use]
     pub fn new(
         foci: impl IntoIterator<Item = (Point3, Amplitude)>,
-        option: LMOption<D>,
+        option: LMOption,
+        backend: Arc<B>,
+    ) -> Self {
+        Self::with_directivity(foci, option, backend)
+    }
+}
+
+impl<D: Directivity, B: LinAlgBackend> LM<D, B> {
+    /// Create a new [`LM`] with directivity.
+    #[must_use]
+    pub fn with_directivity(
+        foci: impl IntoIterator<Item = (Point3, Amplitude)>,
+        option: LMOption,
         backend: Arc<B>,
     ) -> Self {
         Self {
             foci: foci.into_iter().collect(),
             option,
             backend,
+            directivity: std::marker::PhantomData,
         }
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
+impl<D: Directivity, B: LinAlgBackend> LM<D, B> {
     fn make_t(
         backend: &B,
         zero: &B::VectorX,
@@ -138,7 +153,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> LM<D, B> {
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_> for LM<D, B> {
+impl<D: Directivity, B: LinAlgBackend> Gain<'_> for LM<D, B> {
     type G = HoloCalculatorGenerator<f32>;
 
     fn init(
@@ -151,7 +166,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_> for LM<D, B> {
 
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, env, &foci, filter)?;
+            .generate_propagation_matrix::<D>(geometry, env, &foci, filter)?;
 
         let n = self.backend.cols_c(&g)?;
         let m = foci.len();
@@ -300,7 +315,7 @@ mod tests {
     #[test]
     fn test_lm_all() {
         let geometry = create_geometry(1, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = LM::new(
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
@@ -332,7 +347,7 @@ mod tests {
     #[test]
     fn test_lm_filtered() {
         let geometry = create_geometry(2, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = LM {
             foci: vec![
@@ -345,6 +360,7 @@ mod tests {
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
                 ..Default::default()
             },
+            directivity: std::marker::PhantomData::<Sphere>,
         };
 
         let filter = TransducerFilter::from_fn(&geometry, |dev| {

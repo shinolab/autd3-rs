@@ -29,13 +29,13 @@ pub enum Trans {
 
 /// Linear algebra backend
 #[allow(missing_docs)]
-pub trait LinAlgBackend<D: Directivity> {
+pub trait LinAlgBackend {
     type MatrixXc;
     type MatrixX;
     type VectorXc;
     type VectorX;
 
-    fn generate_propagation_matrix(
+    fn generate_propagation_matrix<D: Directivity>(
         &self,
         geometry: &Geometry,
         env: &Environment,
