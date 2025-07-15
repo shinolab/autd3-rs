@@ -6,28 +6,28 @@ use crate::{
     helper::{HoloCalculatorGenerator, generate_result},
 };
 
-use autd3_core::{acoustics::directivity::Directivity, derive::*, geometry::Point3};
+use autd3_core::{
+    acoustics::directivity::{Directivity, Sphere},
+    derive::*,
+    geometry::Point3,
+};
 use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`GS`].
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct GSOption<D: Directivity> {
+pub struct GSOption {
     /// The number of iterations.
     pub repeat: NonZeroUsize,
     /// The transducers' emission constraint.
     pub constraint: EmissionConstraint,
-    #[debug(ignore)]
-    #[doc(hidden)]
-    pub __phantom: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity> Default for GSOption<D> {
+impl Default for GSOption {
     fn default() -> Self {
         Self {
             repeat: NonZeroUsize::new(100).unwrap(),
             constraint: EmissionConstraint::Clamp(Intensity::MIN, Intensity::MAX),
-            __phantom: std::marker::PhantomData,
         }
     }
 }
@@ -36,33 +36,48 @@ impl<D: Directivity> Default for GSOption<D> {
 ///
 /// See [Marzo, et al., 2019](https://www.pnas.org/doi/full/10.1073/pnas.1813047115) for more details.
 #[derive(Gain, Debug)]
-pub struct GS<D: Directivity, B: LinAlgBackend<D>> {
+pub struct GS<D: Directivity, B: LinAlgBackend> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
-    /// The opinion of the Gain.
-    pub option: GSOption<D>,
+    /// The option of the Gain.
+    pub option: GSOption,
     /// The backend of calculation.
     #[debug("{}", tynm::type_name::<B>())]
     pub backend: Arc<B>,
+    /// The directivity of the transducers.
+    pub directivity: std::marker::PhantomData<D>,
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> GS<D, B> {
+impl<B: LinAlgBackend> GS<Sphere, B> {
     /// Create a new [`GS`].
     #[must_use]
     pub fn new(
         foci: impl IntoIterator<Item = (Point3, Amplitude)>,
-        option: GSOption<D>,
+        option: GSOption,
+        backend: Arc<B>,
+    ) -> Self {
+        Self::with_directivity(foci, option, backend)
+    }
+}
+
+impl<D: Directivity, B: LinAlgBackend> GS<D, B> {
+    /// Create a new [`GS`] with directivity.
+    #[must_use]
+    pub fn with_directivity(
+        foci: impl IntoIterator<Item = (Point3, Amplitude)>,
+        option: GSOption,
         backend: Arc<B>,
     ) -> Self {
         Self {
             foci: foci.into_iter().collect(),
             option,
             backend,
+            directivity: std::marker::PhantomData,
         }
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_> for GS<D, B> {
+impl<D: Directivity, B: LinAlgBackend> Gain<'_> for GS<D, B> {
     type G = HoloCalculatorGenerator<Complex>;
 
     fn init(
@@ -75,7 +90,7 @@ impl<D: Directivity, B: LinAlgBackend<D>> Gain<'_> for GS<D, B> {
 
         let g = self
             .backend
-            .generate_propagation_matrix(geometry, env, &foci, filter)?;
+            .generate_propagation_matrix::<D>(geometry, env, &foci, filter)?;
 
         let m = foci.len();
         let n = self.backend.cols_c(&g)?;
@@ -133,14 +148,13 @@ mod tests {
     #[test]
     fn test_gs_all() {
         let geometry = create_geometry(1, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = GS::new(
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
             GSOption {
                 repeat: NonZeroUsize::new(5).unwrap(),
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
-                ..Default::default()
             },
             backend,
         );
@@ -165,7 +179,7 @@ mod tests {
     #[test]
     fn test_gs_filtered() {
         let geometry = create_geometry(2, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend::default());
+        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = GS {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
@@ -173,8 +187,8 @@ mod tests {
             option: GSOption {
                 repeat: NonZeroUsize::new(5).unwrap(),
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
-                ..Default::default()
             },
+            directivity: std::marker::PhantomData::<Sphere>,
         };
 
         let filter = TransducerFilter::from_fn(&geometry, |dev| {

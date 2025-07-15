@@ -21,7 +21,16 @@ zerocopy = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+criterion = { workspace = true }
 approx = { workspace = true }
 autd3-driver = { workspace = true }
 itertools = { workspace = true }
 rstest = { workspace = true }
+
+[lib]
+bench = false
+
+[[bench]]
+name = "autd3-gain-holo"
+path = "benches/holo.rs"
+harness = false
