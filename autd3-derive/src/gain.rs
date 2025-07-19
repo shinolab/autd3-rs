@@ -5,7 +5,7 @@ fn params(
     generics: &syn::Generics,
 ) -> (
     Vec<syn::Lifetime>,
-    syn::TypeGenerics,
+    syn::TypeGenerics<'_>,
     proc_macro2::TokenStream,
     impl Iterator<Item = &syn::TypeParam>,
 ) {
