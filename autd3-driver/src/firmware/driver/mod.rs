@@ -17,7 +17,7 @@ pub use parallel_mode::ParallelMode;
 pub use strategy::{FixedDelay, FixedSchedule, TimerStrategy};
 
 use autd3_core::{
-    derive::FirmwareLimits,
+    datagram::FirmwareLimits,
     environment::Environment,
     geometry::Geometry,
     link::{MsgId, RxMessage},
@@ -55,7 +55,7 @@ pub trait Driver {
         &mut self,
         _msg_id: &'a mut autd3_core::link::MsgId,
         _link: &'a mut L,
-        _geometry: &'a autd3_core::derive::Geometry,
+        _geometry: &'a autd3_core::geometry::Geometry,
         _sent_flags: &'a mut [bool],
         _rx: &'a mut [autd3_core::link::RxMessage],
         _env: &'a Environment,

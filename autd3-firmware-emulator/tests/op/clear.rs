@@ -7,9 +7,10 @@ use crate::{
 };
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-    datagram::PulseWidth,
-    derive::*,
+    datagram::{PulseWidth, Segment, transition_mode},
+    gain::{Drive, Intensity, Phase},
     link::{MsgId, TxMessage},
+    sampling_config::SamplingConfig,
 };
 use autd3_driver::{autd3_device::AUTD3, datagram::*};
 use autd3_firmware_emulator::CPUEmulator;
@@ -86,7 +87,7 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
                 ),
             },
             segment: Segment::S0,
-            transition_mode: Some(TransitionMode::Ext),
+            transition_mode: transition_mode::Ext,
         };
         assert_eq!(
             Ok(()),
@@ -135,14 +136,8 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
     assert_eq!(2, cpu.fpga().modulation_cycle(Segment::S1));
     assert_eq!(0xFFFF, cpu.fpga().modulation_freq_divide(Segment::S0));
     assert_eq!(0xFFFF, cpu.fpga().modulation_freq_divide(Segment::S1));
-    assert_eq!(
-        LoopBehavior::Infinite,
-        cpu.fpga().modulation_loop_behavior(Segment::S0)
-    );
-    assert_eq!(
-        LoopBehavior::Infinite,
-        cpu.fpga().modulation_loop_behavior(Segment::S1)
-    );
+    assert_eq!(0xFFFF, cpu.fpga().modulation_loop_count(Segment::S0));
+    assert_eq!(0xFFFF, cpu.fpga().modulation_loop_count(Segment::S1));
     assert_eq!(vec![u8::MAX; 2], cpu.fpga().modulation_buffer(Segment::S0));
     assert_eq!(vec![u8::MAX; 2], cpu.fpga().modulation_buffer(Segment::S1));
 
@@ -154,14 +149,8 @@ fn send_clear_unsafe() -> anyhow::Result<()> {
     assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
     assert_eq!(0xFFFF, cpu.fpga().stm_freq_divide(Segment::S0));
     assert_eq!(0xFFFF, cpu.fpga().stm_freq_divide(Segment::S1));
-    assert_eq!(
-        LoopBehavior::Infinite,
-        cpu.fpga().stm_loop_behavior(Segment::S0)
-    );
-    assert_eq!(
-        LoopBehavior::Infinite,
-        cpu.fpga().stm_loop_behavior(Segment::S1)
-    );
+    assert_eq!(0xFFFF, cpu.fpga().stm_loop_count(Segment::S0));
+    assert_eq!(0xFFFF, cpu.fpga().stm_loop_count(Segment::S1));
 
     assert!(
         cpu.fpga()

@@ -14,8 +14,10 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::{LoopBehavior, Segment, TRANSITION_MODE_NONE, TransitionMode},
-    derive::FirmwareLimits,
+    datagram::{
+        FirmwareLimits, Segment,
+        transition_mode::{Later, TransitionMode, TransitionModeParams},
+    },
     gain::{Drive, GainCalculator, GainCalculatorGenerator},
     geometry::Device,
     sampling_config::SamplingConfig,
@@ -83,9 +85,9 @@ pub struct GainSTMOp<G, Iterator> {
     mode: GainSTMMode,
     config: SamplingConfig,
     limits: FirmwareLimits,
-    loop_behavior: LoopBehavior,
+    rep: u16,
     segment: Segment,
-    transition_mode: Option<TransitionMode>,
+    transition_params: TransitionModeParams,
     __phantom: std::marker::PhantomData<G>,
 }
 
@@ -99,9 +101,9 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>>
         mode: GainSTMMode,
         config: SamplingConfig,
         limits: FirmwareLimits,
-        loop_behavior: LoopBehavior,
+        rep: u16,
         segment: Segment,
-        transition_mode: Option<TransitionMode>,
+        transition_params: TransitionModeParams,
     ) -> Self {
         Self {
             iter,
@@ -110,9 +112,9 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>>
             mode,
             config,
             limits,
-            loop_behavior,
+            rep,
             segment,
-            transition_mode,
+            transition_params,
             __phantom: std::marker::PhantomData,
         }
     }
@@ -193,7 +195,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
 
         let mut flag = if self.sent == self.size {
             GainSTMControlFlags::END
-                | if self.transition_mode.is_some() {
+                | if self.transition_params != Later.params() {
                     GainSTMControlFlags::TRANSITION
                 } else {
                     GainSTMControlFlags::NONE
@@ -219,13 +221,10 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                     tag: TypeTag::GainSTM,
                     flag: GainSTMControlFlags::BEGIN | flag,
                     mode: self.mode,
-                    transition_mode: self
-                        .transition_mode
-                        .map(|m| m.mode())
-                        .unwrap_or(TRANSITION_MODE_NONE),
-                    transition_value: self.transition_mode.map(TransitionMode::value).unwrap_or(0),
+                    transition_mode: self.transition_params.mode,
+                    transition_value: self.transition_params.value,
                     freq_div: self.config.divide()?,
-                    rep: self.loop_behavior.rep(),
+                    rep: self.rep,
                 },
             );
         } else {
@@ -250,10 +249,10 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
     }
 }
 
-impl<'a, T: GainSTMIteratorGenerator<'a>> OperationGenerator<'a>
-    for GainSTMOperationGenerator<'a, T>
+impl<'a, G: GainSTMIteratorGenerator<'a>> OperationGenerator<'a>
+    for GainSTMOperationGenerator<'a, G>
 {
-    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator<'a>>::Calculator, T::Iterator>;
+    type O1 = GainSTMOp<<G::Gain as GainCalculatorGenerator<'a>>::Calculator, G::Iterator>;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
@@ -264,9 +263,9 @@ impl<'a, T: GainSTMIteratorGenerator<'a>> OperationGenerator<'a>
                 self.mode,
                 self.sampling_config,
                 self.limits,
-                self.loop_behavior,
+                self.rep,
                 self.segment,
-                self.transition_mode,
+                self.transition_params,
             ),
             Self::O2 {},
         ))
@@ -281,9 +280,11 @@ mod tests {
     use crate::{ethercat::DcSysTime, firmware::driver::Driver, geometry::Transducer};
 
     use autd3_core::{
+        datagram::transition_mode,
         gain::{Intensity, Phase},
         link::TxMessage,
     };
+
     use rand::prelude::*;
     use zerocopy::FromZeros;
 
@@ -332,10 +333,10 @@ mod tests {
             .collect();
 
         let freq_div = rng.random_range(0x0001..=0xFFFF);
-        let rep = rng.random_range(0x0001..0xFFFF);
+        let rep = rng.random_range(0x0000..0xFFFF);
         let segment = Segment::S0;
         let transition_value = 0x0123456789ABCDEF;
-        let transition_mode = TransitionMode::SysTime(
+        let transition_mode = transition_mode::SysTime(
             DcSysTime::from_utc(
                 time::macros::datetime!(2000-01-01 0:00 UTC)
                     + std::time::Duration::from_nanos(transition_value),
@@ -353,9 +354,9 @@ mod tests {
             GainSTMMode::PhaseIntensityFull,
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             V10.firmware_limits(),
-            LoopBehavior::Finite(NonZeroU16::new(rep + 1).unwrap()),
+            rep,
             segment,
-            Some(transition_mode),
+            transition_mode.params(),
         );
 
         // First frame
@@ -378,7 +379,7 @@ mod tests {
             assert_eq!(GainSTMControlFlags::BEGIN.bits(), tx[1] & 0x3F);
             assert_eq!(0, tx[1] >> 6);
             assert_eq!(GainSTMMode::PhaseIntensityFull as u8, tx[2]);
-            assert_eq!(transition_mode.mode(), tx[3]);
+            assert_eq!(transition_mode.params().mode, tx[3]);
             assert_eq!(freq_div as u8, tx[4]);
             assert_eq!((freq_div >> 8) as u8, tx[5]);
             assert_eq!(rep as u8, tx[6]);
@@ -483,9 +484,9 @@ mod tests {
             .collect();
 
         let freq_div = rng.random_range(0x0001..=0xFFFF);
-        let rep = rng.random_range(0x0001..=0xFFFF);
+        let rep = rng.random_range(0x0000..0xFFFF);
         let segment = Segment::S1;
-        let mut op = GainSTMOp::new(
+        let mut op = GainSTMOp::<_, _>::new(
             STMIterator {
                 data: gain_data.clone(),
             },
@@ -493,9 +494,9 @@ mod tests {
             GainSTMMode::PhaseFull,
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             V10.firmware_limits(),
-            LoopBehavior::Finite(NonZeroU16::new(rep).unwrap()),
+            rep,
             segment,
-            None,
+            Later.params(),
         );
 
         assert_eq!(op.sent, 0);
@@ -617,7 +618,7 @@ mod tests {
             .collect();
 
         let freq_div = rng.random_range(0x0001..=0xFFFF);
-        let rep = rng.random_range(0x0001..=0xFFFF);
+        let rep = rng.random_range(0x0000..0xFFFF);
         let segment = Segment::S0;
         let mut op = GainSTMOp::new(
             STMIterator {
@@ -627,9 +628,9 @@ mod tests {
             GainSTMMode::PhaseHalf,
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             V10.firmware_limits(),
-            LoopBehavior::Finite(NonZeroU16::new(rep).unwrap()),
+            rep,
             segment,
-            Some(TransitionMode::SyncIdx),
+            transition_mode::SyncIdx.params(),
         );
 
         assert_eq!(op.sent, 0);
@@ -765,9 +766,9 @@ mod tests {
                 GainSTMMode::PhaseIntensityFull,
                 SamplingConfig::FREQ_40K,
                 V10.firmware_limits(),
-                LoopBehavior::Infinite,
+                0xFFFF,
                 Segment::S0,
-                None,
+                Later.params(),
             );
             loop {
                 op.pack(&device, &mut tx)?;

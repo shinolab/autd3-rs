@@ -96,8 +96,8 @@ impl Driver for V12 {
         Self
     }
 
-    fn firmware_limits(&self) -> autd3_core::derive::FirmwareLimits {
-        autd3_core::derive::FirmwareLimits {
+    fn firmware_limits(&self) -> autd3_core::datagram::FirmwareLimits {
+        autd3_core::datagram::FirmwareLimits {
             mod_buf_size_max: MOD_BUF_SIZE_MAX as _,
             gain_stm_buf_size_max: GAIN_STM_BUF_SIZE_MAX as _,
             foci_stm_buf_size_max: FOCI_STM_BUF_SIZE_MAX as _,
@@ -112,7 +112,7 @@ impl Driver for V12 {
         &self,
         msg_id: &'a mut autd3_core::link::MsgId,
         link: &'a mut L,
-        geometry: &'a autd3_core::derive::Geometry,
+        geometry: &'a autd3_core::geometry::Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [autd3_core::link::RxMessage],
         env: &'a Environment,

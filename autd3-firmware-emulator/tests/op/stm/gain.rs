@@ -2,8 +2,10 @@ use std::{collections::HashMap, num::NonZeroU16};
 
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-    datagram::{Datagram, GPIOIn, LoopBehavior, Segment, TransitionMode},
-    derive::DeviceFilter,
+    datagram::{
+        Datagram, DeviceFilter, GPIOIn, Segment,
+        transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, TransitionMode},
+    },
     environment::Environment,
     gain::{Drive, Intensity, Phase},
     link::{MsgId, TxMessage},
@@ -12,7 +14,7 @@ use autd3_core::{
 use autd3_driver::{
     datagram::{
         ControlPoint, FixedCompletionSteps, FociSTM, GainSTM, GainSTMMode, GainSTMOption,
-        PhaseCorrection, Silencer, SwapSegment, WithLoopBehavior, WithSegment,
+        PhaseCorrection, Silencer, SwapSegmentGainSTM, WithFiniteLoop, WithSegment,
     },
     error::AUTDDriverError,
     firmware::{
@@ -55,22 +57,8 @@ fn gen_random_buf(n: usize, geometry: &Geometry) -> Vec<HashMap<usize, Vec<Drive
         .collect()
 }
 
-#[rstest::rstest]
 #[test]
-#[cfg_attr(miri, ignore)]
-#[case(
-    GAIN_STM_BUF_SIZE_MAX,
-    LoopBehavior::Infinite,
-    Segment::S0,
-    Some(TransitionMode::Immediate)
-)]
-#[case(2, LoopBehavior::ONCE, Segment::S1, None)]
-fn send_gain_stm_phase_intensity_full_unsafe(
-    #[case] n: usize,
-    #[case] loop_behavior: LoopBehavior,
-    #[case] segment: Segment,
-    #[case] transition_mode: Option<TransitionMode>,
-) -> anyhow::Result<()> {
+fn send_gain_stm_phase_intensity_full_infinite() -> anyhow::Result<()> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
@@ -89,11 +77,11 @@ fn send_gain_stm_phase_intensity_full_unsafe(
         );
     }
 
-    let bufs = gen_random_buf(n, &geometry);
+    let bufs = gen_random_buf(GAIN_STM_BUF_SIZE_MAX, &geometry);
     let freq_div = rng.random_range(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
     );
-    let d = WithLoopBehavior {
+    let d = WithSegment {
         inner: GainSTM::new(
             bufs.iter()
                 .map(|buf| TestGain { data: buf.clone() })
@@ -101,9 +89,8 @@ fn send_gain_stm_phase_intensity_full_unsafe(
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             GainSTMOption::default(),
         ),
-        loop_behavior,
-        segment,
-        transition_mode,
+        segment: Segment::S0,
+        transition_mode: Immediate,
     };
 
     assert_eq!(
@@ -111,19 +98,75 @@ fn send_gain_stm_phase_intensity_full_unsafe(
         send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
     );
 
-    assert!(cpu.fpga().is_stm_gain_mode(segment));
-    assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
-    assert_eq!(bufs.len(), cpu.fpga().stm_cycle(segment));
-    assert_eq!(freq_div, cpu.fpga().stm_freq_divide(segment));
-    if let Some(transition_mode) = transition_mode {
-        assert_eq!(segment, cpu.fpga().req_stm_segment());
-        assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
-    } else {
-        assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
-    }
+    assert!(cpu.fpga().is_stm_gain_mode(Segment::S0));
+    assert_eq!(0xFFFF, cpu.fpga().stm_loop_count(Segment::S0));
+    assert_eq!(bufs.len(), cpu.fpga().stm_cycle(Segment::S0));
+    assert_eq!(freq_div, cpu.fpga().stm_freq_divide(Segment::S0));
+    assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
     (0..bufs.len()).for_each(|gain_idx| {
         cpu.fpga()
-            .drives_at(segment, gain_idx)
+            .drives_at(Segment::S0, gain_idx)
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, drive)| {
+                assert_eq!(bufs[gain_idx][&0][i].intensity, drive.intensity);
+                assert_eq!(phase_corr[i] + bufs[gain_idx][&0][i].phase, drive.phase);
+            });
+    });
+
+    Ok(())
+}
+
+#[test]
+fn send_gain_stm_phase_intensity_full_unsafe() -> anyhow::Result<()> {
+    let mut rng = rand::rng();
+
+    let mut geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
+
+    let phase_corr: Vec<_> = (0..geometry.num_transducers())
+        .map(|_| Phase(rng.random()))
+        .collect();
+    {
+        let d = PhaseCorrection::new(|_| |tr| phase_corr[tr.idx()]);
+        assert_eq!(
+            Ok(()),
+            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+        );
+    }
+
+    let bufs = gen_random_buf(2, &geometry);
+    let freq_div = rng.random_range(
+        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
+    );
+    let d = WithFiniteLoop {
+        inner: GainSTM::new(
+            bufs.iter()
+                .map(|buf| TestGain { data: buf.clone() })
+                .collect::<Vec<_>>(),
+            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            GainSTMOption::default(),
+        ),
+        loop_count: NonZeroU16::MIN,
+        segment: Segment::S1,
+        transition_mode: Later,
+    };
+
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
+
+    assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
+    assert_eq!(0, cpu.fpga().stm_loop_count(Segment::S1));
+    assert_eq!(bufs.len(), cpu.fpga().stm_cycle(Segment::S1));
+    assert_eq!(freq_div, cpu.fpga().stm_freq_divide(Segment::S1));
+    assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
+    (0..bufs.len()).for_each(|gain_idx| {
+        cpu.fpga()
+            .drives_at(Segment::S1, gain_idx)
             .into_iter()
             .enumerate()
             .for_each(|(i, drive)| {
@@ -149,10 +192,8 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> anyhow::Result<()> {
     let mut msg_id = MsgId::new(0);
 
     let bufs = gen_random_buf(n, &geometry);
-    let loop_behavior = LoopBehavior::Infinite;
     let segment = Segment::S1;
-    let transition_mode = TransitionMode::Ext;
-    let d = WithLoopBehavior {
+    let d = WithSegment {
         inner: GainSTM {
             config: SamplingConfig::new(
                 NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
@@ -166,9 +207,8 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> anyhow::Result<()> {
                 mode: GainSTMMode::PhaseFull,
             },
         },
-        loop_behavior,
         segment,
-        transition_mode: Some(transition_mode),
+        transition_mode: Immediate,
     };
 
     assert_eq!(
@@ -186,8 +226,8 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> anyhow::Result<()> {
                 assert_eq!(bufs[gain_idx][&0][i].phase, drive.phase);
             });
         assert_eq!(segment, cpu.fpga().req_stm_segment());
-        assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
-        assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
+        assert_eq!(0xFFFF, cpu.fpga().stm_loop_count(segment));
+        assert_eq!(Immediate.params(), cpu.fpga().stm_transition_mode());
     });
 
     Ok(())
@@ -221,9 +261,9 @@ fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> anyhow::Result<()> {
     .try_for_each(|(segment, gpio)| -> anyhow::Result<()> {
         let bufs = gen_random_buf(n, &geometry);
 
-        let loop_behavior = LoopBehavior::ONCE;
-        let transition_mode = TransitionMode::GPIO(gpio);
-        let d = WithLoopBehavior {
+        let loop_count = NonZeroU16::MIN;
+        let transition_mode = GPIO(gpio);
+        let d = WithFiniteLoop {
             inner: GainSTM {
                 config: SamplingConfig::new(
                     NonZeroU16::new(
@@ -239,9 +279,9 @@ fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> anyhow::Result<()> {
                     mode: GainSTMMode::PhaseHalf,
                 },
             },
-            loop_behavior,
+            loop_count,
             segment,
-            transition_mode: Some(transition_mode),
+            transition_mode,
         };
 
         assert_eq!(
@@ -259,8 +299,8 @@ fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> anyhow::Result<()> {
                     assert_eq!(bufs[gain_idx][&0][i].phase.0 >> 4, drive.phase.0 >> 4);
                 });
             assert_eq!(segment, cpu.fpga().req_stm_segment());
-            assert_eq!(loop_behavior, cpu.fpga().stm_loop_behavior(segment));
-            assert_eq!(transition_mode, cpu.fpga().stm_transition_mode());
+            assert_eq!(loop_count.get() - 1, cpu.fpga().stm_loop_count(segment));
+            assert_eq!(transition_mode.params(), cpu.fpga().stm_transition_mode());
         });
         Ok(())
     })?;
@@ -290,7 +330,7 @@ fn change_gain_stm_segment_unsafe() -> anyhow::Result<()> {
             option: GainSTMOption::default(),
         },
         segment: Segment::S1,
-        transition_mode: None,
+        transition_mode: Later,
     };
     assert_eq!(
         Ok(()),
@@ -299,7 +339,7 @@ fn change_gain_stm_segment_unsafe() -> anyhow::Result<()> {
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
 
-    let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::Immediate);
+    let d = SwapSegmentGainSTM(Segment::S1, Immediate);
     assert_eq!(
         Ok(()),
         send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
@@ -366,7 +406,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
                 option: GainSTMOption::default(),
             },
             segment: Segment::S1,
-            transition_mode: None,
+            transition_mode: Later,
         };
 
         assert_eq!(
@@ -386,7 +426,7 @@ fn gain_stm_freq_div_too_small() -> anyhow::Result<()> {
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
 
-        let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegmentGainSTM(Segment::S1, Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSilencerSettings),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
@@ -421,10 +461,9 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
     {
         let freq_div = 0xFFFF;
 
-        let loop_behavior = LoopBehavior::Infinite;
         let segment = Segment::S1;
-        let transition_mode = TransitionMode::Ext;
-        let d = WithLoopBehavior {
+        let transition_mode = Ext;
+        let d = WithSegment {
             inner: FociSTM {
                 foci: (0..2)
                     .map(|_| ControlPoint::from(Point3::origin()))
@@ -432,8 +471,7 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
                 config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             },
             segment,
-            transition_mode: Some(transition_mode),
-            loop_behavior,
+            transition_mode,
         };
         assert_eq!(
             Ok(()),
@@ -442,13 +480,13 @@ fn send_gain_stm_invalid_segment_transition() -> anyhow::Result<()> {
     }
 
     {
-        let d = SwapSegment::GainSTM(Segment::S0, TransitionMode::Immediate);
+        let d = SwapSegmentGainSTM(Segment::S0, Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
 
-        let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegmentGainSTM(Segment::S1, Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
@@ -467,7 +505,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
 
     // segment 0 to 0
     {
-        let d = WithSegment {
+        let d = WithFiniteLoop {
             inner: GainSTM {
                 gains: gen_random_buf(2, &geometry)
                     .into_iter()
@@ -477,28 +515,8 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
                 option: GainSTMOption::default(),
             },
             segment: Segment::S0,
-            transition_mode: Some(TransitionMode::SyncIdx),
-        };
-        assert_eq!(
-            Err(AUTDDriverError::InvalidTransitionMode),
-            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
-        );
-    }
-
-    // segment 0 to 1 immediate
-    {
-        let d = WithLoopBehavior {
-            inner: GainSTM {
-                gains: gen_random_buf(2, &geometry)
-                    .into_iter()
-                    .map(|buf| TestGain { data: buf.clone() })
-                    .collect::<Vec<_>>(),
-                config: SamplingConfig::new(NonZeroU16::MAX),
-                option: GainSTMOption::default(),
-            },
-            segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
-            loop_behavior: LoopBehavior::ONCE,
+            loop_count: NonZeroU16::MIN,
+            transition_mode: SyncIdx,
         };
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
@@ -519,7 +537,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
             },
 
             segment: Segment::S1,
-            transition_mode: None,
+            transition_mode: Later,
         };
 
         assert_eq!(
@@ -527,7 +545,7 @@ fn send_gain_stm_invalid_transition_mode() -> anyhow::Result<()> {
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
 
-        let d = SwapSegment::GainSTM(Segment::S1, TransitionMode::SyncIdx);
+        let d = SwapSegmentGainSTM(Segment::S1, SyncIdx);
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)

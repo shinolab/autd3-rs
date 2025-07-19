@@ -122,6 +122,15 @@ mod tests {
     use super::{super::super::NalgebraBackend, super::super::Pa, *};
 
     #[test]
+    fn naive_option_default() {
+        let option = NaiveOption::default();
+        assert_eq!(
+            option.constraint,
+            EmissionConstraint::Clamp(Intensity::MIN, Intensity::MAX)
+        );
+    }
+
+    #[test]
     fn test_naive_all() {
         let geometry = create_geometry(1, 1);
         let backend = std::sync::Arc::new(NalgebraBackend);
