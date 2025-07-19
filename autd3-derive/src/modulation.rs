@@ -9,20 +9,20 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
     let type_params = generics.type_params();
     let (_, ty_generics, where_clause) = generics.split_for_impl();
     let datagram = quote! {
-        impl <#(#lifetimes,)* #(#type_params,)* > DatagramL<'_> for #name #ty_generics #where_clause {
+        impl <#(#lifetimes,)* #(#type_params,)*> DatagramL<'_> for #name #ty_generics #where_clause {
             type G = ModulationOperationGenerator;
             type Error = ModulationError;
 
-            fn operation_generator_with_loop_behavior(self, _: &Geometry, _: &Environment, _: &DeviceFilter, limits: &FirmwareLimits, segment: Segment, transition_mode: Option<TransitionMode>, loop_behavior: LoopBehavior) -> Result<Self::G, Self::Error> {
+            fn operation_generator_with_finite_loop(self, _: &Geometry, _: &Environment, _: &DeviceFilter, limits: &FirmwareLimits, segment: Segment, transition_params: transition_mode::TransitionModeParams, rep: u16) -> Result<Self::G, Self::Error> {
                 let config = <Self as Modulation>::sampling_config(&self);
                 let g = self.calc(limits)?;
                 Ok(Self::G {
                     g: std::sync::Arc::new(g),
                     config,
                     limits: *limits,
-                    loop_behavior,
+                    rep,
                     segment,
-                    transition_mode,
+                    transition_params,
                 })
             }
 
@@ -45,13 +45,10 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                 _: &Environment,
                 filter: &DeviceFilter,
                 limits: &FirmwareLimits
-            ) -> Result<InspectionResult<ModulationInspectionResult>, ModulationError> {
+            ) -> Result<InspectionResult<Self::Result>, ModulationError> {
                 let sampling_config = self.sampling_config();
                 sampling_config.divide()?;
                 let data = self.calc(limits)?;
-                let loop_behavior = LoopBehavior::Infinite;
-                let segment = Segment::S0;
-                let transition_mode = None;
                 Ok(InspectionResult::new(
                     geometry,
                     filter,
@@ -59,19 +56,79 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                             name: tynm::type_name::<Self>().to_string(),
                             data: data.clone(),
                             config: sampling_config,
-                            loop_behavior,
-                            segment,
-                            transition_mode,
                     }
                 ))
             }
         }
     };
 
+    let lifetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let segment_immediate = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)* > internal::HasSegment<transition_mode::Immediate> for #name #ty_generics #where_clause {}
+    };
+
+    let lifetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let segment_ext = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)* > internal::HasSegment<transition_mode::Ext> for #name #ty_generics #where_clause {}
+    };
+
+    let lifetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let segment_later = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)* > internal::HasSegment<transition_mode::Later> for #name #ty_generics #where_clause {}
+    };
+
+    let lifetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let finite_loop_syncidx = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)* > internal::HasFiniteLoop<transition_mode::SyncIdx> for #name #ty_generics #where_clause {}
+    };
+
+    let lifetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let finite_loop_systime = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)* > internal::HasFiniteLoop<transition_mode::SysTime> for #name #ty_generics #where_clause {}
+    };
+
+    let lifetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let finite_loop_gpio = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)* > internal::HasFiniteLoop<transition_mode::GPIO> for #name #ty_generics #where_clause {}
+    };
+
+    let lifetimes = generics.lifetimes();
+    let type_params = generics.type_params();
+    let (_, ty_generics, where_clause) = generics.split_for_impl();
+    let finite_loop_later = quote! {
+        impl <#(#lifetimes,)* #(#type_params,)* > internal::HasFiniteLoop<transition_mode::Later> for #name #ty_generics #where_clause {}
+    };
+
     let generator = quote! {
         #datagram
 
         #inspect
+
+        #segment_immediate
+
+        #segment_ext
+
+        #segment_later
+
+        #finite_loop_syncidx
+
+        #finite_loop_systime
+
+        #finite_loop_gpio
+
+        #finite_loop_later
     };
     generator.into()
 }

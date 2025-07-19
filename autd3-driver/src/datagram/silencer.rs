@@ -2,8 +2,7 @@ use std::{convert::Infallible, num::NonZeroU16};
 
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, ULTRASOUND_PERIOD},
-    datagram::{Datagram, DeviceFilter},
-    derive::FirmwareLimits,
+    datagram::{Datagram, DeviceFilter, FirmwareLimits},
     environment::Environment,
     geometry::Geometry,
 };

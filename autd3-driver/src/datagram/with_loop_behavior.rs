@@ -1,9 +1,10 @@
+use std::num::NonZeroU16;
+
 use autd3_core::{
     datagram::{
-        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
-        LoopBehavior, Segment, TransitionMode,
+        Datagram, DatagramL, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable,
+        InspectionResult, Segment, internal::HasFiniteLoop, transition_mode::TransitionMode,
     },
-    derive::FirmwareLimits,
     environment::Environment,
     geometry::Geometry,
 };
@@ -14,37 +15,45 @@ use derive_more::Deref;
 ///
 /// Note that the loop behavior only affects when switching segments.
 #[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WithLoopBehavior<D> {
+pub struct WithFiniteLoop<T, D> {
     #[deref]
     /// The original [`DatagramL`]
     pub inner: D,
-    /// The loop behavior
-    pub loop_behavior: LoopBehavior,
+    /// The loop count
+    pub loop_count: NonZeroU16,
     /// The segment to write the data
     pub segment: Segment,
     /// The behavior when switching segments
-    pub transition_mode: Option<TransitionMode>,
+    pub transition_mode: T,
 }
 
-impl<'a, D: DatagramL<'a>> WithLoopBehavior<D> {
-    /// Create a new [`WithLoopBehavior`].
+impl<'a, T, D> WithFiniteLoop<T, D>
+where
+    T: TransitionMode,
+    D: DatagramL<'a> + HasFiniteLoop<T>,
+{
+    /// Create a new [`WithFiniteLoop`].
     #[must_use]
     pub const fn new(
         inner: D,
-        loop_behavior: LoopBehavior,
+        loop_count: NonZeroU16,
         segment: Segment,
-        transition_mode: Option<TransitionMode>,
+        transition_mode: T,
     ) -> Self {
         Self {
             inner,
-            loop_behavior,
+            loop_count,
             segment,
             transition_mode,
         }
     }
 }
 
-impl<'a, D: DatagramL<'a>> Datagram<'a> for WithLoopBehavior<D> {
+impl<'a, T, D> Datagram<'a> for WithFiniteLoop<T, D>
+where
+    T: TransitionMode,
+    D: DatagramL<'a> + HasFiniteLoop<T>,
+{
     type G = D::G;
     type Error = D::Error;
 
@@ -55,15 +64,15 @@ impl<'a, D: DatagramL<'a>> Datagram<'a> for WithLoopBehavior<D> {
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
-        <D as DatagramL>::operation_generator_with_loop_behavior(
+        <D as DatagramL>::operation_generator_with_finite_loop(
             self.inner,
             geometry,
             env,
             filter,
             limits,
             self.segment,
-            self.transition_mode,
-            self.loop_behavior,
+            self.transition_mode.params(),
+            self.loop_count.get() - 1,
         )
     }
 
@@ -72,23 +81,21 @@ impl<'a, D: DatagramL<'a>> Datagram<'a> for WithLoopBehavior<D> {
     }
 }
 
-#[doc(hidden)]
-pub trait InspectionResultWithLoopBehavior {
-    fn with_loop_behavior(
-        self,
-        loop_behavior: LoopBehavior,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Self;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct WithFiniteLoopInspectionResult<I, T> {
+    pub inner: I,
+    pub segment: Segment,
+    pub transition_mode: T,
+    pub loop_count: NonZeroU16,
 }
 
-impl<'a, D> Inspectable<'a> for WithLoopBehavior<D>
+impl<'a, T, D> Inspectable<'a> for WithFiniteLoop<T, D>
 where
-    D: Inspectable<'a> + DatagramL<'a>,
-    D::Result: InspectionResultWithLoopBehavior,
+    T: TransitionMode,
+    D: Inspectable<'a> + DatagramL<'a> + HasFiniteLoop<T>,
     <D as DatagramL<'a>>::Error: From<<D as Datagram<'a>>::Error>,
 {
-    type Result = D::Result;
+    type Result = WithFiniteLoopInspectionResult<D::Result, T>;
 
     fn inspect(
         self,
@@ -97,11 +104,21 @@ where
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
-        Ok(self
-            .inner
-            .inspect(geometry, env, filter, limits)?
-            .modify(|t| {
-                t.with_loop_behavior(self.loop_behavior, self.segment, self.transition_mode)
-            }))
+        Ok(InspectionResult {
+            result: self
+                .inner
+                .inspect(geometry, env, filter, limits)?
+                .result
+                .into_iter()
+                .map(|r| {
+                    r.map(|r| WithFiniteLoopInspectionResult {
+                        inner: r,
+                        segment: self.segment,
+                        transition_mode: self.transition_mode,
+                        loop_count: self.loop_count,
+                    })
+                })
+                .collect(),
+        })
     }
 }

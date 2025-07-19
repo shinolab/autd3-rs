@@ -1,5 +1,5 @@
 use autd3_core::{
-    derive::{FirmwareLimits, ModulationError, SamplingConfig},
+    datagram::FirmwareLimits, modulation::ModulationError, sampling_config::SamplingConfig,
     utils::float::is_integer,
 };
 use autd3_driver::common::{Freq, Hz, ULTRASOUND_FREQ};

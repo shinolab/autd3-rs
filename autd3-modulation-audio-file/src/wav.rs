@@ -1,5 +1,4 @@
 use autd3_core::{common::Hz, derive::*};
-use autd3_derive::Modulation;
 use hound::SampleFormat;
 
 use std::{fmt::Debug, path::Path};

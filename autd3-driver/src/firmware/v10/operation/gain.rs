@@ -10,7 +10,7 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::{Segment, TransitionMode},
+    datagram::{Segment, transition_mode::TransitionMode},
     gain::{Drive, GainCalculator, GainCalculatorGenerator, GainOperationGenerator},
     geometry::Device,
 };
@@ -40,16 +40,12 @@ struct Gain {
 pub struct GainOp<Calculator> {
     is_done: bool,
     segment: Segment,
-    transition: Option<TransitionMode>,
+    transition: bool,
     calculator: Calculator,
 }
 
 impl<'a, Calculator: GainCalculator<'a>> GainOp<Calculator> {
-    pub(crate) const fn new(
-        segment: Segment,
-        transition: Option<TransitionMode>,
-        calculator: Calculator,
-    ) -> Self {
+    pub(crate) const fn new(segment: Segment, transition: bool, calculator: Calculator) -> Self {
         Self {
             is_done: false,
             segment,
@@ -72,12 +68,8 @@ impl<'a, Calculator: GainCalculator<'a>> Operation<'a> for GainOp<Calculator> {
             Gain {
                 tag: TypeTag::Gain,
                 segment: self.segment as u8,
-                flag: if let Some(mode) = self.transition {
-                    if mode != TransitionMode::Immediate {
-                        return Err(AUTDDriverError::InvalidTransitionMode);
-                    } else {
-                        GainControlFlags::UPDATE
-                    }
+                flag: if self.transition {
+                    GainControlFlags::UPDATE
                 } else {
                     GainControlFlags::NONE
                 },
@@ -106,7 +98,14 @@ impl<'a, G: GainCalculatorGenerator<'a>> OperationGenerator<'a> for GainOperatio
 
     fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         let c = self.generator.generate(device);
-        Some((Self::O1::new(self.segment, self.transition, c), Self::O2 {}))
+        Some((
+            Self::O1::new(
+                self.segment,
+                self.transition_params != autd3_core::datagram::transition_mode::Later.params(),
+                c,
+            ),
+            Self::O2 {},
+        ))
     }
 }
 
@@ -146,7 +145,7 @@ mod tests {
             })
             .collect();
 
-        let mut op = GainOp::new(Segment::S0, Some(TransitionMode::Immediate), {
+        let mut op = GainOp::new(Segment::S0, true, {
             let data = data.clone();
             Impl { data }
         });
@@ -172,22 +171,5 @@ mod tests {
                 assert_eq!(d[0], &g.phase.0);
                 assert_eq!(d[1], &g.intensity.0);
             });
-    }
-
-    #[test]
-    fn invalid_transition_mode() {
-        let device = crate::autd3_device::tests::create_device();
-
-        let mut tx =
-            vec![0x00u8; size_of::<Gain>() + device.num_transducers() * size_of::<Drive>()];
-
-        let mut op = GainOp::new(Segment::S0, Some(TransitionMode::Ext), {
-            Impl { data: Vec::new() }
-        });
-
-        assert_eq!(
-            Some(AUTDDriverError::InvalidTransitionMode),
-            op.pack(&device, &mut tx).err()
-        );
     }
 }

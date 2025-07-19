@@ -1,7 +1,7 @@
 use crate::{error::AUTDDriverError, geometry::Point3};
 
 use super::*;
-use autd3_core::derive::FirmwareLimits;
+use autd3_core::datagram::FirmwareLimits;
 use zerocopy::{Immutable, IntoBytes};
 
 #[bitfield_struct::bitfield(u64)]

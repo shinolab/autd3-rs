@@ -11,7 +11,7 @@ pub use error::GainError;
 pub use phase::Phase;
 
 use crate::{
-    datagram::{DeviceFilter, Segment, TransitionMode},
+    datagram::{DeviceFilter, Segment, transition_mode::TransitionModeParams},
     environment::Environment,
     geometry::{Device, Geometry, Transducer},
 };
@@ -155,23 +155,23 @@ pub trait Gain<'a>: std::fmt::Debug + Sized {
 pub struct GainOperationGenerator<'a, G> {
     pub generator: G,
     pub segment: Segment,
-    pub transition: Option<TransitionMode>,
+    pub transition_params: TransitionModeParams,
     pub __phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a, G: GainCalculatorGenerator<'a>> GainOperationGenerator<'a, G> {
-    pub fn new<T: Gain<'a, G = G>>(
-        gain: T,
+impl<'a, C: GainCalculatorGenerator<'a>> GainOperationGenerator<'a, C> {
+    pub fn new<G: Gain<'a, G = C>>(
+        gain: G,
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         segment: Segment,
-        transition: Option<TransitionMode>,
+        transition_params: TransitionModeParams,
     ) -> Result<Self, GainError> {
         Ok(Self {
             generator: gain.init(geometry, env, &TransducerFilter::from(filter))?,
             segment,
-            transition,
+            transition_params,
             __phantom: std::marker::PhantomData,
         })
     }
@@ -184,8 +184,4 @@ pub struct GainInspectionResult {
     pub name: String,
     /// The data of the gain.
     pub data: Vec<Drive>,
-    /// The segment of the gain.
-    pub segment: Segment,
-    /// The transition mode of the gain.
-    pub transition_mode: Option<TransitionMode>,
 }
