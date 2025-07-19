@@ -37,7 +37,7 @@ pub mod internal {
 
 const INFINITE_REP: u16 = 0xFFFF;
 
-/// [`DatagramL`] is a [`Datagram`] with [`LoopBehavior`].
+/// [`DatagramL`] is a [`Datagram`] with finite loop behavior.
 pub trait DatagramL<'a>: std::fmt::Debug {
     #[doc(hidden)]
     type G;
