@@ -12,8 +12,10 @@ use crate::{
 
 use autd3_core::{
     common::{FOCI_STM_FOCI_NUM_MIN, METER, STM_BUF_SIZE_MIN},
-    datagram::{LoopBehavior, Segment, TRANSITION_MODE_NONE, TransitionMode},
-    derive::FirmwareLimits,
+    datagram::{
+        FirmwareLimits, Segment,
+        transition_mode::{Later, TransitionMode, TransitionModeParams},
+    },
     geometry::Device,
     sampling_config::SamplingConfig,
 };
@@ -65,9 +67,9 @@ pub struct FociSTMOp<const N: usize, Iterator: FociSTMIterator<N>> {
     config: SamplingConfig,
     sound_speed: f32,
     limits: FirmwareLimits,
-    loop_behavior: LoopBehavior,
+    rep: u16,
     segment: Segment,
-    transition_mode: Option<TransitionMode>,
+    transition_params: TransitionModeParams,
 }
 
 impl<const N: usize, Iterator: FociSTMIterator<N>> FociSTMOp<N, Iterator> {
@@ -78,9 +80,9 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> FociSTMOp<N, Iterator> {
         config: SamplingConfig,
         sound_speed: f32,
         limits: FirmwareLimits,
-        loop_behavior: LoopBehavior,
+        rep: u16,
         segment: Segment,
-        transition_mode: Option<TransitionMode>,
+        transition_params: TransitionModeParams,
     ) -> Self {
         Self {
             iter,
@@ -89,9 +91,9 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> FociSTMOp<N, Iterator> {
             config,
             sound_speed,
             limits,
-            loop_behavior,
+            rep,
             segment,
-            transition_mode,
+            transition_params,
         }
     }
 }
@@ -154,7 +156,7 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> Operation<'_> for FociSTMOp<N
 
         let flag = if self.size == self.sent {
             FociSTMControlFlags::END
-                | if self.transition_mode.is_some() {
+                | if self.transition_params != Later.params() {
                     FociSTMControlFlags::TRANSITION
                 } else {
                     FociSTMControlFlags::NONE
@@ -169,16 +171,13 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> Operation<'_> for FociSTMOp<N
                     tag: TypeTag::FociSTM,
                     flag: flag | FociSTMControlFlags::BEGIN,
                     segment: self.segment as _,
-                    transition_mode: self
-                        .transition_mode
-                        .map(|m| m.mode())
-                        .unwrap_or(TRANSITION_MODE_NONE),
-                    transition_value: self.transition_mode.map(TransitionMode::value).unwrap_or(0),
+                    transition_mode: self.transition_params.mode,
+                    transition_value: self.transition_params.value,
                     send_num: send_num as _,
                     num_foci: N as u8,
                     freq_div: self.config.divide()?,
                     sound_speed: (self.sound_speed / METER * 64.0).round() as u16,
-                    rep: self.loop_behavior.rep(),
+                    rep: self.rep,
                     __: [0; 4],
                 },
             );
@@ -224,9 +223,9 @@ impl<const N: usize, G: FociSTMIteratorGenerator<N>> OperationGenerator<'_>
                 self.config,
                 self.sound_speed,
                 self.limits,
-                self.loop_behavior,
+                self.rep,
                 self.segment,
-                self.transition_mode,
+                self.transition_params,
             ),
             Self::O2 {},
         ))
@@ -253,7 +252,10 @@ mod tests {
         geometry::Point3,
     };
 
-    use autd3_core::gain::Intensity;
+    use autd3_core::{
+        datagram::transition_mode::{self, TransitionMode},
+        gain::Intensity,
+    };
     use rand::prelude::*;
 
     struct TestIterator<const N: usize> {
@@ -288,11 +290,11 @@ mod tests {
                 intensity: Intensity(rng.random::<u8>()),
             })
             .collect();
-        let rep = 0xFFFF;
+        let rep = rng.random_range(0x0000..0xFFFF);
         let segment = Segment::S0;
         let freq_div = rng.random_range(0x0001..=0xFFFF);
         let transition_value = 0x0123456789ABCDEF;
-        let transition_mode = TransitionMode::SysTime(
+        let transition_mode = transition_mode::SysTime(
             DcSysTime::from_utc(
                 time::macros::datetime!(2000-01-01 0:00 UTC)
                     + std::time::Duration::from_nanos(transition_value),
@@ -308,9 +310,9 @@ mod tests {
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             340.,
             limits,
-            LoopBehavior::Infinite,
+            rep,
             segment,
-            Some(transition_mode),
+            transition_mode.params(),
         );
 
         assert_eq!(
@@ -337,7 +339,7 @@ mod tests {
             tx[2]
         );
         assert_eq!(segment as u8, tx[3]);
-        assert_eq!(transition_mode.mode(), tx[4]);
+        assert_eq!(transition_mode.params().mode, tx[4]);
         assert_eq!(1, tx[5]);
         let sound_speed = (340. / METER * 64.0).round() as u16;
         assert_eq!(sound_speed as u8, tx[6]);
@@ -393,11 +395,11 @@ mod tests {
                 intensity: Intensity(rng.random::<u8>()),
             })
             .collect();
-        let rep = 0xFFFF;
+        let rep = rng.random_range(0x0000..0xFFFF);
         let segment = Segment::S0;
         let freq_div = rng.random_range(0x0001..=0xFFFF);
         let transition_value = 0x0123456789ABCDEF;
-        let transition_mode = TransitionMode::SysTime(
+        let transition_mode = transition_mode::SysTime(
             DcSysTime::from_utc(
                 time::macros::datetime!(2000-01-01 0:00 UTC)
                     + std::time::Duration::from_nanos(transition_value),
@@ -413,9 +415,9 @@ mod tests {
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             340.,
             limits,
-            LoopBehavior::Infinite,
+            rep,
             segment,
-            Some(transition_mode),
+            transition_mode.params(),
         );
 
         assert_eq!(
@@ -439,7 +441,7 @@ mod tests {
         );
         assert_eq!(FOCI_STM_SIZE as u8, tx[2]);
         assert_eq!(segment as u8, tx[3]);
-        assert_eq!(transition_mode.mode(), tx[4]);
+        assert_eq!(transition_mode.params().mode, tx[4]);
         assert_eq!(N as u8, tx[5]);
         let sound_speed = (340. / METER * 64.0).round() as u16;
         assert_eq!(sound_speed as u8, tx[6]);
@@ -507,7 +509,7 @@ mod tests {
             })
             .collect();
         let freq_div = rng.random_range(0x0001..0xFFFF);
-        let rep = rng.random_range(0x0001..=0xFFFF);
+        let rep = rng.random_range(0x0000..0xFFFF);
         let segment = Segment::S1;
 
         let mut op = FociSTMOp::new(
@@ -518,9 +520,9 @@ mod tests {
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             340.,
             limits,
-            LoopBehavior::Finite(NonZeroU16::new(rep + 1).unwrap()),
+            rep,
             segment,
-            None,
+            Later.params(),
         );
 
         // First frame
@@ -683,9 +685,9 @@ mod tests {
             SamplingConfig::FREQ_40K,
             340.,
             limits,
-            LoopBehavior::Infinite,
+            0xFFFF,
             Segment::S0,
-            Some(TransitionMode::SyncIdx),
+            transition_mode::Immediate.params(),
         );
 
         assert_eq!(
@@ -720,9 +722,9 @@ mod tests {
             SamplingConfig::FREQ_40K,
             340.,
             V10.firmware_limits(),
-            LoopBehavior::Infinite,
+            0xFFFF,
             Segment::S0,
-            Some(TransitionMode::SyncIdx),
+            transition_mode::Immediate.params(),
         );
 
         let mut tx = vec![0x00u8; size_of::<FociSTMHead>() + n * size_of::<STMFocus>()];
@@ -746,9 +748,9 @@ mod tests {
                 SamplingConfig::FREQ_40K,
                 340.,
                 limits,
-                LoopBehavior::Infinite,
+                0xFFFF,
                 Segment::S0,
-                Some(TransitionMode::SyncIdx),
+                transition_mode::Immediate.params(),
             );
             let mut tx = vec![0x00u8; size_of::<FociSTMHead>()];
             assert_eq!(
@@ -768,9 +770,9 @@ mod tests {
                 SamplingConfig::FREQ_40K,
                 340.,
                 limits,
-                LoopBehavior::Infinite,
+                0xFFFF,
                 Segment::S0,
-                Some(TransitionMode::SyncIdx),
+                transition_mode::Immediate.params(),
             );
             let mut tx = vec![0x00u8; size_of::<FociSTMHead>() + 2 * size_of::<STMFocus>()];
             assert_eq!(Ok(()), op.pack(&device, &mut tx).map(|_| ()));
@@ -791,9 +793,9 @@ mod tests {
                 SamplingConfig::FREQ_40K,
                 340.,
                 limits,
-                LoopBehavior::Infinite,
+                0xFFFF,
                 Segment::S0,
-                Some(TransitionMode::SyncIdx),
+                transition_mode::Immediate.params(),
             );
             let mut tx = vec![
                 0x00u8;
@@ -818,9 +820,9 @@ mod tests {
                 SamplingConfig::FREQ_40K,
                 340.,
                 limits,
-                LoopBehavior::Infinite,
+                0xFFFF,
                 Segment::S0,
-                Some(TransitionMode::SyncIdx),
+                transition_mode::Immediate.params(),
             );
             let mut tx = vec![
                 0x00u8;

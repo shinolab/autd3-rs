@@ -59,7 +59,7 @@ impl FPGAEmulator {
         if (self.read(addr) & CTL_FLAG_MOD_SET) == CTL_FLAG_MOD_SET {
             self.mod_swapchain.set(
                 sys_time,
-                self.modulation_loop_behavior(self.req_modulation_segment()),
+                self.modulation_loop_count(self.req_modulation_segment()),
                 self.modulation_freq_divide(self.req_modulation_segment()),
                 self.modulation_cycle(self.req_modulation_segment()),
                 self.req_modulation_segment(),
@@ -69,7 +69,7 @@ impl FPGAEmulator {
         if (self.read(addr) & CTL_FLAG_STM_SET) == CTL_FLAG_STM_SET {
             self.stm_swapchain.set(
                 sys_time,
-                self.stm_loop_behavior(self.req_stm_segment()),
+                self.stm_loop_count(self.req_stm_segment()),
                 self.stm_freq_divide(self.req_stm_segment()),
                 self.stm_cycle(self.req_stm_segment()),
                 self.req_stm_segment(),

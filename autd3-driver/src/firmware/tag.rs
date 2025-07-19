@@ -1,6 +1,6 @@
 use zerocopy::{Immutable, IntoBytes};
 
-#[derive(PartialEq, Debug, IntoBytes, Immutable)]
+#[derive(Clone, Copy, PartialEq, Debug, IntoBytes, Immutable)]
 #[repr(u8)]
 #[non_exhaustive]
 pub(crate) enum TypeTag {

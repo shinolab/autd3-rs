@@ -2,44 +2,16 @@ mod boxed;
 
 pub use boxed::BoxedModulation;
 
-use super::{
-    with_loop_behavior::InspectionResultWithLoopBehavior, with_segment::InspectionResultWithSegment,
-};
-
-use autd3_core::{
-    datagram::{LoopBehavior, Segment, TransitionMode},
-    modulation::ModulationInspectionResult,
-};
-
-impl InspectionResultWithSegment for ModulationInspectionResult {
-    fn with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
-        Self {
-            segment,
-            transition_mode,
-            ..self
-        }
-    }
-}
-
-impl InspectionResultWithLoopBehavior for ModulationInspectionResult {
-    fn with_loop_behavior(
-        self,
-        loop_behavior: LoopBehavior,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Self {
-        Self {
-            loop_behavior,
-            segment,
-            transition_mode,
-            ..self
-        }
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
+    use std::num::NonZeroU16;
+
     use autd3_core::derive::*;
+
+    use crate::datagram::{
+        with_loop_behavior::WithFiniteLoopInspectionResult,
+        with_segment::WithSegmentInspectionResult,
+    };
 
     #[derive(Modulation, Clone, PartialEq, Debug)]
     pub struct TestModulation {
@@ -76,9 +48,6 @@ pub mod tests {
                     name: "TestModulation".to_string(),
                     data: vec![0, 0],
                     config: SamplingConfig::FREQ_4K,
-                    loop_behavior: LoopBehavior::Infinite,
-                    segment: Segment::S0,
-                    transition_mode: None,
                 }),
                 r
             );
@@ -96,7 +65,7 @@ pub mod tests {
                 sampling_config: SamplingConfig::FREQ_4K,
             },
             segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
+            transition_mode: transition_mode::Later,
         }
         .inspect(
             &geometry,
@@ -107,13 +76,14 @@ pub mod tests {
         .iter()
         .for_each(|r| {
             assert_eq!(
-                &Some(ModulationInspectionResult {
-                    name: "TestModulation".to_string(),
-                    data: vec![0, 0],
-                    config: SamplingConfig::FREQ_4K,
-                    loop_behavior: LoopBehavior::Infinite,
+                &Some(WithSegmentInspectionResult {
+                    inner: ModulationInspectionResult {
+                        name: "TestModulation".to_string(),
+                        data: vec![0, 0],
+                        config: SamplingConfig::FREQ_4K,
+                    },
                     segment: Segment::S1,
-                    transition_mode: Some(TransitionMode::Immediate),
+                    transition_mode: transition_mode::Later,
                 }),
                 r
             );
@@ -126,13 +96,13 @@ pub mod tests {
     fn inspect_with_loop_behavior() -> anyhow::Result<()> {
         let geometry = crate::autd3_device::tests::create_geometry(2);
 
-        crate::datagram::WithLoopBehavior {
+        crate::datagram::WithFiniteLoop {
             inner: TestModulation {
                 sampling_config: SamplingConfig::FREQ_4K,
             },
             segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
-            loop_behavior: LoopBehavior::ONCE,
+            transition_mode: transition_mode::SyncIdx,
+            loop_count: NonZeroU16::MIN,
         }
         .inspect(
             &geometry,
@@ -143,13 +113,15 @@ pub mod tests {
         .iter()
         .for_each(|r| {
             assert_eq!(
-                &Some(ModulationInspectionResult {
-                    name: "TestModulation".to_string(),
-                    data: vec![0, 0],
-                    config: SamplingConfig::FREQ_4K,
-                    loop_behavior: LoopBehavior::ONCE,
+                &Some(WithFiniteLoopInspectionResult {
+                    inner: ModulationInspectionResult {
+                        name: "TestModulation".to_string(),
+                        data: vec![0, 0],
+                        config: SamplingConfig::FREQ_4K,
+                    },
                     segment: Segment::S1,
-                    transition_mode: Some(TransitionMode::Immediate),
+                    transition_mode: transition_mode::SyncIdx,
+                    loop_count: NonZeroU16::MIN,
                 }),
                 r
             );

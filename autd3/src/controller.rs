@@ -357,11 +357,16 @@ impl<L: Link> Controller<L, firmware::auto::Auto> {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    use std::collections::HashMap;
+
     use crate::{
         core::{
-            derive::*,
-            gain::{Gain, GainCalculator, GainCalculatorGenerator},
+            datagram::Segment,
+            gain::{
+                Gain, GainCalculator, GainCalculatorGenerator, Intensity, Phase, TransducerFilter,
+            },
             link::LinkError,
+            modulation::{Modulation, ModulationInspectionResult},
         },
         driver::{
             autd3_device::AUTD3,
@@ -483,9 +488,6 @@ pub(crate) mod tests {
                 name: "Static".to_string(),
                 data: vec![0xFF, 0xFF],
                 config: Static::default().sampling_config(),
-                loop_behavior: LoopBehavior::Infinite,
-                segment: Segment::S0,
-                transition_mode: None
             }),
             r[0]
         );

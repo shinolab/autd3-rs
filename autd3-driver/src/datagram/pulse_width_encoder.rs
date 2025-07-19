@@ -2,8 +2,7 @@ use std::{convert::Infallible, f32::consts::PI};
 
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
-    datagram::{Datagram, DatagramOption, DeviceFilter, PulseWidth},
-    derive::FirmwareLimits,
+    datagram::{Datagram, DatagramOption, DeviceFilter, FirmwareLimits, PulseWidth},
     environment::Environment,
     gain::Intensity,
     geometry::{Device, Geometry},

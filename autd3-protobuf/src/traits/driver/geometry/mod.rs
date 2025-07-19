@@ -95,10 +95,9 @@ impl FromMessage<Geometry> for autd3_core::geometry::Geometry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autd3_core::derive::Device;
     use autd3_driver::{
         autd3_device::AUTD3,
-        geometry::{Geometry, Point3, Quaternion, UnitQuaternion, UnitVector3, Vector3},
+        geometry::{Device, Geometry, Point3, Quaternion, UnitQuaternion, UnitVector3, Vector3},
     };
     use rand::Rng;
 

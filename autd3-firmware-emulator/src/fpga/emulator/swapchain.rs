@@ -1,9 +1,16 @@
 use std::collections::HashMap;
 
-use autd3_core::datagram::{LoopBehavior, Segment, TransitionMode};
+use autd3_core::datagram::{
+    Segment,
+    transition_mode::{Immediate, TransitionMode, TransitionModeParams},
+};
 use autd3_driver::{
     common::{Freq, Hz},
     ethercat::DcSysTime,
+};
+
+use crate::fpga::params::{
+    TRANSITION_MODE_EXT, TRANSITION_MODE_GPIO, TRANSITION_MODE_SYNC_IDX, TRANSITION_MODE_SYS_TIME,
 };
 
 use super::FPGAEmulator;
@@ -21,7 +28,7 @@ pub(crate) struct Swapchain<const SET: u16> {
     cur_segment: Segment,
     req_segment: Segment,
     cur_idx: usize,
-    transition_mode: TransitionMode,
+    transition_params: TransitionModeParams,
     stop: bool,
     ext_mode: bool,
     ext_last_lap: usize,
@@ -51,7 +58,7 @@ impl<const SET: u16> Swapchain<SET> {
             cur_segment: Segment::S0,
             req_segment: Segment::S0,
             cur_idx: 0,
-            transition_mode: TransitionMode::Immediate,
+            transition_params: Immediate.params(),
             stop: false,
             ext_mode: false,
             ext_last_lap: 0,
@@ -67,8 +74,8 @@ impl<const SET: u16> Swapchain<SET> {
         let (last_lap, _) = self.lap_and_idx(self.req_segment, self.sys_time);
         let (lap, idx) = self.lap_and_idx(self.req_segment, sys_time);
         match self.state {
-            State::WaitStart => match self.transition_mode {
-                TransitionMode::SyncIdx => {
+            State::WaitStart => match self.transition_params.mode {
+                TRANSITION_MODE_SYNC_IDX => {
                     if last_lap < lap {
                         self.stop = false;
                         self.start_lap.insert(self.req_segment, lap);
@@ -77,8 +84,8 @@ impl<const SET: u16> Swapchain<SET> {
                         self.state = State::FiniteLoop;
                     }
                 }
-                TransitionMode::SysTime(v) => {
-                    if v.sys_time() <= sys_time.sys_time() {
+                TRANSITION_MODE_SYS_TIME => {
+                    if self.transition_params.value <= sys_time.sys_time() {
                         self.stop = false;
                         self.start_lap.insert(self.req_segment, lap);
                         self.cur_segment = self.req_segment;
@@ -86,8 +93,8 @@ impl<const SET: u16> Swapchain<SET> {
                         self.state = State::FiniteLoop;
                     }
                 }
-                TransitionMode::GPIO(gpio) => {
-                    if gpio_in[gpio as usize] {
+                TRANSITION_MODE_GPIO => {
+                    if gpio_in[self.transition_params.value as usize] {
                         self.stop = false;
                         self.start_lap.insert(self.req_segment, lap);
                         self.cur_segment = self.req_segment;
@@ -130,29 +137,29 @@ impl<const SET: u16> Swapchain<SET> {
     pub fn set(
         &mut self,
         sys_time: DcSysTime,
-        rep: LoopBehavior,
+        rep: u16,
         freq_div: u16,
         cycle: usize,
         req_segment: Segment,
-        transition_mode: TransitionMode,
+        transition_params: TransitionModeParams,
     ) {
         if self.cur_segment == req_segment {
             self.stop = false;
-            self.ext_mode = transition_mode == TransitionMode::Ext;
+            self.ext_mode = transition_params.mode == TRANSITION_MODE_EXT;
             let (lap, _) = self.lap_and_idx(req_segment, sys_time);
             self.ext_last_lap = lap;
             self.tic_idx_offset.insert(req_segment, 0);
             self.state = State::InfiniteLoop;
-        } else if rep.rep() == 0xFFFF {
+        } else if rep == 0xFFFF {
             self.stop = false;
             self.cur_segment = req_segment;
-            self.ext_mode = transition_mode == TransitionMode::Ext;
+            self.ext_mode = transition_params.mode == TRANSITION_MODE_EXT;
             let (lap, _) = self.lap_and_idx(req_segment, sys_time);
             self.ext_last_lap = lap;
             self.tic_idx_offset.insert(req_segment, 0);
             self.state = State::InfiniteLoop;
         } else {
-            self.rep = rep.rep();
+            self.rep = rep;
             self.req_segment = req_segment;
             self.state = State::WaitStart;
         }
@@ -160,7 +167,7 @@ impl<const SET: u16> Swapchain<SET> {
 
         self.freq_div.insert(req_segment, freq_div);
         self.cycle.insert(req_segment, cycle);
-        self.transition_mode = transition_mode;
+        self.transition_params = transition_params;
     }
 
     #[must_use]
@@ -204,7 +211,10 @@ impl FPGAEmulator {
 mod tests {
     use super::*;
 
-    use autd3_core::datagram::{GPIOIn, TransitionMode};
+    use autd3_core::datagram::{
+        GPIOIn,
+        transition_mode::{Ext, GPIO, Immediate, SyncIdx, SysTime},
+    };
 
     const CYCLE_PERIOD: std::time::Duration = std::time::Duration::from_micros(25);
     const FREQ_DIV: u16 = 1;
@@ -216,14 +226,8 @@ mod tests {
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
         let sys_time = DcSysTime::ZERO;
-        fpga.mod_swapchain.set(
-            sys_time,
-            LoopBehavior::ONCE,
-            FREQ_DIV,
-            1,
-            Segment::S0,
-            TransitionMode::Immediate,
-        );
+        fpga.mod_swapchain
+            .set(sys_time, 0, FREQ_DIV, 1, Segment::S0, Immediate.params());
 
         assert!(!fpga.mod_swapchain.stop);
         assert!(!fpga.mod_swapchain.ext_mode);
@@ -241,14 +245,8 @@ mod tests {
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
         let sys_time = DcSysTime::ZERO;
-        fpga.mod_swapchain.set(
-            sys_time,
-            LoopBehavior::Infinite,
-            FREQ_DIV,
-            1,
-            Segment::S1,
-            TransitionMode::Ext,
-        );
+        fpga.mod_swapchain
+            .set(sys_time, 0xFFFF, FREQ_DIV, 1, Segment::S1, Ext.params());
 
         assert!(!fpga.mod_swapchain.stop);
         assert!(fpga.mod_swapchain.ext_mode);
@@ -267,14 +265,8 @@ mod tests {
         assert_eq!(Segment::S0, fpga.current_mod_segment());
 
         let sys_time = DcSysTime::ZERO;
-        fpga.mod_swapchain.set(
-            sys_time,
-            LoopBehavior::ONCE,
-            FREQ_DIV,
-            1,
-            Segment::S1,
-            TransitionMode::SyncIdx,
-        );
+        fpga.mod_swapchain
+            .set(sys_time, 0, FREQ_DIV, 1, Segment::S1, SyncIdx.params());
 
         assert!(!fpga.mod_swapchain.stop);
         assert!(!fpga.mod_swapchain.ext_mode);
@@ -295,11 +287,11 @@ mod tests {
         let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::ONCE,
+            0,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,
-            TransitionMode::SyncIdx,
+            SyncIdx.params(),
         );
 
         fpga.mod_swapchain.update(
@@ -348,11 +340,11 @@ mod tests {
         let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.stm_swapchain.set(
             sys_time,
-            LoopBehavior::ONCE,
+            0,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,
-            TransitionMode::SysTime(sys_time + CYCLE_PERIOD * 5),
+            SysTime(sys_time + CYCLE_PERIOD * 5).params(),
         );
 
         fpga.stm_swapchain.update(
@@ -402,11 +394,11 @@ mod tests {
         let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::ONCE,
+            0,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,
-            TransitionMode::GPIO(GPIOIn::I0),
+            GPIO(GPIOIn::I0).params(),
         );
 
         fpga.mod_swapchain.update(
@@ -461,11 +453,11 @@ mod tests {
         let sys_time = DcSysTime::ZERO + CYCLE_PERIOD * 5;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::ONCE,
+            0,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,
-            TransitionMode::GPIO(GPIOIn::I0),
+            GPIO(GPIOIn::I0).params(),
         );
 
         fpga.mod_swapchain.update(
@@ -505,19 +497,19 @@ mod tests {
         let sys_time = DcSysTime::ZERO;
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::Infinite,
+            0xFFFF,
             FREQ_DIV,
             CYCLE as _,
             Segment::S0,
-            TransitionMode::Ext,
+            Ext.params(),
         );
         fpga.mod_swapchain.set(
             sys_time,
-            LoopBehavior::Infinite,
+            0xFFFF,
             FREQ_DIV,
             CYCLE as _,
             Segment::S1,
-            TransitionMode::Ext,
+            Ext.params(),
         );
 
         fpga.mod_swapchain

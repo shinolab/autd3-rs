@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use autd3_core::{
+    datagram::transition_mode::{Immediate, Later},
     derive::*,
     link::{MsgId, TxMessage},
 };
@@ -86,10 +87,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S0));
         assert_eq!(0xFFFF, cpu.fpga().stm_freq_divide(Segment::S0));
-        assert_eq!(
-            LoopBehavior::Infinite,
-            cpu.fpga().stm_loop_behavior(Segment::S0)
-        );
+        assert_eq!(0xFFFF, cpu.fpga().stm_loop_count(Segment::S0));
         buf[&0].iter().zip(cpu.fpga().drives()).for_each(|(&a, b)| {
             assert_eq!(a, b);
         });
@@ -110,7 +108,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
                 )
             })
             .collect();
-        let g = WithSegment::new(TestGain { data: buf.clone() }, Segment::S1, None);
+        let g = WithSegment::new(TestGain { data: buf.clone() }, Segment::S1, Later);
 
         assert_eq!(
             Ok(()),
@@ -121,10 +119,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
         assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
         assert_eq!(1, cpu.fpga().stm_cycle(Segment::S1));
         assert_eq!(0xFFFF, cpu.fpga().stm_freq_divide(Segment::S1));
-        assert_eq!(
-            LoopBehavior::Infinite,
-            cpu.fpga().stm_loop_behavior(Segment::S1)
-        );
+        assert_eq!(0xFFFF, cpu.fpga().stm_loop_count(Segment::S1));
         buf[&0]
             .iter()
             .zip(cpu.fpga().drives_at(Segment::S1, 0))
@@ -134,7 +129,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
     }
 
     {
-        let d = SwapSegment::Gain(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegmentGain(Segment::S1);
 
         assert_eq!(
             Ok(()),
@@ -166,7 +161,7 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                     .collect::<Vec<_>>(),
             },
             segment: Segment::S0,
-            transition_mode: Some(TransitionMode::Immediate),
+            transition_mode: Immediate,
         },
         &mut geometry,
         &mut tx,
@@ -191,20 +186,20 @@ fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
                 option: GainSTMOption::default(),
             },
             segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
+            transition_mode: Immediate,
         },
         &mut geometry,
         &mut tx,
     )?;
 
     {
-        let d = SwapSegment::Gain(Segment::S0, TransitionMode::Immediate);
+        let d = SwapSegmentGain(Segment::S0);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
 
-        let d = SwapSegment::Gain(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegmentGain(Segment::S1);
         assert_eq!(
             Err(AUTDDriverError::InvalidSegmentTransition),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)

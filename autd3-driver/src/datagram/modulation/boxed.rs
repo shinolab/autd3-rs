@@ -1,7 +1,6 @@
 use std::mem::MaybeUninit;
 
 use autd3_core::derive::*;
-use autd3_derive::Modulation;
 
 /// A dyn-compatible version of [`Modulation`].
 pub trait DModulation {

@@ -2,47 +2,94 @@ use crate::ethercat::DcSysTime;
 
 use super::fpga_gpio::GPIOIn;
 
-pub(crate) const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
-pub(crate) const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
-pub(crate) const TRANSITION_MODE_GPIO: u8 = 0x02;
-pub(crate) const TRANSITION_MODE_EXT: u8 = 0xF0;
-#[doc(hidden)]
-pub const TRANSITION_MODE_NONE: u8 = 0xFE;
-pub(crate) const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
+const TRANSITION_MODE_SYNC_IDX: u8 = 0x00;
+const TRANSITION_MODE_SYS_TIME: u8 = 0x01;
+const TRANSITION_MODE_GPIO: u8 = 0x02;
+const TRANSITION_MODE_EXT: u8 = 0xF0;
+const TRANSITION_MODE_NONE: u8 = 0xFE;
+const TRANSITION_MODE_IMMEDIATE: u8 = 0xFF;
 
-/// Transition mode of segment
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
-pub enum TransitionMode {
-    /// Transition when the sampling index in the destination segment is 0.
-    SyncIdx,
-    /// Transition when the system time is the specified time.
-    SysTime(DcSysTime),
-    /// Transition when the specified GPIO pin is high.
-    GPIO(GPIOIn),
-    /// Transition to the next segment automatically when the data in the current segment is finished.
-    Ext,
-    /// Transition immediately.
-    Immediate,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[doc(hidden)]
+pub struct TransitionModeParams {
+    pub mode: u8,
+    pub value: u64,
 }
 
-impl TransitionMode {
+/// Transition mode between segments.
+pub trait TransitionMode: std::fmt::Debug + Clone + Copy + Send + Sync {
     #[doc(hidden)]
-    pub const fn mode(self) -> u8 {
-        match self {
-            TransitionMode::SyncIdx => TRANSITION_MODE_SYNC_IDX,
-            TransitionMode::SysTime(_) => TRANSITION_MODE_SYS_TIME,
-            TransitionMode::GPIO(_) => TRANSITION_MODE_GPIO,
-            TransitionMode::Ext => TRANSITION_MODE_EXT,
-            TransitionMode::Immediate => TRANSITION_MODE_IMMEDIATE,
+    fn params(self) -> TransitionModeParams;
+}
+
+/// Transition when the sampling index in the destination segment is 0.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SyncIdx;
+impl TransitionMode for SyncIdx {
+    fn params(self) -> TransitionModeParams {
+        TransitionModeParams {
+            mode: TRANSITION_MODE_SYNC_IDX,
+            value: 0,
         }
     }
+}
 
-    #[doc(hidden)]
-    pub const fn value(self) -> u64 {
-        match self {
-            TransitionMode::SyncIdx | TransitionMode::Ext | TransitionMode::Immediate => 0,
-            TransitionMode::GPIO(gpio) => gpio as u64,
-            TransitionMode::SysTime(time) => time.sys_time(),
+/// Transition when the system time is the specified time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SysTime(pub DcSysTime);
+impl TransitionMode for SysTime {
+    fn params(self) -> TransitionModeParams {
+        TransitionModeParams {
+            mode: TRANSITION_MODE_SYS_TIME,
+            value: self.0.sys_time(),
+        }
+    }
+}
+
+/// Transition when the specified GPIO pin is high.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GPIO(pub GPIOIn);
+impl TransitionMode for GPIO {
+    fn params(self) -> TransitionModeParams {
+        TransitionModeParams {
+            mode: TRANSITION_MODE_GPIO,
+            value: self.0 as u64,
+        }
+    }
+}
+
+/// Transition immediately.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Immediate;
+impl TransitionMode for Immediate {
+    fn params(self) -> TransitionModeParams {
+        TransitionModeParams {
+            mode: TRANSITION_MODE_IMMEDIATE,
+            value: 0,
+        }
+    }
+}
+
+/// Transition to the next segment automatically when the data in the current segment is finished.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Ext;
+impl TransitionMode for Ext {
+    fn params(self) -> TransitionModeParams {
+        TransitionModeParams {
+            mode: TRANSITION_MODE_EXT,
+            value: 0,
+        }
+    }
+}
+
+/// Transition later.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Later;
+impl TransitionMode for Later {
+    fn params(self) -> TransitionModeParams {
+        TransitionModeParams {
+            mode: TRANSITION_MODE_NONE,
+            value: 0,
         }
     }
 }

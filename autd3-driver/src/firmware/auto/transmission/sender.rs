@@ -9,8 +9,8 @@ use crate::{
 };
 
 use autd3_core::{
+    datagram::FirmwareLimits,
     datagram::{Datagram, DeviceFilter},
-    derive::FirmwareLimits,
     geometry::Geometry,
     link::Link,
     sleep::Sleep,
