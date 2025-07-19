@@ -30,14 +30,6 @@ impl<T> InspectionResult<T> {
                 .collect(),
         }
     }
-
-    #[must_use]
-    #[doc(hidden)]
-    pub fn modify(self, f: impl Fn(T) -> T) -> Self {
-        Self {
-            result: self.result.into_iter().map(|r| r.map(&f)).collect(),
-        }
-    }
 }
 
 /// Trait to inspect a [`Datagram`].
