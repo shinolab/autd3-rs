@@ -109,12 +109,12 @@ mod tests {
     #[rstest::rstest]
     #[test]
     fn to_fixed_num(limits: FirmwareLimits) {
-        for i in limits.foci_stm_fixed_num_lower_z()..=limits.foci_stm_fixed_num_upper_z() {
+        (limits.foci_stm_fixed_num_lower_z()..=limits.foci_stm_fixed_num_upper_z()).for_each(|i| {
             assert_eq!(
                 i,
                 STMFocus::to_fixed_num(i as f32 * FOCI_STM_FIXED_NUM_UNIT)
             );
-        }
+        });
     }
 
     #[rstest::rstest]

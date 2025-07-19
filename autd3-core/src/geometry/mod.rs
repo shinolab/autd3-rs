@@ -220,9 +220,9 @@ pub(crate) mod tests {
     fn into_iter() {
         let mut geometry = create_geometry(1, 1);
         assert_eq!(0, geometry.version());
-        for dev in &mut geometry {
+        (&mut geometry).into_iter().for_each(|dev| {
             _ = dev;
-        }
+        });
         assert_eq!(1, geometry.version());
     }
 

@@ -599,15 +599,12 @@ mod tests {
     #[tokio::test]
     async fn into_iter() -> anyhow::Result<()> {
         let mut autd = create_controller(1).await?;
-
-        for dev in &mut autd {
+        (&mut autd).into_iter().for_each(|dev| {
             _ = dev;
-        }
-
-        for dev in &autd {
+        });
+        (&autd).into_iter().for_each(|dev| {
             _ = dev;
-        }
-
+        });
         Ok(())
     }
 }

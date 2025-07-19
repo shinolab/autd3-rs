@@ -1,4 +1,4 @@
-use std::{num::NonZeroUsize, sync::Arc};
+use std::{num::NonZeroUsize, ops::ControlFlow, sync::Arc};
 
 use crate::{
     Amplitude, Complex, HoloError, LinAlgBackend, Trans,
@@ -244,9 +244,10 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for LM<D, B> {
         let mut x_new = self.backend.alloc_v(n_param)?;
         let mut tmp_mat = self.backend.alloc_m(n_param, n_param)?;
         let mut tmp_vec = self.backend.alloc_v(n_param)?;
-        for _ in 0..self.option.k_max.get() {
+
+        let mut step = || -> Result<ControlFlow<()>, HoloError> {
             if self.backend.max_abs_v(&g)? <= self.option.eps_1 {
-                break; // GRCOV_EXCL_LINE
+                return Ok(ControlFlow::Break(())); // GRCOV_EXCL_LINE
             }
 
             self.backend.copy_to_m(&a, &mut tmp_mat)?;
@@ -259,7 +260,7 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for LM<D, B> {
             if self.backend.dot(&h_lm, &h_lm)?.sqrt()
                 <= self.option.eps_2 * (self.backend.dot(&x, &x)?.sqrt() + self.option.eps_2)
             {
-                break; // GRCOV_EXCL_LINE
+                return Ok(ControlFlow::Break(())); // GRCOV_EXCL_LINE
             }
 
             self.backend.copy_to_v(&x, &mut x_new)?;
@@ -297,7 +298,17 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for LM<D, B> {
                 mu *= nu;
                 nu *= 2.;
             }
-        }
+            Ok(ControlFlow::Continue(()))
+        };
+
+        (0..self.option.k_max.get())
+            .try_for_each(|_| match step() {
+                Ok(ControlFlow::Continue(())) => ControlFlow::Continue(()),
+                Ok(ControlFlow::Break(())) => ControlFlow::Break(Ok(())),
+                Err(e) => ControlFlow::Break(Err(e)),
+            })
+            .break_value()
+            .transpose()?;
 
         let x = self.backend.to_host_v(x)?;
         generate_result(geometry, x, 1.0, self.option.constraint, filter)
