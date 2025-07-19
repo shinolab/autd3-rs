@@ -1,5 +1,5 @@
 use autd3_core::{
-    derive::*,
+    geometry::Geometry,
     link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
 };
 

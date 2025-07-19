@@ -3,29 +3,41 @@ mod filter;
 mod fpga_gpio;
 mod inspect;
 mod limits;
-mod loop_behavior;
 mod option;
 mod pulse_width;
 mod segment;
-mod transition_mode;
+/// Transition odes for segment switching.
+pub mod transition_mode;
 mod tuple;
 
 pub use cpu_gpio::CpuGPIOPort;
 pub use fpga_gpio::{GPIOIn, GPIOOut};
 pub use inspect::{Inspectable, InspectionResult};
 pub use limits::FirmwareLimits;
-pub use loop_behavior::LoopBehavior;
 pub use pulse_width::{PulseWidth, PulseWidthError};
 pub use segment::Segment;
-pub use transition_mode::{TRANSITION_MODE_NONE, TransitionMode};
 pub use tuple::{CombinedError, CombinedOperationGenerator};
 
 pub use filter::DeviceFilter;
 pub use option::DatagramOption;
 
-use crate::{environment::Environment, geometry::Geometry};
+use crate::{
+    datagram::transition_mode::{Immediate, TransitionMode, TransitionModeParams},
+    environment::Environment,
+    geometry::Geometry,
+};
 
-/// [`DatagramL`] is a [`Datagram`] with [`LoopBehavior`].
+#[doc(hidden)]
+pub mod internal {
+    #[doc(hidden)]
+    pub trait HasSegment<T> {}
+    #[doc(hidden)]
+    pub trait HasFiniteLoop<T> {}
+}
+
+const INFINITE_REP: u16 = 0xFFFF;
+
+/// [`DatagramL`] is a [`Datagram`] with finite loop behavior.
 pub trait DatagramL<'a>: std::fmt::Debug {
     #[doc(hidden)]
     type G;
@@ -34,15 +46,15 @@ pub trait DatagramL<'a>: std::fmt::Debug {
 
     #[doc(hidden)]
     #[allow(clippy::too_many_arguments)]
-    fn operation_generator_with_loop_behavior(
+    fn operation_generator_with_finite_loop(
         self,
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
         segment: Segment,
-        transition_mode: Option<TransitionMode>,
-        loop_behavior: LoopBehavior,
+        transition_params: TransitionModeParams,
+        rep: u16,
     ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
@@ -65,7 +77,7 @@ pub trait DatagramS<'a>: std::fmt::Debug {
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
         segment: Segment,
-        transition_mode: Option<TransitionMode>,
+        transition_params: TransitionModeParams,
     ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
@@ -84,21 +96,21 @@ impl<'a, D: DatagramL<'a>> DatagramS<'a> for D {
         filter: &DeviceFilter,
         limits: &FirmwareLimits,
         segment: Segment,
-        transition_mode: Option<TransitionMode>,
+        transition_params: TransitionModeParams,
     ) -> Result<Self::G, Self::Error> {
-        self.operation_generator_with_loop_behavior(
+        self.operation_generator_with_finite_loop(
             geometry,
             env,
             filter,
             limits,
             segment,
-            transition_mode,
-            LoopBehavior::Infinite,
+            transition_params,
+            INFINITE_REP,
         )
     }
 
     fn option(&self) -> DatagramOption {
-        <D as DatagramL>::option(self)
+        <D as DatagramL<'a>>::option(self)
     }
 }
 
@@ -142,7 +154,7 @@ impl<'a, D: DatagramS<'a>> Datagram<'a> for D {
             filter,
             limits,
             Segment::S0,
-            Some(TransitionMode::Immediate),
+            Immediate.params(),
         )
     }
 

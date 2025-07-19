@@ -1,22 +1,7 @@
 mod boxed;
 
-use autd3_core::{
-    datagram::{Segment, TransitionMode},
-    gain::{Gain, GainCalculatorGenerator, GainInspectionResult},
-};
+use autd3_core::gain::{Gain, GainCalculatorGenerator};
 pub use boxed::BoxedGain;
-
-use super::with_segment::InspectionResultWithSegment;
-
-impl InspectionResultWithSegment for GainInspectionResult {
-    fn with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
-        Self {
-            segment,
-            transition_mode,
-            ..self
-        }
-    }
-}
 
 #[cfg(test)]
 pub mod tests {
@@ -27,6 +12,8 @@ pub mod tests {
         geometry::{Point3, UnitQuaternion},
     };
 
+    use crate::datagram::with_segment::WithSegmentInspectionResult;
+
     #[derive(Gain, Clone, Debug)]
     pub struct TestGain {
         pub data: HashMap<usize, Vec<Drive>>,
@@ -36,8 +23,7 @@ pub mod tests {
         pub fn new<'a, FT: Fn(&'a Transducer) -> Drive, F: Fn(&'a Device) -> FT>(
             f: F,
             geometry: &'a Geometry,
-        ) -> Self
-where {
+        ) -> Self {
             Self {
                 data: geometry
                     .iter()
@@ -182,8 +168,6 @@ where {
                         };
                         1
                     ],
-                    segment: Segment::S0,
-                    transition_mode: None,
                 }),
                 r
             );
@@ -207,7 +191,7 @@ where {
                 &geometry,
             ),
             segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
+            transition_mode: transition_mode::Later,
         }
         .inspect(
             &geometry,
@@ -218,17 +202,19 @@ where {
         .iter()
         .for_each(|r| {
             assert_eq!(
-                &Some(GainInspectionResult {
-                    name: "TestGain".to_string(),
-                    data: vec![
-                        Drive {
-                            phase: Phase(0xFF),
-                            intensity: Intensity(0xFF),
-                        };
-                        1
-                    ],
+                &Some(WithSegmentInspectionResult {
+                    inner: GainInspectionResult {
+                        name: "TestGain".to_string(),
+                        data: vec![
+                            Drive {
+                                phase: Phase(0xFF),
+                                intensity: Intensity(0xFF),
+                            };
+                            1
+                        ],
+                    },
                     segment: Segment::S1,
-                    transition_mode: Some(TransitionMode::Immediate),
+                    transition_mode: transition_mode::Later,
                 }),
                 r
             );

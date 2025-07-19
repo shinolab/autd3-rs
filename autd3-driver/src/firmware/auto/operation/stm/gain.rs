@@ -54,10 +54,10 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
     }
 }
 
-impl<'a, T: GainSTMIteratorGenerator<'a>> OperationGenerator<'a>
-    for GainSTMOperationGenerator<'a, T>
+impl<'a, G: GainSTMIteratorGenerator<'a>> OperationGenerator<'a>
+    for GainSTMOperationGenerator<'a, G>
 {
-    type O1 = GainSTMOp<<T::Gain as GainCalculatorGenerator<'a>>::Calculator, T::Iterator>;
+    type O1 = GainSTMOp<<G::Gain as GainCalculatorGenerator<'a>>::Calculator, G::Iterator>;
     type O2 = crate::firmware::driver::NullOp;
 
     fn generate(&mut self, device: &'a Device, version: Version) -> Option<(Self::O1, Self::O2)> {

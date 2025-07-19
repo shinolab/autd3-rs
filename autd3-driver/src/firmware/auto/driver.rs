@@ -67,7 +67,7 @@ impl Driver for Auto {
         &mut self,
         msg_id: &'a mut autd3_core::link::MsgId,
         link: &'a mut L,
-        geometry: &'a autd3_core::derive::Geometry,
+        geometry: &'a autd3_core::geometry::Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [autd3_core::link::RxMessage],
         env: &'a Environment,
@@ -100,7 +100,7 @@ impl Driver for Auto {
         &self,
         msg_id: &'a mut autd3_core::link::MsgId,
         link: &'a mut L,
-        geometry: &'a autd3_core::derive::Geometry,
+        geometry: &'a autd3_core::geometry::Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [autd3_core::link::RxMessage],
         env: &'a Environment,
@@ -176,7 +176,7 @@ impl Driver for Auto {
         }
     }
 
-    fn firmware_limits(&self) -> autd3_core::derive::FirmwareLimits {
+    fn firmware_limits(&self) -> autd3_core::datagram::FirmwareLimits {
         match self.version {
             Version::V10 => super::super::v10::V10.firmware_limits(),
             Version::V11 => super::super::v11::V11.firmware_limits(),

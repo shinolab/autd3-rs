@@ -214,8 +214,8 @@ macro_rules! impl_auto_op {
 
 use crate::datagram::{
     Clear, CpuGPIOOutputs, EmulateGPIOIn, FetchFirmwareInfoOpGenerator, FixedCompletionSteps,
-    FixedCompletionTime, FixedUpdateRate, ForceFan, GPIOOutputs, ReadsFPGAState, SwapSegment,
-    Synchronize,
+    FixedCompletionTime, FixedUpdateRate, ForceFan, GPIOOutputs, ReadsFPGAState,
+    SwapSegmentFociSTM, SwapSegmentGain, SwapSegmentGainSTM, SwapSegmentModulation, Synchronize,
 };
 use autd3_core::modulation::ModulationOperationGenerator;
 
@@ -224,7 +224,19 @@ impl_auto_op!(FixedCompletionTime);
 impl_auto_op!(FixedUpdateRate);
 impl_auto_op!(Clear);
 impl_auto_op!(Synchronize);
-impl_auto_op!(SwapSegment);
+impl_auto_op!(SwapSegment, SwapSegmentGain);
+mod _0 {
+    use super::*;
+    impl_auto_op!(T; SwapSegment, SwapSegmentModulation<T>);
+}
+mod _1 {
+    use super::*;
+    impl_auto_op!(T; SwapSegment, SwapSegmentFociSTM<T>);
+}
+mod _2 {
+    use super::*;
+    impl_auto_op!(T; SwapSegment, SwapSegmentGainSTM<T>);
+}
 impl_auto_op!(FirmInfo, FetchFirmwareInfoOpGenerator);
 impl_auto_op!(Modulation, ModulationOperationGenerator);
 impl_auto_op!(F; ForceFan, ForceFan<F>);

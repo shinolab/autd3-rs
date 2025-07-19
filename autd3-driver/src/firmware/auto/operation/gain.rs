@@ -1,6 +1,5 @@
 use autd3_core::{
-    derive::GainOperationGenerator,
-    gain::{GainCalculator, GainCalculatorGenerator},
+    gain::{GainCalculator, GainCalculatorGenerator, GainOperationGenerator},
     geometry::Device,
 };
 

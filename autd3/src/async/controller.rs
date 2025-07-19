@@ -334,9 +334,10 @@ mod tests {
     use std::collections::HashMap;
 
     use autd3_core::{
-        derive::*,
+        datagram::Segment,
         gain::{Gain, GainCalculator, GainCalculatorGenerator, Intensity, Phase, TransducerFilter},
         link::LinkError,
+        modulation::{Modulation, ModulationInspectionResult},
     };
     use autd3_driver::{
         autd3_device::AUTD3,
@@ -453,9 +454,6 @@ mod tests {
 
     #[tokio::test]
     async fn inspect() -> anyhow::Result<()> {
-        use crate::core::derive::ModulationInspectionResult;
-        use crate::prelude::LoopBehavior;
-
         let autd = create_controller(2).await?;
 
         let r = autd.inspect(autd3_driver::datagram::Group::new(
@@ -468,9 +466,6 @@ mod tests {
                 name: "Static".to_string(),
                 data: vec![0xFF, 0xFF],
                 config: Static::default().sampling_config(),
-                loop_behavior: LoopBehavior::Infinite,
-                segment: Segment::S0,
-                transition_mode: None
             }),
             r[0]
         );

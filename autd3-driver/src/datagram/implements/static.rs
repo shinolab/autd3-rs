@@ -1,7 +1,6 @@
 use std::num::NonZeroU16;
 
 use autd3_core::derive::*;
-use autd3_derive::Modulation;
 
 /// [`Modulation`] for no modulation
 #[derive(Modulation, Clone, Copy, Debug, PartialEq)]

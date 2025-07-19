@@ -2,12 +2,18 @@ use std::{num::NonZeroU16, time::Duration};
 
 use autd3_core::{
     common::{MOD_BUF_SIZE_MIN, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-    datagram::GPIOIn,
+    datagram::{
+        GPIOIn,
+        internal::{HasFiniteLoop, HasSegment},
+        transition_mode::{Later, TransitionMode},
+    },
     derive::*,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{
-    datagram::{FixedCompletionSteps, Silencer, SwapSegment, WithLoopBehavior, WithSegment},
+    datagram::{
+        FixedCompletionSteps, Silencer, SwapSegmentModulation, WithFiniteLoop, WithSegment,
+    },
     error::AUTDDriverError,
     ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
     firmware::v12_1::fpga::MOD_BUF_SIZE_MAX,
@@ -40,62 +46,21 @@ impl Modulation for TestModulation {
 
 #[rstest::rstest]
 #[test]
-#[cfg_attr(miri, ignore)]
-#[case(
-    MOD_BUF_SIZE_MAX,
-    LoopBehavior::Infinite,
-    Segment::S0,
-    Some(TransitionMode::Immediate)
-)]
-#[cfg_attr(miri, ignore)]
-#[case(
-    MOD_BUF_SIZE_MIN,
-    LoopBehavior::Infinite,
-    Segment::S0,
-    Some(TransitionMode::Ext)
-)]
-#[cfg_attr(miri, ignore)]
-#[case(
-    MOD_BUF_SIZE_MIN,
-    LoopBehavior::ONCE,
-    Segment::S1,
-    Some(TransitionMode::GPIO(GPIOIn::I0))
-)]
-#[cfg_attr(miri, ignore)]
-#[case(
-    MOD_BUF_SIZE_MIN,
-    LoopBehavior::ONCE,
-    Segment::S1,
-    Some(TransitionMode::GPIO(GPIOIn::I1))
-)]
-#[cfg_attr(miri, ignore)]
-#[case(
-    MOD_BUF_SIZE_MIN,
-    LoopBehavior::ONCE,
-    Segment::S1,
-    Some(TransitionMode::GPIO(GPIOIn::I2))
-)]
-#[cfg_attr(miri, ignore)]
-#[case(
-    MOD_BUF_SIZE_MIN,
-    LoopBehavior::ONCE,
-    Segment::S1,
-    Some(TransitionMode::GPIO(GPIOIn::I3))
-)]
-#[cfg_attr(miri, ignore)]
+#[case(MOD_BUF_SIZE_MAX, Segment::S0, transition_mode::Immediate)]
+#[case(MOD_BUF_SIZE_MIN, Segment::S0, transition_mode::Ext)]
 #[case(
     32768 + 1,
-    LoopBehavior::Infinite,
     Segment::S0,
-    Some(TransitionMode::Immediate)
+    transition_mode::Later
 )]
-#[case(MOD_BUF_SIZE_MIN, LoopBehavior::ONCE, Segment::S1, None)]
-fn send_mod_unsafe(
+fn send_mod_with_infinite_loop<T: TransitionMode>(
     #[case] n: usize,
-    #[case] loop_behavior: LoopBehavior,
     #[case] segment: Segment,
-    #[case] transition_mode: Option<TransitionMode>,
-) -> anyhow::Result<()> {
+    #[case] transition_mode: T,
+) -> anyhow::Result<()>
+where
+    TestModulation: HasSegment<T>,
+{
     use autd3_core::link::TxMessage;
 
     let mut rng = rand::rng();
@@ -109,12 +74,11 @@ fn send_mod_unsafe(
     let freq_div = rng.random_range(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=u16::MAX,
     );
-    let d = WithLoopBehavior::new(
+    let d = WithSegment::new(
         TestModulation {
             buf: m.clone(),
             sampling_config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
         },
-        loop_behavior,
         segment,
         transition_mode,
     );
@@ -126,10 +90,101 @@ fn send_mod_unsafe(
 
     assert_eq!(m.len(), cpu.fpga().modulation_cycle(segment));
     assert_eq!(freq_div, cpu.fpga().modulation_freq_divide(segment));
-    assert_eq!(loop_behavior, cpu.fpga().modulation_loop_behavior(segment));
-    if let Some(transition_mode) = transition_mode {
+    assert_eq!(0xFFFF, cpu.fpga().modulation_loop_count(segment));
+    if transition_mode.params() != transition_mode::Later.params() {
         assert_eq!(segment, cpu.fpga().req_modulation_segment());
-        assert_eq!(transition_mode, cpu.fpga().modulation_transition_mode());
+        assert_eq!(
+            transition_mode.params(),
+            cpu.fpga().modulation_transition_mode()
+        );
+    } else {
+        assert_eq!(Segment::S0, cpu.fpga().req_modulation_segment());
+    }
+    assert_eq!(m, cpu.fpga().modulation_buffer(segment));
+
+    Ok(())
+}
+
+#[rstest::rstest]
+#[test]
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MIN,
+    NonZeroU16::MIN,
+    Segment::S1,
+    transition_mode::GPIO(GPIOIn::I0)
+)]
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MIN,
+    NonZeroU16::MIN,
+    Segment::S1,
+    transition_mode::GPIO(GPIOIn::I1)
+)]
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MIN,
+    NonZeroU16::MIN,
+    Segment::S1,
+    transition_mode::GPIO(GPIOIn::I2)
+)]
+#[cfg_attr(miri, ignore)]
+#[case(
+    MOD_BUF_SIZE_MIN,
+    NonZeroU16::MIN,
+    Segment::S1,
+    transition_mode::GPIO(GPIOIn::I3)
+)]
+#[case(MOD_BUF_SIZE_MIN, NonZeroU16::MIN, Segment::S1, transition_mode::Later)]
+fn send_mod_with_finite_loop_unsafe<T: TransitionMode>(
+    #[case] n: usize,
+    #[case] loop_count: NonZeroU16,
+    #[case] segment: Segment,
+    #[case] transition_mode: T,
+) -> anyhow::Result<()>
+where
+    TestModulation: HasFiniteLoop<T>,
+{
+    use autd3_core::link::TxMessage;
+
+    let mut rng = rand::rng();
+
+    let mut geometry = create_geometry(1);
+    let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
+    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut msg_id = MsgId::new(0);
+
+    let m: Vec<_> = (0..n).map(|_| rng.random()).collect();
+    let freq_div = rng.random_range(
+        SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT)..=u16::MAX,
+    );
+    let d = WithFiniteLoop::new(
+        TestModulation {
+            buf: m.clone(),
+            sampling_config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+        },
+        loop_count,
+        segment,
+        transition_mode,
+    );
+
+    assert_eq!(
+        Ok(()),
+        send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
+    );
+
+    assert_eq!(m.len(), cpu.fpga().modulation_cycle(segment));
+    assert_eq!(freq_div, cpu.fpga().modulation_freq_divide(segment));
+    assert_eq!(
+        loop_count.get() - 1,
+        cpu.fpga().modulation_loop_count(segment)
+    );
+    if transition_mode.params() != transition_mode::Later.params() {
+        assert_eq!(segment, cpu.fpga().req_modulation_segment());
+        assert_eq!(
+            transition_mode.params(),
+            cpu.fpga().modulation_transition_mode()
+        );
     } else {
         assert_eq!(Segment::S0, cpu.fpga().req_modulation_segment());
     }
@@ -147,14 +202,13 @@ fn swap_mod_segment_unsafe() -> anyhow::Result<()> {
 
     let m: Vec<_> = (0..MOD_BUF_SIZE_MIN).map(|_| 0x00).collect();
     let freq_div = SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT);
-    let d = WithLoopBehavior {
+    let d = WithSegment {
         inner: TestModulation {
             buf: m.clone(),
             sampling_config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
         },
         segment: Segment::S1,
-        transition_mode: None,
-        loop_behavior: LoopBehavior::Infinite,
+        transition_mode: Later,
     };
 
     assert_eq!(
@@ -163,7 +217,7 @@ fn swap_mod_segment_unsafe() -> anyhow::Result<()> {
     );
     assert_eq!(Segment::S0, cpu.fpga().req_modulation_segment());
 
-    let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
+    let d = SwapSegmentModulation(Segment::S1, transition_mode::Immediate);
     assert_eq!(
         Ok(()),
         send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
@@ -215,7 +269,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
                 ),
             },
             segment: Segment::S1,
-            transition_mode: None,
+            transition_mode: Later,
         };
         assert_eq!(
             Ok(()),
@@ -234,7 +288,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
 
-        let d = SwapSegment::Modulation(Segment::S1, TransitionMode::Immediate);
+        let d = SwapSegmentModulation(Segment::S1, transition_mode::Immediate);
         assert_eq!(
             Err(AUTDDriverError::InvalidSilencerSettings),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
@@ -253,13 +307,14 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
 
     // segment 0 to 0
     {
-        let d = WithSegment {
+        let d = WithFiniteLoop {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
                 sampling_config: SamplingConfig::FREQ_4K,
             },
             segment: Segment::S0,
-            transition_mode: Some(TransitionMode::SyncIdx),
+            loop_count: NonZeroU16::MIN,
+            transition_mode: transition_mode::SyncIdx,
         };
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
@@ -267,24 +322,6 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
         );
     }
 
-    // segment 0 to 1 immediate
-    {
-        let d = WithLoopBehavior {
-            inner: TestModulation {
-                buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-                sampling_config: SamplingConfig::FREQ_4K,
-            },
-            segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
-            loop_behavior: LoopBehavior::ONCE,
-        };
-        assert_eq!(
-            Err(AUTDDriverError::InvalidTransitionMode),
-            send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
-        );
-    }
-
-    // Infinite but SyncIdx
     {
         let d = WithSegment {
             inner: TestModulation {
@@ -292,14 +329,14 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
                 sampling_config: SamplingConfig::FREQ_4K,
             },
             segment: Segment::S1,
-            transition_mode: None,
+            transition_mode: Later,
         };
         assert_eq!(
             Ok(()),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
 
-        let d = SwapSegment::Modulation(Segment::S1, TransitionMode::SyncIdx);
+        let d = SwapSegmentModulation(Segment::S1, transition_mode::SyncIdx);
         assert_eq!(
             Err(AUTDDriverError::InvalidTransitionMode),
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
@@ -324,16 +361,16 @@ fn test_miss_transition_time(
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
 
-    let transition_mode = TransitionMode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
+    let transition_mode = transition_mode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
 
-    let d = WithLoopBehavior {
+    let d = WithFiniteLoop {
         inner: TestModulation {
             buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
             sampling_config: SamplingConfig::FREQ_4K,
         },
         segment: Segment::S1,
-        transition_mode: Some(transition_mode),
-        loop_behavior: LoopBehavior::ONCE,
+        transition_mode,
+        loop_count: NonZeroU16::MIN,
     };
 
     cpu.update_with_sys_time(DcSysTime::from_utc(systime).unwrap());
@@ -342,7 +379,10 @@ fn test_miss_transition_time(
         send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
     );
     if expect.is_ok() {
-        assert_eq!(transition_mode, cpu.fpga().modulation_transition_mode());
+        assert_eq!(
+            transition_mode.params(),
+            cpu.fpga().modulation_transition_mode()
+        );
     }
 
     Ok(())

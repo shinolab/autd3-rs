@@ -8,10 +8,6 @@ use std::{fmt::Debug, time::Duration};
 use super::sampling_config::*;
 use crate::{
     common::Freq,
-    datagram::{
-        with_loop_behavior::InspectionResultWithLoopBehavior,
-        with_segment::InspectionResultWithSegment,
-    },
     error::AUTDDriverError,
     geometry::{Device, Geometry},
 };
@@ -19,10 +15,11 @@ use crate::{
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
     datagram::{
-        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
-        LoopBehavior, Segment, TransitionMode,
+        Datagram, DatagramL, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable,
+        InspectionResult, Segment,
+        internal::{HasFiniteLoop, HasSegment},
+        transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
     },
-    derive::FirmwareLimits,
     environment::Environment,
     sampling_config::SamplingConfig,
 };
@@ -116,9 +113,9 @@ pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMIteratorGenerator
     pub(crate) config: SamplingConfig,
     pub(crate) sound_speed: f32,
     pub(crate) limits: FirmwareLimits,
-    pub(crate) loop_behavior: LoopBehavior,
+    pub(crate) rep: u16,
     pub(crate) segment: Segment,
-    pub(crate) transition_mode: Option<TransitionMode>,
+    pub(crate) transition_params: TransitionModeParams,
 }
 
 impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + std::fmt::Debug> DatagramL<'_>
@@ -127,15 +124,15 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + std::fmt::Debu
     type G = FociSTMOperationGenerator<N, G::T>;
     type Error = AUTDDriverError;
 
-    fn operation_generator_with_loop_behavior(
+    fn operation_generator_with_finite_loop(
         self,
         _: &Geometry,
         env: &Environment,
         _: &DeviceFilter,
         limits: &FirmwareLimits,
         segment: Segment,
-        transition_mode: Option<TransitionMode>,
-        loop_behavior: LoopBehavior,
+        transition_params: TransitionModeParams,
+        rep: u16,
     ) -> Result<Self::G, Self::Error> {
         let size = self.foci.len();
         let stm_config: STMConfig = self.config.into();
@@ -146,9 +143,9 @@ impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + std::fmt::Debu
             config: sampling_config,
             sound_speed: env.sound_speed,
             limits: *limits,
-            loop_behavior,
+            rep,
             segment,
-            transition_mode,
+            transition_params,
         })
     }
 
@@ -169,35 +166,6 @@ pub struct FociSTMInspectionResult<const N: usize> {
     pub name: String,
     pub data: Vec<ControlPoints<N>>,
     pub config: SamplingConfig,
-    pub loop_behavior: LoopBehavior,
-    pub segment: Segment,
-    pub transition_mode: Option<TransitionMode>,
-}
-
-impl<const N: usize> InspectionResultWithSegment for FociSTMInspectionResult<N> {
-    fn with_segment(self, segment: Segment, transition_mode: Option<TransitionMode>) -> Self {
-        Self {
-            segment,
-            transition_mode,
-            ..self
-        }
-    }
-}
-
-impl<const N: usize> InspectionResultWithLoopBehavior for FociSTMInspectionResult<N> {
-    fn with_loop_behavior(
-        self,
-        loop_behavior: LoopBehavior,
-        segment: Segment,
-        transition_mode: Option<TransitionMode>,
-    ) -> Self {
-        Self {
-            loop_behavior,
-            segment,
-            transition_mode,
-            ..self
-        }
-    }
 }
 
 impl<'a, const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Debug> Inspectable<'a>
@@ -217,9 +185,6 @@ impl<'a, const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Deb
         sampling_config.divide()?;
         let n = self.foci.len();
         let mut g = self.foci.init()?;
-        let loop_behavior = LoopBehavior::Infinite;
-        let segment = Segment::S0;
-        let transition_mode = None;
         Ok(InspectionResult::new(geometry, filter, |dev| {
             FociSTMInspectionResult {
                 name: tynm::type_name::<Self>().to_string(),
@@ -228,21 +193,32 @@ impl<'a, const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Deb
                     (0..n).map(|_| d.next()).collect()
                 },
                 config: sampling_config,
-                loop_behavior,
-                segment,
-                transition_mode,
             }
         }))
     }
 }
 
+impl<const N: usize, T: FociSTMGenerator<N>, C> HasSegment<Immediate> for FociSTM<N, T, C> {}
+impl<const N: usize, T: FociSTMGenerator<N>, C> HasSegment<Ext> for FociSTM<N, T, C> {}
+impl<const N: usize, T: FociSTMGenerator<N>, C> HasSegment<Later> for FociSTM<N, T, C> {}
+impl<const N: usize, T: FociSTMGenerator<N>, C> HasFiniteLoop<SyncIdx> for FociSTM<N, T, C> {}
+impl<const N: usize, T: FociSTMGenerator<N>, C> HasFiniteLoop<SysTime> for FociSTM<N, T, C> {}
+impl<const N: usize, T: FociSTMGenerator<N>, C> HasFiniteLoop<GPIO> for FociSTM<N, T, C> {}
+impl<const N: usize, T: FociSTMGenerator<N>, C> HasFiniteLoop<Later> for FociSTM<N, T, C> {}
+
 #[cfg(test)]
 mod tests {
-    use crate::datagram::{WithLoopBehavior, WithSegment};
+    use std::num::NonZeroU16;
+
+    use crate::datagram::{
+        WithFiniteLoop, WithSegment, with_loop_behavior::WithFiniteLoopInspectionResult,
+        with_segment::WithSegmentInspectionResult,
+    };
 
     use super::*;
 
     use autd3_core::{
+        datagram::transition_mode::{self, Later},
         gain::{Intensity, Phase},
         geometry::Point3,
         sampling_config::SamplingConfig,
@@ -293,9 +269,6 @@ mod tests {
                         },
                     ],
                     config: SamplingConfig::FREQ_4K,
-                    loop_behavior: LoopBehavior::Infinite,
-                    segment: Segment::S0,
-                    transition_mode: None,
                 }),
                 r
             );
@@ -323,7 +296,7 @@ mod tests {
                 config: SamplingConfig::FREQ_4K,
             },
             segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
+            transition_mode: Later,
         }
         .inspect(
             &geometry,
@@ -334,28 +307,29 @@ mod tests {
         .iter()
         .for_each(|r| {
             assert_eq!(
-                &Some(FociSTMInspectionResult {
-                    name: "FociSTM".to_string(),
-                    data: vec![
-                        ControlPoints {
-                            points: [ControlPoint {
-                                point: Point3::origin(),
-                                phase_offset: Phase::ZERO,
-                            }],
-                            intensity: Intensity::MAX
-                        },
-                        ControlPoints {
-                            points: [ControlPoint {
-                                point: Point3::new(1., 2., 3.),
-                                phase_offset: Phase::PI,
-                            }],
-                            intensity: Intensity::MAX
-                        },
-                    ],
-                    config: SamplingConfig::FREQ_4K,
-                    loop_behavior: LoopBehavior::Infinite,
+                &Some(WithSegmentInspectionResult {
+                    inner: FociSTMInspectionResult {
+                        name: "FociSTM".to_string(),
+                        data: vec![
+                            ControlPoints {
+                                points: [ControlPoint {
+                                    point: Point3::origin(),
+                                    phase_offset: Phase::ZERO,
+                                }],
+                                intensity: Intensity::MAX
+                            },
+                            ControlPoints {
+                                points: [ControlPoint {
+                                    point: Point3::new(1., 2., 3.),
+                                    phase_offset: Phase::PI,
+                                }],
+                                intensity: Intensity::MAX
+                            },
+                        ],
+                        config: SamplingConfig::FREQ_4K,
+                    },
                     segment: Segment::S1,
-                    transition_mode: Some(TransitionMode::Immediate),
+                    transition_mode: Later,
                 }),
                 r
             );
@@ -368,7 +342,7 @@ mod tests {
     fn inspect_with_loop_behavior() -> anyhow::Result<()> {
         let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
-        WithLoopBehavior {
+        WithFiniteLoop {
             inner: FociSTM {
                 foci: vec![
                     ControlPoint {
@@ -383,8 +357,8 @@ mod tests {
                 config: SamplingConfig::FREQ_4K,
             },
             segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
-            loop_behavior: LoopBehavior::ONCE,
+            transition_mode: transition_mode::SyncIdx,
+            loop_count: NonZeroU16::MIN,
         }
         .inspect(
             &geometry,
@@ -395,28 +369,30 @@ mod tests {
         .iter()
         .for_each(|r| {
             assert_eq!(
-                &Some(FociSTMInspectionResult {
-                    name: "FociSTM".to_string(),
-                    data: vec![
-                        ControlPoints {
-                            points: [ControlPoint {
-                                point: Point3::origin(),
-                                phase_offset: Phase::ZERO,
-                            }],
-                            intensity: Intensity::MAX
-                        },
-                        ControlPoints {
-                            points: [ControlPoint {
-                                point: Point3::new(1., 2., 3.),
-                                phase_offset: Phase::PI,
-                            }],
-                            intensity: Intensity::MAX
-                        },
-                    ],
-                    config: SamplingConfig::FREQ_4K,
-                    loop_behavior: LoopBehavior::ONCE,
+                &Some(WithFiniteLoopInspectionResult {
+                    inner: FociSTMInspectionResult {
+                        name: "FociSTM".to_string(),
+                        data: vec![
+                            ControlPoints {
+                                points: [ControlPoint {
+                                    point: Point3::origin(),
+                                    phase_offset: Phase::ZERO,
+                                }],
+                                intensity: Intensity::MAX
+                            },
+                            ControlPoints {
+                                points: [ControlPoint {
+                                    point: Point3::new(1., 2., 3.),
+                                    phase_offset: Phase::PI,
+                                }],
+                                intensity: Intensity::MAX
+                            },
+                        ],
+                        config: SamplingConfig::FREQ_4K,
+                    },
                     segment: Segment::S1,
-                    transition_mode: Some(TransitionMode::Immediate),
+                    transition_mode: transition_mode::SyncIdx,
+                    loop_count: NonZeroU16::MIN,
                 }),
                 r
             );

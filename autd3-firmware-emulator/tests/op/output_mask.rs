@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use autd3_core::{
-    datagram::Segment,
-    derive::TransitionMode,
+    datagram::{Segment, transition_mode::Immediate},
     gain::{Drive, Intensity, Phase},
     link::{MsgId, TxMessage},
 };
@@ -36,11 +35,7 @@ fn output_mask_unsafe(#[case] segment: Segment) -> anyhow::Result<()> {
         send(
             &mut msg_id,
             &mut cpu,
-            WithSegment {
-                inner: OutputMask::new(|_| |tr| buf[tr.idx()]),
-                segment,
-                transition_mode: None
-            },
+            OutputMask::with_segment(|_| |tr| buf[tr.idx()], segment),
             &mut geometry,
             &mut tx
         )
@@ -66,7 +61,7 @@ fn output_mask_unsafe(#[case] segment: Segment) -> anyhow::Result<()> {
                     )]),
                 },
                 segment,
-                transition_mode: Some(TransitionMode::Immediate)
+                transition_mode: Immediate
             },
             &mut geometry,
             &mut tx

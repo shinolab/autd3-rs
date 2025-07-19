@@ -37,7 +37,7 @@ pub use output_mask::OutputMask;
 pub use phase_corr::PhaseCorrection;
 pub use pulse_width_encoder::PulseWidthEncoder;
 pub use reads_fpga_state::ReadsFPGAState;
-pub use segment::SwapSegment;
+pub use segment::{SwapSegmentFociSTM, SwapSegmentGain, SwapSegmentGainSTM, SwapSegmentModulation};
 pub use silencer::{FixedCompletionSteps, FixedCompletionTime, FixedUpdateRate, Silencer};
 pub use stm::{
     ControlPoint, ControlPoints, FociSTM, FociSTMGenerator, FociSTMIterator,
@@ -45,7 +45,7 @@ pub use stm::{
     GainSTMMode, GainSTMOption, STMConfig,
 };
 pub use synchronize::Synchronize;
-pub use with_loop_behavior::WithLoopBehavior;
+pub use with_loop_behavior::WithFiniteLoop;
 pub use with_segment::WithSegment;
 
 pub(crate) use group::GroupOpGenerator;
@@ -53,5 +53,3 @@ pub(crate) use info::FetchFirmwareInfoOpGenerator;
 pub(crate) use output_mask::OutputMaskOperationGenerator;
 pub(crate) use pulse_width_encoder::PulseWidthEncoderOperationGenerator;
 pub(crate) use stm::{FociSTMOperationGenerator, GainSTMOperationGenerator};
-pub(crate) use with_loop_behavior::InspectionResultWithLoopBehavior;
-pub(crate) use with_segment::InspectionResultWithSegment;

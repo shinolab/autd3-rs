@@ -11,8 +11,10 @@ use crate::{
 
 use autd3_core::{
     common::MOD_BUF_SIZE_MIN,
-    datagram::{LoopBehavior, Segment, TRANSITION_MODE_NONE, TransitionMode},
-    derive::FirmwareLimits,
+    datagram::{
+        FirmwareLimits, Segment,
+        transition_mode::{Later, TransitionMode, TransitionModeParams},
+    },
     geometry::Device,
     modulation::ModulationOperationGenerator,
     sampling_config::SamplingConfig,
@@ -59,29 +61,29 @@ pub struct ModulationOp {
     sent: usize,
     is_done: bool,
     config: SamplingConfig,
-    loop_behavior: LoopBehavior,
+    rep: u16,
     segment: Segment,
-    transition_mode: Option<TransitionMode>,
+    transition_params: TransitionModeParams,
     limits: FirmwareLimits,
 }
 
 impl ModulationOp {
-    pub(crate) const fn new(
+    pub(crate) fn new(
         modulation: Arc<Vec<u8>>,
         config: SamplingConfig,
         limits: FirmwareLimits,
-        loop_behavior: LoopBehavior,
+        rep: u16,
         segment: Segment,
-        transition_mode: Option<TransitionMode>,
+        transition_params: TransitionModeParams,
     ) -> Self {
         Self {
             modulation,
             sent: 0,
             is_done: false,
             config,
-            loop_behavior,
+            rep,
             segment,
-            transition_mode,
+            transition_params,
             limits,
         }
     }
@@ -134,7 +136,7 @@ impl Operation<'_> for ModulationOp {
             flag.set(ModulationControlFlags::END, true);
             flag.set(
                 ModulationControlFlags::TRANSITION,
-                self.transition_mode.is_some(),
+                self.transition_params != Later.params(),
             );
         }
 
@@ -146,12 +148,9 @@ impl Operation<'_> for ModulationOp {
                     flag: ModulationControlFlags::BEGIN | flag,
                     size: send_num as _,
                     freq_div: self.config.divide()?,
-                    rep: self.loop_behavior.rep(),
-                    transition_mode: self
-                        .transition_mode
-                        .map(|m| m.mode())
-                        .unwrap_or(TRANSITION_MODE_NONE),
-                    transition_value: self.transition_mode.map(TransitionMode::value).unwrap_or(0),
+                    rep: self.rep,
+                    transition_mode: self.transition_params.mode,
+                    transition_value: self.transition_params.value,
                 },
             );
             Ok(size_of::<ModulationHead>() + ((send_num + 0x01) & !0x1))
@@ -192,9 +191,9 @@ impl OperationGenerator<'_> for ModulationOperationGenerator {
                 d,
                 self.config,
                 self.limits,
-                self.loop_behavior,
+                self.rep,
                 self.segment,
-                self.transition_mode,
+                self.transition_params,
             ),
             Self::O2 {},
         ))
@@ -209,6 +208,7 @@ mod tests {
 
     use super::{super::super::V10, *};
     use crate::{ethercat::DcSysTime, firmware::driver::Driver};
+    use autd3_core::datagram::transition_mode;
 
     #[test]
     fn test() {
@@ -222,10 +222,9 @@ mod tests {
 
         let buf: Vec<u8> = (0..MOD_SIZE).map(|_| rng.random()).collect();
         let freq_div = rng.random_range(0x0001..=0xFFFF);
-        let loop_behavior = LoopBehavior::Infinite;
-        let rep = loop_behavior.rep();
+        let rep = rng.random_range(0x0000..0xFFFF);
         let segment = Segment::S0;
-        let transition_mode = TransitionMode::SysTime(
+        let transition_mode = transition_mode::SysTime(
             DcSysTime::from_utc(
                 time::macros::datetime!(2000-01-01 0:00 UTC)
                     + std::time::Duration::from_nanos(0x0123456789ABCDEF),
@@ -237,9 +236,9 @@ mod tests {
             Arc::new(buf.clone()),
             SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
             V10.firmware_limits(),
-            loop_behavior,
+            rep,
             segment,
-            Some(transition_mode),
+            transition_mode.params(),
         );
 
         assert_eq!(op.required_size(&device), size_of::<ModulationHead>() + 2);
@@ -262,19 +261,19 @@ mod tests {
             tx[1]
         );
         assert_eq!(MOD_SIZE as u8, tx[2]);
-        assert_eq!(transition_mode.mode(), tx[3]);
+        assert_eq!(transition_mode.params().mode, tx[3]);
         assert_eq!(freq_div as u8, tx[4]);
         assert_eq!((freq_div >> 8) as u8, tx[5]);
         assert_eq!(rep as u8, tx[6]);
         assert_eq!((rep >> 8) as u8, tx[7]);
-        assert_eq!(transition_mode.value() as u8, tx[8]);
-        assert_eq!((transition_mode.value() >> 8) as u8, tx[9]);
-        assert_eq!((transition_mode.value() >> 16) as u8, tx[10]);
-        assert_eq!((transition_mode.value() >> 24) as u8, tx[11]);
-        assert_eq!((transition_mode.value() >> 32) as u8, tx[12]);
-        assert_eq!((transition_mode.value() >> 40) as u8, tx[13]);
-        assert_eq!((transition_mode.value() >> 48) as u8, tx[14]);
-        assert_eq!((transition_mode.value() >> 56) as u8, tx[15]);
+        assert_eq!(transition_mode.params().value as u8, tx[8]);
+        assert_eq!((transition_mode.params().value >> 8) as u8, tx[9]);
+        assert_eq!((transition_mode.params().value >> 16) as u8, tx[10]);
+        assert_eq!((transition_mode.params().value >> 24) as u8, tx[11]);
+        assert_eq!((transition_mode.params().value >> 32) as u8, tx[12]);
+        assert_eq!((transition_mode.params().value >> 40) as u8, tx[13]);
+        assert_eq!((transition_mode.params().value >> 48) as u8, tx[14]);
+        assert_eq!((transition_mode.params().value >> 56) as u8, tx[15]);
         tx.iter()
             .skip(size_of::<ModulationHead>())
             .zip(buf.iter())
@@ -301,9 +300,9 @@ mod tests {
             Arc::new(buf.clone()),
             SamplingConfig::FREQ_40K,
             V10.firmware_limits(),
-            LoopBehavior::Infinite,
+            0,
             Segment::S0,
-            Some(TransitionMode::SyncIdx),
+            transition_mode::SyncIdx.params(),
         );
 
         assert_eq!(op.sent, 0);
@@ -413,9 +412,9 @@ mod tests {
                 buf.clone(),
                 SamplingConfig::FREQ_40K,
                 V10.firmware_limits(),
-                LoopBehavior::Infinite,
+                0xFFFF,
                 Segment::S0,
-                None,
+                Later.params(),
             );
             loop {
                 op.pack(&device, &mut tx)?;
@@ -446,9 +445,9 @@ mod tests {
             Arc::new(buf.clone()),
             SamplingConfig::FREQ_40K,
             V10.firmware_limits(),
-            LoopBehavior::Infinite,
+            0,
             Segment::S0,
-            Some(TransitionMode::SyncIdx),
+            transition_mode::SyncIdx.params(),
         );
 
         let mut sent = 0;

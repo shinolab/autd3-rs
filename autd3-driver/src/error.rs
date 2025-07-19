@@ -2,8 +2,8 @@ use std::{convert::Infallible, time::Duration};
 
 use autd3_core::{
     common::{FOCI_STM_FOCI_NUM_MIN, MOD_BUF_SIZE_MIN, STM_BUF_SIZE_MIN},
+    datagram::FirmwareLimits,
     datagram::{CombinedError, PulseWidthError},
-    derive::FirmwareLimits,
     gain::GainError,
     link::LinkError,
     modulation::ModulationError,

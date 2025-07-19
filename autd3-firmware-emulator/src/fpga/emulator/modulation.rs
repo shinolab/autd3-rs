@@ -1,7 +1,4 @@
-use std::num::NonZeroU16;
-
-use autd3_core::datagram::{GPIOIn, LoopBehavior, Segment, TransitionMode};
-use autd3_driver::ethercat::DcSysTime;
+use autd3_core::datagram::{Segment, transition_mode::TransitionModeParams};
 
 use super::{super::params::*, FPGAEmulator};
 
@@ -22,15 +19,10 @@ impl FPGAEmulator {
     }
 
     #[must_use]
-    pub fn modulation_loop_behavior(&self, segment: Segment) -> LoopBehavior {
-        match &self
-            .mem
+    pub fn modulation_loop_count(&self, segment: Segment) -> u16 {
+        self.mem
             .controller_bram
             .read(ADDR_MOD_REP0 + segment as usize)
-        {
-            0xFFFF => LoopBehavior::Infinite,
-            v => LoopBehavior::Finite(NonZeroU16::new(v + 1).unwrap()),
-        }
     }
 
     #[must_use]
@@ -57,33 +49,13 @@ impl FPGAEmulator {
     }
 
     #[must_use]
-    pub fn modulation_transition_mode(&self) -> TransitionMode {
-        match self.mem.controller_bram.read(ADDR_MOD_TRANSITION_MODE) as u8 {
-            TRANSITION_MODE_SYNC_IDX => TransitionMode::SyncIdx,
-            TRANSITION_MODE_SYS_TIME => TransitionMode::SysTime(
-                DcSysTime::ZERO
-                    + std::time::Duration::from_nanos(
-                        self.mem
-                            .controller_bram
-                            .read_bram_as::<u64>(ADDR_MOD_TRANSITION_VALUE_0),
-                    ),
-            ),
-            TRANSITION_MODE_GPIO => TransitionMode::GPIO(
-                match self
-                    .mem
-                    .controller_bram
-                    .read_bram_as::<u64>(ADDR_MOD_TRANSITION_VALUE_0)
-                {
-                    0 => GPIOIn::I0,
-                    1 => GPIOIn::I1,
-                    2 => GPIOIn::I2,
-                    3 => GPIOIn::I3,
-                    _ => unreachable!(),
-                },
-            ),
-            TRANSITION_MODE_EXT => TransitionMode::Ext,
-            TRANSITION_MODE_IMMEDIATE => TransitionMode::Immediate,
-            _ => unreachable!(),
+    pub fn modulation_transition_mode(&self) -> TransitionModeParams {
+        TransitionModeParams {
+            mode: self.mem.controller_bram.read(ADDR_MOD_TRANSITION_MODE) as u8,
+            value: self
+                .mem
+                .controller_bram
+                .read_bram_as::<u64>(ADDR_MOD_TRANSITION_VALUE_0),
         }
     }
 

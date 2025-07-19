@@ -1,5 +1,5 @@
 use autd3_core::{
-    datagram::{Segment, TransitionMode},
+    datagram::{Segment, transition_mode::Immediate},
     link::{MsgId, TxMessage},
     sampling_config::SamplingConfig,
 };
@@ -60,7 +60,7 @@ fn send_reads_fpga_state_unsafe() -> anyhow::Result<()> {
                 sampling_config: SamplingConfig::new(std::num::NonZeroU16::MAX),
             },
             segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
+            transition_mode: Immediate,
         };
         assert_eq!(
             Ok(()),
@@ -75,7 +75,7 @@ fn send_reads_fpga_state_unsafe() -> anyhow::Result<()> {
                 config: SamplingConfig::new(std::num::NonZeroU16::MAX),
             },
             segment: Segment::S1,
-            transition_mode: Some(TransitionMode::Immediate),
+            transition_mode: Immediate,
         };
         assert_eq!(
             Ok(()),

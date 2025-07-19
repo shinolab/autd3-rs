@@ -185,7 +185,7 @@ use autd3_core::link::Link;
 #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
 #[cfg(feature = "blocking")]
 impl Link for Simulator {
-    fn open(&mut self, geometry: &autd3_core::derive::Geometry) -> Result<(), LinkError> {
+    fn open(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()

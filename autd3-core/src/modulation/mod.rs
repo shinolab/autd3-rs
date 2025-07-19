@@ -3,8 +3,7 @@ mod error;
 use std::sync::Arc;
 
 use crate::{
-    datagram::{LoopBehavior, Segment, TransitionMode},
-    derive::FirmwareLimits,
+    datagram::{FirmwareLimits, Segment, transition_mode::TransitionModeParams},
     sampling_config::SamplingConfig,
 };
 pub use error::ModulationError;
@@ -28,9 +27,9 @@ pub struct ModulationOperationGenerator {
     pub g: Arc<Vec<u8>>,
     pub config: SamplingConfig,
     pub limits: FirmwareLimits,
-    pub loop_behavior: LoopBehavior,
+    pub rep: u16,
     pub segment: Segment,
-    pub transition_mode: Option<TransitionMode>,
+    pub transition_params: TransitionModeParams,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,10 +41,4 @@ pub struct ModulationInspectionResult {
     pub data: Vec<u8>,
     /// The sampling configuration.
     pub config: SamplingConfig,
-    /// The loop behavior.
-    pub loop_behavior: LoopBehavior,
-    /// The segment of the modulation.
-    pub segment: Segment,
-    /// The transition mode of the modulation.
-    pub transition_mode: Option<TransitionMode>,
 }

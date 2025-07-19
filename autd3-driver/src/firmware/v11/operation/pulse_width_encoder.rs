@@ -4,8 +4,8 @@ use super::{super::fpga::PWE_BUF_SIZE, Operation, OperationGenerator};
 use crate::{datagram::PulseWidthEncoderOperationGenerator, firmware::tag::TypeTag};
 
 use autd3_core::{
+    datagram::FirmwareLimits,
     datagram::{PulseWidth, PulseWidthError},
-    derive::FirmwareLimits,
     gain::Intensity,
     geometry::Device,
 };

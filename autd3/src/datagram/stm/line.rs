@@ -1,6 +1,7 @@
 use autd3_core::{
-    derive::{Device, Environment, Geometry},
+    environment::Environment,
     gain::{GainError, Intensity, Phase, TransducerFilter},
+    geometry::{Device, Geometry},
 };
 use autd3_driver::{
     datagram::{

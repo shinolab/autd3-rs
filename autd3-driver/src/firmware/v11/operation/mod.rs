@@ -18,7 +18,7 @@ pub trait OperationGenerator<'a> {
 
 macro_rules! impl_v11_op {
     ($ty:ty) => {
-        impl<'a> OperationGenerator<'a> for  $ty {
+        impl<'a> OperationGenerator<'a> for $ty {
             type O1 = <Self as crate::firmware::v10::operation::OperationGenerator<'a>>::O1;
             type O2 = <Self as crate::firmware::v10::operation::OperationGenerator<'a>>::O2;
 
@@ -47,9 +47,12 @@ impl_v11_op!(crate::datagram::FixedCompletionTime);
 impl_v11_op!(crate::datagram::FixedUpdateRate);
 impl_v11_op!(crate::datagram::Clear);
 impl_v11_op!(crate::datagram::Synchronize);
-impl_v11_op!(crate::datagram::SwapSegment);
 impl_v11_op!(crate::datagram::FetchFirmwareInfoOpGenerator);
 impl_v11_op!(autd3_core::modulation::ModulationOperationGenerator);
+impl_v11_op!(crate::datagram::SwapSegmentGain);
+impl_v11_op!(T; crate::datagram::SwapSegmentModulation<T>);
+impl_v11_op!(T; crate::datagram::SwapSegmentFociSTM<T>);
+impl_v11_op!(T; crate::datagram::SwapSegmentGainSTM<T>);
 impl_v11_op!(F; crate::datagram::CpuGPIOOutputs<F>);
 impl_v11_op!(F; crate::datagram::ForceFan<F>);
 impl_v11_op!(F; crate::datagram::ReadsFPGAState<F>);
@@ -58,32 +61,8 @@ impl_v11_op!(F; crate::datagram::EmulateGPIOIn<F>);
 impl_v11_op!(F, FT; crate::datagram::PhaseCorrection<F, FT>);
 impl_v11_op!(O1, O2; autd3_core::datagram::CombinedOperationGenerator<O1, O2>);
 impl_v11_op!(K, F, G; crate::datagram::GroupOpGenerator<K, F, G>);
-
-impl<'a, G> OperationGenerator<'a> for autd3_core::gain::GainOperationGenerator<'a, G>
-where
-    autd3_core::gain::GainOperationGenerator<'a, G>:
-        crate::firmware::v10::operation::OperationGenerator<'a>,
-{
-    type O1 = <Self as crate::firmware::v10::operation::OperationGenerator<'a>>::O1;
-    type O2 = <Self as crate::firmware::v10::operation::OperationGenerator<'a>>::O2;
-
-    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
-        crate::firmware::v10::operation::OperationGenerator::generate(self, device)
-    }
-}
-
-impl<'a, T> OperationGenerator<'a> for crate::datagram::GainSTMOperationGenerator<'a, T>
-where
-    crate::datagram::GainSTMOperationGenerator<'a, T>:
-        crate::firmware::v10::operation::OperationGenerator<'a>,
-{
-    type O1 = <Self as crate::firmware::v10::operation::OperationGenerator<'a>>::O1;
-    type O2 = <Self as crate::firmware::v10::operation::OperationGenerator<'a>>::O2;
-
-    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
-        crate::firmware::v10::operation::OperationGenerator::generate(self, device)
-    }
-}
+impl_v11_op!(G; autd3_core::gain::GainOperationGenerator<'a, G>);
+impl_v11_op!(G; crate::datagram::GainSTMOperationGenerator<'a, G>);
 
 impl<'a, const N: usize, G: crate::datagram::FociSTMIteratorGenerator<N>> OperationGenerator<'a>
     for crate::datagram::FociSTMOperationGenerator<N, G>

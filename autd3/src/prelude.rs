@@ -20,7 +20,7 @@ pub use crate::{
 };
 
 pub use autd3_core::{
-    datagram::{GPIOIn, GPIOOut, LoopBehavior, PulseWidth, Segment, TransitionMode},
+    datagram::{GPIOIn, GPIOOut, PulseWidth, Segment, transition_mode},
     gain::{Drive, Intensity, Phase},
     modulation::Modulation,
     sampling_config::SamplingConfig,
@@ -33,8 +33,9 @@ pub use autd3_driver::{
     datagram::{
         BoxedGain, Clear, ControlPoint, ControlPoints, FixedCompletionTime, FixedUpdateRate,
         FociSTM, ForceFan, GPIOOutputType, GPIOOutputs, GainSTM, GainSTMMode, GainSTMOption, Group,
-        OutputMask, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer, SwapSegment,
-        WithLoopBehavior, WithSegment,
+        OutputMask, PhaseCorrection, PulseWidthEncoder, ReadsFPGAState, Silencer,
+        SwapSegmentFociSTM, SwapSegmentGain, SwapSegmentGainSTM, SwapSegmentModulation,
+        WithFiniteLoop, WithSegment,
     },
     error::AUTDDriverError,
     ethercat::DcSysTime,

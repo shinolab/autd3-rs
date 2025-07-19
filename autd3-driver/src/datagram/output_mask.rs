@@ -1,7 +1,7 @@
 use std::convert::Infallible;
 
 use autd3_core::{
-    datagram::{DatagramOption, DatagramS, DeviceFilter, FirmwareLimits, Segment},
+    datagram::{Datagram, DatagramOption, DeviceFilter, FirmwareLimits, Segment},
     environment::Environment,
     geometry::{Device, Geometry, Transducer},
 };
@@ -28,6 +28,8 @@ pub struct OutputMask<F, FT> {
     #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
+    /// The segment to which this [`OutputMask`] applies.
+    pub segment: Segment,
     _phantom: std::marker::PhantomData<FT>,
 }
 
@@ -35,8 +37,14 @@ impl<'a, FT: Fn(&'a Transducer) -> bool, F: Fn(&'a Device) -> FT> OutputMask<F, 
     /// Creates a new [`OutputMask`].
     #[must_use]
     pub const fn new(f: F) -> Self {
+        Self::with_segment(f, Segment::S0)
+    }
+
+    /// Creates a new [`OutputMask`] for a segment.
+    pub const fn with_segment(f: F, segment: Segment) -> Self {
         Self {
             f,
+            segment,
             _phantom: std::marker::PhantomData,
         }
     }
@@ -47,22 +55,23 @@ pub struct OutputMaskOperationGenerator<F> {
     pub(crate) segment: Segment,
 }
 
-impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync, F: Fn(&'a Device) -> FT> DatagramS<'a>
+impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync, F: Fn(&'a Device) -> FT> Datagram<'a>
     for OutputMask<F, FT>
 {
     type G = OutputMaskOperationGenerator<F>;
     type Error = Infallible;
 
-    fn operation_generator_with_segment(
+    fn operation_generator(
         self,
         _: &'a Geometry,
         _: &Environment,
         _: &DeviceFilter,
         _: &FirmwareLimits,
-        segment: Segment,
-        _: Option<autd3_core::derive::TransitionMode>,
     ) -> Result<Self::G, Self::Error> {
-        Ok(OutputMaskOperationGenerator { f: self.f, segment })
+        Ok(OutputMaskOperationGenerator {
+            f: self.f,
+            segment: self.segment,
+        })
     }
 
     fn option(&self) -> DatagramOption {

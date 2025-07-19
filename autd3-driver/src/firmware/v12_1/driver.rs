@@ -36,7 +36,7 @@ impl Driver for V12_1 {
         Self
     }
 
-    fn firmware_limits(&self) -> autd3_core::derive::FirmwareLimits {
+    fn firmware_limits(&self) -> autd3_core::datagram::FirmwareLimits {
         crate::firmware::v12::V12.firmware_limits()
     }
 
@@ -44,7 +44,7 @@ impl Driver for V12_1 {
         &self,
         msg_id: &'a mut autd3_core::link::MsgId,
         link: &'a mut L,
-        geometry: &'a autd3_core::derive::Geometry,
+        geometry: &'a autd3_core::geometry::Geometry,
         sent_flags: &'a mut [bool],
         rx: &'a mut [autd3_core::link::RxMessage],
         env: &'a Environment,

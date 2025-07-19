@@ -118,6 +118,8 @@ impl<'a> Gain<'a> for BoxedGain<'a> {
 pub mod tests {
     use super::*;
 
+    use std::collections::HashMap;
+
     use crate::datagram::gain::tests::TestGain;
 
     use autd3_core::{

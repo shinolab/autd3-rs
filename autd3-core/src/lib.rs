@@ -149,12 +149,11 @@ pub mod derive {
         pub use crate::{
             datagram::{
                 DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
-                Segment, TransitionMode,
+                Segment, internal, transition_mode,
             },
             environment::Environment,
             geometry::Geometry,
         };
-        pub use num_cpus;
         pub use tynm;
     }
     #[cfg(any(feature = "gain", feature = "modulation"))]
@@ -171,19 +170,20 @@ pub mod derive {
             geometry::{Device, Transducer},
         };
         pub use autd3_derive::Gain;
+        pub use num_cpus;
+        pub use std::collections::HashMap;
     }
     #[cfg(feature = "gain")]
     pub use gain::*;
 
     #[cfg(feature = "modulation")]
     mod modulation {
-        pub use crate::datagram::{Datagram, DatagramL, LoopBehavior};
+        pub use crate::datagram::{Datagram, DatagramL};
         pub use crate::modulation::{
             Modulation, ModulationError, ModulationInspectionResult, ModulationOperationGenerator,
         };
         pub use crate::sampling_config::{SamplingConfig, SamplingConfigError};
         pub use autd3_derive::Modulation;
-        pub use std::{collections::HashMap, sync::Arc};
     }
     #[cfg(feature = "modulation")]
     pub use modulation::*;
