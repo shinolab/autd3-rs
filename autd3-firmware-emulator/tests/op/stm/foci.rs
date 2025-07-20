@@ -153,7 +153,7 @@ fn test_send_foci_stm_finite_unsafe() -> anyhow::Result<()> {
     let freq_div = rng.random_range(
         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT) as _..=u16::MAX,
     );
-let foci = gen_random_foci::<1>(2);
+    let foci = gen_random_foci::<1>(2);
 
     let stm = WithFiniteLoop {
         inner: FociSTM::new(
