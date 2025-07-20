@@ -91,19 +91,18 @@ impl SamplingMode {
         }
         let fd = freq.hz() as f64 * sampling_config.divide()? as f64;
 
-        for n in (ULTRASOUND_FREQ.hz() as f64 / fd).floor() as u32..=limits.mod_buf_size_max {
+        ((ULTRASOUND_FREQ.hz() as f64 / fd).floor() as u32..=limits.mod_buf_size_max).find_map(|n| {
             if !is_integer(fd * n as f64) {
-                continue;
+                return None;
             }
             let fnd = (fd * n as f64) as u64;
             let fs = ULTRASOUND_FREQ.hz() as u64;
             if fnd % fs != 0 {
-                continue;
+                return None;
             }
             let k = fnd / fs;
-            return Ok((n as _, k as _));
-        }
-        Err(ModulationError::new(format!(
+            Some((n as _, k as _))
+        }).ok_or_else(|| ModulationError::new(format!(
             "Frequency ({freq:?}) cannot be output with the sampling config ({sampling_config:?})."
         )))
     }
