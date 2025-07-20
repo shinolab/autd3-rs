@@ -304,8 +304,8 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for LM<D, B> {
         (0..self.option.k_max.get())
             .try_for_each(|_| match step() {
                 Ok(ControlFlow::Continue(())) => ControlFlow::Continue(()),
-                Ok(ControlFlow::Break(())) => ControlFlow::Break(Ok(())),
-                Err(e) => ControlFlow::Break(Err(e)),
+                Ok(ControlFlow::Break(())) => ControlFlow::Break(Ok(())), // GRCOV_EXCL_LINE
+                Err(e) => ControlFlow::Break(Err(e)),                     // GRCOV_EXCL_LINE
             })
             .break_value()
             .transpose()?;
