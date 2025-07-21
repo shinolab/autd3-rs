@@ -11,7 +11,7 @@ use derive_more::Deref;
 
 /// A wrapper of [`DatagramS`] to specify the segment to write the data.
 #[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WithSegment<T, D> {
+pub struct WithSegment<T: TransitionMode, D> {
     #[deref]
     /// The original [`DatagramS`]
     pub inner: D,
