@@ -15,7 +15,7 @@ use derive_more::Deref;
 ///
 /// Note that the loop behavior only affects when switching segments.
 #[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WithFiniteLoop<T, D> {
+pub struct WithFiniteLoop<T: TransitionMode, D> {
     #[deref]
     /// The original [`DatagramL`]
     pub inner: D,
