@@ -54,7 +54,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
 
             fn option(&self) -> DatagramOption {
                 DatagramOption {
-                    parallel_threshold: num_cpus::get(),
+                    parallel_threshold: std::thread::available_parallelism().map(std::num::NonZeroUsize::get).unwrap_or(8),
                     ..DatagramOption::default()
                 }
             }
