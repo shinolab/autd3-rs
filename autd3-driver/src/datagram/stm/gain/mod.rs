@@ -194,7 +194,9 @@ impl<'a, G: GainSTMGenerator<'a>, C: Into<STMConfig> + std::fmt::Debug> Datagram
     fn option(&self) -> DatagramOption {
         DatagramOption {
             timeout: DEFAULT_TIMEOUT,
-            parallel_threshold: num_cpus::get(),
+            parallel_threshold: std::thread::available_parallelism()
+                .map(std::num::NonZeroUsize::get)
+                .unwrap_or(8),
         }
     }
 }

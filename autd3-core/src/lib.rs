@@ -170,7 +170,6 @@ pub mod derive {
             geometry::{Device, Transducer},
         };
         pub use autd3_derive::Gain;
-        pub use num_cpus;
         pub use std::collections::HashMap;
     }
     #[cfg(feature = "gain")]
