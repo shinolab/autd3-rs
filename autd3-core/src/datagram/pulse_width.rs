@@ -1,11 +1,13 @@
 use thiserror::Error;
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 enum PulseWidthInner {
     Duty(f32),
     Raw(u32),
 }
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 /// The pulse width.
 pub struct PulseWidth {
@@ -28,7 +30,7 @@ impl PulseWidth {
     ///
     /// Note that the period depends on the firmware version, so it is recommended to use [`PulseWidth::from_duty`] instead.
     #[must_use]
-    pub fn new(pulse_width: u32) -> Self {
+    pub const fn new(pulse_width: u32) -> Self {
         Self {
             inner: PulseWidthInner::Raw(pulse_width),
         }
