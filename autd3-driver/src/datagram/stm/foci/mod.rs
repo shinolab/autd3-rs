@@ -34,7 +34,7 @@ pub trait FociSTMIterator<const N: usize>: Send + Sync {
 }
 
 /// A trait to generate the [`FociSTMIterator`].
-pub trait FociSTMIteratorGenerator<const N: usize>: std::fmt::Debug {
+pub trait FociSTMIteratorGenerator<const N: usize> {
     /// [`FociSTMIterator`] that generates the sequence of foci.
     type Iterator: FociSTMIterator<N>;
 
@@ -45,7 +45,7 @@ pub trait FociSTMIteratorGenerator<const N: usize>: std::fmt::Debug {
 
 /// A trait to generate the [`FociSTMIteratorGenerator`].
 #[allow(clippy::len_without_is_empty)]
-pub trait FociSTMGenerator<const N: usize>: std::fmt::Debug {
+pub trait FociSTMGenerator<const N: usize> {
     /// The type of the iterator generator.
     type T: FociSTMIteratorGenerator<N>;
 
@@ -118,8 +118,8 @@ pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMIteratorGenerator
     pub(crate) transition_params: TransitionModeParams,
 }
 
-impl<const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + std::fmt::Debug> DatagramL<'_>
-    for FociSTM<N, G, C>
+impl<const N: usize, G: FociSTMGenerator<N> + std::fmt::Debug, C: Into<STMConfig> + std::fmt::Debug>
+    DatagramL<'_> for FociSTM<N, G, C>
 {
     type G = FociSTMOperationGenerator<N, G::T>;
     type Error = AUTDDriverError;
@@ -170,8 +170,12 @@ pub struct FociSTMInspectionResult<const N: usize> {
     pub config: SamplingConfig,
 }
 
-impl<'a, const N: usize, G: FociSTMGenerator<N>, C: Into<STMConfig> + Copy + Debug> Inspectable<'a>
-    for FociSTM<N, G, C>
+impl<
+    'a,
+    const N: usize,
+    G: FociSTMGenerator<N> + std::fmt::Debug,
+    C: Into<STMConfig> + Copy + Debug,
+> Inspectable<'a> for FociSTM<N, G, C>
 {
     type Result = FociSTMInspectionResult<N>;
 
@@ -231,7 +235,7 @@ mod tests {
         let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         FociSTM {
-            foci: vec![
+            foci: [
                 ControlPoint {
                     point: Point3::origin(),
                     phase_offset: Phase::ZERO,

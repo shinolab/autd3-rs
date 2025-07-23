@@ -51,8 +51,29 @@ impl<'a, G: Gain<'a>> GainSTMGenerator<'a> for Vec<G> {
             .map(|g| g.init(geometry, env, filter))
             .collect::<Result<Vec<_>, _>>()
     }
+
     fn len(&self) -> usize {
-        self.len()
+        Vec::len(self)
+    }
+}
+
+impl<'a, const N: usize, G: Gain<'a>> GainSTMGenerator<'a> for [G; N] {
+    type T = Vec<G::G>;
+
+    fn init(
+        self,
+        geometry: &'a Geometry,
+        env: &Environment,
+        filter: &TransducerFilter,
+    ) -> Result<Self::T, GainError> {
+        // TODO: replace with `array::try_map` when stabilized
+        self.into_iter()
+            .map(|g| g.init(geometry, env, filter))
+            .collect()
+    }
+
+    fn len(&self) -> usize {
+        N
     }
 }
 
