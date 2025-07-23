@@ -1,58 +1,87 @@
-use std::sync::Arc;
+use std::{borrow::Borrow, sync::Arc};
 
 use crate::{error::AUTDDriverError, geometry::Device};
 
 use super::{ControlPoints, FociSTMGenerator, FociSTMIterator, FociSTMIteratorGenerator};
 
-pub struct VecFociSTMIterator<const N: usize, C>
+pub struct VecFociSTMIterator<const N: usize, C, I>
 where
-    C: Send + Sync,
     ControlPoints<N>: From<C>,
 {
-    foci: Arc<Vec<C>>,
+    foci: Arc<I>,
     i: usize,
+    _phantom: std::marker::PhantomData<C>,
 }
 
-impl<const N: usize, C> FociSTMIterator<N> for VecFociSTMIterator<N, C>
+impl<const N: usize, C, I> FociSTMIterator<N> for VecFociSTMIterator<N, C, I>
 where
+    I: Borrow<[C]> + Send + Sync,
     C: Clone + Send + Sync,
     ControlPoints<N>: From<C>,
 {
     fn next(&mut self) -> ControlPoints<N> {
-        let p = self.foci[self.i].clone().into();
+        let p = <I as Borrow<[C]>>::borrow(&self.foci)[self.i]
+            .clone()
+            .into();
         self.i += 1;
         p
     }
 }
 
-impl<const N: usize, C> FociSTMIteratorGenerator<N> for Arc<Vec<C>>
+impl<const N: usize, C, I> FociSTMIteratorGenerator<N> for VecFociSTMIterator<N, C, I>
 where
-    C: Clone + Send + Sync + std::fmt::Debug,
+    I: Borrow<[C]> + Send + Sync,
+    C: Clone + Send + Sync,
     ControlPoints<N>: From<C>,
 {
-    type Iterator = VecFociSTMIterator<N, C>;
+    type Iterator = VecFociSTMIterator<N, C, I>;
 
     fn generate(&mut self, _: &Device) -> Self::Iterator {
         Self::Iterator {
-            foci: self.clone(),
+            foci: self.foci.clone(),
             i: 0,
+            _phantom: std::marker::PhantomData,
         }
     }
 }
 
 impl<const N: usize, C> FociSTMGenerator<N> for Vec<C>
 where
-    C: Clone + Send + Sync + std::fmt::Debug,
+    C: Clone + Send + Sync,
     ControlPoints<N>: From<C>,
 {
-    type T = Arc<Vec<C>>;
+    type T = VecFociSTMIterator<N, C, Vec<C>>;
 
     fn init(self) -> Result<Self::T, AUTDDriverError> {
-        Ok(Arc::new(self))
+        Ok(VecFociSTMIterator {
+            foci: Arc::new(self),
+            i: 0,
+            _phantom: std::marker::PhantomData,
+        })
     }
 
     fn len(&self) -> usize {
-        self.len()
+        Vec::len(self)
+    }
+}
+
+impl<const M: usize, const N: usize, C> FociSTMGenerator<N> for [C; M]
+where
+    C: Clone + Send + Sync,
+    ControlPoints<N>: From<C>,
+{
+    type T = VecFociSTMIterator<N, C, [C; M]>;
+
+    fn init(self) -> Result<Self::T, AUTDDriverError> {
+        Ok(VecFociSTMIterator {
+            foci: Arc::new(self),
+            i: 0,
+            _phantom: std::marker::PhantomData,
+        })
+    }
+
+    fn len(&self) -> usize {
+        M
     }
 }
 

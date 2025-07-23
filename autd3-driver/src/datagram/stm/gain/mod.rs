@@ -277,7 +277,7 @@ mod tests {
         let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         GainSTM {
-            gains: vec![
+            gains: [
                 TestGain::new(|_dev| |_| Drive::NULL, &geometry),
                 TestGain::new(
                     |_dev| {
@@ -302,7 +302,7 @@ mod tests {
         .for_each(|r| {
             assert_eq!(
                 &Some(GainSTMInspectionResult {
-                    name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
+                    name: "GainSTM<[TestGain; 2], SamplingConfig>".to_string(),
                     data: vec![
                         vec![Drive::NULL; 1],
                         vec![
