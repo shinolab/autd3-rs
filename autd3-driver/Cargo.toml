@@ -18,7 +18,7 @@ async = ["autd3-core/async"]
 default = []
 
 [dependencies]
-autd3-core = { workspace = true, features = ["gain", "common", "geometry", "derive", "link", "ethercat", "modulation", "sampling_config", "sleep", "environment"] }
+autd3-core = { workspace = true, features = ["gain", "common", "geometry", "derive", "link", "ethercat", "modulation", "firmware", "sleep", "environment"] }
 autd3-derive = { workspace = true }
 bitfield-struct = { workspace = true }
 bitflags = { workspace = true }

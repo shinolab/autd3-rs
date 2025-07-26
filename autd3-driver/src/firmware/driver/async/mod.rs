@@ -4,8 +4,8 @@ use super::{FPGAState, SenderOption};
 use crate::{error::AUTDDriverError, firmware::version::FirmwareVersion};
 
 use autd3_core::{
-    datagram::FirmwareLimits,
     environment::Environment,
+    firmware::FirmwareLimits,
     geometry::Geometry,
     link::{MsgId, RxMessage},
 };

@@ -1,4 +1,4 @@
-use autd3_core::{datagram::Segment, link::RxMessage};
+use autd3_core::{firmware::Segment, link::RxMessage};
 
 use getset::CopyGetters;
 

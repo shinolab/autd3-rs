@@ -1,6 +1,6 @@
 use std::num::ParseIntError;
 
-use autd3_core::{modulation::ModulationError, sampling_config::SamplingConfigError};
+use autd3_core::{firmware::SamplingConfigError, modulation::ModulationError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use autd3_core::{
-    datagram::transition_mode::{Immediate, Later},
     derive::*,
+    firmware::transition_mode::{Immediate, Later},
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{datagram::*, error::AUTDDriverError, geometry::Point3};

@@ -2,10 +2,11 @@ use std::num::NonZeroU16;
 
 use autd3_core::{
     datagram::{
-        Datagram, DatagramL, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable,
-        InspectionResult, Segment, internal::HasFiniteLoop, transition_mode::TransitionMode,
+        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
+        internal::HasFiniteLoop,
     },
     environment::Environment,
+    firmware::{FirmwareLimits, Segment, transition_mode::TransitionMode},
     geometry::Geometry,
 };
 

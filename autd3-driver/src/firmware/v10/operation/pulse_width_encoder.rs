@@ -7,9 +7,7 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::FirmwareLimits,
-    datagram::{PulseWidth, PulseWidthError},
-    gain::Intensity,
+    firmware::{FirmwareLimits, Intensity, PulseWidth, PulseWidthError},
     geometry::Device,
 };
 

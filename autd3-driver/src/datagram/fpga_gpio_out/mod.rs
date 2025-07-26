@@ -5,8 +5,9 @@ pub use gpio_out::GPIOOutputType;
 use std::convert::Infallible;
 
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter, FirmwareLimits, GPIOOut},
+    datagram::{Datagram, DeviceFilter},
     environment::Environment,
+    firmware::{FirmwareLimits, GPIOOut},
     geometry::{Device, Geometry},
 };
 
@@ -19,7 +20,7 @@ use derive_more::Debug;
 /// ```
 /// # use autd3_driver::datagram::GPIOOutputs;
 /// # use autd3_driver::datagram::GPIOOutputType;
-/// # use autd3_core::datagram::GPIOOut;
+/// # use autd3_core::firmware::GPIOOut;
 /// GPIOOutputs::new(|dev, gpio| match gpio {
 ///     GPIOOut::O0 => Some(GPIOOutputType::BaseSignal),
 ///     GPIOOut::O1 => Some(GPIOOutputType::Sync),

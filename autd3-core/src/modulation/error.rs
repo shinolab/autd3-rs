@@ -3,7 +3,7 @@ use std::convert::Infallible;
 use derive_more::Display;
 use thiserror::Error;
 
-use crate::sampling_config::SamplingConfigError;
+use crate::firmware::SamplingConfigError;
 
 #[derive(Error, Debug, Display, PartialEq, Clone)]
 #[display("{}", msg)]

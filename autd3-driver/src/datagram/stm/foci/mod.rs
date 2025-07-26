@@ -15,13 +15,14 @@ use crate::{
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
     datagram::{
-        Datagram, DatagramL, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable,
-        InspectionResult, Segment,
+        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
         internal::{HasFiniteLoop, HasSegment},
-        transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
     },
     environment::Environment,
-    sampling_config::SamplingConfig,
+    firmware::{
+        FirmwareLimits, SamplingConfig, Segment,
+        transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
+    },
 };
 use derive_more::{Deref, DerefMut};
 
@@ -224,10 +225,11 @@ mod tests {
     use super::*;
 
     use autd3_core::{
-        datagram::transition_mode::{self, Later},
-        gain::{Intensity, Phase},
+        firmware::{
+            Intensity, Phase, SamplingConfig, Segment,
+            transition_mode::{self, Later},
+        },
         geometry::Point3,
-        sampling_config::SamplingConfig,
     };
 
     #[test]

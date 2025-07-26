@@ -25,6 +25,10 @@ pub mod environment;
 #[cfg(feature = "ethercat")]
 /// Definitions for EtherCAT.
 pub mod ethercat;
+#[cfg_attr(docsrs, doc(cfg(feature = "firmware")))]
+#[cfg(feature = "firmware")]
+/// Firmware related modules.
+pub mod firmware;
 #[cfg_attr(docsrs, doc(cfg(feature = "gain")))]
 #[cfg(feature = "gain")]
 /// Core traits for Gain.
@@ -41,10 +45,6 @@ pub mod link;
 #[cfg(feature = "modulation")]
 /// Core traits for Modulation.
 pub mod modulation;
-#[cfg_attr(docsrs, doc(cfg(feature = "sampling_config")))]
-#[cfg(feature = "sampling_config")]
-#[doc(hidden)]
-pub mod sampling_config;
 #[cfg_attr(docsrs, doc(cfg(feature = "sleep")))]
 #[cfg(feature = "sleep")]
 #[doc(hidden)]
@@ -147,11 +147,9 @@ pub mod derive {
     #[cfg(any(feature = "gain", feature = "modulation"))]
     mod common {
         pub use crate::{
-            datagram::{
-                DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
-                Segment, internal, transition_mode,
-            },
+            datagram::{DatagramOption, DeviceFilter, Inspectable, InspectionResult, internal},
             environment::Environment,
+            firmware::{FirmwareLimits, Segment, transition_mode},
             geometry::Geometry,
         };
         pub use tynm;
@@ -163,9 +161,10 @@ pub mod derive {
     mod gain {
         pub use crate::{
             datagram::DatagramS,
+            firmware::{Drive, Intensity, Phase},
             gain::{
-                Drive, Gain, GainCalculator, GainCalculatorGenerator, GainError,
-                GainInspectionResult, GainOperationGenerator, Intensity, Phase, TransducerFilter,
+                Gain, GainCalculator, GainCalculatorGenerator, GainError, GainInspectionResult,
+                GainOperationGenerator, TransducerFilter,
             },
             geometry::{Device, Transducer},
         };
@@ -178,10 +177,10 @@ pub mod derive {
     #[cfg(feature = "modulation")]
     mod modulation {
         pub use crate::datagram::{Datagram, DatagramL};
+        pub use crate::firmware::{SamplingConfig, SamplingConfigError};
         pub use crate::modulation::{
             Modulation, ModulationError, ModulationInspectionResult, ModulationOperationGenerator,
         };
-        pub use crate::sampling_config::{SamplingConfig, SamplingConfigError};
         pub use autd3_derive::Modulation;
     }
     #[cfg(feature = "modulation")]

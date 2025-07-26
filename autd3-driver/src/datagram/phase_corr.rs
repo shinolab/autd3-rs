@@ -1,9 +1,10 @@
 use std::convert::Infallible;
 
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter, FirmwareLimits},
+    datagram::{Datagram, DeviceFilter},
     environment::Environment,
-    gain::Phase,
+    firmware::FirmwareLimits,
+    firmware::Phase,
     geometry::{Device, Geometry, Transducer},
 };
 
@@ -17,7 +18,7 @@ use derive_more::Debug;
 ///
 /// ```
 /// # use autd3_driver::datagram::PhaseCorrection;
-/// # use autd3_core::gain::Phase;
+/// # use autd3_core::firmware::Phase;
 /// PhaseCorrection::new(|_dev| |_tr| Phase::PI);
 /// ```
 ///

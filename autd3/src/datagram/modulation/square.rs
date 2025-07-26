@@ -1,4 +1,4 @@
-use autd3_core::{common::Freq, derive::*};
+use autd3_core::{common::Freq, derive::*, firmware::SamplingConfig};
 
 use super::sampling_mode::{Nearest, SamplingMode};
 

@@ -1,4 +1,4 @@
-use autd3_core::{datagram::PulseWidth, gain::Intensity};
+use autd3_core::firmware::{Intensity, PulseWidth};
 
 use super::FPGAEmulator;
 

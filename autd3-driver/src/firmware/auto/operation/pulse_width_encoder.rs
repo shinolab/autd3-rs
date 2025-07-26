@@ -5,8 +5,7 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::{PulseWidth, PulseWidthError},
-    gain::Intensity,
+    firmware::{Intensity, PulseWidth, PulseWidthError},
     geometry::Device,
 };
 

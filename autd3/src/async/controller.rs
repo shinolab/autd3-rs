@@ -334,8 +334,8 @@ mod tests {
     use std::collections::HashMap;
 
     use autd3_core::{
-        datagram::Segment,
-        gain::{Gain, GainCalculator, GainCalculatorGenerator, Intensity, Phase, TransducerFilter},
+        firmware::{Intensity, Phase, Segment},
+        gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerFilter},
         link::LinkError,
         modulation::{Modulation, ModulationInspectionResult},
     };

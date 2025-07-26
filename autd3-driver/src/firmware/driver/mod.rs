@@ -17,8 +17,8 @@ pub use parallel_mode::ParallelMode;
 pub use strategy::{FixedDelay, FixedSchedule, TimerStrategy};
 
 use autd3_core::{
-    datagram::FirmwareLimits,
     environment::Environment,
+    firmware::FirmwareLimits,
     geometry::Geometry,
     link::{MsgId, RxMessage},
 };

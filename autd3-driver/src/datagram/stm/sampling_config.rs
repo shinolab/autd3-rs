@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{common::Freq, error::AUTDDriverError};
 
-use autd3_core::sampling_config::SamplingConfig;
+use autd3_core::firmware::SamplingConfig;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[non_exhaustive]

@@ -36,7 +36,7 @@ impl Driver for V12_1 {
         Self
     }
 
-    fn firmware_limits(&self) -> autd3_core::datagram::FirmwareLimits {
+    fn firmware_limits(&self) -> autd3_core::firmware::FirmwareLimits {
         crate::firmware::v12::V12.firmware_limits()
     }
 

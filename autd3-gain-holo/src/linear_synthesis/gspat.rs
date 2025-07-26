@@ -156,7 +156,10 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for GSPAT<D, B> {
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::gain::{Drive, GainCalculator, GainCalculatorGenerator};
+    use autd3_core::{
+        firmware::Drive,
+        gain::{GainCalculator, GainCalculatorGenerator},
+    };
 
     use crate::tests::create_geometry;
 

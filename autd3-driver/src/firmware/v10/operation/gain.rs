@@ -10,8 +10,8 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::{Segment, transition_mode::TransitionMode},
-    gain::{Drive, GainCalculator, GainCalculatorGenerator, GainOperationGenerator},
+    firmware::{Drive, Segment, transition_mode::TransitionMode},
+    gain::{GainCalculator, GainCalculatorGenerator, GainOperationGenerator},
     geometry::Device,
 };
 
@@ -101,7 +101,7 @@ impl<'a, G: GainCalculatorGenerator<'a>> OperationGenerator<'a> for GainOperatio
         Some((
             Self::O1::new(
                 self.segment,
-                self.transition_params != autd3_core::datagram::transition_mode::Later.params(),
+                self.transition_params != autd3_core::firmware::transition_mode::Later.params(),
                 c,
             ),
             Self::O2 {},
@@ -112,7 +112,7 @@ impl<'a, G: GainCalculatorGenerator<'a>> OperationGenerator<'a> for GainOperatio
 #[cfg(test)]
 mod tests {
     use autd3_core::{
-        gain::{Intensity, Phase},
+        firmware::{Intensity, Phase},
         geometry::Transducer,
     };
 

@@ -1,4 +1,4 @@
-use autd3_core::gain::Intensity;
+use autd3_core::firmware::Intensity;
 
 /// Emission constraint of transducers.
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use autd3_core::{
-    datagram::{Segment, transition_mode::Immediate},
-    gain::{Drive, Intensity, Phase},
+    firmware::{Drive, Intensity, Phase, Segment, transition_mode::Immediate},
     link::{MsgId, TxMessage},
 };
 use autd3_driver::datagram::{OutputMask, WithSegment};

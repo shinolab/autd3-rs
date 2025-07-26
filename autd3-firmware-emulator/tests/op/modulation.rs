@@ -2,12 +2,12 @@ use std::{num::NonZeroU16, time::Duration};
 
 use autd3_core::{
     common::{MOD_BUF_SIZE_MIN, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-    datagram::{
+    datagram::internal::{HasFiniteLoop, HasSegment},
+    derive::*,
+    firmware::{
         GPIOIn,
-        internal::{HasFiniteLoop, HasSegment},
         transition_mode::{Later, TransitionMode},
     },
-    derive::*,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{

@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 use autd3_core::{
     common::{Angle, Freq, rad},
     derive::*,
+    firmware::SamplingConfig,
 };
 
 use super::sampling_mode::{Nearest, SamplingMode};

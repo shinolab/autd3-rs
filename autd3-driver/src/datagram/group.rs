@@ -3,10 +3,9 @@ use std::{collections::HashMap, fmt::Debug, hash::Hash, time::Duration};
 use crate::error::AUTDDriverError;
 
 use autd3_core::{
-    datagram::{
-        Datagram, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
-    },
+    datagram::{Datagram, DatagramOption, DeviceFilter, Inspectable, InspectionResult},
     environment::Environment,
+    firmware::FirmwareLimits,
     geometry::{Device, Geometry},
 };
 use derive_more::Debug as DeriveDebug;
