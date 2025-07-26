@@ -20,10 +20,11 @@ pub use crate::{
 };
 
 pub use autd3_core::{
-    datagram::{GPIOIn, GPIOOut, PulseWidth, Segment, transition_mode},
-    gain::{Drive, Intensity, Phase},
+    firmware::{
+        Drive, GPIOIn, GPIOOut, Intensity, Phase, PulseWidth, SamplingConfig, Segment,
+        transition_mode,
+    },
     modulation::Modulation,
-    sampling_config::SamplingConfig,
     sleep::{self, SpinSleeper},
 };
 

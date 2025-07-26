@@ -1,8 +1,9 @@
 use std::convert::Infallible;
 
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter, FirmwareLimits},
+    datagram::{Datagram, DeviceFilter},
     environment::Environment,
+    firmware::FirmwareLimits,
     geometry::{Device, Geometry},
 };
 

@@ -1,8 +1,9 @@
 use std::convert::Infallible;
 
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter, FirmwareLimits, GPIOIn},
+    datagram::{Datagram, DeviceFilter},
     environment::Environment,
+    firmware::{FirmwareLimits, GPIOIn},
     geometry::{Device, Geometry},
 };
 use derive_more::Debug;

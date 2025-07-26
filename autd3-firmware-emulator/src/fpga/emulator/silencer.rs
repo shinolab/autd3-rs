@@ -1,6 +1,6 @@
 use std::num::NonZeroU16;
 
-use autd3_core::gain::{Intensity, Phase};
+use autd3_core::firmware::{Intensity, Phase};
 use autd3_driver::datagram::{FixedCompletionSteps, FixedUpdateRate};
 
 use super::{super::params::*, FPGAEmulator};

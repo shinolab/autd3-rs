@@ -5,7 +5,7 @@ use crate::{
     firmware::v11::operation::GPIOOutputsOp,
 };
 
-use autd3_core::{datagram::GPIOOut, geometry::Device};
+use autd3_core::{firmware::GPIOOut, geometry::Device};
 
 fn convert(ty: Option<GPIOOutputType<'_>>) -> crate::firmware::v11::operation::GPIOOutValue {
     crate::firmware::v11::operation::GPIOOutValue::new()

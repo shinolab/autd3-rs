@@ -2,9 +2,9 @@ use std::{convert::Infallible, f32::consts::PI};
 
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
-    datagram::{Datagram, DatagramOption, DeviceFilter, FirmwareLimits, PulseWidth},
+    datagram::{Datagram, DatagramOption, DeviceFilter},
     environment::Environment,
-    gain::Intensity,
+    firmware::{FirmwareLimits, Intensity, PulseWidth},
     geometry::{Device, Geometry},
 };
 
@@ -26,11 +26,11 @@ use derive_more::Debug;
 /// The following example sets the pulse width to be linearly proportional to the intensity for all devices.
 /// ```
 /// # use autd3_driver::datagram::PulseWidthEncoder;
-/// # use autd3_core::datagram::PulseWidth;
+/// # use autd3_core::firmware::PulseWidth;
 /// PulseWidthEncoder::new(|_dev| |i| PulseWidth::from_duty(i.0 as f32 / 510.).unwrap());
 /// ```
 ///
-/// [`Intensity`]: autd3_core::gain::Intensity
+/// [`Intensity`]: autd3_core::firmware::Intensity
 #[derive(Clone, Debug)]
 pub struct PulseWidthEncoder<F> {
     #[debug(ignore)]

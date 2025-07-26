@@ -2,14 +2,12 @@ use std::{collections::HashMap, num::NonZeroU16, time::Duration};
 
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-    datagram::{
-        Segment,
+    environment::Environment,
+    firmware::{
+        Drive, Intensity, Phase, SamplingConfig, Segment,
         transition_mode::{Immediate, Later, SyncIdx, TransitionMode},
     },
-    environment::Environment,
-    gain::{Drive, Intensity, Phase},
     link::{MsgId, TxMessage},
-    sampling_config::SamplingConfig,
 };
 use autd3_driver::{
     common::{METER, mm},
@@ -446,7 +444,7 @@ fn test_miss_transition_time(
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
 ) -> anyhow::Result<()> {
-    use autd3_core::datagram::transition_mode;
+    use autd3_core::firmware::transition_mode;
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());

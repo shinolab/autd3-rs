@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use autd3_core::datagram::{
+use autd3_core::firmware::{
     Segment,
     transition_mode::{Immediate, TransitionMode, TransitionModeParams},
 };
@@ -211,7 +211,7 @@ impl FPGAEmulator {
 mod tests {
     use super::*;
 
-    use autd3_core::datagram::{
+    use autd3_core::firmware::{
         GPIOIn,
         transition_mode::{Ext, GPIO, Immediate, SyncIdx, SysTime},
     };

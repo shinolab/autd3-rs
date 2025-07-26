@@ -9,15 +9,13 @@ use crate::{
         tag::TypeTag,
     },
 };
-
 use autd3_core::{
     common::{FOCI_STM_FOCI_NUM_MIN, METER, STM_BUF_SIZE_MIN},
-    datagram::{
-        FirmwareLimits, Segment,
+    firmware::{
+        FirmwareLimits, SamplingConfig, Segment,
         transition_mode::{Later, TransitionMode, TransitionModeParams},
     },
     geometry::Device,
-    sampling_config::SamplingConfig,
 };
 
 use zerocopy::{Immutable, IntoBytes};
@@ -251,10 +249,9 @@ mod tests {
         firmware::{driver::Driver, v10::fpga::FOCI_STM_FOCI_NUM_MAX},
         geometry::Point3,
     };
-
-    use autd3_core::{
-        datagram::transition_mode::{self, TransitionMode},
-        gain::Intensity,
+    use autd3_core::firmware::{
+        Intensity,
+        transition_mode::{self, TransitionMode},
     };
     use rand::prelude::*;
 

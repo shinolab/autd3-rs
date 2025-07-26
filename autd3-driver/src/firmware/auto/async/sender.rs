@@ -9,7 +9,8 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter, FirmwareLimits},
+    datagram::{Datagram, DeviceFilter},
+    firmware::FirmwareLimits,
     geometry::Geometry,
     link::AsyncLink,
     sleep::r#async::Sleep,

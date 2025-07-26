@@ -14,13 +14,12 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::{
-        FirmwareLimits, Segment,
+    firmware::{
+        Drive, FirmwareLimits, SamplingConfig, Segment,
         transition_mode::{Later, TransitionMode, TransitionModeParams},
     },
-    gain::{Drive, GainCalculator, GainCalculatorGenerator},
+    gain::{GainCalculator, GainCalculatorGenerator},
     geometry::Device,
-    sampling_config::SamplingConfig,
 };
 use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout};
 
@@ -280,8 +279,7 @@ mod tests {
     use crate::{ethercat::DcSysTime, firmware::driver::Driver, geometry::Transducer};
 
     use autd3_core::{
-        datagram::transition_mode,
-        gain::{Intensity, Phase},
+        firmware::{Drive, Intensity, Phase, SamplingConfig, Segment, transition_mode},
         link::TxMessage,
     };
 

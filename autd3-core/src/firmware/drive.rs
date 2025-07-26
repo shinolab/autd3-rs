@@ -1,4 +1,4 @@
-use super::{emit_intensity::Intensity, phase::Phase};
+use super::{intensity::Intensity, phase::Phase};
 
 use zerocopy::{Immutable, IntoBytes};
 

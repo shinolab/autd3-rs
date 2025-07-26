@@ -1,6 +1,7 @@
 use autd3_core::{
     environment::Environment,
-    gain::{GainError, Intensity, Phase, TransducerFilter},
+    firmware::{Intensity, Phase},
+    gain::{GainError, TransducerFilter},
     geometry::{Device, Geometry},
 };
 use autd3_driver::{

@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::{datagram::FirmwareLimits, environment::Environment, geometry::Geometry};
+use crate::{environment::Environment, firmware::FirmwareLimits, geometry::Geometry};
 
 use super::{Datagram, DatagramOption, DeviceFilter};
 

@@ -1,4 +1,4 @@
-use autd3_core::gain::Phase;
+use autd3_core::firmware::Phase;
 
 use super::FPGAEmulator;
 

@@ -1,7 +1,4 @@
-use autd3_core::{
-    datagram::Segment,
-    gain::{Drive, Intensity, Phase},
-};
+use autd3_core::firmware::{Drive, Intensity, Phase, Segment};
 
 use crate::FPGAEmulator;
 

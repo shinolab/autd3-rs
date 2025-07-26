@@ -1,5 +1,6 @@
 use autd3_core::{
-    datagram::FirmwareLimits, modulation::ModulationError, sampling_config::SamplingConfig,
+    firmware::{FirmwareLimits, SamplingConfig},
+    modulation::ModulationError,
     utils::float::is_integer,
 };
 use autd3_driver::common::{Freq, Hz, ULTRASOUND_FREQ};

@@ -95,7 +95,7 @@ mod tests {
         geometry::Point3,
     };
 
-    use autd3_core::sampling_config::SamplingConfig;
+    use autd3_core::firmware::SamplingConfig;
 
     #[rstest::rstest]
     #[test]

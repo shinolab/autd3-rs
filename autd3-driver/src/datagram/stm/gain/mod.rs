@@ -11,15 +11,16 @@ use crate::{common::Freq, error::AUTDDriverError};
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
     datagram::{
-        Datagram, DatagramL, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable,
-        InspectionResult, Segment,
+        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
         internal::{HasFiniteLoop, HasSegment},
-        transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
     },
     environment::Environment,
-    gain::{Drive, GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter},
+    firmware::{
+        Drive, FirmwareLimits, SamplingConfig, Segment,
+        transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
+    },
+    gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter},
     geometry::{Device, Geometry},
-    sampling_config::SamplingConfig,
 };
 use derive_more::{Deref, DerefMut};
 
@@ -267,10 +268,7 @@ mod tests {
         with_loop_behavior::WithFiniteLoopInspectionResult,
         with_segment::WithSegmentInspectionResult,
     };
-    use autd3_core::{
-        datagram::transition_mode,
-        gain::{Drive, Intensity, Phase},
-    };
+    use autd3_core::firmware::{Drive, Intensity, Phase, SamplingConfig, Segment, transition_mode};
 
     #[test]
     fn inspect() -> anyhow::Result<()> {

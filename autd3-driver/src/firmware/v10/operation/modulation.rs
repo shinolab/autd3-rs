@@ -11,13 +11,12 @@ use crate::{
 
 use autd3_core::{
     common::MOD_BUF_SIZE_MIN,
-    datagram::{
-        FirmwareLimits, Segment,
+    firmware::{
+        FirmwareLimits, SamplingConfig, Segment,
         transition_mode::{Later, TransitionMode, TransitionModeParams},
     },
     geometry::Device,
     modulation::ModulationOperationGenerator,
-    sampling_config::SamplingConfig,
 };
 
 use zerocopy::{Immutable, IntoBytes};
@@ -208,7 +207,7 @@ mod tests {
 
     use super::{super::super::V10, *};
     use crate::{ethercat::DcSysTime, firmware::driver::Driver};
-    use autd3_core::datagram::transition_mode;
+    use autd3_core::firmware::transition_mode;
 
     #[test]
     fn test() {

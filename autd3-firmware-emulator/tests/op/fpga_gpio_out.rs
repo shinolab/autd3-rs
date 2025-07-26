@@ -1,5 +1,5 @@
 use autd3_core::{
-    datagram::GPIOOut,
+    firmware::GPIOOut,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{datagram::*, ethercat::DcSysTime};

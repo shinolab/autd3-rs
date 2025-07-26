@@ -10,7 +10,7 @@ use crate::{
     },
 };
 
-use autd3_core::{datagram::GPIOOut, geometry::Device};
+use autd3_core::{firmware::GPIOOut, geometry::Device};
 
 use zerocopy::{Immutable, IntoBytes};
 

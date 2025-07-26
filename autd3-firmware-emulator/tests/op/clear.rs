@@ -7,10 +7,8 @@ use crate::{
 };
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-    datagram::{PulseWidth, Segment, transition_mode},
-    gain::{Drive, Intensity, Phase},
+    firmware::{Drive, Intensity, Phase, PulseWidth, SamplingConfig, Segment, transition_mode},
     link::{MsgId, TxMessage},
-    sampling_config::SamplingConfig,
 };
 use autd3_driver::{autd3_device::AUTD3, datagram::*};
 use autd3_firmware_emulator::CPUEmulator;

@@ -1,4 +1,4 @@
-use autd3_core::datagram::Segment;
+use autd3_core::firmware::Segment;
 
 use super::FPGAEmulator;
 

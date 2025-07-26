@@ -50,8 +50,9 @@ pub mod tests {
     use crate::firmware::driver::{BoxedDatagram, operation::boxed::tests::TestOp};
 
     use autd3_core::{
-        datagram::{Datagram, DatagramOption, DeviceFilter, FirmwareLimits},
+        datagram::{Datagram, DatagramOption, DeviceFilter},
         environment::Environment,
+        firmware::FirmwareLimits,
         geometry::Geometry,
     };
 

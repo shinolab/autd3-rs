@@ -35,10 +35,9 @@ mod tests {
     use crate::{datagram::Group, firmware::driver::NullOp};
 
     use autd3_core::{
-        datagram::{
-            Datagram, DatagramOption, DeviceFilter, FirmwareLimits, Inspectable, InspectionResult,
-        },
+        datagram::{Datagram, DatagramOption, DeviceFilter, Inspectable, InspectionResult},
         environment::Environment,
+        firmware::FirmwareLimits,
         geometry::Geometry,
     };
 
