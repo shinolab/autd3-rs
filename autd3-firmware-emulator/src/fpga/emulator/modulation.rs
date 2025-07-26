@@ -1,4 +1,4 @@
-use autd3_core::datagram::{Segment, transition_mode::TransitionModeParams};
+use autd3_core::firmware::{Segment, transition_mode::TransitionModeParams};
 
 use super::{super::params::*, FPGAEmulator};
 

@@ -87,7 +87,7 @@ mod tests {
         datagram::{gain::tests::TestGain, stm::GainSTMOption},
     };
 
-    use autd3_core::sampling_config::SamplingConfig;
+    use autd3_core::firmware::SamplingConfig;
 
     #[rstest::rstest]
     #[test]

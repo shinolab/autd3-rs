@@ -10,7 +10,7 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::Segment,
+    firmware::Segment,
     geometry::{Device, Transducer},
 };
 

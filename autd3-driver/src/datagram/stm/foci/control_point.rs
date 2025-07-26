@@ -1,6 +1,6 @@
 use crate::geometry::{Isometry, Point3};
 
-use autd3_core::gain::{Intensity, Phase};
+use autd3_core::firmware::{Intensity, Phase};
 use derive_more::{Deref, DerefMut};
 
 /// A pair of a focal point and a phase offset.

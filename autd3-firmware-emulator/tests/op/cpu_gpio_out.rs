@@ -1,5 +1,5 @@
 use autd3_core::{
-    datagram::CpuGPIOPort,
+    firmware::CpuGPIOPort,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::datagram::*;

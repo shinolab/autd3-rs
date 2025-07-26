@@ -1,7 +1,4 @@
-use autd3_core::{
-    datagram::{Segment, transition_mode::TransitionModeParams},
-    gain::{Drive, Phase},
-};
+use autd3_core::firmware::{Drive, Phase, Segment, transition_mode::TransitionModeParams};
 
 use super::{super::params::*, FPGAEmulator};
 

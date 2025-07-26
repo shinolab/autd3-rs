@@ -6,7 +6,7 @@ use crate::{
 };
 
 use autd3_core::{
-    gain::Phase,
+    firmware::Phase,
     geometry::{Device, Transducer},
 };
 

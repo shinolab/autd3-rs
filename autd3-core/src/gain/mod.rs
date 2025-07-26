@@ -1,18 +1,14 @@
-mod drive;
-mod emit_intensity;
 mod error;
-mod phase;
 
 use std::collections::HashMap;
 
-pub use drive::Drive;
-pub use emit_intensity::Intensity;
 pub use error::GainError;
-pub use phase::Phase;
 
 use crate::{
-    datagram::{DeviceFilter, Segment, transition_mode::TransitionModeParams},
+    datagram::DeviceFilter,
     environment::Environment,
+    firmware::Drive,
+    firmware::{Segment, transition_mode::TransitionModeParams},
     geometry::{Device, Geometry, Transducer},
 };
 

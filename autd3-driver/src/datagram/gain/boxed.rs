@@ -123,7 +123,7 @@ pub mod tests {
     use crate::datagram::gain::tests::TestGain;
 
     use autd3_core::{
-        gain::Drive,
+        firmware::Drive,
         geometry::{Point3, UnitQuaternion},
     };
 

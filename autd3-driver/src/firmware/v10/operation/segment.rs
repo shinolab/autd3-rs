@@ -12,7 +12,7 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::{
+    firmware::{
         Segment,
         transition_mode::{TransitionMode, TransitionModeParams},
     },
@@ -167,7 +167,7 @@ impl<T: TransitionMode> OperationGenerator<'_> for SwapSegmentGainSTM<T> {
 #[cfg(test)]
 mod tests {
     use crate::ethercat::DcSysTime;
-    use autd3_core::datagram::{
+    use autd3_core::firmware::{
         Segment,
         transition_mode::{self, TransitionMode},
     };

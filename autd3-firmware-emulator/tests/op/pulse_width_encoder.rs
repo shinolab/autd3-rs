@@ -1,5 +1,5 @@
 use autd3_core::{
-    datagram::PulseWidth,
+    firmware::PulseWidth,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::datagram::PulseWidthEncoder;

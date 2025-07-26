@@ -35,7 +35,7 @@ impl Driver for V11 {
         Self
     }
 
-    fn firmware_limits(&self) -> autd3_core::datagram::FirmwareLimits {
+    fn firmware_limits(&self) -> autd3_core::firmware::FirmwareLimits {
         <Self as super::super::driver::Driver>::firmware_limits(self)
     }
 

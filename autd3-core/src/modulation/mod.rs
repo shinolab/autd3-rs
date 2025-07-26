@@ -2,9 +2,8 @@ mod error;
 
 use std::sync::Arc;
 
-use crate::{
-    datagram::{FirmwareLimits, Segment, transition_mode::TransitionModeParams},
-    sampling_config::SamplingConfig,
+use crate::firmware::{
+    FirmwareLimits, SamplingConfig, Segment, transition_mode::TransitionModeParams,
 };
 pub use error::ModulationError;
 

@@ -1,5 +1,5 @@
 use autd3_core::{
-    gain::Phase,
+    firmware::Phase,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::datagram::PhaseCorrection;

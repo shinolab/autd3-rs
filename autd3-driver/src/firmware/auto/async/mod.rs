@@ -204,7 +204,7 @@ impl Driver for Auto {
         }
     }
 
-    fn firmware_limits(&self) -> autd3_core::datagram::FirmwareLimits {
+    fn firmware_limits(&self) -> autd3_core::firmware::FirmwareLimits {
         match self.version {
             Version::V10 => super::super::v10::V10.firmware_limits(),
             Version::V11 => super::super::v11::V11.firmware_limits(),

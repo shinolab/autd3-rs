@@ -1,7 +1,7 @@
 use super::{Datagram, DeviceFilter};
 use crate::{
-    datagram::FirmwareLimits,
     environment::Environment,
+    firmware::FirmwareLimits,
     geometry::{Device, Geometry},
 };
 

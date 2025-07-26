@@ -2,14 +2,13 @@ use std::{collections::HashMap, num::NonZeroU16};
 
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-    datagram::{
-        Datagram, DeviceFilter, GPIOIn, Segment,
+    datagram::{Datagram, DeviceFilter},
+    environment::Environment,
+    firmware::{
+        Drive, GPIOIn, Intensity, Phase, SamplingConfig, Segment,
         transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, TransitionMode},
     },
-    environment::Environment,
-    gain::{Drive, Intensity, Phase},
     link::{MsgId, TxMessage},
-    sampling_config::SamplingConfig,
 };
 use autd3_driver::{
     datagram::{

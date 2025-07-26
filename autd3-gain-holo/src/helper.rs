@@ -2,7 +2,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use autd3_core::{
     common::rad,
-    gain::{Drive, GainCalculator, GainCalculatorGenerator, GainError, Phase, TransducerFilter},
+    firmware::{Drive, Phase},
+    gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter},
     geometry::{Device, Geometry, Transducer},
 };
 use nalgebra::ComplexField;

@@ -8,7 +8,7 @@ mod silencer;
 mod stm;
 mod swapchain;
 
-use autd3_core::datagram::Segment;
+use autd3_core::firmware::Segment;
 use autd3_driver::ethercat::DcSysTime;
 
 use getset::{Getters, MutGetters};

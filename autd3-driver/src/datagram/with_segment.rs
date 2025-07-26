@@ -1,9 +1,10 @@
 use autd3_core::{
     datagram::{
-        Datagram, DatagramOption, DatagramS, DeviceFilter, FirmwareLimits, Inspectable,
-        InspectionResult, Segment, internal::HasSegment, transition_mode::TransitionMode,
+        Datagram, DatagramOption, DatagramS, DeviceFilter, Inspectable, InspectionResult,
+        internal::HasSegment,
     },
     environment::Environment,
+    firmware::{FirmwareLimits, Segment, transition_mode::TransitionMode},
     geometry::Geometry,
 };
 

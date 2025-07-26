@@ -1,29 +1,17 @@
-mod cpu_gpio;
 mod filter;
-mod fpga_gpio;
 mod inspect;
-mod limits;
 mod option;
-mod pulse_width;
-mod segment;
-/// Transition odes for segment switching.
-pub mod transition_mode;
 mod tuple;
 
-pub use cpu_gpio::CpuGPIOPort;
-pub use fpga_gpio::{GPIOIn, GPIOOut};
+pub use filter::DeviceFilter;
 pub use inspect::{Inspectable, InspectionResult};
-pub use limits::FirmwareLimits;
-pub use pulse_width::{PulseWidth, PulseWidthError};
-pub use segment::Segment;
+pub use option::DatagramOption;
 pub use tuple::{CombinedError, CombinedOperationGenerator};
 
-pub use filter::DeviceFilter;
-pub use option::DatagramOption;
-
 use crate::{
-    datagram::transition_mode::{Immediate, TransitionMode, TransitionModeParams},
     environment::Environment,
+    firmware::transition_mode::{Immediate, TransitionMode, TransitionModeParams},
+    firmware::{FirmwareLimits, Segment},
     geometry::Geometry,
 };
 

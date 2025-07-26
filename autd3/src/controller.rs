@@ -361,10 +361,8 @@ pub(crate) mod tests {
 
     use crate::{
         core::{
-            datagram::Segment,
-            gain::{
-                Gain, GainCalculator, GainCalculatorGenerator, Intensity, Phase, TransducerFilter,
-            },
+            firmware::{Intensity, Phase, Segment},
+            gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerFilter},
             link::LinkError,
             modulation::{Modulation, ModulationInspectionResult},
         },
