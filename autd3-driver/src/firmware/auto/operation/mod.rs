@@ -23,7 +23,7 @@ pub trait OperationGenerator<'a> {
 
 macro_rules! impl_auto_op {
     ($op:ty,$gen:ty) => {
-        paste::paste! {
+        pastey::paste! {
             enum [<$op Inner>] {
                 V10(crate::firmware::v10::operation::[<$op Op>]),
                 V11(crate::firmware::v11::operation::[<$op Op>]),
@@ -115,7 +115,7 @@ macro_rules! impl_auto_op {
         impl_auto_op!($op, $op);
     };
     ($($generics:ty),*;$op:ty,$gen:ty) => {
-        paste::paste! {
+        pastey::paste! {
             enum [<$op Inner>] {
                 V10(crate::firmware::v10::operation::[<$op Op>]),
                 V11(crate::firmware::v11::operation::[<$op Op>]),

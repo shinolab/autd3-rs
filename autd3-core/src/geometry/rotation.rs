@@ -2,7 +2,7 @@ use crate::common::Angle;
 
 use super::{UnitQuaternion, Vector3};
 
-use paste::paste;
+use pastey::paste;
 
 macro_rules! make_euler_angle_intrinsic {
     ($({$first:ident, $second:ident, $third:ident}),*) => {
