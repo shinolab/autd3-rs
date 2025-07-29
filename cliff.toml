@@ -3,6 +3,7 @@ conventional_commits = true
 filter_unconventional = true
 split_commits = false
 commit_preprocessors = [
+  { pattern = "chore\\(deps\\): (update (.*) requirement from (.*) to (.*))", replace = "deps: $1" },
   { pattern = "Update (.*) requirement from (.*) to (.*)", replace = "deps: $0" },
   { pattern = "feat: remove (.*)", replace = "remove: $1" },
   { pattern = "feat: supports `Group` in lightweight", replace = "" },
