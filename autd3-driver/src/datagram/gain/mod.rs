@@ -90,7 +90,6 @@ pub mod tests {
     const NUM_TRANSDUCERS: usize = 2;
 
     #[rstest::rstest]
-    #[test]
     #[case::serial(
         [
             (0, vec![Drive { phase: Phase(0x01), intensity: Intensity(0x01) }; NUM_TRANSDUCERS]),

@@ -81,7 +81,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Ok(DcSysTime { dc_sys_time: 0 }), time::macros::datetime!(2000-01-01 0:0:0 UTC))]
     #[case(Ok(DcSysTime { dc_sys_time: 1000000000 }), time::macros::datetime!(2000-01-01 0:0:1 UTC))]
     #[case(Ok(DcSysTime { dc_sys_time: 31622400000000000 }), time::macros::datetime!(2001-01-01 0:0:0 UTC))]
@@ -92,7 +91,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(time::macros::datetime!(2000-01-01 0:0:1 UTC))]
     #[case(time::macros::datetime!(2001-01-01 0:0:0 UTC))]
     fn to_utc(#[case] utc: OffsetDateTime) {

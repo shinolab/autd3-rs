@@ -178,7 +178,6 @@ fn send_gain_stm_phase_intensity_full_unsafe() -> anyhow::Result<()> {
 }
 
 #[rstest::rstest]
-#[test]
 #[case(2)]
 #[cfg_attr(miri, ignore)]
 #[case(3)]
@@ -233,7 +232,6 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> anyhow::Result<()> {
 }
 
 #[rstest::rstest]
-#[test]
 #[case(2)]
 #[cfg_attr(miri, ignore)]
 #[case(3)]

@@ -59,7 +59,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case::value_1_1(Intensity(0x01), Intensity(0x01), 1)]
     #[case::value_1_2(Intensity(0x00), Intensity(0x01), 2)]
     #[case::value_ff_2(Intensity(0x7F), Intensity(0xFF), 2)]
@@ -68,7 +67,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::value_1_1(Intensity(0x01), Intensity(0x01), 1)]
     #[case::value_1_2(Intensity(0x02), Intensity(0x01), 2)]
     #[case::value_7f_2(Intensity(0xFE), Intensity(0x7F), 2)]
@@ -79,7 +77,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::value_1_1(Intensity(0x02), Intensity(0x01), Intensity(0x01))]
     #[case::value_7f_7f(Intensity(0xFE), Intensity(0x7F), Intensity(0x7F))]
     #[case::value_7f_ff(Intensity(0xFF), Intensity(0x7F), Intensity(0xFF))]
@@ -88,7 +85,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::value_1_1(Intensity(0x00), Intensity(0x01), Intensity(0x01))]
     #[case::value_7f_7f(Intensity(0x01), Intensity(0x02), Intensity(0x01))]
     #[case::value_7f_ff(Intensity(0x00), Intensity(0x7F), Intensity(0xFF))]

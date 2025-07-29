@@ -53,7 +53,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case::freq_4k(SamplingConfig::new(4. * kHz))]
     #[case::freq_8k(SamplingConfig::new(8. * kHz))]
     fn test_sampling_config(#[case] config: SamplingConfig) {

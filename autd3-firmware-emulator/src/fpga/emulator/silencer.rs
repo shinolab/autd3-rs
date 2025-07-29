@@ -281,7 +281,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case([vec![0; 255], vec![1]].concat(), 1, false, 0, vec![1; 256])]
     #[case([vec![0; 255], vec![1]].concat(), 1, true, 0, vec![1; 256])]
     #[case([vec![1; 256], vec![0]].concat(), 1, false, 2, vec![0; 257])]
@@ -329,7 +328,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::intensity_1(vec![21, 33, 45, 57, 69, 80, 92, 104, 116, 128, 128], 10, false, 10, vec![128; 11])]
     #[case::phase_1(vec![21, 33, 45, 57, 69, 80, 92, 104, 116, 128, 128], 10, true, 10, vec![128; 11])]
     #[case::intensity_2(vec![25, 51, 76, 102, 127, 153, 178, 204, 229, 255, 255], 10, false, 0, vec![255; 11])]

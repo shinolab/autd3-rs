@@ -107,7 +107,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     fn to_fixed_num(limits: FirmwareLimits) {
         (limits.foci_stm_fixed_num_lower_z()..=limits.foci_stm_fixed_num_upper_z()).for_each(|i| {
             assert_eq!(
@@ -118,7 +117,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(1, 2, 3, 0x04)]
     #[case(-1, -2, -3, 0xFF)]
     fn stm_focus(
@@ -146,7 +144,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     fn marginal(limits: FirmwareLimits) {
         let check = |expect, x, y, z| {
             let p = STMFocus::create(

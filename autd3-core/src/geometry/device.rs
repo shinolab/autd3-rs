@@ -122,7 +122,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(1)]
     #[case(249)]
     fn num_transducers(#[case] n: u8) {
@@ -138,7 +137,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         Vector3::new(10., 20., 30.),
         Vector3::new(10., 20., 30.),

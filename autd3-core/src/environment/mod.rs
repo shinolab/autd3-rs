@@ -54,7 +54,6 @@ pub(crate) mod tests {
     use crate::common::mm;
 
     #[rstest::rstest]
-    #[test]
     #[case(340.29525e3, 15.)]
     #[case(343.23497e3, 20.)]
     #[case(349.04013e3, 30.)]
@@ -65,7 +64,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(8.5, 340e3)]
     #[case(10., 400e3)]
     fn wavelength(#[case] expect: f32, #[case] c: f32) {
@@ -75,7 +73,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(0.739_198_27, 340e3)]
     #[case(0.628_318_55, 400e3)]
     fn wavenumber(#[case] expect: f32, #[case] c: f32) {

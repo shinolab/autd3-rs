@@ -94,7 +94,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(false, 0b0)]
     #[case(true, 0b1)]
     fn is_thermal_assert(#[case] expected: bool, #[case] state: u8) {
@@ -102,7 +101,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Segment::S0, 0b00)]
     #[case(Segment::S1, 0b10)]
     fn current_mod_segment(#[case] expected: Segment, #[case] state: u8) {
@@ -110,7 +108,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(false, 0b0000)]
     #[case(true, 0b1000)]
     fn is_gain_mode(#[case] expected: bool, #[case] state: u8) {
@@ -118,7 +115,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(false, 0b1000)]
     #[case(true, 0b0000)]
     fn is_stm_mode(#[case] expected: bool, #[case] state: u8) {
@@ -126,7 +122,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(None, 0b1000)]
     #[case(Some(Segment::S0), 0b0000)]
     #[case(Some(Segment::S1), 0b0100)]
@@ -135,7 +130,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(None, 0b0000)]
     #[case(Some(Segment::S0), 0b1000)]
     #[case(Some(Segment::S1), 0b1100)]

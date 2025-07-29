@@ -18,7 +18,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case::success(vec![
         RxMessage::new(0, Ack::new().with_err(0).with_msg_id(0)),
         RxMessage::new(0, Ack::new().with_err(0).with_msg_id(0)),

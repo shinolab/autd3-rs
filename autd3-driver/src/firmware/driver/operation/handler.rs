@@ -146,7 +146,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::serial(false)]
     #[case::parallel(true)]
     fn operation_handler(#[case] parallel: bool) {
@@ -199,7 +198,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::serial(false)]
     #[case::parallel(true)]
     fn operation_handler_none(#[case] parallel: bool) {
