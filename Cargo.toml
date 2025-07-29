@@ -67,7 +67,7 @@ thiserror = { version = "2.0.12", default-features = false }
 time = { version = "0.3.41", default-features = false }
 tokio = { version = "1.45.1", default-features = false }
 tokio-test = { version = "0.4.4", default-features = false }
-tonic = { version = "0.13.0", default-features = false }
+tonic = { version = "0.14.0", default-features = false }
 tonic-build = { version = "0.13.0", default-features = false }
 tynm = { version = "0.2.0", default-features = false }
 zerocopy = { version = "0.8.24", default-features = false }
