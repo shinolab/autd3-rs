@@ -41,7 +41,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::dir_x(90., Vector3::x(), Vector3::z_axis())]
     #[case::dir_y(90., Vector3::y(), Vector3::z_axis())]
     #[case::dir_z(0., Vector3::z(), Vector3::z_axis())]

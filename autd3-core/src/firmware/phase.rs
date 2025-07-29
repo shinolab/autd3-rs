@@ -77,7 +77,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case(Phase(0x02), Phase(0x01), Phase(0x01))]
     #[case(Phase(0xFE), Phase(0x7F), Phase(0x7F))]
     #[case(Phase(0x7E), Phase(0x7F), Phase(0xFF))]
@@ -86,7 +85,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Phase::ZERO, Phase(0x01), Phase(0x01))]
     #[case(Phase(0x01), Phase(0x02), Phase(0x01))]
     #[case(Phase(0x80), Phase(0x7F), Phase(0xFF))]
@@ -95,7 +93,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Phase(0x02), Phase(0x01), 2)]
     #[case(Phase(0xFE), Phase(0x7F), 2)]
     #[case(Phase::ZERO, Phase(0x80), 2)]
@@ -104,7 +101,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Phase(0x01), Phase(0x02), 2)]
     #[case(Phase(0x7F), Phase(0xFE), 2)]
     #[case(Phase::ZERO, Phase(0x01), 2)]
@@ -113,7 +109,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(0.0, 0)]
     #[case(2.0 * PI / 256.0 * 128.0, 128)]
     #[case(2.0 * PI / 256.0 * 255.0, 255)]

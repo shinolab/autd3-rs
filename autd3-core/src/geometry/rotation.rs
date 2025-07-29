@@ -101,7 +101,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(0., 0. * deg)]
     #[case(PI / 2., 90. * deg)]
     #[case(0., 0. * rad)]
@@ -111,7 +110,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::XYZ(90. * deg, 0. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 90. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 0. * deg, 90. * deg))]
@@ -123,7 +121,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 90. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 0. * deg, 90. * deg))]
@@ -135,7 +132,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(90. * deg, 0. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(0. * deg, 90. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(0. * deg, 0. * deg, 90. * deg))]
@@ -147,7 +143,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(90. * deg, 0. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(0. * deg, 90. * deg, 0. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(0. * deg, 0. * deg, 90. * deg))]

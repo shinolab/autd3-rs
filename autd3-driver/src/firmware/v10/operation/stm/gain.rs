@@ -736,7 +736,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         Err(AUTDDriverError::GainSTMSizeOutOfRange(0, V10.firmware_limits())),
         0

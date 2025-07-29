@@ -98,7 +98,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case(0b1001, [true, false, false, true])]
     #[case(0b0110, [false, true, true, false])]
     fn test(#[case] expected: u8, #[case] value: [bool; 4]) {

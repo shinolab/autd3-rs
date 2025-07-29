@@ -90,7 +90,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case(SilencerControlFlags::STRICT_MODE.bits(), true)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict: bool) {

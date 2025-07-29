@@ -69,7 +69,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case(FirmwareVersionType::CPUMajor)]
     #[case(FirmwareVersionType::CPUMinor)]
     #[case(FirmwareVersionType::FPGAMajor)]

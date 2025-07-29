@@ -10,7 +10,6 @@ use crate::{create_geometry, send};
 use zerocopy::FromZeros;
 
 #[rstest::rstest]
-#[test]
 #[case([GPIO_O_TYPE_NONE, GPIO_O_TYPE_BASE_SIG, GPIO_O_TYPE_THERMO, GPIO_O_TYPE_FORCE_FAN], [0, 0, 0, 0], [None, Some(GPIOOutputType::BaseSignal), Some(GPIOOutputType::Thermo), Some(GPIOOutputType::ForceFan)])]
 #[case([GPIO_O_TYPE_SYNC, GPIO_O_TYPE_MOD_SEGMENT, GPIO_O_TYPE_MOD_IDX, GPIO_O_TYPE_STM_SEGMENT], [0, 0, 0x01, 0], [Some(GPIOOutputType::Sync), Some(GPIOOutputType::ModSegment), Some(GPIOOutputType::ModIdx(0x01)), Some(GPIOOutputType::StmSegment)])]
 #[case([GPIO_O_TYPE_STM_IDX, GPIO_O_TYPE_IS_STM_MODE, GPIO_O_TYPE_SYS_TIME_EQ, GPIO_O_TYPE_DIRECT], [0x02, 0, 2, 1], [Some(GPIOOutputType::StmIdx(0x02)), Some(GPIOOutputType::IsStmMode), Some(GPIOOutputType::SysTimeEq(DcSysTime::ZERO + 2 * std::time::Duration::from_micros(25))), Some(GPIOOutputType::Direct(true))])]

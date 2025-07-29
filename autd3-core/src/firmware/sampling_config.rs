@@ -199,7 +199,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case(Ok(1), NonZeroU16::MIN)]
     #[case(Ok(u16::MAX), NonZeroU16::MAX)]
     #[case(Ok(1), 40000. * Hz)]
@@ -220,7 +219,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Ok(40000. * Hz), NonZeroU16::MIN)]
     #[case(Ok(0.61036086 * Hz), NonZeroU16::MAX)]
     #[case(Ok(40000. * Hz), 40000. * Hz)]
@@ -235,7 +233,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Ok(Duration::from_micros(25)), NonZeroU16::MIN)]
     #[case(Ok(Duration::from_micros(1638375)), NonZeroU16::MAX)]
     #[case(Ok(Duration::from_micros(25)), 40000. * Hz)]
@@ -250,7 +247,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::min(u16::MAX, (40000. / u16::MAX as f32) * Hz)]
     #[case::max(1, 40000. * Hz)]
     #[case::not_supported_max(1, (ULTRASOUND_FREQ.hz() as f32 - 1.) * Hz)]
@@ -264,7 +260,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::min(1, ULTRASOUND_PERIOD)]
     #[case::max(u16::MAX, Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64))]
     #[case::not_supported_max(u16::MAX, Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64) - Duration::from_nanos(1))]

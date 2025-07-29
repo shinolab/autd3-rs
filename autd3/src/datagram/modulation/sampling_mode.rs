@@ -163,7 +163,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case(0.61035156 * Hz, 0.5 * Hz, SamplingConfig::FREQ_40K)]
     #[case(0.61035156 * Hz, 0.61035156 * Hz, SamplingConfig::FREQ_40K)]
     #[case(20000. * Hz, 20000. * Hz, SamplingConfig::FREQ_40K)]

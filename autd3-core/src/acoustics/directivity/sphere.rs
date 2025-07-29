@@ -29,7 +29,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::dir_x(1., Vector3::x())]
     #[case::dir_y(1., Vector3::y())]
     #[case::dir_z(1., Vector3::z())]

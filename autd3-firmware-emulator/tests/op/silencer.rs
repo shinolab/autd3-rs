@@ -164,7 +164,6 @@ fn send_silencer_fixed_completion_steps_unsafe() {
 }
 
 #[rstest::rstest]
-#[test]
 #[case(Ok(()), 1)]
 #[case(Err(AUTDDriverError::InvalidSilencerSettings), 2)]
 fn silencer_completion_steps_too_large_mod(
@@ -221,7 +220,6 @@ fn silencer_completion_steps_too_large_mod(
 }
 
 #[rstest::rstest]
-#[test]
 #[case(Ok(()), 1, 1)]
 #[case(Err(AUTDDriverError::InvalidSilencerSettings), 2, 1)]
 #[case(Err(AUTDDriverError::InvalidSilencerSettings), 1, 2)]

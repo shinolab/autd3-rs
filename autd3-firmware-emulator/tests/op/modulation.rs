@@ -45,7 +45,6 @@ impl Modulation for TestModulation {
 }
 
 #[rstest::rstest]
-#[test]
 #[case(MOD_BUF_SIZE_MAX, Segment::S0, transition_mode::Immediate)]
 #[case(MOD_BUF_SIZE_MIN, Segment::S0, transition_mode::Ext)]
 #[case(
@@ -106,7 +105,6 @@ where
 }
 
 #[rstest::rstest]
-#[test]
 #[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
@@ -347,7 +345,6 @@ fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
 }
 
 #[rstest::rstest]
-#[test]
 #[case(Ok(()), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
 #[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN)-autd3_driver::ethercat::EC_CYCLE_TIME_BASE)]
 #[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(1), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]

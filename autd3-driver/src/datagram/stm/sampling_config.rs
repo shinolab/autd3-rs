@@ -88,7 +88,6 @@ mod tests {
     use crate::common::Hz;
 
     #[rstest::rstest]
-    #[test]
     #[case(SamplingConfig::new(4000. * Hz), 4000. * Hz, 1)]
     #[case(SamplingConfig::new(8000. * Hz,), 4000. * Hz, 2)]
     #[case(SamplingConfig::new(40000. * Hz), 40000. * Hz, 1)]
@@ -97,7 +96,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(SamplingConfig::FREQ_40K, 1)]
     #[case(SamplingConfig::FREQ_40K, 2)]
     #[case(SamplingConfig::FREQ_4K, 1)]
@@ -110,7 +108,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         Ok(SamplingConfig::new(Duration::from_micros(250))),
         Duration::from_micros(250),
@@ -140,7 +137,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(SamplingConfig::new(4000. * Hz).into_nearest(), 4000. * Hz, 1)]
     #[case(SamplingConfig::new(8000. * Hz).into_nearest(), 4000. * Hz, 2)]
     #[case(SamplingConfig::new(4001. * Hz).into_nearest(), 4001. * Hz, 1)]
@@ -157,7 +153,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         SamplingConfig::new(Duration::from_micros(250)).into_nearest(),
         Duration::from_micros(250),
