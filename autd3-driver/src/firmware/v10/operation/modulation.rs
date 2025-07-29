@@ -389,7 +389,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         Err(AUTDDriverError::ModulationSizeOutOfRange(0, V10.firmware_limits())),
         0
@@ -427,7 +426,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(3)]
     #[case(253)]
     #[case(255)]

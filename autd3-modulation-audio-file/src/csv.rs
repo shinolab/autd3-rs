@@ -100,7 +100,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(vec![0xFF, 0x7F, 0x00], 4000. * Hz)]
     fn new(#[case] data: Vec<u8>, #[case] sample_rate: Freq<f32>) -> anyhow::Result<()> {
         let dir = tempfile::tempdir().unwrap();

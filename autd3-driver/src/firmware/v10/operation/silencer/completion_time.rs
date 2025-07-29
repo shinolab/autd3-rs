@@ -108,7 +108,6 @@ mod tests {
     use crate::common::ULTRASOUND_PERIOD;
 
     #[rstest::rstest]
-    #[test]
     #[case(SilencerControlFlags::STRICT_MODE.bits(), true)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict: bool) {
@@ -138,7 +137,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         AUTDDriverError::SilencerCompletionTimeOutOfRange(Duration::from_micros(0)),
         Duration::from_micros(0),

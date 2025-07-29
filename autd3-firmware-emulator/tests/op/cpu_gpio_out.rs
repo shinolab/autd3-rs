@@ -10,7 +10,6 @@ use crate::{create_geometry, send};
 use zerocopy::FromZeros;
 
 #[rstest::rstest]
-#[test]
 #[case(0b10100000, true, true)]
 #[case(0b00100000, true, false)]
 #[case(0b10000000, false, true)]

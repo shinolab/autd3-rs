@@ -35,7 +35,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case(Intensity::MIN, 0.0, 1.0)]
     #[case(Intensity(128), 0.5, 1.0)]
     #[case(Intensity(128), 1.0, 2.0)]
@@ -48,7 +47,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Intensity::MIN, 0.0, 1.0, 0.5)]
     #[case(Intensity(64), 0.5, 1.0, 0.5)]
     #[case(Intensity(64), 1.0, 2.0, 0.5)]
@@ -66,7 +64,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Intensity::MIN, 0.0, 1.0)]
     #[case(Intensity::MAX, 0.0, 1.0)]
     #[case(Intensity::MIN, 0.5, 1.0)]
@@ -83,7 +80,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Intensity(64), 0.0, 1.0, Intensity(64), Intensity(192))]
     #[case(Intensity(128), 0.5, 1.0, Intensity(64), Intensity(192))]
     #[case(Intensity(192), 1.0, 1.0, Intensity(64), Intensity(192))]

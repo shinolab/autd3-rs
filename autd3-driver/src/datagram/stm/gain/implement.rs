@@ -90,7 +90,6 @@ mod tests {
     use autd3_core::firmware::SamplingConfig;
 
     #[rstest::rstest]
-    #[test]
     #[case(SamplingConfig::new(1. * Hz), 0.5*Hz, 2)]
     #[case(SamplingConfig::new(10. * Hz), 1.*Hz, 10)]
     #[case(SamplingConfig::new(20. * Hz), 2.*Hz, 10)]
@@ -107,7 +106,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(SamplingConfig::new(1. * Hz).into_nearest(), 0.5*Hz, 2)]
     #[case(SamplingConfig::new(0.98 * Hz).into_nearest(), 0.49*Hz, 2)]
     #[case(SamplingConfig::new(10. * Hz).into_nearest(), 1.*Hz, 10)]
@@ -130,7 +128,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         Ok(SamplingConfig::new(Duration::from_millis(1000))),
         Duration::from_millis(2000),
@@ -164,7 +161,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         SamplingConfig::new(Duration::from_millis(1000)).into_nearest(),
         Duration::from_millis(2000),
@@ -195,7 +191,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(SamplingConfig::new(4. * kHz), 10)]
     #[case(SamplingConfig::new(8. * kHz), 10)]
     fn from_sampling_config(

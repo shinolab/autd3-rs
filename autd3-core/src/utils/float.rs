@@ -10,7 +10,6 @@ pub fn is_integer(a: f64) -> bool {
 mod tests {
 
     #[rstest::rstest]
-    #[test]
     #[case(true, 1.0)]
     #[case(false, 1.5)]
     #[case(true, 1.0 + f32::EPSILON)]

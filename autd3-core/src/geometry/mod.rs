@@ -179,7 +179,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(1, vec![create_device(249)])]
     #[case(2, vec![create_device(249), create_device(249)])]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
@@ -190,7 +189,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(249, vec![create_device(249)])]
     #[case(498, vec![create_device(249), create_device(249)])]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
@@ -227,7 +225,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(Aabb{min: Point3::origin(), max: Point3::new(172.72 * mm, 132.08 * mm, 0.)}, vec![TestDevice::new_autd3(Point3::origin())])]
     #[case(Aabb{min: Point3::new(10. * mm, 20. * mm, 30. * mm), max: Point3::new(182.72 * mm, 152.08 * mm, 30. * mm)}, vec![TestDevice::new_autd3(Point3::new(10. * mm, 20. * mm, 30. * mm))])]
     #[case(Aabb{min: Point3::new(-132.08 * mm, 0., 0.), max: Point3::new(0., 172.72 * mm, 0.)}, vec![TestDevice::new_autd3_with_rot(Point3::origin(), EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg))])]

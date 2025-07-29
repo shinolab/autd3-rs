@@ -78,7 +78,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case::deg_0(1.0, 0.0)]
     #[case::deg_10(1.0, 10.0)]
     #[case::deg_20(1.0, 20.0)]

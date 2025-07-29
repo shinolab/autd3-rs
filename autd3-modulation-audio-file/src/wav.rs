@@ -86,7 +86,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case::i8(
         vec![
             0xFF,

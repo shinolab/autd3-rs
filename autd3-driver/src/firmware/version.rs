@@ -123,7 +123,6 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[test]
     #[case("older than v0.4", 0)]
     #[case("v0.4", 1)]
     #[case("v0.5", 2)]
@@ -218,7 +217,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         "0: CPU = v0.4, FPGA = v0.5",
         FirmwareVersion {

@@ -112,7 +112,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(
         Point3::new(0., 0., 0.),
         0,
@@ -202,7 +201,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(0, 0, false)]
     #[case(1, 0, false)]
     #[case(2, 0, false)]
@@ -470,7 +468,6 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[test]
     #[case(0, (0, 0))]
     #[case(1, (1, 0))]
     #[case(2, (2, 0))]
