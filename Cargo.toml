@@ -53,7 +53,7 @@ nalgebra = { version = "0.33.2", default-features = false }
 num = { version = "0.4.3", default-features = false }
 pastey = { version = "0.1.0", default-features = false }
 proc-macro2 = { version = "1.0.95", default-features = false }
-prost = { version = "0.13.5", default-features = false }
+prost = { version = "0.14.1", default-features = false }
 quote = { version = "1.0.40", default-features = false }
 rand = { version = "0.9.1", default-features = false }
 rayon = { version = "1.10.0", default-features = false }
@@ -67,7 +67,8 @@ thiserror = { version = "2.0.12", default-features = false }
 time = { version = "0.3.41", default-features = false }
 tokio = { version = "1.45.1", default-features = false }
 tokio-test = { version = "0.4.4", default-features = false }
-tonic = { version = "0.13.0", default-features = false }
-tonic-build = { version = "0.13.0", default-features = false }
+tonic = { version = "0.14.0", default-features = false }
+tonic-prost = { version = "0.14.0", default-features = false }
+tonic-prost-build = { version = "0.14.0", default-features = false }
 tynm = { version = "0.2.0", default-features = false }
 zerocopy = { version = "0.8.24", default-features = false }

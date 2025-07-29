@@ -14,19 +14,20 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
-tonic-build = ["dep:tonic-build"]
+tonic-prost-build = ["dep:tonic-prost-build"]
 
 [dependencies]
 autd3 = { workspace = true, optional = true }
 autd3-core = { workspace = true, features = ["geometry"] }
 autd3-driver = { workspace = true }
-prost = { workspace = true, features = ["derive"] }
+prost = { workspace = true }
+tonic-prost = { workspace = true }
 thiserror = { workspace = true }
-tonic = { workspace = true, features = ["channel", "codegen", "prost", "server"] }
+tonic = { workspace = true, features = ["channel", "codegen", "server"] }
 zerocopy = { workspace = true }
 
 [build-dependencies]
-tonic-build = { workspace = true, optional = true, features = ["prost"] }
+tonic-prost-build = { workspace = true, optional = true }
 
 [dev-dependencies]
 approx = { workspace = true }
