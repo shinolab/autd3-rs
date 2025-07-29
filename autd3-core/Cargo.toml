@@ -14,8 +14,8 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["firmware"]
-firmware = ["common", "thiserror", "utils", "zerocopy"]
+default = []
+firmware = ["common", "ethercat", "thiserror", "utils", "zerocopy"]
 acoustics = ["common", "geometry"]
 async = ["tokio"]
 datagram = ["common", "firmware", "geometry", "ethercat", "smallvec", "environment"]
