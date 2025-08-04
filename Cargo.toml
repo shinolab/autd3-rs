@@ -39,7 +39,6 @@ autd3-protobuf = { path = "./autd3-protobuf", version = "36.0.0-alpha.0", defaul
 bit-vec = { version = "0.8.0", default-features = false }
 bitfield-struct = { version = "0.11.0", default-features = false }
 bitflags = { version = "2.9.1", default-features = false }
-bvh = { version = "0.11.0", default-features = false }
 cc = { version = "1.2.24", default-features = false }
 color-print = { version = "0.3.7", default-features = false }
 criterion = { version = "0.7.0", default-features = false }
