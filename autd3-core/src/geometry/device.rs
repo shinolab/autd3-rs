@@ -1,4 +1,3 @@
-use bvh::aabb::Aabb;
 use derive_more::{Deref, IntoIterator};
 use getset::Getters;
 
@@ -29,9 +28,6 @@ pub struct Device {
     #[doc(hidden)]
     #[getset(get = "pub")]
     inv: Isometry,
-    #[getset(get = "pub")]
-    /// The Axis Aligned Bounding Box of the device.
-    aabb: Aabb<f32, 3>,
 }
 
 impl Device {
@@ -53,10 +49,6 @@ impl Device {
         self.inv = (nalgebra::Translation3::<f32>::from(*self.transducers[0].position())
             * self.rotation)
             .inverse();
-        self.aabb = self
-            .transducers
-            .iter()
-            .fold(Aabb::empty(), |aabb, tr| aabb.grow(tr.position()));
     }
 
     #[doc(hidden)]
@@ -75,7 +67,6 @@ impl Device {
             y_direction: Vector3::y_axis(),
             axial_direction: Vector3::z_axis(),
             inv: nalgebra::Isometry3::identity(),
-            aabb: Aabb::empty(),
         };
         dev.init();
         dev
