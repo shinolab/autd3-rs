@@ -19,7 +19,6 @@ pub type Translation = nalgebra::Translation3<f32>;
 /// A 3-dimensional isometry.
 pub type Isometry = nalgebra::Isometry3<f32>;
 
-pub use bvh::aabb::Aabb;
 pub use device::*;
 use getset::CopyGetters;
 pub use rotation::*;
@@ -82,13 +81,6 @@ impl Geometry {
         )
     }
 
-    /// Axis Aligned Bounding Box of devices.
-    #[must_use]
-    pub fn aabb(&self) -> Aabb<f32, 3> {
-        self.iter()
-            .fold(Aabb::empty(), |aabb, dev| aabb.join(dev.aabb()))
-    }
-
     /// Reconfigure the geometry.
     pub fn reconfigure<D: Into<Device>, F: Fn(&Device) -> D>(&mut self, f: F) {
         self.devices.iter_mut().for_each(|dev| {
@@ -120,7 +112,7 @@ impl std::ops::DerefMut for Geometry {
 pub(crate) mod tests {
     use rand::Rng;
 
-    use crate::common::{deg, mm};
+    use crate::common::mm;
 
     use super::*;
 
@@ -222,20 +214,6 @@ pub(crate) mod tests {
             _ = dev;
         });
         assert_eq!(1, geometry.version());
-    }
-
-    #[rstest::rstest]
-    #[case(Aabb{min: Point3::origin(), max: Point3::new(172.72 * mm, 132.08 * mm, 0.)}, vec![TestDevice::new_autd3(Point3::origin())])]
-    #[case(Aabb{min: Point3::new(10. * mm, 20. * mm, 30. * mm), max: Point3::new(182.72 * mm, 152.08 * mm, 30. * mm)}, vec![TestDevice::new_autd3(Point3::new(10. * mm, 20. * mm, 30. * mm))])]
-    #[case(Aabb{min: Point3::new(-132.08 * mm, 0., 0.), max: Point3::new(0., 172.72 * mm, 0.)}, vec![TestDevice::new_autd3_with_rot(Point3::origin(), EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg))])]
-    #[case(Aabb{min: Point3::new(-132.08 * mm, -10. * mm, 0.), max: Point3::new(172.72 * mm, 162.72 * mm, 10. * mm)}, vec![
-        TestDevice::new_autd3(Point3::origin()),
-        TestDevice::new_autd3_with_rot(Point3::new(0., -10. * mm, 10. * mm), EulerAngle::ZYZ(90. * deg, 0. * deg, 0. * deg))
-    ])]
-    fn aabb(#[case] expect: Aabb<f32, 3>, #[case] dev: Vec<TestDevice>) {
-        let geometry = Geometry::new(dev.into_iter().map(|d| d.into()).collect());
-        assert_approx_eq_vec3!(expect.min, geometry.aabb().min);
-        assert_approx_eq_vec3!(expect.max, geometry.aabb().max);
     }
 
     #[test]
