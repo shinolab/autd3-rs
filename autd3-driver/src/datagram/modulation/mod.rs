@@ -38,7 +38,7 @@ pub mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()
@@ -70,7 +70,7 @@ pub mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()
@@ -107,7 +107,7 @@ pub mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()

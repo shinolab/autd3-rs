@@ -1,6 +1,6 @@
 use autd3_core::{
     datagram::{
-        Datagram, DatagramOption, DatagramS, DeviceFilter, Inspectable, InspectionResult,
+        Datagram, DatagramOption, DatagramS, DeviceMask, Inspectable, InspectionResult,
         internal::HasSegment,
     },
     environment::Environment,
@@ -50,7 +50,7 @@ where
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramS>::operation_generator_with_segment(
@@ -88,7 +88,7 @@ where
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
         Ok(InspectionResult {

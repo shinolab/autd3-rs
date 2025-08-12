@@ -65,7 +65,7 @@ impl<'a, FT: Fn(&'a Transducer) -> Drive + Send + Sync, F: Fn(&'a Device) -> FT>
         self,
         _: &'a Geometry,
         _: &Environment,
-        _: &TransducerFilter,
+        _: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }
@@ -102,7 +102,7 @@ mod tests {
         });
 
         let mut d = transducer_test
-            .init(&geometry, &env, &TransducerFilter::all_enabled())
+            .init(&geometry, &env, &TransducerMask::AllEnabled)
             .unwrap();
         geometry.iter().for_each(|dev| {
             let d = d.generate(dev);

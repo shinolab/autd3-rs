@@ -1,102 +1,138 @@
 mod error;
 
-use std::collections::HashMap;
-
 pub use error::GainError;
 
 use crate::{
-    datagram::DeviceFilter,
+    datagram::DeviceMask,
     environment::Environment,
     firmware::Drive,
     firmware::{Segment, transition_mode::TransitionModeParams},
     geometry::{Device, Geometry, Transducer},
 };
 
+#[derive(Debug, Clone)]
+/// A mask that represents which Transducers are enabled in a Device.
+pub enum DeviceTransducerMask {
+    /// All transducers are enabled.
+    AllEnabled,
+    /// All transducers are disabled.
+    AllDisabled,
+    /// A filtered mask where each bit represents whether the corresponding transducer is enabled.
+    Masked(bit_vec::BitVec<u32>),
+}
+
+impl DeviceTransducerMask {
+    /// Creates a [`DeviceTransducerMask`] from an iterator.
+    pub fn from_fn(dev: &Device, f: impl Fn(&Transducer) -> bool) -> Self {
+        Self::Masked(bit_vec::BitVec::from_iter(dev.iter().map(f)))
+    }
+
+    /// Returns `true` if the transducers is enabled.
+    fn is_enabled(&self, tr: &Transducer) -> bool {
+        match self {
+            Self::AllEnabled => true,
+            Self::AllDisabled => false,
+            Self::Masked(bit_vec) => bit_vec[tr.idx()],
+        }
+    }
+
+    fn is_enabled_device(&self) -> bool {
+        match self {
+            Self::AllEnabled => true,
+            Self::AllDisabled => false,
+            Self::Masked(_) => true,
+        }
+    }
+
+    fn num_enabled_transducers(&self, dev: &Device) -> usize {
+        match self {
+            Self::AllEnabled => dev.num_transducers(),
+            Self::AllDisabled => 0,
+            Self::Masked(bit_vec) => bit_vec.count_ones() as _,
+        }
+    }
+}
+
 #[derive(Debug)]
 /// A filter that represents which transducers are enabled.
-pub struct TransducerFilter(Option<HashMap<usize, Option<bit_vec::BitVec<u32>>>>);
+pub enum TransducerMask {
+    /// All transducers are enabled.
+    AllEnabled,
+    /// A filtered mask where each value represents the enabled transducers for the corresponding device.
+    Masked(Vec<DeviceTransducerMask>),
+}
 
-impl TransducerFilter {
-    #[doc(hidden)]
-    pub const fn new(filter: HashMap<usize, Option<bit_vec::BitVec<u32>>>) -> Self {
-        Self(Some(filter))
+impl TransducerMask {
+    /// Creates a [`TransducerMask`].
+    pub fn new<T>(v: T) -> Self
+    where
+        T: IntoIterator<Item = DeviceTransducerMask>,
+    {
+        Self::Masked(v.into_iter().collect())
     }
 
-    /// Returns a new `TransducerFilter` that enables all transducers.
-    pub const fn all_enabled() -> Self {
-        Self(None)
+    /// Creates a [`TransducerMask`] from a function that maps each [`Device`] to a [`DeviceTransducerMask`].
+    pub fn from_fn(geo: &Geometry, f: impl Fn(&Device) -> DeviceTransducerMask) -> Self {
+        Self::Masked(geo.iter().map(f).collect())
     }
 
-    /// Creates a `DeviceFilter` where the value at each index is `f(&Device)`
-    pub fn from_fn<FT: Fn(&Transducer) -> bool>(
-        geo: &Geometry,
-        f: impl Fn(&Device) -> Option<FT>,
-    ) -> Self {
-        Self(Some(HashMap::from_iter(geo.iter().filter_map(|dev| {
-            f(dev).map(|f| {
-                (
-                    dev.idx(),
-                    Some(bit_vec::BitVec::from_fn(dev.num_transducers(), |idx| {
-                        f(&dev[idx])
-                    })),
-                )
-            })
-        }))))
-    }
-
-    /// Returns `true` i
+    /// Returns `true` if all transducers are enabled.
     pub const fn is_all_enabled(&self) -> bool {
-        self.0.is_none()
+        matches!(self, Self::AllEnabled)
     }
 
-    /// Returns `true` if the `Device` is enabled.
+    /// Returns `true` if the [`Device`] is enabled.
     pub fn is_enabled_device(&self, dev: &Device) -> bool {
-        self.0.as_ref().is_none_or(|f| f.contains_key(&dev.idx()))
+        match self {
+            Self::AllEnabled => true,
+            Self::Masked(filter) => filter[dev.idx()].is_enabled_device(),
+        }
     }
 
-    /// Returns `true` if the `Transducer` is enabled.
+    /// Returns `true` if the [`Transducer`] is enabled.
     pub fn is_enabled(&self, tr: &Transducer) -> bool {
-        self.0.as_ref().is_none_or(|f| {
-            f.get(&tr.dev_idx())
-                .map(|f| f.as_ref().map(|f| f[tr.idx()]).unwrap_or(true))
-                .unwrap_or(false)
-        })
+        match self {
+            Self::AllEnabled => true,
+            Self::Masked(filter) => filter[tr.dev_idx()].is_enabled(tr),
+        }
     }
 
     /// Returns the number of enabled devices.
     pub fn num_enabled_devices(&self, geometry: &Geometry) -> usize {
-        self.0.as_ref().map_or(geometry.num_devices(), |f| {
-            geometry
+        match self {
+            Self::AllEnabled => geometry.num_devices(),
+            Self::Masked(filter) => geometry
                 .iter()
-                .filter(|dev| f.contains_key(&dev.idx()))
-                .count()
-        })
+                .filter(|dev| filter[dev.idx()].is_enabled_device())
+                .count(),
+        }
     }
 
-    /// Returns the number of enabled transducers for the given `Device`.
+    /// Returns the number of enabled transducers for the given [`Device`].
     pub fn num_enabled_transducers(&self, dev: &Device) -> usize {
-        self.0.as_ref().map_or(dev.num_transducers(), |f| {
-            f.get(&dev.idx()).map_or(0, |filter| {
-                filter
-                    .as_ref()
-                    .map_or(dev.num_transducers(), |f| f.count_ones() as usize)
-            })
-        })
+        match self {
+            TransducerMask::AllEnabled => dev.num_transducers(),
+            TransducerMask::Masked(filter) => filter[dev.idx()].num_enabled_transducers(dev),
+        }
     }
 }
 
-impl From<&DeviceFilter> for TransducerFilter {
-    fn from(filter: &DeviceFilter) -> Self {
-        if let Some(filter) = filter.0.as_ref() {
-            Self(Some(
+impl From<&DeviceMask> for TransducerMask {
+    fn from(filter: &DeviceMask) -> Self {
+        match filter {
+            DeviceMask::AllEnabled => Self::AllEnabled,
+            DeviceMask::Masked(filter) => Self::Masked(
                 filter
                     .iter()
-                    .enumerate()
-                    .filter_map(|(idx, enable)| enable.then_some((idx, None)))
+                    .map(|enable| {
+                        if *enable {
+                            DeviceTransducerMask::AllEnabled
+                        } else {
+                            DeviceTransducerMask::AllDisabled
+                        }
+                    })
                     .collect(),
-            ))
-        } else {
-            Self(None)
+            ),
         }
     }
 }
@@ -131,7 +167,7 @@ pub trait GainCalculatorGenerator<'a> {
 /// See also [`Gain`] derive macro.
 ///
 /// [`Gain`]: autd3_derive::Gain
-pub trait Gain<'a>: std::fmt::Debug + Sized {
+pub trait Gain<'a>: core::fmt::Debug + Sized {
     /// The type of the calculator generator.
     type G: GainCalculatorGenerator<'a>;
 
@@ -143,7 +179,7 @@ pub trait Gain<'a>: std::fmt::Debug + Sized {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::G, GainError>;
 }
 
@@ -152,7 +188,7 @@ pub struct GainOperationGenerator<'a, G> {
     pub generator: G,
     pub segment: Segment,
     pub transition_params: TransitionModeParams,
-    pub __phantom: std::marker::PhantomData<&'a ()>,
+    pub __phantom: core::marker::PhantomData<&'a ()>,
 }
 
 impl<'a, C: GainCalculatorGenerator<'a>> GainOperationGenerator<'a, C> {
@@ -160,15 +196,15 @@ impl<'a, C: GainCalculatorGenerator<'a>> GainOperationGenerator<'a, C> {
         gain: G,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         segment: Segment,
         transition_params: TransitionModeParams,
     ) -> Result<Self, GainError> {
         Ok(Self {
-            generator: gain.init(geometry, env, &TransducerFilter::from(filter))?,
+            generator: gain.init(geometry, env, &TransducerMask::from(filter))?,
             segment,
             transition_params,
-            __phantom: std::marker::PhantomData,
+            __phantom: core::marker::PhantomData,
         })
     }
 }

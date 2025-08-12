@@ -79,12 +79,12 @@ where
     fn get_filters(
         &self,
         geometry: &'a Geometry,
-        device_filter: &TransducerFilter,
-    ) -> HashMap<K, TransducerFilter> {
+        tr_filter: &TransducerMask,
+    ) -> HashMap<K, TransducerMask> {
         let mut filters: HashMap<K, HashMap<usize, bit_vec::BitVec<u32>>> = HashMap::new();
         geometry
             .iter()
-            .filter(|dev| device_filter.is_enabled_device(dev))
+            .filter(|dev| tr_filter.is_enabled_device(dev))
             .for_each(|dev| {
                 dev.iter().for_each(|tr| {
                     if let Some(key) = (self.key_map)(dev)(tr) {
@@ -117,12 +117,16 @@ where
             });
         filters
             .into_iter()
-            .map(|(k, v)| {
+            .map(|(k, mut v)| {
                 (
                     k,
-                    TransducerFilter::new(
-                        v.into_iter().map(|(idx, bits)| (idx, Some(bits))).collect(),
-                    ),
+                    TransducerMask::new(geometry.iter().map(|dev| {
+                        if let Some(bits) = v.remove(&dev.idx()) {
+                            DeviceTransducerMask::Masked(bits)
+                        } else {
+                            DeviceTransducerMask::AllDisabled
+                        }
+                    })),
                 )
             })
             .collect()
@@ -165,7 +169,7 @@ where
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        device_filter: &TransducerFilter,
+        device_filter: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         let filters = self.get_filters(geometry, device_filter);
 
@@ -276,7 +280,7 @@ mod tests {
             ]),
         );
 
-        let mut g = gain.init(&geometry, &env, &TransducerFilter::all_enabled())?;
+        let mut g = gain.init(&geometry, &env, &TransducerMask::AllEnabled)?;
         let drives = geometry
             .iter()
             .map(|dev| {
@@ -324,7 +328,7 @@ mod tests {
         let env = Environment::new();
         assert_eq!(
             Some(GainError::new("Unknown group key: \"test\"")),
-            gain.init(&geometry, &env, &TransducerFilter::all_enabled())
+            gain.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .err()
         );
 
@@ -342,7 +346,7 @@ mod tests {
         let env = Environment::new();
         assert_eq!(
             Some(GainError::new("Unused group keys: 2")),
-            gain.init(&geometry, &env, &TransducerFilter::all_enabled())
+            gain.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .err()
         );
 

@@ -2,7 +2,7 @@ use std::{convert::Infallible, f32::consts::PI};
 
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
-    datagram::{Datagram, DatagramOption, DeviceFilter},
+    datagram::{Datagram, DatagramOption, DeviceMask},
     environment::Environment,
     firmware::{FirmwareLimits, Intensity, PulseWidth},
     geometry::{Device, Geometry},
@@ -55,7 +55,7 @@ impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> Datagram
         self,
         _: &Geometry,
         _: &Environment,
-        _: &DeviceFilter,
+        _: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(Self::G {

@@ -1,7 +1,7 @@
 use autd3_core::{
     acoustics::directivity::Directivity,
     environment::Environment,
-    gain::TransducerFilter,
+    gain::TransducerMask,
     geometry::{Geometry, Point3},
 };
 use nalgebra::{Dyn, U1, VecStorage};
@@ -40,7 +40,7 @@ pub trait LinAlgBackend {
         geometry: &Geometry,
         env: &Environment,
         foci: &[Point3],
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::MatrixXc, HoloError>;
 
     fn alloc_v(&self, size: usize) -> Result<Self::VectorX, HoloError>;

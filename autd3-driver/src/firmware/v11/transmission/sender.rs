@@ -7,7 +7,7 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter},
+    datagram::{Datagram, DeviceMask},
     link::Link,
     sleep::Sleep,
 };
@@ -32,7 +32,7 @@ impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T> {
         let mut g = s.operation_generator(
             self.inner.geometry,
             self.inner.env,
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &V11.firmware_limits(),
         )?;
         let mut operations = self

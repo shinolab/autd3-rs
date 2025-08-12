@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use autd3_core::{
     common::rad,
     firmware::{Drive, Phase},
-    gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter},
+    gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerMask},
     geometry::{Device, Geometry, Transducer},
 };
 use nalgebra::ComplexField;
@@ -129,7 +129,7 @@ pub(crate) fn generate_result<T>(
     >,
     max_coefficient: f32,
     constraint: EmissionConstraint,
-    filter: &TransducerFilter,
+    filter: &TransducerMask,
 ) -> Result<HoloCalculatorGenerator<T>, GainError>
 where
     T: IntoDrive + Copy + Send + Sync + 'static,

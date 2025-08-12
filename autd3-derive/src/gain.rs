@@ -41,7 +41,7 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
             type G = GainOperationGenerator<'geo, <Self as Gain<'geo>>::G>;
             type Error = GainError;
 
-            fn operation_generator_with_segment(self, geometry: &'geo Geometry, env: &Environment, filter: &DeviceFilter, _: &FirmwareLimits, segment: Segment, transition_params: transition_mode::TransitionModeParams) -> Result<Self::G, Self::Error> {
+            fn operation_generator_with_segment(self, geometry: &'geo Geometry, env: &Environment, filter: &DeviceMask, _: &FirmwareLimits, segment: Segment, transition_params: transition_mode::TransitionModeParams) -> Result<Self::G, Self::Error> {
                 Self::G::new(
                     self,
                     geometry,
@@ -71,10 +71,10 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
                 self,
                 geometry: &'geo Geometry,
                 env: &Environment,
-                filter: &DeviceFilter,
+                filter: &DeviceMask,
                 _: &FirmwareLimits,
             ) -> Result<InspectionResult<GainInspectionResult>, GainError> {
-                let mut g = self.init(geometry, env, &TransducerFilter::from(filter))?;
+                let mut g = self.init(geometry, env, &TransducerMask::from(filter))?;
                 Ok(InspectionResult::new(
                     geometry,
                     filter,

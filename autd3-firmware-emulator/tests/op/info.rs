@@ -1,5 +1,5 @@
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter},
+    datagram::{Datagram, DeviceMask},
     environment::Environment,
     link::{MsgId, TxMessage},
 };
@@ -78,7 +78,7 @@ fn invalid_info_type() -> anyhow::Result<()> {
         .operation_generator(
             &geometry,
             &Environment::new(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &V12_1.firmware_limits(),
         )?
         .generate(&geometry[0]);

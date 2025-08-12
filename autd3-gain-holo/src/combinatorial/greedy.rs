@@ -92,7 +92,7 @@ impl<D: Directivity> Greedy<D> {
         });
     }
 
-    fn generate_indices(geometry: &Geometry, filter: &TransducerFilter) -> Vec<(usize, usize)> {
+    fn generate_indices(geometry: &Geometry, filter: &TransducerMask) -> Vec<(usize, usize)> {
         let mut indices: Vec<_> = if filter.is_all_enabled() {
             geometry
                 .iter()
@@ -111,7 +111,7 @@ impl<D: Directivity> Greedy<D> {
         indices
     }
 
-    fn alloc_result(geometry: &Geometry, filter: &TransducerFilter) -> HashMap<usize, Vec<Drive>> {
+    fn alloc_result(geometry: &Geometry, filter: &TransducerMask) -> HashMap<usize, Vec<Drive>> {
         geometry
             .iter()
             .filter(|dev| filter.is_enabled_device(dev))
@@ -151,7 +151,7 @@ impl<D: Directivity> Gain<'_> for Greedy<D> {
         self,
         geometry: &Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
@@ -219,30 +219,23 @@ mod tests {
             GreedyOption::default(),
         );
         assert_eq!(
-            g.init(
-                &geometry,
-                &Environment::new(),
-                &TransducerFilter::all_enabled()
-            )
-            .map(|mut res| {
-                let f = res.generate(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f.calc(tr) != Drive::NULL)
-                    .count()
-            }),
+            g.init(&geometry, &Environment::new(), &TransducerMask::AllEnabled)
+                .map(|mut res| {
+                    let f = res.generate(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
+                        .count()
+                }),
             Ok(geometry.num_transducers()),
         );
     }
 
     #[rstest::rstest]
-    #[case(itertools::iproduct!(0..2, 0..249).collect::<Vec<_>>(), TransducerFilter::all_enabled())]
-    #[case(itertools::iproduct!(1..2, 0..249).collect::<Vec<_>>(), TransducerFilter::new(HashMap::from([(1, None)])))]
+    #[case(itertools::iproduct!(0..2, 0..249).collect::<Vec<_>>(), TransducerMask::AllEnabled)]
+    #[case(itertools::iproduct!(1..2, 0..249).collect::<Vec<_>>(), TransducerMask::new([DeviceTransducerMask::AllDisabled, DeviceTransducerMask::AllEnabled]))]
     #[test]
-    fn test_greedy_indices(
-        #[case] expected: Vec<(usize, usize)>,
-        #[case] filter: TransducerFilter,
-    ) {
+    fn test_greedy_indices(#[case] expected: Vec<(usize, usize)>, #[case] filter: TransducerMask) {
         let geometry = create_geometry(2, 1);
 
         let mut indices = Greedy::<Sphere>::generate_indices(&geometry, &filter);
@@ -251,12 +244,12 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(HashMap::from([(0, vec![Drive::NULL; 249]), (1, vec![Drive::NULL; 249])]), TransducerFilter::all_enabled())]
-    #[case(HashMap::from([(1, vec![Drive::NULL; 249])]), TransducerFilter::new(HashMap::from([(1, None)])))]
+    #[case(HashMap::from([(0, vec![Drive::NULL; 249]), (1, vec![Drive::NULL; 249])]), TransducerMask::AllEnabled)]
+    #[case(HashMap::from([(1, vec![Drive::NULL; 249])]), TransducerMask::new([DeviceTransducerMask::AllDisabled, DeviceTransducerMask::AllEnabled]))]
     #[test]
     fn test_greedy_alloc_result(
         #[case] expected: HashMap<usize, Vec<Drive>>,
-        #[case] filter: TransducerFilter,
+        #[case] filter: TransducerMask,
     ) {
         let geometry = create_geometry(2, 1);
         assert_eq!(expected, Greedy::<Sphere>::alloc_result(&geometry, &filter));
@@ -272,17 +265,9 @@ mod tests {
             directivity: std::marker::PhantomData::<Sphere>,
         };
 
-        let filter = TransducerFilter::new(
-            geometry
-                .iter()
-                .map(|dev| {
-                    (
-                        dev.idx(),
-                        Some(dev.iter().map(|tr| tr.idx() < 100).collect()),
-                    )
-                })
-                .collect::<HashMap<_, _>>(),
-        );
+        let filter = TransducerMask::from_fn(&geometry, |dev| {
+            DeviceTransducerMask::from_fn(dev, |tr| tr.idx() < 100)
+        });
         assert_eq!(
             g.init(&geometry, &Environment::new(), &filter)
                 .map(|mut res| {

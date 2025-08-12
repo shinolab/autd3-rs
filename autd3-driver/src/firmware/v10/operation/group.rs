@@ -35,7 +35,7 @@ mod tests {
     use crate::{datagram::Group, firmware::driver::NullOp};
 
     use autd3_core::{
-        datagram::{Datagram, DatagramOption, DeviceFilter, Inspectable, InspectionResult},
+        datagram::{Datagram, DatagramOption, DeviceMask, Inspectable, InspectionResult},
         environment::Environment,
         firmware::FirmwareLimits,
         geometry::Geometry,
@@ -68,7 +68,7 @@ mod tests {
                 self,
                 _: &Geometry,
                 _: &Environment,
-                _: &DeviceFilter,
+                _: &DeviceMask,
                 _: &FirmwareLimits,
             ) -> Result<Self::G, Self::Error> {
                 Ok(NullOperationGenerator)
@@ -119,7 +119,7 @@ mod tests {
                 self,
                 geometry: &Geometry,
                 _: &Environment,
-                filter: &DeviceFilter,
+                filter: &DeviceMask,
                 _: &FirmwareLimits,
             ) -> Result<Self::G, Self::Error> {
                 geometry.iter().for_each(|dev| {
@@ -142,7 +142,7 @@ mod tests {
         .operation_generator(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?;
 
@@ -167,7 +167,7 @@ mod tests {
                 self,
                 _: &Geometry,
                 _: &Environment,
-                _: &DeviceFilter,
+                _: &DeviceMask,
                 _: &FirmwareLimits,
             ) -> Result<Self::G, Self::Error> {
                 Ok(NullOperationGenerator)
@@ -182,7 +182,7 @@ mod tests {
                 self,
                 geometry: &Geometry,
                 _: &Environment,
-                filter: &DeviceFilter,
+                filter: &DeviceMask,
                 _: &FirmwareLimits,
             ) -> Result<InspectionResult<Self::Result>, Self::Error> {
                 Ok(InspectionResult::new(geometry, filter, |_| ()))
@@ -200,7 +200,7 @@ mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?;
 
