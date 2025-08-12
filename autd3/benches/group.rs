@@ -49,7 +49,7 @@ fn without_group(c: &mut Criterion) {
                         .operation_generator(
                             geometry,
                             &Environment::default(),
-                            &DeviceFilter::all_enabled(),
+                            &DeviceMask::AllEnabled,
                             &V12_1.firmware_limits(),
                         )
                         .unwrap();
@@ -90,7 +90,7 @@ fn group(c: &mut Criterion) {
                         .operation_generator(
                             geometry,
                             &Environment::default(),
-                            &DeviceFilter::all_enabled(),
+                            &DeviceMask::AllEnabled,
                             &V12_1.firmware_limits(),
                         )
                         .unwrap();
@@ -134,7 +134,7 @@ fn group_boxed(c: &mut Criterion) {
                         .operation_generator(
                             geometry,
                             &Environment::default(),
-                            &DeviceFilter::all_enabled(),
+                            &DeviceMask::AllEnabled,
                             &V12_1.firmware_limits(),
                         )
                         .unwrap();
@@ -175,7 +175,7 @@ fn gain_group(c: &mut Criterion) {
                         .operation_generator(
                             geometry,
                             &Environment::default(),
-                            &DeviceFilter::all_enabled(),
+                            &DeviceMask::AllEnabled,
                             &V12_1.firmware_limits(),
                         )
                         .unwrap();

@@ -2,7 +2,7 @@ use std::num::NonZeroU16;
 
 use autd3_core::{
     datagram::{
-        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
+        Datagram, DatagramL, DatagramOption, DeviceMask, Inspectable, InspectionResult,
         internal::HasFiniteLoop,
     },
     environment::Environment,
@@ -62,7 +62,7 @@ where
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramL>::operation_generator_with_finite_loop(
@@ -102,7 +102,7 @@ where
         self,
         geometry: &'a Geometry,
         env: &autd3_core::environment::Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
         Ok(InspectionResult {

@@ -100,7 +100,7 @@ pub mod utils;
 ///         self,
 ///         _geometry: &'a Geometry,
 ///         env: &Environment,
-///         _filter: &TransducerFilter,
+///         _filter: &TransducerMask ,
 ///     ) -> Result<Self::G, GainError> {
 ///         Ok(Impl {
 ///             pos: self.pos,
@@ -147,7 +147,7 @@ pub mod derive {
     #[cfg(any(feature = "gain", feature = "modulation"))]
     mod common {
         pub use crate::{
-            datagram::{DatagramOption, DeviceFilter, Inspectable, InspectionResult, internal},
+            datagram::{DatagramOption, DeviceMask, Inspectable, InspectionResult, internal},
             environment::Environment,
             firmware::{FirmwareLimits, Segment, transition_mode},
             geometry::Geometry,
@@ -163,8 +163,8 @@ pub mod derive {
             datagram::DatagramS,
             firmware::{Drive, Intensity, Phase},
             gain::{
-                Gain, GainCalculator, GainCalculatorGenerator, GainError, GainInspectionResult,
-                GainOperationGenerator, TransducerFilter,
+                DeviceTransducerMask, Gain, GainCalculator, GainCalculatorGenerator, GainError,
+                GainInspectionResult, GainOperationGenerator, TransducerMask,
             },
             geometry::{Device, Transducer},
         };

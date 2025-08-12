@@ -1,105 +1,16 @@
 mod error;
-
-use std::collections::HashMap;
+mod filter;
 
 pub use error::GainError;
+pub use filter::{DeviceTransducerMask, TransducerMask};
 
 use crate::{
-    datagram::DeviceFilter,
+    datagram::DeviceMask,
     environment::Environment,
     firmware::Drive,
     firmware::{Segment, transition_mode::TransitionModeParams},
     geometry::{Device, Geometry, Transducer},
 };
-
-#[derive(Debug)]
-/// A filter that represents which transducers are enabled.
-pub struct TransducerFilter(Option<HashMap<usize, Option<bit_vec::BitVec<u32>>>>);
-
-impl TransducerFilter {
-    #[doc(hidden)]
-    pub const fn new(filter: HashMap<usize, Option<bit_vec::BitVec<u32>>>) -> Self {
-        Self(Some(filter))
-    }
-
-    /// Returns a new `TransducerFilter` that enables all transducers.
-    pub const fn all_enabled() -> Self {
-        Self(None)
-    }
-
-    /// Creates a `DeviceFilter` where the value at each index is `f(&Device)`
-    pub fn from_fn<FT: Fn(&Transducer) -> bool>(
-        geo: &Geometry,
-        f: impl Fn(&Device) -> Option<FT>,
-    ) -> Self {
-        Self(Some(HashMap::from_iter(geo.iter().filter_map(|dev| {
-            f(dev).map(|f| {
-                (
-                    dev.idx(),
-                    Some(bit_vec::BitVec::from_fn(dev.num_transducers(), |idx| {
-                        f(&dev[idx])
-                    })),
-                )
-            })
-        }))))
-    }
-
-    /// Returns `true` i
-    pub const fn is_all_enabled(&self) -> bool {
-        self.0.is_none()
-    }
-
-    /// Returns `true` if the `Device` is enabled.
-    pub fn is_enabled_device(&self, dev: &Device) -> bool {
-        self.0.as_ref().is_none_or(|f| f.contains_key(&dev.idx()))
-    }
-
-    /// Returns `true` if the `Transducer` is enabled.
-    pub fn is_enabled(&self, tr: &Transducer) -> bool {
-        self.0.as_ref().is_none_or(|f| {
-            f.get(&tr.dev_idx())
-                .map(|f| f.as_ref().map(|f| f[tr.idx()]).unwrap_or(true))
-                .unwrap_or(false)
-        })
-    }
-
-    /// Returns the number of enabled devices.
-    pub fn num_enabled_devices(&self, geometry: &Geometry) -> usize {
-        self.0.as_ref().map_or(geometry.num_devices(), |f| {
-            geometry
-                .iter()
-                .filter(|dev| f.contains_key(&dev.idx()))
-                .count()
-        })
-    }
-
-    /// Returns the number of enabled transducers for the given `Device`.
-    pub fn num_enabled_transducers(&self, dev: &Device) -> usize {
-        self.0.as_ref().map_or(dev.num_transducers(), |f| {
-            f.get(&dev.idx()).map_or(0, |filter| {
-                filter
-                    .as_ref()
-                    .map_or(dev.num_transducers(), |f| f.count_ones() as usize)
-            })
-        })
-    }
-}
-
-impl From<&DeviceFilter> for TransducerFilter {
-    fn from(filter: &DeviceFilter) -> Self {
-        if let Some(filter) = filter.0.as_ref() {
-            Self(Some(
-                filter
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(idx, enable)| enable.then_some((idx, None)))
-                    .collect(),
-            ))
-        } else {
-            Self(None)
-        }
-    }
-}
 
 /// A trait to calculate the phase and intensity for [`Gain`].
 ///
@@ -131,7 +42,7 @@ pub trait GainCalculatorGenerator<'a> {
 /// See also [`Gain`] derive macro.
 ///
 /// [`Gain`]: autd3_derive::Gain
-pub trait Gain<'a>: std::fmt::Debug + Sized {
+pub trait Gain<'a>: core::fmt::Debug + Sized {
     /// The type of the calculator generator.
     type G: GainCalculatorGenerator<'a>;
 
@@ -143,7 +54,7 @@ pub trait Gain<'a>: std::fmt::Debug + Sized {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::G, GainError>;
 }
 
@@ -152,7 +63,7 @@ pub struct GainOperationGenerator<'a, G> {
     pub generator: G,
     pub segment: Segment,
     pub transition_params: TransitionModeParams,
-    pub __phantom: std::marker::PhantomData<&'a ()>,
+    pub __phantom: core::marker::PhantomData<&'a ()>,
 }
 
 impl<'a, C: GainCalculatorGenerator<'a>> GainOperationGenerator<'a, C> {
@@ -160,15 +71,15 @@ impl<'a, C: GainCalculatorGenerator<'a>> GainOperationGenerator<'a, C> {
         gain: G,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         segment: Segment,
         transition_params: TransitionModeParams,
     ) -> Result<Self, GainError> {
         Ok(Self {
-            generator: gain.init(geometry, env, &TransducerFilter::from(filter))?,
+            generator: gain.init(geometry, env, &TransducerMask::from(filter))?,
             segment,
             transition_params,
-            __phantom: std::marker::PhantomData,
+            __phantom: core::marker::PhantomData,
         })
     }
 }

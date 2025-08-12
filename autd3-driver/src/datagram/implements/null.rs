@@ -29,12 +29,7 @@ impl GainCalculatorGenerator<'_> for Null {
 impl Gain<'_> for Null {
     type G = Null;
 
-    fn init(
-        self,
-        _: &Geometry,
-        _: &Environment,
-        _: &TransducerFilter,
-    ) -> Result<Self::G, GainError> {
+    fn init(self, _: &Geometry, _: &Environment, _: &TransducerMask) -> Result<Self::G, GainError> {
         Ok(self)
     }
 }

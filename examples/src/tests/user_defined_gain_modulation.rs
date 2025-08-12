@@ -36,7 +36,7 @@ impl Gain<'_> for MyUniform {
         self,
         _geometry: &Geometry,
         _env: &Environment,
-        _filter: &TransducerFilter,
+        _filter: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }

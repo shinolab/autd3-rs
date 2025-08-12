@@ -50,7 +50,7 @@ pub mod tests {
     use crate::firmware::driver::{BoxedDatagram, operation::boxed::tests::TestOp};
 
     use autd3_core::{
-        datagram::{Datagram, DatagramOption, DeviceFilter},
+        datagram::{Datagram, DatagramOption, DeviceMask},
         environment::Environment,
         firmware::FirmwareLimits,
         geometry::Geometry,
@@ -91,7 +91,7 @@ pub mod tests {
             self,
             _geometry: &Geometry,
             _: &Environment,
-            _: &DeviceFilter,
+            _: &DeviceMask,
             _: &FirmwareLimits,
         ) -> Result<Self::G, Self::Error> {
             Ok(Self::G {})
@@ -123,7 +123,7 @@ pub mod tests {
             bd,
             &geometry,
             &Environment::new(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?;
         let (mut op1, mut op2) = g.generate(&geometry[0], Version::V12).unwrap();

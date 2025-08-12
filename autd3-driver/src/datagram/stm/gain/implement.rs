@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use autd3_core::{
     environment::Environment,
-    gain::{Gain, GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter},
+    gain::{Gain, GainCalculator, GainCalculatorGenerator, GainError, TransducerMask},
     geometry::{Device, Geometry},
 };
 
@@ -45,7 +45,7 @@ impl<'a, G: Gain<'a>> GainSTMGenerator<'a> for Vec<G> {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::T, GainError> {
         self.into_iter()
             .map(|g| g.init(geometry, env, filter))
@@ -64,7 +64,7 @@ impl<'a, const N: usize, G: Gain<'a>> GainSTMGenerator<'a> for [G; N] {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::T, GainError> {
         // TODO: replace with `array::try_map` when stabilized
         self.into_iter()

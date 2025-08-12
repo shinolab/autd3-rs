@@ -89,7 +89,7 @@ impl Gain<'_> for Focus {
         self,
         _: &Geometry,
         env: &Environment,
-        _: &TransducerFilter,
+        _: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         Ok(Impl {
             pos: self.pos,
@@ -118,7 +118,7 @@ fn focus(c: &mut Criterion) {
                         .operation_generator(
                             geometry,
                             &Environment::default(),
-                            &DeviceFilter::all_enabled(),
+                            &DeviceMask::AllEnabled,
                             &V12_1.firmware_limits(),
                         )
                         .unwrap();
@@ -157,7 +157,7 @@ fn focus_parallel(c: &mut Criterion) {
                         .operation_generator(
                             geometry,
                             &Environment::default(),
-                            &DeviceFilter::all_enabled(),
+                            &DeviceMask::AllEnabled,
                             &V12_1.firmware_limits(),
                         )
                         .unwrap();
@@ -199,7 +199,7 @@ fn focus_boxed(c: &mut Criterion) {
                         .operation_generator(
                             geometry,
                             &Environment::default(),
-                            &DeviceFilter::all_enabled(),
+                            &DeviceMask::AllEnabled,
                             &V12_1.firmware_limits(),
                         )
                         .unwrap();

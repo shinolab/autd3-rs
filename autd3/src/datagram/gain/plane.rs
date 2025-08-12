@@ -71,7 +71,7 @@ impl Gain<'_> for Plane {
         self,
         _: &Geometry,
         env: &Environment,
-        _: &TransducerFilter,
+        _: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         Ok(Impl {
             dir: self.dir,
@@ -121,7 +121,7 @@ mod tests {
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let g = Plane::new(dir, PlaneOption::default());
         plane_check(
-            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+            g.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .unwrap(),
             dir,
             Intensity::MAX,
@@ -141,7 +141,7 @@ mod tests {
             },
         };
         plane_check(
-            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+            g.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .unwrap(),
             dir,
             intensity,

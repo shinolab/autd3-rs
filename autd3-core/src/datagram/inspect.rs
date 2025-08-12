@@ -1,4 +1,4 @@
-use super::{Datagram, DeviceFilter};
+use super::{Datagram, DeviceMask};
 use crate::{
     environment::Environment,
     firmware::FirmwareLimits,
@@ -20,7 +20,7 @@ impl<T> InspectionResult<T> {
     #[doc(hidden)]
     pub fn new<'a>(
         geometry: &'a Geometry,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         mut f: impl FnMut(&'a Device) -> T,
     ) -> Self {
         Self {
@@ -42,7 +42,7 @@ pub trait Inspectable<'a>: Datagram<'a> {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error>;
 }

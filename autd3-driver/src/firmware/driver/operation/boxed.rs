@@ -6,7 +6,7 @@ use crate::{
 };
 
 use autd3_core::{
-    datagram::{DatagramOption, DeviceFilter},
+    datagram::{DatagramOption, DeviceMask},
     derive::{Datagram, FirmwareLimits},
     environment::Environment,
     geometry::{Device, Geometry},
@@ -44,7 +44,7 @@ pub trait DDatagram: std::fmt::Debug {
         &mut self,
         geometry: &Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError>;
     #[must_use]
@@ -62,7 +62,7 @@ where
         &mut self,
         geometry: &Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError> {
         let mut tmp = MaybeUninit::<T>::uninit();
@@ -123,7 +123,7 @@ impl<'a> Datagram<'a> for BoxedDatagram {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         let Self { mut d } = self;

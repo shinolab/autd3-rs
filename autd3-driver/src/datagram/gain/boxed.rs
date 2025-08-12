@@ -4,7 +4,7 @@ use super::{Gain, GainCalculatorGenerator};
 
 pub use crate::geometry::{Device, Geometry};
 
-use autd3_core::{derive::*, gain::TransducerFilter};
+use autd3_core::{derive::*, gain::TransducerMask};
 
 pub trait DGainCalculatorGenerator<'a> {
     #[must_use]
@@ -40,7 +40,7 @@ trait DGain<'a> {
         &mut self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Box<dyn DGainCalculatorGenerator<'a>>, GainError>;
     fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
@@ -52,7 +52,7 @@ impl<'a, G: DGainCalculatorGenerator<'a> + 'static, T: Gain<'a, G = G>> DGain<'a
         &mut self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Box<dyn DGainCalculatorGenerator<'a>>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
@@ -105,7 +105,7 @@ impl<'a> Gain<'a> for BoxedGain<'a> {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         let Self { mut g, .. } = self;
         Ok(DynGainCalculatorGenerator {
@@ -172,11 +172,7 @@ pub mod tests {
             &geometry,
         ));
 
-        let mut f = g.init(
-            &geometry,
-            &Environment::new(),
-            &TransducerFilter::all_enabled(),
-        )?;
+        let mut f = g.init(&geometry, &Environment::new(), &TransducerMask::AllEnabled)?;
         assert_eq!(
             expect,
             geometry

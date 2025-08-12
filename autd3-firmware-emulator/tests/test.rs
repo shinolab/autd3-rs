@@ -1,5 +1,5 @@
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter},
+    datagram::{Datagram, DeviceMask},
     environment::Environment,
     geometry::{Geometry, Point3},
     link::{MsgId, TxMessage},
@@ -51,7 +51,7 @@ where
     let mut generator = d.operation_generator(
         geometry,
         &Environment::new(),
-        &DeviceFilter::all_enabled(),
+        &DeviceMask::AllEnabled,
         &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
@@ -113,7 +113,7 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &Environment::new(),
-        &DeviceFilter::all_enabled(),
+        &DeviceMask::AllEnabled,
         &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
@@ -128,7 +128,7 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &Environment::new(),
-        &DeviceFilter::all_enabled(),
+        &DeviceMask::AllEnabled,
         &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
@@ -154,7 +154,7 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &Environment::new(),
-        &DeviceFilter::all_enabled(),
+        &DeviceMask::AllEnabled,
         &V12_1.firmware_limits(),
     )?;
     let mut op = geometry
@@ -182,7 +182,7 @@ fn send_slot_2_err() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &Environment::new(),
-        &DeviceFilter::all_enabled(),
+        &DeviceMask::AllEnabled,
         &V12_1.firmware_limits(),
     )?;
     let mut op = geometry

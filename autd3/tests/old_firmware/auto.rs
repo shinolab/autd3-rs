@@ -4,7 +4,7 @@ use std::num::NonZeroU16;
 
 use autd3::{
     controller::Driver,
-    core::gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerFilter},
+    core::gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerMask},
     firmware::Version,
     link::{Audit, AuditOption, audit::version},
     prelude::*,
@@ -64,7 +64,7 @@ fn firmware_v10_by_auto_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(
@@ -83,7 +83,7 @@ fn firmware_v10_by_auto_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(
@@ -201,7 +201,7 @@ fn firmware_v11_by_auto_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(
@@ -220,7 +220,7 @@ fn firmware_v11_by_auto_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(
@@ -315,7 +315,7 @@ fn firmware_v12_by_auto_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(
@@ -334,7 +334,7 @@ fn firmware_v12_by_auto_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(
@@ -419,7 +419,7 @@ fn firmware_v12_1_by_auto_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(
@@ -433,7 +433,7 @@ fn firmware_v12_1_by_auto_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(

@@ -3,7 +3,7 @@ mod inspect;
 mod option;
 mod tuple;
 
-pub use filter::DeviceFilter;
+pub use filter::DeviceMask;
 pub use inspect::{Inspectable, InspectionResult};
 pub use option::DatagramOption;
 pub use tuple::{CombinedError, CombinedOperationGenerator};
@@ -38,7 +38,7 @@ pub trait DatagramL<'a>: std::fmt::Debug {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
         segment: Segment,
         transition_params: TransitionModeParams,
@@ -62,7 +62,7 @@ pub trait DatagramS<'a>: std::fmt::Debug {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
         segment: Segment,
         transition_params: TransitionModeParams,
@@ -81,7 +81,7 @@ impl<'a, D: DatagramL<'a>> DatagramS<'a> for D {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
         segment: Segment,
         transition_params: TransitionModeParams,
@@ -114,7 +114,7 @@ pub trait Datagram<'a>: std::fmt::Debug {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error>;
 
@@ -133,7 +133,7 @@ impl<'a, D: DatagramS<'a>> Datagram<'a> for D {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_segment(

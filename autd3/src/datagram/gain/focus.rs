@@ -71,7 +71,7 @@ impl Gain<'_> for Focus {
         self,
         _: &Geometry,
         env: &Environment,
-        _: &TransducerFilter,
+        _: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         Ok(Impl {
             pos: self.pos,
@@ -119,7 +119,7 @@ mod tests {
         let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let g = Focus::new(pos, Default::default());
         focus_check(
-            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+            g.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .unwrap(),
             pos,
             Intensity::MAX,
@@ -139,7 +139,7 @@ mod tests {
             },
         };
         focus_check(
-            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+            g.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .unwrap(),
             pos,
             intensity,
