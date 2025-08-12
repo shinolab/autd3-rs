@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Debug, hash::Hash, time::Duration};
 use crate::error::AUTDDriverError;
 
 use autd3_core::{
-    datagram::{Datagram, DatagramOption, DeviceFilter, Inspectable, InspectionResult},
+    datagram::{Datagram, DatagramOption, DeviceMask, Inspectable, InspectionResult},
     environment::Environment,
     firmware::FirmwareLimits,
     geometry::{Device, Geometry},
@@ -62,16 +62,16 @@ where
         }
     }
 
-    fn generate_filter(key_map: &F, geometry: &Geometry) -> HashMap<K, DeviceFilter> {
-        let mut filters: HashMap<K, DeviceFilter> = HashMap::new();
+    fn generate_filter(key_map: &F, geometry: &Geometry) -> HashMap<K, DeviceMask> {
+        let mut filters: HashMap<K, DeviceMask> = HashMap::new();
         geometry.iter().for_each(|dev| {
             if let Some(key) = key_map(dev) {
                 if let Some(v) = filters.get_mut(&key) {
-                    v.set_enable(dev.idx());
+                    v.set_enable(dev);
                 } else {
                     filters.insert(
                         key,
-                        DeviceFilter::from_fn(geometry, |dev_| dev_.idx() == dev.idx()),
+                        DeviceMask::from_fn(geometry, |dev_| dev_.idx() == dev.idx()),
                     );
                 }
             }
@@ -99,7 +99,7 @@ where
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        _: &DeviceFilter,
+        _: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         let Self {
@@ -160,7 +160,7 @@ where
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        _: &DeviceFilter,
+        _: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, AUTDDriverError> {
         let Self {
@@ -214,7 +214,7 @@ mod tests {
                 .operation_generator(
                     &geometry,
                     &Environment::default(),
-                    &DeviceFilter::all_enabled(),
+                    &DeviceMask::AllEnabled,
                     &FirmwareLimits::unused()
                 )
                 .err()
@@ -236,7 +236,7 @@ mod tests {
             .operation_generator(
                 &geometry,
                 &Environment::default(),
-                &DeviceFilter::all_enabled(),
+                &DeviceMask::AllEnabled,
                 &FirmwareLimits::unused()
             )
             .err()

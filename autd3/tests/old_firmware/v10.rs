@@ -2,7 +2,7 @@
 
 use autd3::{
     controller::Driver,
-    core::gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerFilter},
+    core::gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerMask},
     link::{Audit, AuditOption, audit::version},
     prelude::*,
 };
@@ -53,7 +53,7 @@ fn firmware_v10_by_v10_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(
@@ -72,7 +72,7 @@ fn firmware_v10_by_v10_driver() -> anyhow::Result<()> {
         .init(
             autd.geometry(),
             &autd.environment,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?
         .generate(dev);
         assert_eq!(

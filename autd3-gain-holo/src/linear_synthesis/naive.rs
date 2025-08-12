@@ -79,7 +79,7 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for Naive<D, B> {
         self,
         geometry: &Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
@@ -147,18 +147,14 @@ mod tests {
         );
 
         assert_eq!(
-            g.init(
-                &geometry,
-                &Environment::new(),
-                &TransducerFilter::all_enabled(),
-            )
-            .map(|mut res| {
-                let f = res.generate(&geometry[0]);
-                geometry[0]
-                    .iter()
-                    .filter(|tr| f.calc(tr) != Drive::NULL)
-                    .count()
-            }),
+            g.init(&geometry, &Environment::new(), &TransducerMask::AllEnabled,)
+                .map(|mut res| {
+                    let f = res.generate(&geometry[0]);
+                    geometry[0]
+                        .iter()
+                        .filter(|tr| f.calc(tr) != Drive::NULL)
+                        .count()
+                }),
             Ok(geometry.num_transducers()),
         );
     }
@@ -180,7 +176,10 @@ mod tests {
         let mut g = g.init(
             &geometry,
             &Environment::new(),
-            &TransducerFilter::new(HashMap::from([(1, None)])),
+            &TransducerMask::new([
+                DeviceTransducerMask::AllDisabled,
+                DeviceTransducerMask::AllEnabled,
+            ]),
         )?;
         let f = g.generate(&geometry[1]);
         assert_eq!(
@@ -208,11 +207,11 @@ mod tests {
             directivity: std::marker::PhantomData::<Sphere>,
         };
 
-        let filter = TransducerFilter::from_fn(&geometry, |dev| {
+        let filter = TransducerMask::from_fn(&geometry, |dev| {
             if dev.idx() == 0 {
-                Some(|tr: &Transducer| tr.idx() < 100)
+                DeviceTransducerMask::from_fn(dev, |tr: &Transducer| tr.idx() < 100)
             } else {
-                None
+                DeviceTransducerMask::AllDisabled
             }
         });
         let mut g = g.init(&geometry, &Environment::new(), &filter).unwrap();
@@ -252,11 +251,11 @@ mod tests {
             directivity: std::marker::PhantomData::<Sphere>,
         };
 
-        let filter = TransducerFilter::from_fn(&geometry, |dev| {
+        let filter = TransducerMask::from_fn(&geometry, |dev| {
             if dev.idx() == 0 {
-                None
+                DeviceTransducerMask::AllDisabled
             } else {
-                Some(|tr: &Transducer| tr.idx() < 100)
+                DeviceTransducerMask::from_fn(dev, |tr: &Transducer| tr.idx() < 100)
             }
         });
         let mut g = g.init(&geometry, &Environment::new(), &filter)?;

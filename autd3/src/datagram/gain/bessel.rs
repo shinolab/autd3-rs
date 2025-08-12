@@ -87,7 +87,7 @@ impl Gain<'_> for Bessel {
         self,
         _: &Geometry,
         env: &Environment,
-        _: &TransducerFilter,
+        _: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         Ok(Impl {
             pos: self.pos,
@@ -185,7 +185,7 @@ mod tests {
             },
         };
         bessel_check(
-            g.init(&geometry, &env, &TransducerFilter::all_enabled())
+            g.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .unwrap(),
             pos,
             dir,

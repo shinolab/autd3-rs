@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 use autd3_core::{
     environment::Environment,
     firmware::{Intensity, Phase},
-    gain::{GainError, TransducerFilter},
+    gain::{GainError, TransducerMask},
     geometry::{Device, Geometry},
 };
 use autd3_driver::{
@@ -118,7 +118,7 @@ impl GainSTMGenerator<'_> for Circle {
         self,
         _: &Geometry,
         env: &Environment,
-        _filter: &TransducerFilter,
+        _filter: &TransducerMask,
     ) -> Result<Self::T, GainError> {
         let v = if self.n.dot(&Vector3::z()).abs() < 0.9 {
             Vector3::z()
@@ -241,7 +241,7 @@ mod tests {
                 circle,
                 &Geometry::new(vec![]),
                 &env,
-                &TransducerFilter::all_enabled(),
+                &TransducerMask::AllEnabled,
             )?;
             let mut iterator = GainSTMIteratorGenerator::generate(&mut g, &device);
             expect.iter().for_each(|e| {

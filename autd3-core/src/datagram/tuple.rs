@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use crate::{environment::Environment, firmware::FirmwareLimits, geometry::Geometry};
 
-use super::{Datagram, DatagramOption, DeviceFilter};
+use super::{Datagram, DatagramOption, DeviceMask};
 
 #[derive(Debug, PartialEq)]
 #[doc(hidden)]
@@ -32,7 +32,7 @@ where
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         match (
@@ -70,7 +70,7 @@ mod tests {
             self,
             _: &Geometry,
             _: &Environment,
-            _: &DeviceFilter,
+            _: &DeviceMask,
             _: &FirmwareLimits,
         ) -> Result<Self::G, Self::Error> {
             self.result
@@ -106,7 +106,7 @@ mod tests {
                 .operation_generator(
                     &Geometry::new(Default::default()),
                     &Environment::new(),
-                    &DeviceFilter::all_enabled(),
+                    &DeviceMask::AllEnabled,
                     &FirmwareLimits::unused()
                 )
         );

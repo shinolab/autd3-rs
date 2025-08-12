@@ -11,7 +11,7 @@ use crate::{common::Freq, error::AUTDDriverError};
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
     datagram::{
-        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
+        Datagram, DatagramL, DatagramOption, DeviceMask, Inspectable, InspectionResult,
         internal::{HasFiniteLoop, HasSegment},
     },
     environment::Environment,
@@ -19,7 +19,7 @@ use autd3_core::{
         Drive, FirmwareLimits, SamplingConfig, Segment,
         transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
     },
-    gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerFilter},
+    gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerMask},
     geometry::{Device, Geometry},
 };
 use derive_more::{Deref, DerefMut};
@@ -60,7 +60,7 @@ pub trait GainSTMGenerator<'a>: std::fmt::Debug {
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::T, GainError>;
     /// Returns the length of the sequence of gains.
     #[must_use]
@@ -167,7 +167,7 @@ impl<'a, G: GainSTMGenerator<'a>, C: Into<STMConfig> + std::fmt::Debug> Datagram
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         limits: &FirmwareLimits,
         segment: Segment,
         transition_params: TransitionModeParams,
@@ -180,7 +180,7 @@ impl<'a, G: GainSTMGenerator<'a>, C: Into<STMConfig> + std::fmt::Debug> Datagram
         let GainSTMOption { mode } = self.option;
         let gains = self.gains;
         Ok(GainSTMOperationGenerator {
-            g: gains.init(geometry, env, &TransducerFilter::from(filter))?,
+            g: gains.init(geometry, env, &TransducerMask::from(filter))?,
             size,
             sampling_config,
             limits,
@@ -219,7 +219,7 @@ impl<'a, T: GainSTMGenerator<'a>, C: Into<STMConfig> + Copy + std::fmt::Debug> I
         self,
         geometry: &'a Geometry,
         env: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         _: &FirmwareLimits,
     ) -> Result<InspectionResult<<Self as Inspectable<'a>>::Result>, <Self as Datagram<'a>>::Error>
     {
@@ -228,7 +228,7 @@ impl<'a, T: GainSTMGenerator<'a>, C: Into<STMConfig> + Copy + std::fmt::Debug> I
         let n = self.gains.len();
         let mut g = self
             .gains
-            .init(geometry, env, &TransducerFilter::from(filter))?;
+            .init(geometry, env, &TransducerMask::from(filter))?;
         let mode = self.option.mode;
         Ok(InspectionResult::new(geometry, filter, |dev| {
             GainSTMInspectionResult {
@@ -293,7 +293,7 @@ mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()
@@ -348,7 +348,7 @@ mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()
@@ -408,7 +408,7 @@ mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()

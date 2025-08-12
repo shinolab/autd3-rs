@@ -1,7 +1,7 @@
 use autd3_core::{
     environment::Environment,
     firmware::{Intensity, Phase},
-    gain::{GainError, TransducerFilter},
+    gain::{GainError, TransducerMask},
     geometry::{Device, Geometry},
 };
 use autd3_driver::{
@@ -109,7 +109,7 @@ impl GainSTMGenerator<'_> for Line {
         self,
         _: &Geometry,
         env: &Environment,
-        _filter: &TransducerFilter,
+        _filter: &TransducerMask,
     ) -> Result<Self::T, GainError> {
         Ok(LineSTMIterator {
             start: self.start,
@@ -190,7 +190,7 @@ mod tests {
                 line,
                 &Geometry::new(vec![]),
                 &env,
-                &TransducerFilter::all_enabled(),
+                &TransducerMask::AllEnabled,
             )?;
             let mut iterator = GainSTMIteratorGenerator::generate(&mut g, &device);
             expect.iter().for_each(|e| {

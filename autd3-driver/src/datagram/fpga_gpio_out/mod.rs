@@ -5,7 +5,7 @@ pub use gpio_out::GPIOOutputType;
 use std::convert::Infallible;
 
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter},
+    datagram::{Datagram, DeviceMask},
     environment::Environment,
     firmware::{FirmwareLimits, GPIOOut},
     geometry::{Device, Geometry},
@@ -52,7 +52,7 @@ impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> Datagram<'
         self,
         _: &Geometry,
         _: &Environment,
-        _: &DeviceFilter,
+        _: &DeviceMask,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self)

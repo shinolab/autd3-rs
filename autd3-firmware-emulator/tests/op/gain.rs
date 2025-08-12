@@ -46,7 +46,7 @@ impl Gain<'_> for TestGain {
         self,
         _: &Geometry,
         _: &Environment,
-        _filter: &TransducerFilter,
+        _filter: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         Ok(self)
     }

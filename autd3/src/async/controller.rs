@@ -1,5 +1,5 @@
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter, Inspectable, InspectionResult},
+    datagram::{Datagram, DeviceMask, Inspectable, InspectionResult},
     environment::Environment,
     link::{Ack, AsyncLink, MsgId, RxMessage},
     sleep::r#async::Sleep,
@@ -155,7 +155,7 @@ impl<L: AsyncLink, V: Driver> Controller<L, V> {
         s.inspect(
             &self.geometry,
             &self.environment,
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &self.driver.firmware_limits(),
         )
     }
@@ -335,7 +335,7 @@ mod tests {
 
     use autd3_core::{
         firmware::{Intensity, Phase, Segment},
-        gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerFilter},
+        gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerMask},
         link::LinkError,
         modulation::{Modulation, ModulationInspectionResult},
     };
@@ -423,7 +423,7 @@ mod tests {
             .init(
                 &autd.geometry,
                 &autd.environment,
-                &TransducerFilter::all_enabled(),
+                &TransducerMask::AllEnabled,
             )?
             .generate(dev);
             assert_eq!(
@@ -437,7 +437,7 @@ mod tests {
             .init(
                 &autd.geometry,
                 &autd.environment,
-                &TransducerFilter::all_enabled(),
+                &TransducerMask::AllEnabled,
             )?
             .generate(dev);
             assert_eq!(

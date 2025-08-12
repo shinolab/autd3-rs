@@ -66,7 +66,7 @@ pub mod tests {
             self,
             _: &Geometry,
             _env: &Environment,
-            _: &TransducerFilter,
+            _: &TransducerMask,
         ) -> Result<Self::G, GainError> {
             Ok(self)
         }
@@ -117,11 +117,7 @@ pub mod tests {
             },
             &geometry,
         );
-        let mut f = g.init(
-            &geometry,
-            &Environment::new(),
-            &TransducerFilter::all_enabled(),
-        )?;
+        let mut f = g.init(&geometry, &Environment::new(), &TransducerMask::AllEnabled)?;
         assert_eq!(
             expect,
             geometry
@@ -152,7 +148,7 @@ pub mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()
@@ -195,7 +191,7 @@ pub mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()

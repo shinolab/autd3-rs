@@ -1,5 +1,5 @@
 use autd3_core::{
-    datagram::{Datagram, DeviceFilter},
+    datagram::{Datagram, DeviceMask},
     datagram::{Inspectable, InspectionResult},
     environment::Environment,
     link::{Ack, Link, MsgId, RxMessage},
@@ -136,7 +136,7 @@ impl<L: Link, V: Driver> Controller<L, V> {
         s.inspect(
             &self.geometry,
             &self.environment,
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &self.driver.firmware_limits(),
         )
     }
@@ -362,7 +362,7 @@ pub(crate) mod tests {
     use crate::{
         core::{
             firmware::{Intensity, Phase, Segment},
-            gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerFilter},
+            gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerMask},
             link::LinkError,
             modulation::{Modulation, ModulationInspectionResult},
         },
@@ -443,7 +443,7 @@ pub(crate) mod tests {
             .init(
                 &autd.geometry,
                 &autd.environment,
-                &TransducerFilter::all_enabled(),
+                &TransducerMask::AllEnabled,
             )?
             .generate(dev);
             assert_eq!(
@@ -457,7 +457,7 @@ pub(crate) mod tests {
             .init(
                 &autd.geometry,
                 &autd.environment,
-                &TransducerFilter::all_enabled(),
+                &TransducerMask::AllEnabled,
             )?
             .generate(dev);
             assert_eq!(
@@ -687,7 +687,7 @@ pub(crate) mod tests {
             .init(
                 &autd.geometry,
                 &autd.environment,
-                &TransducerFilter::all_enabled(),
+                &TransducerMask::AllEnabled,
             )?
             .generate(dev);
             assert_eq!(
@@ -701,7 +701,7 @@ pub(crate) mod tests {
             .init(
                 &autd.geometry,
                 &autd.environment,
-                &TransducerFilter::all_enabled(),
+                &TransducerMask::AllEnabled,
             )?
             .generate(dev);
             assert_eq!(

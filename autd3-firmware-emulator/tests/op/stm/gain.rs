@@ -2,7 +2,7 @@ use std::{collections::HashMap, num::NonZeroU16};
 
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
-    datagram::{Datagram, DeviceFilter},
+    datagram::{Datagram, DeviceMask},
     environment::Environment,
     firmware::{
         Drive, GPIOIn, Intensity, Phase, SamplingConfig, Segment,
@@ -572,7 +572,7 @@ fn invalid_gain_stm_mode() -> anyhow::Result<()> {
     let mut generator = d.operation_generator(
         &geometry,
         &Environment::new(),
-        &DeviceFilter::all_enabled(),
+        &DeviceMask::AllEnabled,
         &V12_1.firmware_limits(),
     )?;
     let mut op = geometry

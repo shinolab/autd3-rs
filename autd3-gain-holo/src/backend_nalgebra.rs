@@ -3,7 +3,7 @@ use std::mem::{ManuallyDrop, MaybeUninit};
 use autd3_core::{
     acoustics::{directivity::Directivity, propagate},
     environment::Environment,
-    gain::TransducerFilter,
+    gain::TransducerMask,
     geometry::{Complex, Geometry, Point3},
 };
 use nalgebra::{ComplexField, Dyn, Normed, U1, VecStorage};
@@ -87,7 +87,7 @@ impl LinAlgBackend for NalgebraBackend {
         geometry: &Geometry,
         env: &Environment,
         foci: &[Point3],
-        filter: &TransducerFilter,
+        filter: &TransducerMask,
     ) -> Result<Self::MatrixXc, HoloError> {
         use rayon::prelude::*;
 
@@ -543,13 +543,15 @@ impl LinAlgBackend for NalgebraBackend {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, f32::consts::PI};
+    use std::f32::consts::PI;
 
     use crate::{Amplitude, Pa, Trans, tests::create_geometry};
 
     use super::*;
 
-    use autd3_core::{acoustics::directivity::Sphere, geometry::Transducer};
+    use autd3_core::{
+        acoustics::directivity::Sphere, gain::DeviceTransducerMask, geometry::Transducer,
+    };
     use rand::Rng;
 
     const N: usize = 10;
@@ -1897,7 +1899,7 @@ mod tests {
             &geometry,
             &env,
             &foci,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?;
         let g = backend.to_host_cm(g)?;
         reference(geometry, foci)
@@ -1921,7 +1923,7 @@ mod tests {
     ) -> Result<(), HoloError> {
         let env = Environment::new();
 
-        let reference = |geometry: Geometry, foci: Vec<Point3>, filter: TransducerFilter| {
+        let reference = |geometry: Geometry, foci: Vec<Point3>, filter: TransducerMask| {
             let mut g = MatrixXc::zeros(
                 foci.len(),
                 geometry
@@ -1948,9 +1950,12 @@ mod tests {
         };
 
         let geometry = create_geometry(dev_num, dev_num);
-        let filter = TransducerFilter::new(HashMap::from_iter(
-            (1..geometry.num_devices()).map(|i| (i, None)),
-        ));
+        let filter = TransducerMask::new(
+            [DeviceTransducerMask::AllDisabled]
+                .into_iter()
+                .chain(std::iter::repeat(DeviceTransducerMask::AllEnabled))
+                .take(geometry.num_devices()),
+        );
 
         let foci = gen_foci(foci_num).map(|(p, _)| p).collect::<Vec<_>>();
 
@@ -1977,10 +1982,10 @@ mod tests {
     ) -> Result<(), HoloError> {
         let env = Environment::new();
 
-        let filter = |geometry: &Geometry| -> TransducerFilter {
-            TransducerFilter::from_fn(geometry, |dev| {
+        let filter = |geometry: &Geometry| -> TransducerMask {
+            TransducerMask::from_fn(geometry, |dev| {
                 let num_transducers = dev.num_transducers();
-                Some(move |tr: &Transducer| tr.idx() > num_transducers / 2)
+                DeviceTransducerMask::from_fn(dev, |tr: &Transducer| tr.idx() > num_transducers / 2)
             })
         };
 
@@ -2049,16 +2054,16 @@ mod tests {
         let env = Environment::new();
 
         let filter = |geometry: &Geometry| {
-            TransducerFilter::from_fn(geometry, |dev| {
+            TransducerMask::from_fn(geometry, |dev| {
                 if dev.idx() == 0 {
-                    return None;
+                    return DeviceTransducerMask::AllDisabled;
                 }
                 let num_transducers = dev.num_transducers();
-                Some(move |tr: &Transducer| tr.idx() > num_transducers / 2)
+                DeviceTransducerMask::from_fn(dev, |tr: &Transducer| tr.idx() > num_transducers / 2)
             })
         };
 
-        let reference = |geometry: Geometry, foci: Vec<Point3>, filter: TransducerFilter| {
+        let reference = |geometry: Geometry, foci: Vec<Point3>, filter: TransducerMask| {
             let mut g = MatrixXc::zeros(
                 foci.len(),
                 geometry
@@ -2135,7 +2140,7 @@ mod tests {
             &geometry,
             &env,
             &foci,
-            &TransducerFilter::all_enabled(),
+            &TransducerMask::AllEnabled,
         )?;
 
         let b = backend.gen_back_prop(m, n, &g)?;

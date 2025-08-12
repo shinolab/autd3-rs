@@ -15,7 +15,7 @@ use crate::{
 use autd3_core::{
     common::DEFAULT_TIMEOUT,
     datagram::{
-        Datagram, DatagramL, DatagramOption, DeviceFilter, Inspectable, InspectionResult,
+        Datagram, DatagramL, DatagramOption, DeviceMask, Inspectable, InspectionResult,
         internal::{HasFiniteLoop, HasSegment},
     },
     environment::Environment,
@@ -129,7 +129,7 @@ impl<const N: usize, G: FociSTMGenerator<N> + std::fmt::Debug, C: Into<STMConfig
         self,
         _: &Geometry,
         env: &Environment,
-        _: &DeviceFilter,
+        _: &DeviceMask,
         limits: &FirmwareLimits,
         segment: Segment,
         transition_params: TransitionModeParams,
@@ -184,7 +184,7 @@ impl<
         self,
         geometry: &'a Geometry,
         _: &Environment,
-        filter: &DeviceFilter,
+        filter: &DeviceMask,
         _: &FirmwareLimits,
     ) -> Result<InspectionResult<<Self as Inspectable<'a>>::Result>, <Self as Datagram<'a>>::Error>
     {
@@ -252,7 +252,7 @@ mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()
@@ -309,7 +309,7 @@ mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()
@@ -371,7 +371,7 @@ mod tests {
         .inspect(
             &geometry,
             &Environment::default(),
-            &DeviceFilter::all_enabled(),
+            &DeviceMask::AllEnabled,
             &FirmwareLimits::unused(),
         )?
         .iter()

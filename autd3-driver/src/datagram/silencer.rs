@@ -2,7 +2,7 @@ use std::{convert::Infallible, num::NonZeroU16};
 
 use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT, ULTRASOUND_PERIOD},
-    datagram::{Datagram, DeviceFilter},
+    datagram::{Datagram, DeviceMask},
     environment::Environment,
     firmware::FirmwareLimits,
     geometry::Geometry,
@@ -136,7 +136,7 @@ impl<T: SilencerConfig> Datagram<'_> for Silencer<T> {
         self,
         _: &Geometry,
         _: &Environment,
-        _: &DeviceFilter,
+        _: &DeviceMask,
         _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self.config)
