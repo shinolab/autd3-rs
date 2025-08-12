@@ -1,3 +1,4 @@
+use alloc::string::{String, ToString};
 use derive_more::Display;
 use thiserror::Error;
 

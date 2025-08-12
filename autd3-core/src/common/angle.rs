@@ -22,7 +22,7 @@ impl Angle {
 
     /// An angle of π
     pub const PI: Self = Self {
-        radian: std::f32::consts::PI,
+        radian: core::f32::consts::PI,
     };
 
     /// Returns the angle in radian
@@ -38,7 +38,7 @@ impl Angle {
     }
 }
 
-impl std::ops::Mul<deg> for f32 {
+impl core::ops::Mul<deg> for f32 {
     type Output = Angle;
 
     fn mul(self, _rhs: deg) -> Self::Output {
@@ -48,7 +48,7 @@ impl std::ops::Mul<deg> for f32 {
     }
 }
 
-impl std::ops::Mul<rad> for f32 {
+impl core::ops::Mul<rad> for f32 {
     type Output = Angle;
 
     fn mul(self, _rhs: rad) -> Self::Output {
@@ -62,6 +62,6 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(format!("{:?}", 1.0 * rad), "1rad");
+        assert_eq!(alloc::format!("{:?}", 1.0 * rad), "1rad");
     }
 }

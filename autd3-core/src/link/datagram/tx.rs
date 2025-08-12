@@ -5,7 +5,7 @@ use crate::ethercat::EC_OUTPUT_FRAME_SIZE;
 
 use super::header::Header;
 
-const PAYLOAD_SIZE: usize = EC_OUTPUT_FRAME_SIZE - std::mem::size_of::<Header>();
+const PAYLOAD_SIZE: usize = EC_OUTPUT_FRAME_SIZE - core::mem::size_of::<Header>();
 
 /// PDO output data representation
 #[repr(C)]

@@ -1,3 +1,5 @@
+use alloc::{boxed::Box, vec::Vec};
+
 use crate::geometry::Geometry;
 
 use super::{RxMessage, TxMessage, error::LinkError};

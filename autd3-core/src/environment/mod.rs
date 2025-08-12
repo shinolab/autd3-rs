@@ -1,6 +1,9 @@
-use std::f32::consts::PI;
+use core::f32::consts::PI;
 
 use crate::common::{METER, ULTRASOUND_FREQ};
+
+#[cfg(not(feature = "std"))]
+use num_traits::float::Float;
 
 #[non_exhaustive]
 #[repr(C)]

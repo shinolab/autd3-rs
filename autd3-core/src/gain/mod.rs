@@ -1,6 +1,7 @@
 mod error;
 mod filter;
 
+use alloc::{boxed::Box, string::String, vec::Vec};
 pub use error::GainError;
 pub use filter::{DeviceTransducerMask, TransducerMask};
 

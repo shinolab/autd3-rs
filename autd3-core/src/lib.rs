@@ -1,9 +1,14 @@
+#![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_crate_level_docs)]
 #![warn(rustdoc::unescaped_backticks)]
 
 //! Core traits and types for AUTD3.
+
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 #[cfg_attr(docsrs, doc(cfg(feature = "acoustics")))]
 #[cfg(feature = "acoustics")]
@@ -169,7 +174,6 @@ pub mod derive {
             geometry::{Device, Transducer},
         };
         pub use autd3_derive::Gain;
-        pub use std::collections::HashMap;
     }
     #[cfg(feature = "gain")]
     pub use gain::*;

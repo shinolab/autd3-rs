@@ -142,3 +142,8 @@ content = re.sub(r'^version = "(.*?)"', f'version = "{version}"', content, flags
 content = re.sub(r'^autd3(.*)version = "(.*?)"', f'autd3\\1version = "{version}"', content, flags=re.MULTILINE)
 file.write_text(content, encoding="utf-8")
 '''
+
+[tasks.no_std-check]
+command = "cargo"
+cwd = "tests/ensure_no_std"
+args = ["build"]

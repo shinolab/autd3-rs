@@ -10,9 +10,9 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-autd3-core = { workspace = true, features = ["acoustics", "derive", "gain"] }
+autd3-core = { workspace = true, features = ["std", "acoustics", "derive", "gain"] }
 derive_more = { workspace = true }
-nalgebra = { workspace = true }
+nalgebra = { workspace = true, features = ["std"] }
 rand = { workspace = true, features = ["thread_rng"] }
 rayon = { workspace = true }
 thiserror = { workspace = true }

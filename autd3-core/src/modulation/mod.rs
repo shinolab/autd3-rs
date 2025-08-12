@@ -1,10 +1,9 @@
 mod error;
 
-use std::sync::Arc;
-
 use crate::firmware::{
     FirmwareLimits, SamplingConfig, Segment, transition_mode::TransitionModeParams,
 };
+use alloc::{string::String, sync::Arc, vec::Vec};
 pub use error::ModulationError;
 
 /// Trait for applying amplitude modulation.
@@ -12,7 +11,7 @@ pub use error::ModulationError;
 /// See also [`Modulation`] derive macro.
 ///
 /// [`Modulation`]: autd3_derive::Modulation
-pub trait Modulation: std::fmt::Debug {
+pub trait Modulation: core::fmt::Debug {
     /// Calculate the modulation data.
     fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError>;
 

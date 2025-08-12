@@ -14,7 +14,7 @@ impl Intensity {
     pub const MIN: Intensity = Intensity(0x00);
 }
 
-impl std::ops::Div<u8> for Intensity {
+impl core::ops::Div<u8> for Intensity {
     type Output = Self;
 
     fn div(self, rhs: u8) -> Self::Output {
@@ -22,7 +22,7 @@ impl std::ops::Div<u8> for Intensity {
     }
 }
 
-impl std::ops::Mul<u8> for Intensity {
+impl core::ops::Mul<u8> for Intensity {
     type Output = Intensity;
 
     fn mul(self, rhs: u8) -> Self::Output {
@@ -30,7 +30,7 @@ impl std::ops::Mul<u8> for Intensity {
     }
 }
 
-impl std::ops::Mul<Intensity> for u8 {
+impl core::ops::Mul<Intensity> for u8 {
     type Output = Intensity;
 
     fn mul(self, rhs: Intensity) -> Self::Output {
@@ -38,7 +38,7 @@ impl std::ops::Mul<Intensity> for u8 {
     }
 }
 
-impl std::ops::Add<Intensity> for Intensity {
+impl core::ops::Add<Intensity> for Intensity {
     type Output = Self;
 
     fn add(self, rhs: Intensity) -> Self::Output {
@@ -46,7 +46,7 @@ impl std::ops::Add<Intensity> for Intensity {
     }
 }
 
-impl std::ops::Sub<Intensity> for Intensity {
+impl core::ops::Sub<Intensity> for Intensity {
     type Output = Self;
 
     fn sub(self, rhs: Intensity) -> Self::Output {
@@ -94,8 +94,8 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(format!("{:?}", Intensity(0x00)), "0x00");
-        assert_eq!(format!("{:?}", Intensity(0x01)), "0x01");
-        assert_eq!(format!("{:?}", Intensity(0xFF)), "0xFF");
+        assert_eq!(alloc::format!("{:?}", Intensity(0x00)), "0x00");
+        assert_eq!(alloc::format!("{:?}", Intensity(0x01)), "0x01");
+        assert_eq!(alloc::format!("{:?}", Intensity(0xFF)), "0xFF");
     }
 }
