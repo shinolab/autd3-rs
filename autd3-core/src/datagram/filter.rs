@@ -24,11 +24,8 @@ impl DeviceMask {
 
     /// Sets the device enabled.
     pub fn set_enable(&mut self, dev: &Device) {
-        match self {
-            Self::AllEnabled => (),
-            Self::Masked(filter) => {
-                filter[dev.idx()] = true;
-            }
+        if let Self::Masked(filter) = self {
+            filter[dev.idx()] = true;
         }
     }
 }
