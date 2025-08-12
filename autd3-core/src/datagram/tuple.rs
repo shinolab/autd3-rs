@@ -54,7 +54,7 @@ where
 mod tests {
     use super::*;
 
-    use std::time::Duration;
+    use core::time::Duration;
 
     #[derive(Debug)]
     pub struct TestDatagram {

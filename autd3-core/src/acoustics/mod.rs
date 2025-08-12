@@ -1,7 +1,7 @@
 /// directivity module
 pub mod directivity;
 
-use std::f32::consts::PI;
+use core::f32::consts::PI;
 
 use crate::{
     common::T4010A1_AMPLITUDE,
@@ -90,7 +90,7 @@ mod tests {
 
     #[rstest::rstest]
     fn test_propagate(tr: Transducer, rot: UnitQuaternion, target: Point3, sound_speed: f32) {
-        let device = Device::new(rot, vec![tr.clone()]);
+        let device = Device::new(rot, alloc::vec![tr.clone()]);
         let wavelength = sound_speed / ULTRASOUND_FREQ.hz() as f32;
         let wavenumber = 2. * PI / wavelength;
         assert_complex_approx_eq!(

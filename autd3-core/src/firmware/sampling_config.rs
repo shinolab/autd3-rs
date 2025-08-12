@@ -1,4 +1,7 @@
-use std::{convert::Infallible, fmt::Debug, num::NonZeroU16, time::Duration};
+use core::{convert::Infallible, fmt::Debug, num::NonZeroU16, time::Duration};
+
+#[cfg(not(feature = "std"))]
+use num_traits::float::Float;
 
 use crate::{
     common::{Freq, Hz, ULTRASOUND_FREQ},
@@ -53,11 +56,11 @@ pub enum SamplingConfig {
     #[doc(hidden)]
     Freq(Freq<f32>),
     #[doc(hidden)]
-    Period(std::time::Duration),
+    Period(core::time::Duration),
     #[doc(hidden)]
     FreqNearest(Nearest<Freq<f32>>),
     #[doc(hidden)]
-    PeriodNearest(Nearest<std::time::Duration>),
+    PeriodNearest(Nearest<core::time::Duration>),
 }
 
 impl PartialEq for SamplingConfig {
@@ -69,8 +72,8 @@ impl PartialEq for SamplingConfig {
     }
 }
 
-impl std::fmt::Debug for SamplingConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for SamplingConfig {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             SamplingConfig::Divide(div) => write!(f, "SamplingConfig::Divide({div})"),
             SamplingConfig::Freq(freq) => write!(f, "SamplingConfig::Freq({freq:?})"),
@@ -97,8 +100,8 @@ impl From<Freq<f32>> for SamplingConfig {
     }
 }
 
-impl From<std::time::Duration> for SamplingConfig {
-    fn from(value: std::time::Duration) -> Self {
+impl From<core::time::Duration> for SamplingConfig {
+    fn from(value: core::time::Duration) -> Self {
         Self::Period(value)
     }
 }
@@ -139,7 +142,7 @@ impl SamplingConfig {
                 use crate::common::ULTRASOUND_PERIOD;
 
                 let period_min = ULTRASOUND_PERIOD;
-                let period_max = std::time::Duration::from_micros(
+                let period_max = core::time::Duration::from_micros(
                     u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64,
                 );
                 if !(period_min..=period_max).contains(&duration) {
@@ -172,7 +175,7 @@ impl SamplingConfig {
     }
 
     /// The sampling period.
-    pub fn period(&self) -> Result<std::time::Duration, SamplingConfigError> {
+    pub fn period(&self) -> Result<core::time::Duration, SamplingConfigError> {
         Ok(crate::common::ULTRASOUND_PERIOD * self.divide()? as u32)
     }
 }
@@ -194,7 +197,7 @@ mod tests {
     use crate::common::{Hz, kHz};
 
     use crate::common::ULTRASOUND_PERIOD;
-    use std::time::Duration;
+    use core::time::Duration;
 
     use super::*;
 
@@ -296,7 +299,7 @@ mod tests {
     #[case(
         true,
         SamplingConfig::FREQ_40K,
-        SamplingConfig::new(std::time::Duration::from_micros(25))
+        SamplingConfig::new(core::time::Duration::from_micros(25))
     )]
     #[case(false, SamplingConfig::new(41. * kHz), SamplingConfig::new(41. * kHz))]
     #[test]
@@ -318,6 +321,6 @@ mod tests {
     )]
     #[test]
     fn debug(#[case] expect: &str, #[case] config: SamplingConfig) {
-        assert_eq!(expect, format!("{config:?}"));
+        assert_eq!(expect, alloc::format!("{config:?}"));
     }
 }

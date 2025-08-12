@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use crate::{
     datagram::DeviceMask,
     geometry::{Device, Geometry, Transducer},

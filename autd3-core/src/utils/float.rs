@@ -1,3 +1,6 @@
+#[cfg(not(feature = "std"))]
+use num_traits::float::Float;
+
 const EPSILON: f64 = 1e-6;
 
 #[doc(hidden)]

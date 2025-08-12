@@ -1,3 +1,6 @@
+#[cfg(not(feature = "std"))]
+use num_traits::float::Float;
+
 use thiserror::Error;
 
 #[repr(C)]

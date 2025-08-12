@@ -37,8 +37,8 @@ impl RxMessage {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::offset_of;
-    use std::mem::size_of;
+    use core::mem::offset_of;
+    use core::mem::size_of;
 
     use super::*;
 

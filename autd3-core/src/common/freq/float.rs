@@ -1,6 +1,6 @@
 use super::{Freq, Hz, kHz};
 
-impl std::ops::Mul<Hz> for f32 {
+impl core::ops::Mul<Hz> for f32 {
     type Output = Freq<f32>;
 
     fn mul(self, _rhs: Hz) -> Self::Output {
@@ -8,7 +8,7 @@ impl std::ops::Mul<Hz> for f32 {
     }
 }
 
-impl std::ops::Mul<kHz> for f32 {
+impl core::ops::Mul<kHz> for f32 {
     type Output = Freq<f32>;
 
     fn mul(self, _rhs: kHz) -> Self::Output {

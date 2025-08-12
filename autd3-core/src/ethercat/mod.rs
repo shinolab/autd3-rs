@@ -2,7 +2,7 @@ mod dc_sys_time;
 
 pub use dc_sys_time::DcSysTime;
 
-use std::time::Duration;
+use core::time::Duration;
 
 /// PDO output frame size
 pub const EC_OUTPUT_FRAME_SIZE: usize = 626;

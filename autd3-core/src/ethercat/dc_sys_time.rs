@@ -32,7 +32,7 @@ impl DcSysTime {
     /// Converts the system time to the UTC time
     #[must_use]
     pub fn to_utc(&self) -> OffsetDateTime {
-        ECAT_DC_SYS_TIME_BASE + std::time::Duration::from_nanos(self.dc_sys_time)
+        ECAT_DC_SYS_TIME_BASE + core::time::Duration::from_nanos(self.dc_sys_time)
     }
 
     /// Creates a new instance from the UTC time
@@ -45,25 +45,26 @@ impl DcSysTime {
 
     /// Returns the system time of now
     #[must_use]
+    #[cfg(feature = "std")]
     pub fn now() -> Self {
         Self::from_utc(OffsetDateTime::now_utc()).unwrap()
     }
 }
 
-impl std::ops::Add<std::time::Duration> for DcSysTime {
+impl core::ops::Add<core::time::Duration> for DcSysTime {
     type Output = Self;
 
-    fn add(self, rhs: std::time::Duration) -> Self::Output {
+    fn add(self, rhs: core::time::Duration) -> Self::Output {
         Self {
             dc_sys_time: self.dc_sys_time + rhs.as_nanos() as u64,
         }
     }
 }
 
-impl std::ops::Sub<std::time::Duration> for DcSysTime {
+impl core::ops::Sub<core::time::Duration> for DcSysTime {
     type Output = Self;
 
-    fn sub(self, rhs: std::time::Duration) -> Self::Output {
+    fn sub(self, rhs: core::time::Duration) -> Self::Output {
         Self {
             dc_sys_time: self.dc_sys_time - rhs.as_nanos() as u64,
         }
@@ -102,10 +103,10 @@ mod tests {
         let utc = time::macros::datetime!(2000-01-01 0:0:0 UTC);
         let t = DcSysTime::from_utc(utc);
         assert!(t.is_ok());
-        let t = t.unwrap() + std::time::Duration::from_secs(1);
+        let t = t.unwrap() + core::time::Duration::from_secs(1);
         assert_eq!(1000000000, t.sys_time());
 
-        let t = t - std::time::Duration::from_secs(1);
+        let t = t - core::time::Duration::from_secs(1);
         assert_eq!(0, t.sys_time());
     }
 }
