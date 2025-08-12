@@ -130,6 +130,7 @@ jobs:
           fail_ci_if_error: true
 
   no-std-check:
+    needs: changed-files
     if: ${{ needs.changed-files.outputs.src == 'true' }}
     name: no-std-check
     runs-on: ubuntu-latest
