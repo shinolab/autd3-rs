@@ -14,6 +14,10 @@ fn panic(_panic: &core::panic::PanicInfo<'_>) -> ! {
 #[unsafe(no_mangle)]
 fn main() {}
 
+#[cfg(target_os = "linux")]
+#[unsafe(no_mangle)]
+fn __libc_start_main(_main: fn() -> isize) {}
+
 use alloc::alloc::*;
 
 #[derive(Default)]
