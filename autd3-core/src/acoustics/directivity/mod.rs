@@ -1,6 +1,9 @@
 mod sphere;
 mod t4010a1;
 
+#[cfg(not(feature = "std"))]
+use num_traits::float::Float;
+
 use crate::{
     common::{Angle, rad},
     geometry::{UnitVector3, Vector3},

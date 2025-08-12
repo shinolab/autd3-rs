@@ -19,12 +19,14 @@ pub type Translation = nalgebra::Translation3<f32>;
 /// A 3-dimensional isometry.
 pub type Isometry = nalgebra::Isometry3<f32>;
 
+use alloc::vec::Vec;
+
 pub use device::*;
-use getset::CopyGetters;
 pub use rotation::*;
 pub use transducer::*;
 
 use derive_more::{Deref, IntoIterator};
+use getset::CopyGetters;
 
 /// Geometry of the devices.
 #[derive(Deref, CopyGetters, IntoIterator)]
@@ -93,7 +95,7 @@ impl Geometry {
 
 impl<'a> IntoIterator for &'a mut Geometry {
     type Item = &'a mut Device;
-    type IntoIter = std::slice::IterMut<'a, Device>;
+    type IntoIter = core::slice::IterMut<'a, Device>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.version += 1;
@@ -101,7 +103,7 @@ impl<'a> IntoIterator for &'a mut Geometry {
     }
 }
 
-impl std::ops::DerefMut for Geometry {
+impl core::ops::DerefMut for Geometry {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.version += 1;
         &mut self.devices
@@ -110,6 +112,7 @@ impl std::ops::DerefMut for Geometry {
 
 #[cfg(test)]
 pub(crate) mod tests {
+    use alloc::vec::Vec;
     use rand::Rng;
 
     use crate::common::mm;
@@ -171,8 +174,8 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[case(1, vec![create_device(249)])]
-    #[case(2, vec![create_device(249), create_device(249)])]
+    #[case(1, alloc::vec![create_device(249)])]
+    #[case(2, alloc::vec![create_device(249), create_device(249)])]
     fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
@@ -181,8 +184,8 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[case(249, vec![create_device(249)])]
-    #[case(498, vec![create_device(249), create_device(249)])]
+    #[case(249, alloc::vec![create_device(249)])]
+    #[case(498, alloc::vec![create_device(249), create_device(249)])]
     fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
@@ -192,7 +195,7 @@ pub(crate) mod tests {
 
     #[test]
     fn test_center() {
-        let geometry = Geometry::new(vec![
+        let geometry = Geometry::new(alloc::vec![
             TestDevice::new_autd3(Point3::origin()).into(),
             TestDevice::new_autd3(Point3::new(10., 20., 30.)).into(),
         ]);
@@ -218,7 +221,7 @@ pub(crate) mod tests {
 
     #[test]
     fn idx() {
-        let geometry = Geometry::new(vec![
+        let geometry = Geometry::new(alloc::vec![
             TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
             TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
         ]);
@@ -233,7 +236,7 @@ pub(crate) mod tests {
 
     #[test]
     fn reconfigure() {
-        let mut geometry = Geometry::new(vec![
+        let mut geometry = Geometry::new(alloc::vec![
             TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
             TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
         ]);

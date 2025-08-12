@@ -129,12 +129,25 @@ jobs:
           disable_search: true
           fail_ci_if_error: true
 
+  no-std-check:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
+    name: no-std-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-build
+      - run: cargo make no_std-check
+
   auto-merge:
     needs:
       - all-tests-passed
       - miri
       - build-docs
       - coverage
+      - no-std-check
     permissions:
       pull-requests: write
       contents: write

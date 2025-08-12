@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use zerocopy::FromZeros;
 
 use crate::geometry::Geometry;
@@ -28,7 +29,7 @@ impl TxBufferPoolSync {
     pub fn borrow(&mut self) -> Vec<TxMessage> {
         self.buffer
             .take()
-            .unwrap_or_else(|| vec![TxMessage::new_zeroed(); self.num_devices])
+            .unwrap_or_else(|| alloc::vec![TxMessage::new_zeroed(); self.num_devices])
     }
 
     /// Returns a buffer to the pool.

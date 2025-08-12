@@ -5,6 +5,7 @@ use crate::{
     geometry::{Device, Geometry},
 };
 
+use alloc::vec::Vec;
 use derive_more::Deref;
 
 /// Inspection result of a [`Datagram`].

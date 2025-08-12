@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use core::f32::consts::PI;
 
 use crate::{
     common::{Angle, rad},
@@ -40,7 +40,7 @@ impl From<Complex> for Phase {
     }
 }
 
-impl std::ops::Add<Phase> for Phase {
+impl core::ops::Add<Phase> for Phase {
     type Output = Phase;
 
     fn add(self, rhs: Phase) -> Self::Output {
@@ -48,7 +48,7 @@ impl std::ops::Add<Phase> for Phase {
     }
 }
 
-impl std::ops::Sub<Phase> for Phase {
+impl core::ops::Sub<Phase> for Phase {
     type Output = Phase;
 
     fn sub(self, rhs: Phase) -> Self::Output {
@@ -56,7 +56,7 @@ impl std::ops::Sub<Phase> for Phase {
     }
 }
 
-impl std::ops::Mul<u8> for Phase {
+impl core::ops::Mul<u8> for Phase {
     type Output = Phase;
 
     fn mul(self, rhs: u8) -> Self::Output {
@@ -64,7 +64,7 @@ impl std::ops::Mul<u8> for Phase {
     }
 }
 
-impl std::ops::Div<u8> for Phase {
+impl core::ops::Div<u8> for Phase {
     type Output = Phase;
 
     fn div(self, rhs: u8) -> Self::Output {
@@ -118,8 +118,8 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(format!("{:?}", Phase::ZERO), "0x00");
-        assert_eq!(format!("{:?}", Phase(0x01)), "0x01");
-        assert_eq!(format!("{:?}", Phase(0xFF)), "0xFF");
+        assert_eq!(alloc::format!("{:?}", Phase::ZERO), "0x00");
+        assert_eq!(alloc::format!("{:?}", Phase(0x01)), "0x01");
+        assert_eq!(alloc::format!("{:?}", Phase(0xFF)), "0xFF");
     }
 }

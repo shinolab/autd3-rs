@@ -1,13 +1,11 @@
-use std::time::Duration;
-
-use super::SpinWaitSleeper;
+use core::time::Duration;
 
 #[doc(hidden)]
-pub trait Sleep: std::fmt::Debug + Send + Sync {
-    fn sleep(&self, duration: Duration) -> impl std::future::Future<Output = ()> + Send;
+pub trait Sleep: core::fmt::Debug + Send + Sync {
+    fn sleep(&self, duration: Duration) -> impl core::future::Future<Output = ()> + Send;
 }
 
-impl Sleep for SpinWaitSleeper {
+impl Sleep for super::SpinWaitSleeper {
     async fn sleep(&self, duration: Duration) {
         use std::time::Instant;
 
