@@ -141,7 +141,7 @@ impl LinAlgBackend for NalgebraBackend {
                 let columns = par_map!(foci, |f| {
                     nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
                         n,
-                        geometry.iter().filter(|dev| filter.is_enabled_device(dev)).flat_map(|dev| {
+                        geometry.iter().filter(|dev| filter.has_enabled(dev)).flat_map(|dev| {
                             dev.iter().filter(|tr| filter.is_enabled(tr)).map(move |tr| {
                                 propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), f)
                             })
@@ -153,7 +153,7 @@ impl LinAlgBackend for NalgebraBackend {
                 let mut r = uninit_mat(foci.len(), n);
                 let ptr = Ptr(r.as_mut_ptr());
                 par_for_each!(
-                    geometry.iter().filter(|dev| filter.is_enabled_device(dev)),
+                    geometry.iter().filter(|dev| filter.has_enabled(dev)),
                     move |dev| {
                         let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
                         dev.iter().for_each(move |tr| {
@@ -1933,7 +1933,7 @@ mod tests {
             );
             let transducers = geometry
                 .iter()
-                .filter(|dev| filter.is_enabled_device(dev))
+                .filter(|dev| filter.has_enabled(dev))
                 .flat_map(|dev| dev.iter().map(|tr| (dev.idx(), tr)))
                 .collect::<Vec<_>>();
             (0..foci.len()).for_each(|i| {
@@ -2073,7 +2073,7 @@ mod tests {
             );
             let transducers = geometry
                 .iter()
-                .filter(|dev| filter.is_enabled_device(dev))
+                .filter(|dev| filter.has_enabled(dev))
                 .flat_map(|dev| {
                     dev.iter().filter_map(|tr| {
                         if filter.is_enabled(tr) {
@@ -2108,7 +2108,7 @@ mod tests {
             g.ncols(),
             geometry
                 .iter()
-                .filter(|dev| filter.is_enabled_device(dev))
+                .filter(|dev| filter.has_enabled(dev))
                 .map(|dev| dev.num_transducers() / 2)
                 .sum::<usize>()
         );

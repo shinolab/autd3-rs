@@ -114,7 +114,7 @@ impl<D: Directivity> Greedy<D> {
     fn alloc_result(geometry: &Geometry, filter: &TransducerMask) -> HashMap<usize, Vec<Drive>> {
         geometry
             .iter()
-            .filter(|dev| filter.is_enabled_device(dev))
+            .filter(|dev| filter.has_enabled(dev))
             .map(|dev| (dev.idx(), vec![Drive::NULL; dev.num_transducers()]))
             .collect()
     }
