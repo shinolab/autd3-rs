@@ -3,8 +3,11 @@ use crate::link::AuditOption;
 use autd3_core::link::{RxMessage, TxMessage};
 
 pub use autd3_firmware_emulator::CPUEmulator as V12_1;
+#[cfg(feature = "link-audit-v10")]
 pub use autd3_firmware_emulator_v10::CPUEmulator as V10;
+#[cfg(feature = "link-audit-v11")]
 pub use autd3_firmware_emulator_v11::CPUEmulator as V11;
+#[cfg(feature = "link-audit-v12")]
 pub use autd3_firmware_emulator_v12::CPUEmulator as V12;
 
 #[doc(hidden)]
@@ -48,6 +51,7 @@ impl Emulator for V12_1 {
     }
 }
 
+#[cfg(feature = "link-audit-v12")]
 impl Emulator for V12 {
     fn new(idx: usize, num_transducers: usize, _: AuditOption) -> Self {
         V12::new(idx, num_transducers)
@@ -71,6 +75,7 @@ impl Emulator for V12 {
     }
 }
 
+#[cfg(feature = "link-audit-v11")]
 impl Emulator for V11 {
     fn new(idx: usize, num_transducers: usize, _: AuditOption) -> Self {
         V11::new(idx, num_transducers)
@@ -94,6 +99,7 @@ impl Emulator for V11 {
     }
 }
 
+#[cfg(feature = "link-audit-v10")]
 impl Emulator for V10 {
     fn new(idx: usize, num_transducers: usize, _: AuditOption) -> Self {
         V10::new(idx, num_transducers)

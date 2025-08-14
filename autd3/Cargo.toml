@@ -21,7 +21,10 @@ async = ["tokio", "autd3-core/async", "autd3-driver/async"]
 gain = ["bit-vec", "itertools"]
 modulation = ["num"]
 stm = []
-link-audit = ["autd3-firmware-emulator", "autd3-firmware-emulator-v10", "autd3-firmware-emulator-v11", "autd3-firmware-emulator-v12"]
+link-audit = ["autd3-firmware-emulator"]
+link-audit-v10 = ["autd3-firmware-emulator-v10"]
+link-audit-v11 = ["autd3-firmware-emulator-v11"]
+link-audit-v12 = ["autd3-firmware-emulator-v12"]
 link-nop = ["autd3-firmware-emulator"]
 
 [dependencies]
@@ -40,7 +43,7 @@ smallvec = { workspace = true }
 tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = true }
 
 [dev-dependencies]
-autd3 = { path = ".", features = ["link-audit", "link-nop"] }
+autd3 = { path = ".", features = ["link-audit", "link-audit-v10", "link-audit-v11", "link-audit-v12", "link-nop"] }
 anyhow = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
