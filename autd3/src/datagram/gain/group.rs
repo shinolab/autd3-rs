@@ -84,7 +84,7 @@ where
         let mut filters: HashMap<K, HashMap<usize, bit_vec::BitVec<u32>>> = HashMap::new();
         geometry
             .iter()
-            .filter(|dev| tr_filter.is_enabled_device(dev))
+            .filter(|dev| tr_filter.has_enabled(dev))
             .for_each(|dev| {
                 dev.iter().for_each(|tr| {
                     if let Some(key) = (self.key_map)(dev)(tr) {
@@ -185,7 +185,7 @@ where
                     k,
                     geometry
                         .iter()
-                        .map(|dev| filter.is_enabled_device(dev).then(|| g.generate(dev)))
+                        .map(|dev| filter.has_enabled(dev).then(|| g.generate(dev)))
                         .collect::<Vec<_>>(),
                 ))
             })
@@ -202,7 +202,7 @@ where
         Ok(Self::G {
             g: geometry
                 .iter()
-                .filter(|dev| device_filter.is_enabled_device(dev))
+                .filter(|dev| device_filter.has_enabled(dev))
                 .map(|dev| {
                     let f = (f)(dev);
                     (

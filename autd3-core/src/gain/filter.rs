@@ -31,7 +31,7 @@ impl DeviceTransducerMask {
         }
     }
 
-    fn is_enabled_device(&self) -> bool {
+    fn has_enabled(&self) -> bool {
         match self {
             Self::AllEnabled => true,
             Self::AllDisabled => false,
@@ -76,11 +76,11 @@ impl TransducerMask {
         matches!(self, Self::AllEnabled)
     }
 
-    /// Returns `true` if the [`Device`] is enabled.
-    pub fn is_enabled_device(&self, dev: &Device) -> bool {
+    /// Returns `true` if the [`Device`] has enabled transducers.
+    pub fn has_enabled(&self, dev: &Device) -> bool {
         match self {
             Self::AllEnabled => true,
-            Self::Masked(filter) => filter[dev.idx()].is_enabled_device(),
+            Self::Masked(filter) => filter[dev.idx()].has_enabled(),
         }
     }
 
@@ -98,7 +98,7 @@ impl TransducerMask {
             Self::AllEnabled => geometry.num_devices(),
             Self::Masked(filter) => geometry
                 .iter()
-                .filter(|dev| filter[dev.idx()].is_enabled_device())
+                .filter(|dev| filter[dev.idx()].has_enabled())
                 .count(),
         }
     }

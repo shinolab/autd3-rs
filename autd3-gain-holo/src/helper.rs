@@ -157,7 +157,7 @@ where
             map: Either::Left(
                 geometry
                     .iter()
-                    .filter(|dev| filter.is_enabled_device(dev))
+                    .filter(|dev| filter.has_enabled(dev))
                     .scan(0usize, |state, dev| {
                         Some((dev.idx(), {
                             dev.iter()
