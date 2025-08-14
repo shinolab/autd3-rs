@@ -10,12 +10,12 @@ use autd3_driver::{
     datagram::Group,
     firmware::{
         driver::{BoxedDatagram, Driver, OperationHandler},
-        v12_1::{V12_1, operation::OperationGenerator},
+        v12_1::{operation::OperationGenerator, V12_1},
     },
     geometry::{Geometry, Point3},
 };
 
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use zerocopy::FromZeros;
 
 pub fn generate_geometry(size: usize) -> Geometry {

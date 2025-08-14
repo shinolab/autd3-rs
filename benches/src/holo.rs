@@ -9,14 +9,14 @@ use autd3_driver::{
     autd3_device::AUTD3,
     firmware::{
         driver::{Driver, OperationHandler},
-        v12_1::{V12_1, operation::OperationGenerator},
+        v12_1::{operation::OperationGenerator, V12_1},
     },
     geometry::{Geometry, Point3},
 };
 
 use autd3_gain_holo::{Greedy, Pa};
 
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, Criterion};
 use zerocopy::FromZeros;
 
 pub fn generate_geometry(size: usize) -> Geometry {

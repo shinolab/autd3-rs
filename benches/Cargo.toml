@@ -1,0 +1,31 @@
+[package]
+name = "benches"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+autd3 = { path = "../autd3", default-features = false, features = ["gain"] }
+autd3-core = { path = "../autd3-core", default-features = false, features = ["derive", "environment"] }
+autd3-driver = { path = "../autd3-driver", default-features = false }
+autd3-gain-holo = { path = "../autd3-gain-holo", default-features = false }
+criterion = { version = "0.7.0", default-features = false }
+itertools = { version = "0.14.0", default-features = false }
+zerocopy = { version = "0.8.26", default-features = false }
+
+[lib]
+bench = false
+
+[[bench]]
+name = "autd3-driver-gain"
+path = "src/gain.rs"
+harness = false
+
+[[bench]]
+name = "autd3-group"
+path = "src/group.rs"
+harness = false
+
+[[bench]]
+name = "autd3-gain-holo"
+path = "src/holo.rs"
+harness = false

@@ -42,17 +42,5 @@ tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = t
 [dev-dependencies]
 autd3 = { path = ".", features = ["link-audit", "link-nop"] }
 anyhow = { workspace = true }
-criterion = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt"] }
-tokio-test = { workspace = true }
-zerocopy = { workspace = true }
-
-[lib]
-bench = false
-
-[[bench]]
-name = "autd3-group"
-path = "benches/group.rs"
-harness = false
