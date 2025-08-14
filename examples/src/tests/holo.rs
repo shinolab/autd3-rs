@@ -63,7 +63,7 @@ pub fn holo(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<
         println!("[{i}]: {name}");
     });
     println!("[Others]: GSPAT");
-    color_print::cprint!("<green><bold>Choose number: ");
+    print!("Choose number: ");
     io::stdout().flush()?;
 
     let mut s = String::new();
