@@ -46,7 +46,7 @@ pub fn run<L: Link>(mut autd: Controller<L, firmware::Auto>) -> anyhow::Result<(
             println!("[{i}]: {name}");
         });
         println!("[Others]: Finish");
-        color_print::cprint!("<green><bold>Choose number: ");
+        print!("Choose number: ");
         io::stdout().flush()?;
 
         let mut s = String::new();
