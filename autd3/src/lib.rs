@@ -18,9 +18,7 @@ pub mod controller;
 /// [`GainSTM`]: autd3_driver::datagram::GainSTM
 /// [`FociSTM`]: autd3_driver::datagram::FociSTM
 pub mod datagram;
-/// Primitive [`Link`].
-///
-/// [`Link`]: autd3_core::link::Link
+#[doc(hidden)]
 pub mod link;
 /// Prelude module.
 pub mod prelude;
