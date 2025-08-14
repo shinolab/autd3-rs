@@ -39,7 +39,7 @@ bit-vec = { workspace = true, optional = true }
 bitfield-struct = { workspace = true, optional = true }
 derive_more = { workspace = true, optional = true }
 getset = { workspace = true, optional = true }
-nalgebra = { workspace = true, optional = true, features = [] }
+nalgebra = { workspace = true, optional = true }
 pastey = { workspace = true, optional = true }
 smallvec = { workspace = true, optional = true }
 spin_sleep = { workspace = true, optional = true }
