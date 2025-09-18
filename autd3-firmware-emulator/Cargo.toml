@@ -17,7 +17,6 @@ thread-safe = []
 autd3-core = { workspace = true }
 autd3-driver = { workspace = true }
 bitfield-struct = { workspace = true }
-time = { workspace = true, features = ["std"] }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
@@ -25,4 +24,3 @@ autd3-core = { workspace = true, features = ["derive"] }
 itertools = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
-time = { workspace = true, features = ["macros"] }

@@ -14,17 +14,17 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-std = ["time/std", "spin_sleep"]
+std = ["time?/std", "spin_sleep"]
 default = []
 firmware = ["common", "ethercat", "thiserror", "utils", "zerocopy", "num-traits"]
-acoustics = ["common", "geometry", "num-complex", "num-traits"]
+acoustics = ["common", "geometry", "num-traits"]
 async = ["tokio"]
 datagram = ["common", "firmware", "geometry", "ethercat", "smallvec", "environment"]
 common = []
 derive = ["autd3-derive"]
 ethercat = ["time", "thiserror"]
 gain = ["common", "datagram", "geometry", "thiserror", "bit-vec", "environment", "firmware"]
-geometry = ["nalgebra", "simba", "pastey", "common"]
+geometry = ["nalgebra", "pastey", "common"]
 left_handed = []
 link = ["bitfield-struct", "zerocopy", "ethercat", "datagram", "geometry"]
 modulation = ["firmware", "utils", "common", "datagram"]
@@ -35,19 +35,17 @@ environment = ["num-traits"]
 
 [dependencies]
 autd3-derive = { workspace = true, optional = true }
-bit-vec = { workspace = true, optional = true }
+bit-vec = { version = "0.8.0", default-features = false, optional = true }
 bitfield-struct = { workspace = true, optional = true }
-nalgebra = { workspace = true, optional = true }
+nalgebra = { workspace = true, optional = true, features = ["libm"] }
+num-traits = { version = "0.2.19", default-features = false, features = ["libm"], optional = true }
 pastey = { workspace = true, optional = true }
 smallvec = { workspace = true, optional = true }
-spin_sleep = { workspace = true, optional = true }
+spin_sleep = { version = "1.3.1", default-features = false, optional = true }
 thiserror = { workspace = true, optional = true }
-time = { workspace = true, optional = true, features = ["macros"] }
-tokio = { workspace = true, optional = true, features = ["time", "rt"] }
+time = { version = "0.3.41", default-features = false, optional = true, features = ["macros"] }
+tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 zerocopy = { workspace = true, optional = true, features = ["derive"] }
-simba = { workspace = true, optional = true, features = ["libm"] }
-num-complex = { workspace = true, optional = true, features = ["libm"] }
-num-traits = { workspace = true, features = ["libm"], optional = true }
 
 [dev-dependencies]
 approx = { workspace = true }

@@ -224,11 +224,7 @@ mod tests {
         let rep = rng.random_range(0x0000..0xFFFF);
         let segment = Segment::S0;
         let transition_mode = transition_mode::SysTime(
-            DcSysTime::from_utc(
-                time::macros::datetime!(2000-01-01 0:00 UTC)
-                    + std::time::Duration::from_nanos(0x0123456789ABCDEF),
-            )
-            .unwrap(),
+            DcSysTime::ZERO + std::time::Duration::from_nanos(0x0123456789ABCDEF),
         );
 
         let mut op = ModulationOp::new(

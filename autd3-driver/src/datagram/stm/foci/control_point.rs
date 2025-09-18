@@ -80,7 +80,7 @@ impl<const N: usize> ControlPoints<N> {
         Self { points, intensity }
     }
 
-    pub(crate) fn transform(&self, iso: &nalgebra::Isometry3<f32>) -> Self {
+    pub(crate) fn transform(&self, iso: &Isometry) -> Self {
         Self {
             points: self.points.map(|p| p.transform(iso)),
             intensity: self.intensity,

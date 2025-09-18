@@ -19,13 +19,15 @@ pub fn propagate<D: Directivity>(
     dir: UnitVector3,
     target_pos: Point3,
 ) -> Complex {
+    #[cfg(not(feature = "std"))]
+    use num_traits::float::Float;
+
     const P0: f32 = T4010A1_AMPLITUDE / (4. * PI);
     let diff = target_pos - tr.position();
     let dist = diff.norm();
-    Complex::from_polar(
-        P0 / dist * D::directivity_from_dir(dir, diff),
-        wavenumber * dist,
-    )
+    let r = P0 / dist * D::directivity_from_dir(dir, diff);
+    let theta = wavenumber * dist;
+    Complex::new(r * theta.cos(), r * theta.sin())
 }
 
 #[cfg(test)]
