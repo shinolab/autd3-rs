@@ -58,6 +58,9 @@ pub struct T4010A1 {}
 
 impl Directivity for T4010A1 {
     fn directivity(theta: Angle) -> f32 {
+        #[cfg(not(feature = "std"))]
+        use num_traits::float::Float;
+
         let theta_deg = theta.degree().abs() % 180.0;
         let theta_deg = 90.0 - (theta_deg - 90.0).abs();
         let i = (theta_deg / 10.0).ceil() as usize;

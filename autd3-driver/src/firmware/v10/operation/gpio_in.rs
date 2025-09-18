@@ -53,7 +53,10 @@ impl Operation<'_> for EmulateGPIOInOp {
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
         let mut flag = GPIOInFlags::NONE;
-        seq_macro::seq!(N in 0..4 {#(flag.set(GPIOInFlags::GPIO_IN_~N, self.value[N]);)*});
+        flag.set(GPIOInFlags::GPIO_IN_0, self.value[0]);
+        flag.set(GPIOInFlags::GPIO_IN_1, self.value[1]);
+        flag.set(GPIOInFlags::GPIO_IN_2, self.value[2]);
+        flag.set(GPIOInFlags::GPIO_IN_3, self.value[3]);
 
         crate::firmware::driver::write_to_tx(
             tx,

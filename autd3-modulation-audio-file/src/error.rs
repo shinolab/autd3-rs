@@ -4,14 +4,15 @@ use autd3_core::{firmware::SamplingConfigError, modulation::ModulationError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-#[non_exhaustive]
 pub enum AudioFileError {
     #[error("{0}")]
     Io(#[from] std::io::Error),
     #[error("{0}")]
     Parse(#[from] ParseIntError),
+    #[cfg(feature = "wav")]
     #[error("{0}")]
     Wav(#[from] hound::Error),
+    #[cfg(feature = "csv")]
     #[error("{0}")]
     Csv(#[from] csv::Error),
     #[error("{0}")]

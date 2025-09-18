@@ -5,7 +5,7 @@ use crate::{
     geometry::{Device, Geometry, Transducer},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 /// A mask that represents which Transducers are enabled in a Device.
 pub enum DeviceTransducerMask {
     /// All transducers are enabled.
@@ -20,6 +20,21 @@ impl DeviceTransducerMask {
     /// Creates a [`DeviceTransducerMask`] from an iterator.
     pub fn from_fn(dev: &Device, f: impl Fn(&Transducer) -> bool) -> Self {
         Self::Masked(bit_vec::BitVec::from_iter(dev.iter().map(f)))
+    }
+
+    /// Sets the enabled state of the given transducer.
+    pub fn set(&mut self, dev: &Device, tr: &Transducer, enabled: bool) {
+        match self {
+            Self::AllEnabled => {
+                if !enabled {
+                    *self = Self::from_fn(dev, |t| t.idx() != tr.idx());
+                }
+            }
+            Self::AllDisabled => {
+                *self = Self::from_fn(dev, |t| t.idx() == tr.idx());
+            }
+            Self::Masked(bit_vec) => bit_vec.set(tr.idx(), enabled),
+        }
     }
 
     /// Returns `true` if the transducers is enabled.
@@ -129,5 +144,110 @@ impl From<&DeviceMask> for TransducerMask {
                     .collect(),
             ),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::geometry::tests::create_device;
+
+    #[test]
+    fn device_transducer_mask_from_fn() {
+        let dev = create_device(10);
+        let mask = DeviceTransducerMask::from_fn(&dev, |tr| tr.idx() % 2 == 0);
+        assert!(
+            dev.iter()
+                .all(|tr| (tr.idx() % 2 == 0) == mask.is_enabled(tr))
+        );
+        assert_eq!(5, mask.num_enabled_transducers(&dev));
+    }
+
+    #[test]
+    fn set_all_enabled_disable_one() {
+        let dev = create_device(5);
+        let mut mask = DeviceTransducerMask::AllEnabled;
+
+        mask.set(&dev, &dev[2], true);
+        assert_eq!(DeviceTransducerMask::AllEnabled, mask);
+
+        mask.set(&dev, &dev[2], false);
+        assert!(dev.iter().all(|tr| (tr.idx() != 2) == mask.is_enabled(tr)));
+        assert!(mask.has_enabled());
+        assert_eq!(
+            dev.num_transducers() - 1,
+            mask.num_enabled_transducers(&dev)
+        );
+    }
+
+    #[test]
+    fn set_all_disabled_enable_one() {
+        let dev = create_device(5);
+        let mut mask = DeviceTransducerMask::AllDisabled;
+        mask.set(&dev, &dev[3], true);
+        assert!(dev.iter().all(|tr| (tr.idx() == 3) == mask.is_enabled(tr)));
+        assert!(mask.has_enabled());
+        assert_eq!(1, mask.num_enabled_transducers(&dev));
+    }
+
+    #[test]
+    fn set_masked_toggle_bits() {
+        let dev = create_device(6);
+        let mut mask = DeviceTransducerMask::from_fn(&dev, |tr| tr.idx() % 2 == 0);
+
+        assert_eq!(3, mask.num_enabled_transducers(&dev));
+
+        mask.set(&dev, &dev[1], true);
+        assert!(mask.is_enabled(&dev[1]));
+        assert_eq!(4, mask.num_enabled_transducers(&dev));
+
+        mask.set(&dev, &dev[2], false);
+        assert!(!mask.is_enabled(&dev[2]));
+        assert_eq!(3, mask.num_enabled_transducers(&dev));
+    }
+
+    #[test]
+    fn is_enabled_variants() {
+        let dev = create_device(3);
+        let mask_all = DeviceTransducerMask::AllEnabled;
+        assert!(dev.iter().all(|tr| mask_all.is_enabled(tr)));
+
+        let mask_none = DeviceTransducerMask::AllDisabled;
+        assert!(dev.iter().all(|tr| !mask_none.is_enabled(tr)));
+
+        let mask_some = DeviceTransducerMask::from_fn(&dev, |tr| tr.idx() == 1);
+        assert!(mask_some.is_enabled(&dev[1]));
+        assert!(!mask_some.is_enabled(&dev[0]));
+        assert!(!mask_some.is_enabled(&dev[2]));
+    }
+
+    #[test]
+    fn has_enabled_variants() {
+        let dev = create_device(2);
+        let mask_all = DeviceTransducerMask::AllEnabled;
+        assert!(mask_all.has_enabled());
+
+        let mask_none = DeviceTransducerMask::AllDisabled;
+        assert!(!mask_none.has_enabled());
+
+        let mask_masked_all_disabled = DeviceTransducerMask::from_fn(&dev, |_| false);
+        assert!(mask_masked_all_disabled.has_enabled());
+
+        let mask_masked_some = DeviceTransducerMask::from_fn(&dev, |tr| tr.idx() == 0);
+        assert!(mask_masked_some.has_enabled());
+    }
+
+    #[test]
+    fn num_enabled_transducers_variants() {
+        let dev = create_device(4);
+
+        let mask_all = DeviceTransducerMask::AllEnabled;
+        assert_eq!(4, mask_all.num_enabled_transducers(&dev));
+
+        let mask_none = DeviceTransducerMask::AllDisabled;
+        assert_eq!(0, mask_none.num_enabled_transducers(&dev));
+
+        let mask_some = DeviceTransducerMask::from_fn(&dev, |tr| tr.idx() < 2);
+        assert_eq!(2, mask_some.num_enabled_transducers(&dev));
     }
 }

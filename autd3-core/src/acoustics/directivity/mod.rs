@@ -1,9 +1,6 @@
 mod sphere;
 mod t4010a1;
 
-#[cfg(not(feature = "std"))]
-use num_traits::float::Float;
-
 use crate::{
     common::{Angle, rad},
     geometry::{UnitVector3, Vector3},
@@ -25,6 +22,9 @@ pub trait Directivity: Send + Sync {
     /// Calculates the directivity based on the axial direction and target direction.
     #[must_use]
     fn directivity_from_dir(axial_direction: UnitVector3, target: Vector3) -> f32 {
+        #[cfg(not(feature = "std"))]
+        use num_traits::float::Float;
+
         Self::directivity(
             (axial_direction.cross(&target).norm()).atan2(axial_direction.dot(&target)) * rad,
         )

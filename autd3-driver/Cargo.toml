@@ -18,17 +18,13 @@ async = ["autd3-core/async"]
 default = []
 
 [dependencies]
-autd3-core = { workspace = true, features = ["std", "gain", "common", "geometry", "derive", "link", "ethercat", "modulation", "firmware", "sleep", "environment"] }
-autd3-derive = { workspace = true }
+autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulation", "sleep", "std"] }
 bitfield-struct = { workspace = true }
-bitflags = { workspace = true }
+bitflags = { version = "2.9.1", default-features = false }
 itertools = { workspace = true, features = ["use_alloc"] }
-nalgebra = { workspace = true }
 pastey = { workspace = true }
 rayon = { workspace = true }
-seq-macro = { workspace = true }
 thiserror = { workspace = true }
-time = { workspace = true, features = ["macros", "std"] }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
