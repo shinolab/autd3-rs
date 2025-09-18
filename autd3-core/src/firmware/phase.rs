@@ -5,15 +5,19 @@ use crate::{
     geometry::Complex,
 };
 
-use derive_more::Debug;
 use nalgebra::ComplexField;
 use zerocopy::{Immutable, IntoBytes};
 
 /// The phase of the ultrasound.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, IntoBytes, Immutable, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, IntoBytes, Immutable, Default)]
 #[repr(C)]
-#[debug("{:#04X}", self.0)]
 pub struct Phase(pub u8);
+
+impl core::fmt::Debug for Phase {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "0x{:02X}", self.0)
+    }
+}
 
 impl Phase {
     /// A phase of zero.

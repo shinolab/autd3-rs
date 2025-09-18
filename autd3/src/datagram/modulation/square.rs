@@ -2,8 +2,6 @@ use autd3_core::{common::Freq, derive::*, firmware::SamplingConfig};
 
 use super::sampling_mode::{Nearest, SamplingMode};
 
-use derive_more::Debug;
-
 /// The option of [`Square`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SquareOption {

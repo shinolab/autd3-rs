@@ -25,17 +25,9 @@ pub use device::*;
 pub use rotation::*;
 pub use transducer::*;
 
-use derive_more::{Deref, IntoIterator};
-use getset::CopyGetters;
-
 /// Geometry of the devices.
-#[derive(Deref, CopyGetters, IntoIterator)]
 pub struct Geometry {
-    #[deref]
-    #[into_iterator(ref)]
     pub(crate) devices: Vec<Device>,
-    #[doc(hidden)]
-    #[getset(get_copy = "pub")]
     version: usize,
 }
 
@@ -83,6 +75,11 @@ impl Geometry {
         )
     }
 
+    #[doc(hidden)]
+    pub fn version(&self) -> usize {
+        self.version
+    }
+
     /// Reconfigure the geometry.
     pub fn reconfigure<D: Into<Device>, F: Fn(&Device) -> D>(&mut self, f: F) {
         self.devices.iter_mut().for_each(|dev| {
@@ -93,6 +90,15 @@ impl Geometry {
     }
 }
 
+impl<'a> IntoIterator for &'a Geometry {
+    type Item = &'a Device;
+    type IntoIter = core::slice::Iter<'a, Device>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.devices.iter()
+    }
+}
+
 impl<'a> IntoIterator for &'a mut Geometry {
     type Item = &'a mut Device;
     type IntoIter = core::slice::IterMut<'a, Device>;
@@ -100,6 +106,14 @@ impl<'a> IntoIterator for &'a mut Geometry {
     fn into_iter(self) -> Self::IntoIter {
         self.version += 1;
         self.devices.iter_mut()
+    }
+}
+
+impl core::ops::Deref for Geometry {
+    type Target = Vec<Device>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.devices
     }
 }
 
@@ -252,13 +266,13 @@ pub(crate) mod tests {
 
         geometry.reconfigure(|dev| match dev.idx() {
             0 => TestDevice::new_autd3_with_rot(t, rot),
-            _ => TestDevice::new_autd3_with_rot(*dev[0].position(), *dev.rotation()),
+            _ => TestDevice::new_autd3_with_rot(dev[0].position(), dev.rotation()),
         });
 
         assert_eq!(1, geometry.version());
-        assert_eq!(t, *geometry[0][0].position());
-        assert_eq!(rot, *geometry[0].rotation());
-        assert_eq!(Point3::origin(), *geometry[1][0].position());
-        assert_eq!(UnitQuaternion::identity(), *geometry[1].rotation());
+        assert_eq!(t, geometry[0][0].position());
+        assert_eq!(rot, geometry[0].rotation());
+        assert_eq!(Point3::origin(), geometry[1][0].position());
+        assert_eq!(UnitQuaternion::identity(), geometry[1].rotation());
     }
 }

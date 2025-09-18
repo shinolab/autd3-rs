@@ -1,6 +1,5 @@
 use autd3_core::common::ABSOLUTE_THRESHOLD_OF_HEARING;
 
-use derive_more::{Display, Div, Mul};
 use zerocopy::{Immutable, IntoBytes};
 
 /// \[dB\]
@@ -15,8 +14,7 @@ pub struct Pa;
 pub struct kPa;
 
 /// Amplitude
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Div, Mul, Display, IntoBytes, Immutable)]
-#[display("{:.2} Pa", value)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, IntoBytes, Immutable)]
 pub struct Amplitude {
     pub(crate) value: f32,
 }
@@ -61,12 +59,32 @@ impl std::ops::Mul<kPa> for f32 {
     }
 }
 
+impl std::ops::Mul<f32> for Amplitude {
+    type Output = Amplitude;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Self::Output {
+            value: self.value * rhs,
+        }
+    }
+}
+
 impl std::ops::Mul<Amplitude> for f32 {
     type Output = Amplitude;
 
     fn mul(self, rhs: Amplitude) -> Self::Output {
         Self::Output {
             value: self * rhs.value,
+        }
+    }
+}
+
+impl std::ops::Div<f32> for Amplitude {
+    type Output = Amplitude;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Self::Output {
+            value: self.value / rhs,
         }
     }
 }
@@ -107,11 +125,5 @@ mod tests {
         approx::assert_abs_diff_eq!((amp * 2.).pascal(), 2. * 23.77, epsilon = 1e-3);
 
         approx::assert_abs_diff_eq!((amp / 2.).pascal(), 23.77 / 2., epsilon = 1e-3);
-    }
-
-    #[test]
-    fn display() {
-        let amp = 23.77 * Pa;
-        assert_eq!(amp.to_string(), "23.77 Pa");
     }
 }

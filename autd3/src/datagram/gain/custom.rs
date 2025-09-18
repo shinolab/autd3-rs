@@ -1,8 +1,6 @@
 use autd3_core::derive::*;
 use autd3_driver::geometry::{Device, Transducer};
 
-use derive_more::Debug;
-
 /// [`Gain`] to use arbitrary phases and intensities
 ///
 /// # Examples
@@ -14,7 +12,6 @@ use derive_more::Debug;
 /// Custom::new(|dev| |tr| Drive { phase: Phase::ZERO, intensity: Intensity::MAX });
 /// ```
 #[derive(Gain, Debug)]
-#[debug("Custom (Gain)")]
 pub struct Custom<FT, F> {
     /// The function to calculate the phase and intensity
     pub f: F,

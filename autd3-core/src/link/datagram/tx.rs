@@ -1,4 +1,3 @@
-use derive_more::Display;
 use zerocopy::{FromZeros, Immutable, IntoBytes};
 
 use crate::ethercat::EC_OUTPUT_FRAME_SIZE;
@@ -9,8 +8,7 @@ const PAYLOAD_SIZE: usize = EC_OUTPUT_FRAME_SIZE - core::mem::size_of::<Header>(
 
 /// PDO output data representation
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromZeros, Display)]
-#[display("({:?}, TAG: {:#04X})", header, (payload[0] & 0xFF) as u8)]
+#[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromZeros)]
 pub struct TxMessage {
     #[doc(hidden)]
     pub header: Header,

@@ -7,8 +7,6 @@ use autd3_core::{
     geometry::{Device, Geometry, Transducer},
 };
 
-use derive_more::Debug;
-
 /// [`Datagram`] to mask output.
 ///
 /// The transducers set to `false` in [`OutputMask`] will not output ultrasound regardless of the intensity settings by [`Gain`], [`FociSTM`], and [`GainSTM`].
@@ -26,7 +24,6 @@ use derive_more::Debug;
 /// [`GainSTM`]: crate::datagram::GainSTM
 #[derive(Debug)]
 pub struct OutputMask<F, FT> {
-    #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
     /// The segment to which this [`OutputMask`] applies.

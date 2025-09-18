@@ -14,24 +14,13 @@ use autd3_driver::{
     geometry::{Device, Geometry},
 };
 
-use derive_more::{Deref, DerefMut};
-use getset::{Getters, MutGetters};
-
 /// A controller for the AUTD devices.
 ///
 /// All operations to the devices are done through this struct.
-#[derive(Deref, DerefMut, Getters, MutGetters)]
 pub struct Controller<L: Link, V: Driver> {
-    /// The link to the devices.
-    #[getset(get = "pub", get_mut = "pub")]
     link: L,
     #[doc(hidden)]
-    #[getset(get = "pub")]
     driver: V,
-    /// The geometry of the devices.
-    #[getset(get = "pub", get_mut = "pub")]
-    #[deref]
-    #[deref_mut]
     geometry: Geometry,
     /// THe environment where the devices are placed.
     pub environment: Environment,
@@ -40,6 +29,14 @@ pub struct Controller<L: Link, V: Driver> {
     rx_buf: Vec<RxMessage>,
     /// The default sender option used for [`send`](Controller::send).
     pub default_sender_option: SenderOption,
+}
+
+impl<L: Link, V: Driver> std::ops::Deref for Controller<L, V> {
+    type Target = Geometry;
+
+    fn deref(&self) -> &Self::Target {
+        &self.geometry
+    }
 }
 
 impl<L: Link> Controller<L, Auto> {
@@ -108,6 +105,21 @@ impl<L: Link, V: Driver> Controller<L, V> {
         cnt.sender(option, timer_strategy).initialize_devices()?;
 
         Ok(cnt)
+    }
+
+    #[doc(hidden)]
+    pub const fn driver(&self) -> &V {
+        &self.driver
+    }
+
+    #[doc(hidden)]
+    pub const fn link(&self) -> &L {
+        &self.link
+    }
+
+    #[doc(hidden)]
+    pub const fn link_mut(&mut self) -> &mut L {
+        &mut self.link
     }
 
     /// Returns the [`Sender`] to send data to the devices.

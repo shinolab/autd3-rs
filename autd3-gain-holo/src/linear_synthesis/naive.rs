@@ -11,7 +11,6 @@ use autd3_core::{
     derive::*,
     geometry::Point3,
 };
-use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`Naive`].
@@ -37,7 +36,6 @@ pub struct Naive<D: Directivity, B: LinAlgBackend> {
     /// The option of the Gain.
     pub option: NaiveOption,
     /// The backend of calculation.
-    #[debug("{}", tynm::type_name::<B>())]
     pub backend: Arc<B>,
     /// The directivity of the transducers.
     pub directivity: std::marker::PhantomData<D>,

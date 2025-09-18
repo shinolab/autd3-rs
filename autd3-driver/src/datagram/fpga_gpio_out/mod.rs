@@ -11,8 +11,6 @@ use autd3_core::{
     geometry::{Device, Geometry},
 };
 
-use derive_more::Debug;
-
 /// [`Datagram`] to configure GPIO Out pins.
 ///
 /// # Example
@@ -28,9 +26,7 @@ use derive_more::Debug;
 ///     GPIOOut::O3 => Some(GPIOOutputType::Direct(true)),
 /// });
 /// ```
-#[derive(Debug)]
 pub struct GPIOOutputs<F> {
-    #[debug(ignore)]
     pub(crate) f: F,
 }
 

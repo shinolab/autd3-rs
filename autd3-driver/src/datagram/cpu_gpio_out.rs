@@ -7,12 +7,9 @@ use autd3_core::{
     geometry::{Device, Geometry},
 };
 
-use derive_more::Debug;
-
 #[derive(Debug)]
 #[doc(hidden)]
 pub struct CpuGPIOOutputs<F> {
-    #[debug(ignore)]
     pub(crate) f: F,
 }
 

@@ -39,7 +39,7 @@ pub struct DynOperationGenerator {
     pub(crate) g: Box<dyn DOperationGenerator>,
 }
 
-pub trait DDatagram: std::fmt::Debug {
+pub trait DDatagram {
     fn dyn_operation_generator(
         &mut self,
         geometry: &Geometry,
@@ -49,7 +49,6 @@ pub trait DDatagram: std::fmt::Debug {
     ) -> Result<Box<dyn DOperationGenerator>, AUTDDriverError>;
     #[must_use]
     fn dyn_option(&self) -> DatagramOption;
-    fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
 impl<'a, T: Datagram<'a>> DDatagram for MaybeUninit<T>
@@ -79,21 +78,11 @@ where
     fn dyn_option(&self) -> DatagramOption {
         unsafe { self.assume_init_ref() }.option()
     }
-
-    fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        unsafe { self.assume_init_ref() }.fmt(f)
-    }
 }
 
 /// Boxed [`Datagram`].
 pub struct BoxedDatagram {
     d: Box<dyn DDatagram>,
-}
-
-impl std::fmt::Debug for BoxedDatagram {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.d.dyn_fmt(f)
-    }
 }
 
 impl BoxedDatagram {

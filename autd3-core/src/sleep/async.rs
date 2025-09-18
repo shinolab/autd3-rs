@@ -1,7 +1,7 @@
 use core::time::Duration;
 
 #[doc(hidden)]
-pub trait Sleep: core::fmt::Debug + Send + Sync {
+pub trait Sleep: Send + Sync {
     fn sleep(&self, duration: Duration) -> impl core::future::Future<Output = ()> + Send;
 }
 

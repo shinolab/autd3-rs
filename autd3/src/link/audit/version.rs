@@ -27,9 +27,7 @@ impl Emulator for V12_1 {
         }
         if let Some(initial_phase_corr) = option.initial_phase_corr {
             cpu.fpga_mut()
-                .mem_mut()
-                .phase_corr_bram_mut()
-                .fill(u16::from_le_bytes([initial_phase_corr, initial_phase_corr]));
+                .set_phase_corr_bram(u16::from_le_bytes([initial_phase_corr, initial_phase_corr]));
         }
         cpu
     }

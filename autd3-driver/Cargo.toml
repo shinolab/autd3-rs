@@ -22,8 +22,6 @@ autd3-core = { workspace = true, features = ["std", "gain", "common", "geometry"
 autd3-derive = { workspace = true }
 bitfield-struct = { workspace = true }
 bitflags = { workspace = true }
-derive_more = { workspace = true, features = ["deref_mut"] }
-getset = { workspace = true }
 itertools = { workspace = true, features = ["use_alloc"] }
 nalgebra = { workspace = true }
 pastey = { workspace = true }

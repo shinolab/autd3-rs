@@ -8,8 +8,6 @@ use autd3_core::{
     geometry::{Device, Geometry, Transducer},
 };
 
-use derive_more::Debug;
-
 /// [`Datagram`] to apply phase correction.
 ///
 /// The phase value set here is added to the phase value by [`Gain`], [`FociSTM`], and [`GainSTM`].
@@ -27,7 +25,6 @@ use derive_more::Debug;
 /// [`GainSTM`]: crate::datagram::GainSTM
 #[derive(Debug)]
 pub struct PhaseCorrection<F, FT> {
-    #[debug(ignore)]
     #[doc(hidden)]
     pub f: F,
     _phantom: std::marker::PhantomData<FT>,

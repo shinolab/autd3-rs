@@ -1,13 +1,12 @@
 use core::convert::Infallible;
 
 use alloc::string::{String, ToString};
-use derive_more::Display;
 use thiserror::Error;
 
 use crate::firmware::SamplingConfigError;
 
-#[derive(Error, Debug, Display, PartialEq, Clone)]
-#[display("{}", msg)]
+#[derive(Error, Debug, PartialEq, Clone)]
+#[error("{msg}")]
 /// An error occurred during modulation calculation.
 pub struct ModulationError {
     msg: String,

@@ -8,8 +8,6 @@ use autd3_core::{
 
 use super::sampling_mode::{Nearest, SamplingMode};
 
-use derive_more::Debug;
-
 /// The option of [`Sine`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SineOption {

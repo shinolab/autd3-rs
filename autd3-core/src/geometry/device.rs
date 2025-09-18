@@ -1,33 +1,16 @@
 use alloc::vec::Vec;
-use derive_more::{Deref, IntoIterator};
-use getset::Getters;
 
 use super::{Isometry, Point3, Quaternion, Transducer, UnitQuaternion, UnitVector3, Vector3};
 
 /// An AUTD device unit.
-#[derive(Getters, Deref, IntoIterator)]
 pub struct Device {
     pub(crate) idx: u16,
-    #[deref]
-    #[into_iterator(ref)]
     pub(crate) transducers: Vec<Transducer>,
-    #[getset(get = "pub")]
-    /// The rotation of the device.
     rotation: UnitQuaternion,
-    #[getset(get = "pub")]
-    /// The center of the device.
     center: Point3,
-    #[getset(get = "pub")]
-    /// The x-direction of the device.
     x_direction: UnitVector3,
-    #[getset(get = "pub")]
-    /// The y-direction of the device.
     y_direction: UnitVector3,
-    #[getset(get = "pub")]
-    /// The axial direction of the device.
     axial_direction: UnitVector3,
-    #[doc(hidden)]
-    #[getset(get = "pub")]
     inv: Isometry,
 }
 
@@ -47,7 +30,7 @@ impl Device {
         } else {
             Self::get_direction(Vector3::z(), &self.rotation)
         };
-        self.inv = (nalgebra::Translation3::<f32>::from(*self.transducers[0].position())
+        self.inv = (nalgebra::Translation3::<f32>::from(self.transducers[0].position())
             * self.rotation)
             .inverse();
     }
@@ -85,10 +68,54 @@ impl Device {
         self.transducers.len()
     }
 
+    /// Gets the rotation of the device.
+    #[must_use]
+    pub const fn rotation(&self) -> UnitQuaternion {
+        self.rotation
+    }
+
+    /// Gets the center of the device.
+    #[must_use]
+    pub const fn center(&self) -> Point3 {
+        self.center
+    }
+
+    /// Gets the x-direction of the device.
+    #[must_use]
+    pub const fn x_direction(&self) -> UnitVector3 {
+        self.x_direction
+    }
+
+    /// Gets the y-direction of the device.
+    #[must_use]
+    pub const fn y_direction(&self) -> UnitVector3 {
+        self.y_direction
+    }
+
+    /// Gets the axial direction of the device.
+    #[must_use]
+    pub const fn axial_direction(&self) -> UnitVector3 {
+        self.axial_direction
+    }
+
+    #[doc(hidden)]
+    #[must_use]
+    pub const fn inv(&self) -> &Isometry {
+        &self.inv
+    }
+
     #[must_use]
     fn get_direction(dir: Vector3, rotation: &UnitQuaternion) -> UnitVector3 {
         let dir: UnitQuaternion = UnitQuaternion::from_quaternion(Quaternion::from_imag(dir));
         UnitVector3::new_normalize((rotation * dir * rotation.conjugate()).imag())
+    }
+}
+
+impl core::ops::Deref for Device {
+    type Target = [Transducer];
+
+    fn deref(&self) -> &Self::Target {
+        &self.transducers
     }
 }
 
@@ -126,6 +153,18 @@ pub(crate) mod tests {
         let expected =
             device.iter().map(|t| t.position().coords).sum::<Vector3>() / device.len() as f32;
         assert_approx_eq_vec3!(expected, device.center());
+    }
+
+    #[test]
+    fn direction() {
+        let device: Device = TestDevice::new_autd3(Point3::origin()).into();
+        assert_approx_eq_vec3!(Vector3::x(), device.x_direction().into_inner());
+        assert_approx_eq_vec3!(Vector3::y(), device.y_direction().into_inner());
+        if cfg!(feature = "left_handed") {
+            assert_approx_eq_vec3!(-Vector3::z(), device.axial_direction().into_inner()); // GRCOV_EXCL_LINE
+        } else {
+            assert_approx_eq_vec3!(Vector3::z(), device.axial_direction().into_inner());
+        }
     }
 
     #[rstest::rstest]

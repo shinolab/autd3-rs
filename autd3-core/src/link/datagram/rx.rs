@@ -1,10 +1,8 @@
-use derive_more::Display;
-use getset::CopyGetters;
 use zerocopy::{FromBytes, Immutable, IntoBytes};
 
 /// Acknowledgement structure for received messages
 #[bitfield_struct::bitfield(u8)]
-#[derive(IntoBytes, Immutable, FromBytes, PartialEq, Eq, Display)]
+#[derive(IntoBytes, Immutable, FromBytes, PartialEq, Eq)]
 pub struct Ack {
     #[bits(4)]
     pub msg_id: u8,
@@ -13,17 +11,10 @@ pub struct Ack {
 }
 
 /// PDO input data representation
-#[derive(
-    Clone, Copy, PartialEq, Eq, Debug, CopyGetters, IntoBytes, Immutable, FromBytes, Display,
-)]
-#[display("{:?}", self)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, IntoBytes, Immutable, FromBytes)]
 #[repr(C)]
 pub struct RxMessage {
-    #[getset(get_copy = "pub")]
-    /// Received data
     data: u8,
-    #[getset(get_copy = "pub")]
-    /// Acknowledgement
     ack: Ack,
 }
 
@@ -32,6 +23,18 @@ impl RxMessage {
     #[must_use]
     pub const fn new(data: u8, ack: Ack) -> Self {
         Self { data, ack }
+    }
+
+    /// Returns the received data.
+    #[must_use]
+    pub const fn data(&self) -> u8 {
+        self.data
+    }
+
+    /// Returns the acknowledgement.
+    #[must_use]
+    pub const fn ack(&self) -> Ack {
+        self.ack
     }
 }
 
