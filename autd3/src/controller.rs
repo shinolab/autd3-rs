@@ -393,11 +393,11 @@ pub(crate) mod tests {
 
     pub fn create_controller(
         dev_num: usize,
-    ) -> anyhow::Result<Controller<Audit<version::V12_1>, V12_1>> {
-        Ok(Controller::open_with(
+    ) -> Result<Controller<Audit<version::V12_1>, V12_1>, AUTDDriverError> {
+        Controller::open_with(
             (0..dev_num).map(|_| AUTD3::default()),
             Audit::<version::V12_1>::new(AuditOption::default()),
-        )?)
+        )
     }
 
     #[test]
@@ -416,7 +416,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn send() -> anyhow::Result<()> {
+    fn send() -> Result<(), Box<dyn std::error::Error>> {
         let mut autd = create_controller(1)?;
         autd.send((
             Sine {
@@ -476,7 +476,7 @@ pub(crate) mod tests {
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 1)
             );
-            anyhow::Ok(())
+            Result::<(), Box<dyn std::error::Error>>::Ok(())
         })?;
 
         autd.close()?;
@@ -485,7 +485,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn inspect() -> anyhow::Result<()> {
+    fn inspect() -> Result<(), Box<dyn std::error::Error>> {
         let autd = create_controller(2)?;
 
         let r = autd.inspect(autd3_driver::datagram::Group::new(
@@ -508,7 +508,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn firmware_version() -> anyhow::Result<()> {
+    fn firmware_version() -> Result<(), Box<dyn std::error::Error>> {
         use autd3_driver::firmware::version::{CPUVersion, FPGAVersion};
 
         let mut autd = create_controller(1)?;
@@ -531,7 +531,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn firmware_version_err() -> anyhow::Result<()> {
+    fn firmware_version_err() -> Result<(), Box<dyn std::error::Error>> {
         let mut autd = create_controller(2)?;
         autd.link_mut().break_down();
         assert_eq!(
@@ -544,7 +544,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn close() -> anyhow::Result<()> {
+    fn close() -> Result<(), Box<dyn std::error::Error>> {
         {
             let mut autd = create_controller(1)?;
             autd.close_impl(SenderOption::default(), FixedSchedule::default())?;
@@ -564,7 +564,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn fpga_state() -> anyhow::Result<()> {
+    fn fpga_state() -> Result<(), Box<dyn std::error::Error>> {
         let mut autd = Controller::<_, V12_1>::open_with(
             [AUTD3::default(), AUTD3::default()],
             Audit::<version::V12_1>::new(AuditOption::default()),
@@ -576,16 +576,8 @@ pub(crate) mod tests {
 
             let states = autd.fpga_state()?;
             assert_eq!(2, states.len());
-            assert!(
-                states[0]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
-            assert!(
-                !states[1]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
+            assert!(states[0].is_some_and(|s| s.is_thermal_assert()));
+            assert!(states[1].is_some_and(|s| !s.is_thermal_assert()));
         }
 
         {
@@ -594,16 +586,8 @@ pub(crate) mod tests {
 
             let states = autd.fpga_state()?;
             assert_eq!(2, states.len());
-            assert!(
-                !states[0]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
-            assert!(
-                states[1]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
+            assert!(states[0].is_some_and(|s| !s.is_thermal_assert()));
+            assert!(states[1].is_some_and(|s| s.is_thermal_assert()));
         }
 
         autd.send(ReadsFPGAState::new(|dev| dev.idx() == 1))?;
@@ -611,18 +595,14 @@ pub(crate) mod tests {
             let states = autd.fpga_state()?;
             assert_eq!(2, states.len());
             assert!(states[0].is_none());
-            assert!(
-                states[1]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
+            assert!(states[1].is_some_and(|s| s.is_thermal_assert()));
         }
 
         Ok(())
     }
 
     #[test]
-    fn into_iter() -> anyhow::Result<()> {
+    fn into_iter() -> Result<(), Box<dyn std::error::Error>> {
         let mut autd = create_controller(1)?;
         (&mut autd).into_iter().for_each(|dev| {
             _ = dev;
@@ -634,7 +614,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn with_boxed_link() -> anyhow::Result<()> {
+    fn with_boxed_link() -> Result<(), Box<dyn std::error::Error>> {
         let link: Box<dyn Link> = Box::new(Audit::<version::V12_1>::new(AuditOption::default()));
         let mut autd = Controller::<_, V12_1>::open_with([AUTD3::default()], link)?;
 
@@ -649,7 +629,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn into_boxed_link_unsafe() -> anyhow::Result<()> {
+    fn into_boxed_link_unsafe() -> Result<(), Box<dyn std::error::Error>> {
         let autd = Controller::<_, V12_1>::open_with_option(
             [AUTD3::default()],
             Audit::<version::V12_1>::new(AuditOption::default()),
@@ -719,7 +699,7 @@ pub(crate) mod tests {
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 1)
             );
-            anyhow::Ok(())
+            Result::<(), Box<dyn std::error::Error>>::Ok(())
         })?;
 
         autd.close()?;
@@ -728,7 +708,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn into_boxed_link_close() -> anyhow::Result<()> {
+    fn into_boxed_link_close() -> Result<(), Box<dyn std::error::Error>> {
         let autd = create_controller(1)?;
         let autd = autd.into_boxed_link();
 
@@ -738,7 +718,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn send_boxed() -> anyhow::Result<()> {
+    fn send_boxed() -> Result<(), Box<dyn std::error::Error>> {
         use crate::gain::Null;
         use autd3_driver::firmware::driver::BoxedDatagram;
 

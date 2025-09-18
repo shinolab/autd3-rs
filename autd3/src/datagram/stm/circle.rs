@@ -212,7 +212,10 @@ mod tests {
         Vector3::z_axis()
     )]
     #[test]
-    fn circle(#[case] expect: Vec<Vector3>, #[case] n: UnitVector3) -> anyhow::Result<()> {
+    fn circle(
+        #[case] expect: Vec<Vector3>,
+        #[case] n: UnitVector3,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let env = Environment::default();
 
         let circle = Circle {

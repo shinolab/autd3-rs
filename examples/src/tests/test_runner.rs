@@ -7,10 +7,12 @@ use super::{
     stm::*, user_defined_gain_modulation::*,
 };
 
-pub fn run<L: Link>(mut autd: Controller<L, firmware::Auto>) -> anyhow::Result<()> {
+pub fn run<L: Link>(
+    mut autd: Controller<L, firmware::Auto>,
+) -> Result<(), Box<dyn std::error::Error>> {
     type Test<L> = (
         &'static str,
-        fn(&'_ mut Controller<L, firmware::Auto>) -> anyhow::Result<bool>,
+        fn(&'_ mut Controller<L, firmware::Auto>) -> Result<(), Box<dyn std::error::Error>>,
     );
 
     println!("======== AUTD3 firmware information ========");
@@ -53,9 +55,7 @@ pub fn run<L: Link>(mut autd: Controller<L, firmware::Auto>) -> anyhow::Result<(
         io::stdin().read_line(&mut s)?;
         match s.trim().parse::<usize>() {
             Ok(i) if i < examples.len() => {
-                if !(examples[i].1)(&mut autd)? {
-                    eprintln!("Failed to send data");
-                }
+                (examples[i].1)(&mut autd)?;
             }
             _ => break,
         }

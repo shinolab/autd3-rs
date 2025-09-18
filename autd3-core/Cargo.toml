@@ -47,10 +47,9 @@ tokio = { workspace = true, optional = true, features = ["time", "rt"] }
 zerocopy = { workspace = true, optional = true, features = ["derive"] }
 simba = { workspace = true, optional = true, features = ["libm"] }
 num-complex = { workspace = true, optional = true, features = ["libm"] }
-num-traits = { version = "0.2.19", default-features = false, optional = true, features = ["libm"] }
+num-traits = { workspace = true, features = ["libm"], optional = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
 approx = { workspace = true }
 itertools = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }

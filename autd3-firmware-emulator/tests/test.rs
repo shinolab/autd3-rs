@@ -103,7 +103,7 @@ fn send_invalid_msg_id() {
 }
 
 #[test]
-fn send_ignore_same_data() -> anyhow::Result<()> {
+fn send_ignore_same_data() -> Result<(), Box<dyn std::error::Error>> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -144,7 +144,7 @@ fn send_ignore_same_data() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_slot_2_unsafe() -> anyhow::Result<()> {
+fn send_slot_2_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -172,7 +172,7 @@ fn send_slot_2_unsafe() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_slot_2_err() -> anyhow::Result<()> {
+fn send_slot_2_err() -> Result<(), Box<dyn std::error::Error>> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];

@@ -49,7 +49,7 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
 }
 
 #[test]
-fn test_send_foci_stm_infinite() -> anyhow::Result<()> {
+fn test_send_foci_stm_infinite() -> Result<(), Box<dyn std::error::Error>> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -125,7 +125,7 @@ fn test_send_foci_stm_infinite() -> anyhow::Result<()> {
 }
 
 #[test]
-fn test_send_foci_stm_finite_unsafe() -> anyhow::Result<()> {
+fn test_send_foci_stm_finite_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -203,7 +203,7 @@ fn test_send_foci_stm_finite_unsafe() -> anyhow::Result<()> {
 }
 
 #[test]
-fn change_foci_stm_segment_unsafe() -> anyhow::Result<()> {
+fn change_foci_stm_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -240,7 +240,7 @@ fn change_foci_stm_segment_unsafe() -> anyhow::Result<()> {
 }
 
 #[test]
-fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
+fn test_foci_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -318,7 +318,7 @@ fn test_foci_stm_freq_div_too_small() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
+fn send_foci_stm_invalid_segment_transition() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -385,7 +385,7 @@ fn send_foci_stm_invalid_segment_transition() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_foci_stm_invalid_transition_mode() -> anyhow::Result<()> {
+fn send_foci_stm_invalid_transition_mode() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -442,7 +442,7 @@ fn test_miss_transition_time(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
-) -> anyhow::Result<()> {
+) -> Result<(), Box<dyn std::error::Error>> {
     use autd3_core::firmware::transition_mode;
 
     let mut geometry = create_geometry(1);
@@ -474,7 +474,7 @@ fn test_miss_transition_time(
     Ok(())
 }
 
-fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
+fn test_send_foci_stm_n<const N: usize>() -> Result<(), Box<dyn std::error::Error>> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -552,36 +552,36 @@ fn test_send_foci_stm_n<const N: usize>() -> anyhow::Result<()> {
 }
 
 #[test]
-fn test_send_foci_stm_2() -> anyhow::Result<()> {
+fn test_send_foci_stm_2() -> Result<(), Box<dyn std::error::Error>> {
     test_send_foci_stm_n::<2>()
 }
 
 #[test]
-fn test_send_foci_stm_3() -> anyhow::Result<()> {
+fn test_send_foci_stm_3() -> Result<(), Box<dyn std::error::Error>> {
     test_send_foci_stm_n::<3>()
 }
 
 #[test]
-fn test_send_foci_stm_4() -> anyhow::Result<()> {
+fn test_send_foci_stm_4() -> Result<(), Box<dyn std::error::Error>> {
     test_send_foci_stm_n::<4>()
 }
 
 #[test]
-fn test_send_foci_stm_5() -> anyhow::Result<()> {
+fn test_send_foci_stm_5() -> Result<(), Box<dyn std::error::Error>> {
     test_send_foci_stm_n::<5>()
 }
 
 #[test]
-fn test_send_foci_stm_6() -> anyhow::Result<()> {
+fn test_send_foci_stm_6() -> Result<(), Box<dyn std::error::Error>> {
     test_send_foci_stm_n::<6>()
 }
 
 #[test]
-fn test_send_foci_stm_7() -> anyhow::Result<()> {
+fn test_send_foci_stm_7() -> Result<(), Box<dyn std::error::Error>> {
     test_send_foci_stm_n::<7>()
 }
 
 #[test]
-fn test_send_foci_stm_8() -> anyhow::Result<()> {
+fn test_send_foci_stm_8() -> Result<(), Box<dyn std::error::Error>> {
     test_send_foci_stm_n::<8>()
 }

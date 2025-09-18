@@ -93,7 +93,7 @@ mod tests {
     use super::*;
     use std::io::Write;
 
-    fn create_csv(path: impl AsRef<Path>, data: &[u8]) -> anyhow::Result<()> {
+    fn create_csv(path: impl AsRef<Path>, data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
         let mut f = File::create(path)?;
         data.iter().try_for_each(|d| writeln!(f, "{d}"))?;
         Ok(())
@@ -101,7 +101,10 @@ mod tests {
 
     #[rstest::rstest]
     #[case(vec![0xFF, 0x7F, 0x00], 4000. * Hz)]
-    fn new(#[case] data: Vec<u8>, #[case] sample_rate: Freq<f32>) -> anyhow::Result<()> {
+    fn new(
+        #[case] data: Vec<u8>,
+        #[case] sample_rate: Freq<f32>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("tmp.csv");
         create_csv(&path, &data)?;
@@ -114,7 +117,7 @@ mod tests {
     }
 
     #[test]
-    fn not_exists() -> anyhow::Result<()> {
+    fn not_exists() -> Result<(), Box<dyn std::error::Error>> {
         let m = Csv {
             path: Path::new("not_exists.csv"),
             sampling_config: 4000. * Hz,

@@ -10,7 +10,7 @@ use autd3_core::link::{Ack, LinkError, RxMessage};
 use autd3_driver::firmware::v12_1::fpga::FPGAState;
 
 #[tokio::test]
-async fn audit_test() -> anyhow::Result<()> {
+async fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::<_, firmware::V12_1>::open_with_option(
         [AUTD3::default()],
         Audit::<version::V12_1>::new(AuditOption::default()),

@@ -53,7 +53,7 @@ mod tests {
     }
 
     #[test]
-    fn test_group_option() -> anyhow::Result<()> {
+    fn test_group_option() -> Result<(), Box<dyn std::error::Error>> {
         #[derive(Debug)]
         pub struct TestDatagram {
             pub option: DatagramOption,
@@ -105,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn test_group() -> anyhow::Result<()> {
+    fn test_group() -> Result<(), Box<dyn std::error::Error>> {
         #[derive(Debug)]
         pub struct TestDatagram {
             pub test: Arc<Mutex<Vec<bool>>>,
@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn inspect() -> anyhow::Result<()> {
+    fn inspect() -> Result<(), Box<dyn std::error::Error>> {
         #[derive(Debug)]
         pub struct TestDatagram {}
 

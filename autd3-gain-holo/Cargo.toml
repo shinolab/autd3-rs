@@ -18,7 +18,6 @@ thiserror = { workspace = true }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
 approx = { workspace = true }
 autd3-driver = { workspace = true }
 itertools = { workspace = true }

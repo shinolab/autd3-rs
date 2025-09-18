@@ -52,7 +52,7 @@ mod tests {
     }
 
     #[test]
-    fn test() -> anyhow::Result<()> {
+    fn test() -> Result<(), Box<dyn std::error::Error>> {
         let mut rng = rand::rng();
 
         let buf = vec![rng.random(), rng.random()];

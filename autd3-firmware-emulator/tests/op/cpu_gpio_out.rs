@@ -18,7 +18,7 @@ fn send_cpu_gpio_out(
     #[case] expect: u8,
     #[case] pa5: bool,
     #[case] pa7: bool,
-) -> anyhow::Result<()> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];

@@ -232,7 +232,7 @@ mod tests {
     };
 
     #[test]
-    fn test() -> anyhow::Result<()> {
+    fn test() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = create_geometry(4);
         let env = Environment::new();
 
@@ -318,7 +318,7 @@ mod tests {
     }
 
     #[test]
-    fn unknown_key() -> anyhow::Result<()> {
+    fn unknown_key() -> Result<(), Box<dyn std::error::Error>> {
         let gain = Group::new(|_dev| |_tr| Some("test"), HashMap::<_, Null>::new());
         let geometry = create_geometry(1);
         let env = Environment::new();
@@ -332,7 +332,7 @@ mod tests {
     }
 
     #[test]
-    fn unused_key() -> anyhow::Result<()> {
+    fn unused_key() -> Result<(), Box<dyn std::error::Error>> {
         let gain = Group::new(
             |_dev| |_tr| Some(1),
             HashMap::from([(1, Null {}), (2, Null {})]),

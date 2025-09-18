@@ -204,7 +204,7 @@ mod tests {
     }
 
     #[test]
-    fn with_low() -> anyhow::Result<()> {
+    fn with_low() -> Result<(), Box<dyn std::error::Error>> {
         let m = Square {
             freq: 150. * Hz,
             option: SquareOption {
@@ -222,7 +222,7 @@ mod tests {
     }
 
     #[test]
-    fn with_high() -> anyhow::Result<()> {
+    fn with_high() -> Result<(), Box<dyn std::error::Error>> {
         let m = Square {
             freq: 150. * Hz,
             option: SquareOption {
@@ -243,7 +243,7 @@ mod tests {
     #[case(u8::MIN, 0.0)]
     #[case(u8::MAX, 1.0)]
     #[test]
-    fn with_duty(#[case] expect: u8, #[case] duty: f32) -> anyhow::Result<()> {
+    fn with_duty(#[case] expect: u8, #[case] duty: f32) -> Result<(), Box<dyn std::error::Error>> {
         let m = Square {
             freq: 150. * Hz,
             option: SquareOption {

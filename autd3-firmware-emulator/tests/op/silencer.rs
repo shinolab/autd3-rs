@@ -14,7 +14,7 @@ use crate::{create_geometry, send};
 use zerocopy::FromZeros;
 
 #[test]
-fn send_silencer_fixed_update_rate_unsafe() -> anyhow::Result<()> {
+fn send_silencer_fixed_update_rate_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
@@ -169,7 +169,7 @@ fn send_silencer_fixed_completion_steps_unsafe() {
 fn silencer_completion_steps_too_large_mod(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] steps_intensity: u16,
-) -> anyhow::Result<()> {
+) -> Result<(), Box<dyn std::error::Error>> {
     use crate::op::modulation::TestModulation;
 
     let mut geometry = create_geometry(1);
@@ -227,7 +227,7 @@ fn silencer_completion_steps_too_large_stm(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] steps_intensity: u16,
     #[case] steps_phase: u16,
-) -> anyhow::Result<()> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -275,7 +275,7 @@ fn silencer_completion_steps_too_large_stm(
 }
 
 #[test]
-fn send_silencer_fixed_completion_steps_permissive() -> anyhow::Result<()> {
+fn send_silencer_fixed_completion_steps_permissive() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);

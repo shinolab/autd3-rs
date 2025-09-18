@@ -429,7 +429,7 @@ mod tests {
     #[case(3)]
     #[case(253)]
     #[case(255)]
-    fn odd_size(#[case] size: usize) -> anyhow::Result<()> {
+    fn odd_size(#[case] size: usize) -> Result<(), Box<dyn std::error::Error>> {
         let device = crate::autd3_device::tests::create_device();
 
         let mut tx = vec![0x00u8; device.num_transducers() * 2];

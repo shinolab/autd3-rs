@@ -70,7 +70,7 @@ mod tests {
     }
 
     #[test]
-    fn test() -> anyhow::Result<()> {
+    fn test() -> Result<(), Box<dyn std::error::Error>> {
         let coef = vec![
             0.,
             2.336_732_5E-6,

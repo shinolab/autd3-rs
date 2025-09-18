@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bessel() -> anyhow::Result<()> {
+    fn test_bessel() -> Result<(), Box<dyn std::error::Error>> {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(1);

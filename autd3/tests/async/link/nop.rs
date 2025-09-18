@@ -5,7 +5,7 @@ use autd3::{
 };
 
 #[tokio::test]
-async fn nop_test() -> anyhow::Result<()> {
+async fn nop_test() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::open([AUTD3::default()], Nop::new()).await?;
 
     assert!(autd.send(Static::default()).await.is_ok());

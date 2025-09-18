@@ -78,7 +78,7 @@ mod tests {
         path: impl AsRef<Path>,
         spec: hound::WavSpec,
         data: &[impl hound::Sample + Copy],
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let mut writer = hound::WavWriter::create(path, spec)?;
         data.iter().try_for_each(|&s| writer.write_sample(s))?;
         writer.finalize()?;
@@ -160,7 +160,7 @@ mod tests {
         #[case] expect: Vec<u8>,
         #[case] spec: hound::WavSpec,
         #[case] data: &[impl hound::Sample + Copy],
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(&path, spec, data)?;
@@ -172,7 +172,7 @@ mod tests {
     }
 
     #[test]
-    fn test_wav_new_unsupported() -> anyhow::Result<()> {
+    fn test_wav_new_unsupported() -> Result<(), Box<dyn std::error::Error>> {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(
