@@ -6,7 +6,7 @@ use alloc::boxed::Box;
 pub use spin_sleep::{SpinSleeper, SpinStrategy};
 
 /// A trait for sleep operations.
-pub trait Sleep: core::fmt::Debug {
+pub trait Sleep {
     /// Sleep until the specified deadline.
     fn sleep(&self, duration: Duration);
 }

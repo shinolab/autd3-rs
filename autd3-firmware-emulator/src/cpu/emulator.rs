@@ -3,20 +3,15 @@ use autd3_driver::{
     link::{Ack, Header, MsgId, RxMessage, TxMessage},
 };
 
-use getset::{CopyGetters, Getters, MutGetters};
-
 use crate::fpga::emulator::FPGAEmulator;
 
 use super::params::*;
 
-#[derive(CopyGetters, Getters, MutGetters)]
 pub struct CPUEmulator {
-    #[getset(get_copy = "pub")]
     pub(crate) idx: usize,
     pub(crate) err: u8,
     pub(crate) last_msg_id: MsgId,
     pub(crate) rx_data: u8,
-    #[getset(get_copy = "pub")]
     pub(crate) reads_fpga_state: bool,
     pub(crate) reads_fpga_state_store: bool,
     pub(crate) mod_cycle: u32,
@@ -35,21 +30,15 @@ pub struct CPUEmulator {
     pub(crate) mod_transition_mode: u8,
     pub(crate) mod_transition_value: u64,
     pub(crate) gain_stm_mode: u8,
-    #[getset(get = "pub", get_mut = "pub")]
     pub(crate) fpga: FPGAEmulator,
-    #[getset(get_copy = "pub")]
     pub(crate) synchronized: bool,
-    #[getset(get_copy = "pub")]
     pub(crate) num_transducers: usize,
     pub(crate) fpga_flags_internal: u16,
-    #[getset(get_copy = "pub")]
     pub(crate) silencer_strict: bool,
     pub(crate) min_freq_div_intensity: u16,
     pub(crate) min_freq_div_phase: u16,
     pub(crate) is_rx_data_used: bool,
-    #[getset(get_copy = "pub")]
     pub(crate) dc_sys_time: DcSysTime,
-    #[getset(get_copy = "pub")]
     pub(crate) port_a_podr: u8,
     pub(crate) broken: bool,
 }
@@ -102,6 +91,51 @@ impl CPUEmulator {
 
     pub const fn repair(&mut self) {
         self.broken = false;
+    }
+
+    #[must_use]
+    pub const fn idx(&self) -> usize {
+        self.idx
+    }
+
+    #[must_use]
+    pub const fn num_transducers(&self) -> usize {
+        self.num_transducers
+    }
+
+    #[must_use]
+    pub const fn dc_sys_time(&self) -> DcSysTime {
+        self.dc_sys_time
+    }
+
+    #[must_use]
+    pub const fn synchronized(&self) -> bool {
+        self.synchronized
+    }
+
+    #[must_use]
+    pub const fn fpga(&self) -> &FPGAEmulator {
+        &self.fpga
+    }
+
+    #[must_use]
+    pub const fn fpga_mut(&mut self) -> &mut FPGAEmulator {
+        &mut self.fpga
+    }
+
+    #[must_use]
+    pub const fn silencer_strict(&self) -> bool {
+        self.silencer_strict
+    }
+
+    #[must_use]
+    pub const fn reads_fpga_state(&self) -> bool {
+        self.reads_fpga_state
+    }
+
+    #[must_use]
+    pub const fn port_a_podr(&self) -> u8 {
+        self.port_a_podr
     }
 
     #[must_use]

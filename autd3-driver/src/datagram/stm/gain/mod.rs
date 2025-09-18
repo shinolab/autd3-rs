@@ -22,7 +22,6 @@ use autd3_core::{
     gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerMask},
     geometry::{Device, Geometry},
 };
-use derive_more::{Deref, DerefMut};
 
 /// A trait to iterate a [`GainCalculator`] for [`GainSTM`].
 ///
@@ -51,7 +50,7 @@ pub trait GainSTMIteratorGenerator<'a> {
 
 /// A trait to generate the [`GainSTMIteratorGenerator`].
 #[allow(clippy::len_without_is_empty)]
-pub trait GainSTMGenerator<'a>: std::fmt::Debug {
+pub trait GainSTMGenerator<'a> {
     /// The type of the iterator generator.
     type T: GainSTMIteratorGenerator<'a>;
 
@@ -86,10 +85,8 @@ impl Default for GainSTMOption {
 /// [`Datagram`] to produce STM by [`Gain`].
 ///
 /// [`Gain`]: autd3_core::gain::Gain
-#[derive(Clone, Debug, Deref, DerefMut)]
+#[derive(Clone, Debug)]
 pub struct GainSTM<T, C> {
-    #[deref]
-    #[deref_mut]
     /// The sequence of [`Gain`]s.
     ///
     /// [`Gain`]: autd3_core::gain::Gain

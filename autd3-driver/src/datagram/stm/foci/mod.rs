@@ -24,7 +24,6 @@ use autd3_core::{
         transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
     },
 };
-use derive_more::{Deref, DerefMut};
 
 /// A trait to generate a [`ControlPoints`] for  [`FociSTM`].
 ///
@@ -59,10 +58,8 @@ pub trait FociSTMGenerator<const N: usize> {
 }
 
 /// [`Datagram`] to produce STM by foci.
-#[derive(Clone, Deref, DerefMut, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FociSTM<const N: usize, T: FociSTMGenerator<N>, C> {
-    #[deref]
-    #[deref_mut]
     /// The sequence of foci.
     pub foci: T,
     /// The STM configuration.

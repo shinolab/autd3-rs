@@ -6,7 +6,6 @@ use autd3_core::{
     firmware::FirmwareLimits,
     geometry::Geometry,
 };
-use derive_more::Debug;
 
 /// [`Datagram`] which does nothing.
 #[derive(Debug)]

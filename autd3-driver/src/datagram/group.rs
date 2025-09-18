@@ -8,7 +8,7 @@ use autd3_core::{
     firmware::FirmwareLimits,
     geometry::{Device, Geometry},
 };
-use derive_more::Debug as DeriveDebug;
+
 use itertools::Itertools;
 
 /// [`Datagram`] that divide the devices into groups by given function and send different data to each group.
@@ -33,16 +33,14 @@ use itertools::Itertools;
 ///     ]),
 /// };
 /// ```
-#[derive(Default, DeriveDebug)]
+#[derive(Default)]
 pub struct Group<K, D, F>
 where
     F: Fn(&Device) -> Option<K>,
 {
     /// Mapping function from device to group key.
-    #[debug(ignore)]
     pub key_map: F,
     /// Map from group key to [`Datagram`].
-    #[debug(ignore)]
     pub datagram_map: HashMap<K, D>,
 }
 

@@ -8,8 +8,6 @@ use autd3_core::{
     geometry::{Device, Geometry},
 };
 
-use derive_more::Debug;
-
 /// [`Datagram`] to configure pulse width encoder table.
 ///
 /// The pulse width encoder table is a table to determine the pulse width (or duty ratio) from the intensity.
@@ -33,7 +31,6 @@ use derive_more::Debug;
 /// [`Intensity`]: autd3_core::firmware::Intensity
 #[derive(Clone, Debug)]
 pub struct PulseWidthEncoder<F> {
-    #[debug(ignore)]
     pub(crate) f: F,
 }
 

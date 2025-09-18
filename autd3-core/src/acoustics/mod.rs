@@ -16,14 +16,14 @@ use directivity::Directivity;
 pub fn propagate<D: Directivity>(
     tr: &Transducer,
     wavenumber: f32,
-    dir: &UnitVector3,
-    target_pos: &Point3,
+    dir: UnitVector3,
+    target_pos: Point3,
 ) -> Complex {
     const P0: f32 = T4010A1_AMPLITUDE / (4. * PI);
     let diff = target_pos - tr.position();
     let dist = diff.norm();
     Complex::from_polar(
-        P0 / dist * D::directivity_from_dir(dir, &diff),
+        P0 / dist * D::directivity_from_dir(dir, diff),
         wavenumber * dist,
     )
 }
@@ -98,11 +98,11 @@ mod tests {
                 let diff = target - tr.position();
                 let dist = diff.norm();
                 let r = T4010A1_AMPLITUDE / (4. * PI) / dist
-                    * TestDirectivity::directivity_from_dir(device.axial_direction(), &diff);
+                    * TestDirectivity::directivity_from_dir(device.axial_direction(), diff);
                 let phase = wavenumber * dist;
                 Complex::new(r * phase.cos(), r * phase.sin())
             },
-            super::propagate::<TestDirectivity>(&tr, wavenumber, device.axial_direction(), &target)
+            super::propagate::<TestDirectivity>(&tr, wavenumber, device.axial_direction(), target)
         );
     }
 }

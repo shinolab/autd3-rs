@@ -11,7 +11,6 @@ mod swapchain;
 use autd3_core::firmware::Segment;
 use autd3_driver::ethercat::DcSysTime;
 
-use getset::{Getters, MutGetters};
 use memory::Memory;
 
 use super::params::{
@@ -24,9 +23,7 @@ pub use silencer::SilencerEmulator;
 const CTL_FLAG_MOD_SET: u16 = 1 << CTL_FLAG_MOD_SET_BIT;
 const CTL_FLAG_STM_SET: u16 = 1 << CTL_FLAG_STM_SET_BIT;
 
-#[derive(Getters, MutGetters)]
 pub struct FPGAEmulator {
-    #[getset(get = "pub", get_mut = "pub")]
     pub(crate) mem: Memory,
     mod_swapchain: swapchain::Swapchain<CTL_FLAG_MOD_SET>,
     stm_swapchain: swapchain::Swapchain<CTL_FLAG_STM_SET>,
@@ -132,6 +129,10 @@ impl FPGAEmulator {
     #[must_use]
     pub fn is_force_fan(&self) -> bool {
         (self.mem.controller_bram.read(ADDR_CTL_FLAG) & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
+    }
+
+    pub fn set_phase_corr_bram(&mut self, value: u16) {
+        self.mem.phase_corr_bram.mem_mut().fill(value);
     }
 }
 

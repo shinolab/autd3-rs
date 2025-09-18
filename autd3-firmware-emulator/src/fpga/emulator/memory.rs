@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use crate::FPGAEmulator;
 
 use autd3_core::firmware::Segment;
-use getset::{Getters, MutGetters};
 
 use super::super::params::*;
 
@@ -79,10 +78,6 @@ impl<T: Copy> Bram<T> {
     pub fn write(&self, index: usize, value: T) {
         self.mem_mut()[index] = value;
     }
-
-    pub fn fill(&self, value: T) {
-        self.mem_mut().fill(value);
-    }
 }
 
 impl<T> Brom<T> {
@@ -112,11 +107,9 @@ macro_rules! create_bram {
     };
 }
 
-#[derive(Getters, MutGetters)]
 pub struct Memory {
     pub(crate) num_transducers: usize,
     pub(crate) controller_bram: Bram<u16>,
-    #[getset(get = "pub", get_mut = "pub")]
     pub(crate) phase_corr_bram: Bram<u16>,
     pub(crate) output_mask_bram: Bram<u16>,
     pub(crate) modulation_bram: HashMap<Segment, Bram<u16>>,

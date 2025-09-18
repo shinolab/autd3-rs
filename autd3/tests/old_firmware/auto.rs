@@ -61,11 +61,7 @@ fn firmware_v10_by_auto_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x80),
             phase: Phase::ZERO,
         }
-        .init(
-            autd.geometry(),
-            &autd.environment,
-            &TransducerMask::AllEnabled,
-        )?
+        .init(&autd, &autd.environment, &TransducerMask::AllEnabled)?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -80,11 +76,7 @@ fn firmware_v10_by_auto_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x81),
             phase: Phase::ZERO,
         }
-        .init(
-            autd.geometry(),
-            &autd.environment,
-            &TransducerMask::AllEnabled,
-        )?
+        .init(&autd, &autd.environment, &TransducerMask::AllEnabled)?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -198,11 +190,7 @@ fn firmware_v11_by_auto_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x80),
             phase: Phase::ZERO,
         }
-        .init(
-            autd.geometry(),
-            &autd.environment,
-            &TransducerMask::AllEnabled,
-        )?
+        .init(&autd, &autd.environment, &TransducerMask::AllEnabled)?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -217,11 +205,7 @@ fn firmware_v11_by_auto_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x81),
             phase: Phase::ZERO,
         }
-        .init(
-            autd.geometry(),
-            &autd.environment,
-            &TransducerMask::AllEnabled,
-        )?
+        .init(&autd, &autd.environment, &TransducerMask::AllEnabled)?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -312,11 +296,7 @@ fn firmware_v12_by_auto_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x80),
             phase: Phase::ZERO,
         }
-        .init(
-            autd.geometry(),
-            &autd.environment,
-            &TransducerMask::AllEnabled,
-        )?
+        .init(&autd, &autd.environment, &TransducerMask::AllEnabled)?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -331,11 +311,7 @@ fn firmware_v12_by_auto_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x81),
             phase: Phase::ZERO,
         }
-        .init(
-            autd.geometry(),
-            &autd.environment,
-            &TransducerMask::AllEnabled,
-        )?
+        .init(&autd, &autd.environment, &TransducerMask::AllEnabled)?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -416,11 +392,7 @@ fn firmware_v12_1_by_auto_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x80),
             phase: Phase::ZERO,
         }
-        .init(
-            autd.geometry(),
-            &autd.environment,
-            &TransducerMask::AllEnabled,
-        )?
+        .init(&autd, &autd.environment, &TransducerMask::AllEnabled)?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
@@ -430,11 +402,7 @@ fn firmware_v12_1_by_auto_driver() -> anyhow::Result<()> {
             intensity: Intensity(0x81),
             phase: Phase::ZERO,
         }
-        .init(
-            autd.geometry(),
-            &autd.environment,
-            &TransducerMask::AllEnabled,
-        )?
+        .init(&autd, &autd.environment, &TransducerMask::AllEnabled)?
         .generate(dev);
         assert_eq!(
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),

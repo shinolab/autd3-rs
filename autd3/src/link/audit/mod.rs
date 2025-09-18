@@ -6,8 +6,6 @@ use autd3_core::{
     link::{Link, LinkError, MsgId, RxMessage, TxBufferPoolSync, TxMessage},
 };
 
-use derive_more::{Deref, DerefMut};
-
 #[derive(Default, Clone, Copy)]
 #[doc(hidden)]
 pub struct AuditOption {
@@ -17,15 +15,26 @@ pub struct AuditOption {
 }
 
 #[doc(hidden)]
-#[derive(Deref, DerefMut)]
 pub struct Audit<E: version::Emulator> {
     option: AuditOption,
     is_open: bool,
-    #[deref]
-    #[deref_mut]
     cpus: Vec<E>,
     broken: bool,
     buffer_pool: TxBufferPoolSync,
+}
+
+impl<E: version::Emulator> std::ops::Deref for Audit<E> {
+    type Target = [E];
+
+    fn deref(&self) -> &Self::Target {
+        &self.cpus
+    }
+}
+
+impl<E: version::Emulator> std::ops::DerefMut for Audit<E> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.cpus
+    }
 }
 
 impl<E: version::Emulator> Audit<E> {

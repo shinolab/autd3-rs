@@ -17,7 +17,6 @@ thread-safe = []
 autd3-core = { workspace = true }
 autd3-driver = { workspace = true }
 bitfield-struct = { workspace = true }
-getset = { workspace = true }
 time = { workspace = true, features = ["std"] }
 zerocopy = { workspace = true }
 

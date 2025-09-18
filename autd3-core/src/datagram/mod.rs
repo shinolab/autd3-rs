@@ -26,7 +26,7 @@ pub mod internal {
 const INFINITE_REP: u16 = 0xFFFF;
 
 /// [`DatagramL`] is a [`Datagram`] with finite loop behavior.
-pub trait DatagramL<'a>: core::fmt::Debug {
+pub trait DatagramL<'a> {
     #[doc(hidden)]
     type G;
     #[doc(hidden)]
@@ -51,7 +51,7 @@ pub trait DatagramL<'a>: core::fmt::Debug {
 }
 
 /// [`DatagramS`] is a [`Datagram`] with [`Segment`].
-pub trait DatagramS<'a>: core::fmt::Debug {
+pub trait DatagramS<'a> {
     #[doc(hidden)]
     type G;
     #[doc(hidden)]
@@ -103,7 +103,7 @@ impl<'a, D: DatagramL<'a>> DatagramS<'a> for D {
 }
 
 /// [`Datagram`] represents the data sent to the device.
-pub trait Datagram<'a>: core::fmt::Debug {
+pub trait Datagram<'a> {
     #[doc(hidden)]
     type G;
     #[doc(hidden)]
