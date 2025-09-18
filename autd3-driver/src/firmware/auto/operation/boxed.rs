@@ -109,7 +109,7 @@ pub mod tests {
     }
 
     #[test]
-    fn boxed_datagram() -> anyhow::Result<()> {
+    fn boxed_datagram() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::autd3_device::tests::create_geometry(1);
 
         let d = TestDatagram {

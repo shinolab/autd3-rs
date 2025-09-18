@@ -8,7 +8,7 @@ use autd3::{
 };
 
 #[test]
-fn firmware_v10_by_v10_driver() -> anyhow::Result<()> {
+fn firmware_v10_by_v10_driver() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::<_, firmware::V10>::open_with(
         [AUTD3::default()],
         Audit::<version::V10>::new(AuditOption::default()),
@@ -76,7 +76,7 @@ fn firmware_v10_by_v10_driver() -> anyhow::Result<()> {
                 .map(|v| unsafe { std::mem::transmute(v) })
                 .collect::<Vec<_>>()
         );
-        anyhow::Ok(())
+        Result::<(), Box<dyn std::error::Error>>::Ok(())
     })?;
 
     autd.close()?;

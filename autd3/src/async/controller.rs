@@ -368,12 +368,12 @@ mod tests {
     // GRCOV_EXCL_START
     pub async fn create_controller(
         dev_num: usize,
-    ) -> anyhow::Result<Controller<Audit<version::V12_1>, V12_1>> {
-        Ok(Controller::open_with(
+    ) -> Result<Controller<Audit<version::V12_1>, V12_1>, AUTDDriverError> {
+        Controller::open_with(
             (0..dev_num).map(|_| AUTD3::default()),
             Audit::<version::V12_1>::new(AuditOption::default()),
         )
-        .await?)
+        .await
     }
     // GRCOV_EXCL_STOP
 
@@ -394,7 +394,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn send() -> anyhow::Result<()> {
+    async fn send() -> Result<(), Box<dyn std::error::Error>> {
         let mut autd = create_controller(1).await?;
         autd.send((
             Sine {
@@ -455,7 +455,7 @@ mod tests {
                 dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
                 autd.link[dev.idx()].fpga().drives_at(Segment::S0, 1)
             );
-            anyhow::Ok(())
+            Result::<(), Box<dyn std::error::Error>>::Ok(())
         })?;
 
         autd.close().await?;
@@ -464,7 +464,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn inspect() -> anyhow::Result<()> {
+    async fn inspect() -> Result<(), Box<dyn std::error::Error>> {
         let autd = create_controller(2).await?;
 
         let r = autd.inspect(autd3_driver::datagram::Group::new(
@@ -487,7 +487,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn firmware_version() -> anyhow::Result<()> {
+    async fn firmware_version() -> Result<(), Box<dyn std::error::Error>> {
         use autd3_driver::firmware::version::{CPUVersion, FPGAVersion};
 
         let mut autd = create_controller(1).await?;
@@ -510,7 +510,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn firmware_version_err() -> anyhow::Result<()> {
+    async fn firmware_version_err() -> Result<(), Box<dyn std::error::Error>> {
         let mut autd = create_controller(2).await?;
         autd.link_mut().break_down();
         assert_eq!(
@@ -523,7 +523,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn close() -> anyhow::Result<()> {
+    async fn close() -> Result<(), Box<dyn std::error::Error>> {
         {
             let mut autd = create_controller(1).await?;
             autd.close_impl(SenderOption::default(), FixedSchedule(AsyncSleeper))
@@ -548,7 +548,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn fpga_state() -> anyhow::Result<()> {
+    async fn fpga_state() -> Result<(), Box<dyn std::error::Error>> {
         let mut autd = Controller::open(
             [AUTD3::default(), AUTD3::default()],
             Audit::<version::V12_1>::new(AuditOption::default()),
@@ -561,16 +561,8 @@ mod tests {
 
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
-            assert!(
-                states[0]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
-            assert!(
-                !states[1]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
+            assert!(states[0].is_some_and(|s| s.is_thermal_assert()));
+            assert!(states[1].is_some_and(|s| !s.is_thermal_assert()));
         }
 
         {
@@ -579,16 +571,8 @@ mod tests {
 
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
-            assert!(
-                !states[0]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
-            assert!(
-                states[1]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
+            assert!(states[0].is_some_and(|s| !s.is_thermal_assert()));
+            assert!(states[1].is_some_and(|s| s.is_thermal_assert()));
         }
 
         autd.send(ReadsFPGAState::new(|dev| dev.idx() == 1)).await?;
@@ -596,18 +580,14 @@ mod tests {
             let states = autd.fpga_state().await?;
             assert_eq!(2, states.len());
             assert!(states[0].is_none());
-            assert!(
-                states[1]
-                    .ok_or(anyhow::anyhow!("state shouldn't be None here"))?
-                    .is_thermal_assert()
-            );
+            assert!(states[1].is_some_and(|s| s.is_thermal_assert()));
         }
 
         Ok(())
     }
 
     #[tokio::test]
-    async fn into_iter() -> anyhow::Result<()> {
+    async fn into_iter() -> Result<(), Box<dyn std::error::Error>> {
         let mut autd = create_controller(1).await?;
         (&mut autd).into_iter().for_each(|dev| {
             _ = dev;

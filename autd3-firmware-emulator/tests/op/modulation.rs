@@ -56,7 +56,7 @@ fn send_mod_with_infinite_loop<T: TransitionMode>(
     #[case] n: usize,
     #[case] segment: Segment,
     #[case] transition_mode: T,
-) -> anyhow::Result<()>
+) -> Result<(), Box<dyn std::error::Error>>
 where
     TestModulation: HasSegment<T>,
 {
@@ -139,7 +139,7 @@ fn send_mod_with_finite_loop_unsafe<T: TransitionMode>(
     #[case] loop_count: NonZeroU16,
     #[case] segment: Segment,
     #[case] transition_mode: T,
-) -> anyhow::Result<()>
+) -> Result<(), Box<dyn std::error::Error>>
 where
     TestModulation: HasFiniteLoop<T>,
 {
@@ -192,7 +192,7 @@ where
 }
 
 #[test]
-fn swap_mod_segment_unsafe() -> anyhow::Result<()> {
+fn swap_mod_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -226,7 +226,7 @@ fn swap_mod_segment_unsafe() -> anyhow::Result<()> {
 }
 
 #[test]
-fn mod_freq_div_too_small() -> anyhow::Result<()> {
+fn mod_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -297,7 +297,7 @@ fn mod_freq_div_too_small() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_mod_invalid_transition_mode() -> anyhow::Result<()> {
+fn send_mod_invalid_transition_mode() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -352,7 +352,7 @@ fn test_miss_transition_time(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] systime: OffsetDateTime,
     #[case] transition_time: OffsetDateTime,
-) -> anyhow::Result<()> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];

@@ -67,7 +67,9 @@ impl Modulation for Burst {
     }
 }
 
-pub fn user_defined(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<bool> {
+pub fn user_defined(
+    autd: &mut Controller<impl Link, firmware::Auto>,
+) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(Silencer::disable())?;
 
     let g = MyUniform::new();
@@ -75,5 +77,5 @@ pub fn user_defined(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow:
 
     autd.send((m, g))?;
 
-    Ok(true)
+    Ok(())
 }

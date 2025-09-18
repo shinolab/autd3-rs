@@ -30,7 +30,7 @@ fn firmware_v11_by_v12_1_driver() {
 }
 
 #[test]
-fn firmware_v12_1_by_v12_1_driver() -> anyhow::Result<()> {
+fn firmware_v12_1_by_v12_1_driver() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::<_, firmware::V12_1>::open_with(
         [AUTD3::default()],
         Audit::<version::V12_1>::new(AuditOption::default()),
@@ -86,7 +86,7 @@ fn firmware_v12_1_by_v12_1_driver() -> anyhow::Result<()> {
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
             autd.link()[dev.idx()].fpga().drives_at(Segment::S0, 1)
         );
-        anyhow::Ok(())
+        Result::<(), Box<dyn std::error::Error>>::Ok(())
     })?;
 
     autd.close()?;

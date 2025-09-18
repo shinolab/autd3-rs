@@ -11,7 +11,7 @@ mod datagram;
 mod link;
 
 #[test]
-fn initial_msg_id() -> anyhow::Result<()> {
+fn initial_msg_id() -> Result<(), Box<dyn std::error::Error>> {
     let cnt = Controller::<_, V12_1>::open_with(
         [AUTD3::default()],
         Audit::<version::V12_1>::new(AuditOption {
@@ -33,7 +33,7 @@ fn initial_msg_id() -> anyhow::Result<()> {
 }
 
 #[test]
-fn test_retry_with_disabled_device() -> anyhow::Result<()> {
+fn test_retry_with_disabled_device() -> Result<(), Box<dyn std::error::Error>> {
     let mut cnt = Controller::<_, V12_1>::open_with(
         [AUTD3::default(); 2],
         Audit::<version::V12_1>::new(Default::default()),

@@ -32,7 +32,6 @@ time = { workspace = true, features = ["macros", "std"] }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
 approx = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }

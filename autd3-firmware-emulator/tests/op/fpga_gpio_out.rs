@@ -18,7 +18,7 @@ fn send_gpio_output(
     #[case] expect_types: [u8; 4],
     #[case] expect_values: [u64; 4],
     #[case] gpio_out_types: [Option<GPIOOutputType<'static>>; 4],
-) -> anyhow::Result<()> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];
@@ -43,7 +43,7 @@ fn send_gpio_output(
 }
 
 #[test]
-fn send_gpio_output_pwm() -> anyhow::Result<()> {
+fn send_gpio_output_pwm() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];

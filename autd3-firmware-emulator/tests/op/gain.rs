@@ -53,7 +53,7 @@ impl Gain<'_> for TestGain {
 }
 
 #[test]
-fn send_gain_unsafe() -> anyhow::Result<()> {
+fn send_gain_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
@@ -143,7 +143,7 @@ fn send_gain_unsafe() -> anyhow::Result<()> {
 }
 
 #[test]
-fn send_gain_invalid_segment_transition() -> anyhow::Result<()> {
+fn send_gain_invalid_segment_transition() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];

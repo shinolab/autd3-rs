@@ -10,7 +10,7 @@ use autd3::{
 };
 
 #[test]
-fn firmware_v10_by_v11_driver() -> anyhow::Result<()> {
+fn firmware_v10_by_v11_driver() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::<_, firmware::V11>::open_with(
         [AUTD3::default()],
         Audit::<version::V10>::new(AuditOption::default()),
@@ -79,7 +79,7 @@ fn firmware_v10_by_v11_driver() -> anyhow::Result<()> {
                     .map(|v| unsafe { std::mem::transmute(v) })
                     .collect::<Vec<_>>()
             );
-            anyhow::Ok(())
+            Result::<(), Box<dyn std::error::Error>>::Ok(())
         })?;
     }
 
@@ -122,7 +122,7 @@ fn firmware_v10_by_v11_driver_focistm_out_of_range() {
 }
 
 #[test]
-fn firmware_v11_by_v11_driver() -> anyhow::Result<()> {
+fn firmware_v11_by_v11_driver() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::<_, firmware::V11>::open_with(
         [AUTD3::default()],
         Audit::<version::V11>::new(AuditOption::default()),
@@ -190,7 +190,7 @@ fn firmware_v11_by_v11_driver() -> anyhow::Result<()> {
                 .map(|v| unsafe { std::mem::transmute(v) })
                 .collect::<Vec<_>>()
         );
-        anyhow::Ok(())
+        Result::<(), Box<dyn std::error::Error>>::Ok(())
     })?;
 
     {

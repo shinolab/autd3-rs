@@ -19,7 +19,7 @@ use crate::{create_geometry, send};
 use zerocopy::FromZeros;
 
 #[test]
-fn send_firminfo() -> anyhow::Result<()> {
+fn send_firminfo() -> Result<(), Box<dyn std::error::Error>> {
     use FirmwareVersionType::*;
 
     const EMULATOR_BIT: u8 = 1 << 7;
@@ -67,7 +67,7 @@ fn send_firminfo() -> anyhow::Result<()> {
 }
 
 #[test]
-fn invalid_info_type() -> anyhow::Result<()> {
+fn invalid_info_type() -> Result<(), Box<dyn std::error::Error>> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new_zeroed(); 1];

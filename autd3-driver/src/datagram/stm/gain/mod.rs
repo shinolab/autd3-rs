@@ -266,7 +266,7 @@ mod tests {
     use autd3_core::firmware::{Drive, Intensity, Phase, SamplingConfig, Segment, transition_mode};
 
     #[test]
-    fn inspect() -> anyhow::Result<()> {
+    fn inspect() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         GainSTM {
@@ -316,7 +316,7 @@ mod tests {
     }
 
     #[test]
-    fn inspect_with_segment() -> anyhow::Result<()> {
+    fn inspect_with_segment() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         WithSegment {
@@ -374,7 +374,7 @@ mod tests {
     }
 
     #[test]
-    fn inspect_with_loop_behavior() -> anyhow::Result<()> {
+    fn inspect_with_loop_behavior() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::datagram::gain::tests::create_geometry(2, 1);
 
         WithFiniteLoop {

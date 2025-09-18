@@ -29,7 +29,7 @@ pub mod tests {
     }
 
     #[test]
-    fn inspect() -> anyhow::Result<()> {
+    fn inspect() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::autd3_device::tests::create_geometry(2);
 
         TestModulation {
@@ -56,7 +56,7 @@ pub mod tests {
     }
 
     #[test]
-    fn inspect_with_segment() -> anyhow::Result<()> {
+    fn inspect_with_segment() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::autd3_device::tests::create_geometry(2);
 
         crate::datagram::WithSegment {
@@ -91,7 +91,7 @@ pub mod tests {
     }
 
     #[test]
-    fn inspect_with_loop_behavior() -> anyhow::Result<()> {
+    fn inspect_with_loop_behavior() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::autd3_device::tests::create_geometry(2);
 
         crate::datagram::WithFiniteLoop {

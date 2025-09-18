@@ -1,10 +1,8 @@
-use anyhow::Result;
-
 use autd3::r#async::Controller;
 use autd3::prelude::*;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::open(
         [AUTD3 {
             pos: Point3::origin(),
