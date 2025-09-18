@@ -42,7 +42,6 @@ trait DGain<'a> {
         env: &Environment,
         filter: &TransducerMask,
     ) -> Result<Box<dyn DGainCalculatorGenerator<'a>>, GainError>;
-    fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
 }
 
 impl<'a, G: DGainCalculatorGenerator<'a> + 'static, T: Gain<'a, G = G>> DGain<'a>
@@ -59,11 +58,6 @@ impl<'a, G: DGainCalculatorGenerator<'a> + 'static, T: Gain<'a, G = G>> DGain<'a
         // SAFETY: This function is called only once from `Gain::init`.
         let g = unsafe { tmp.assume_init() };
         Ok(Box::new(g.init(geometry, env, filter)?) as _)
-    }
-
-    fn dyn_fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // SAFETY: This function is never called after `dyn_init`.
-        unsafe { self.assume_init_ref() }.fmt(f)
     }
 }
 
@@ -89,12 +83,6 @@ impl<'a> BoxedGain<'a> {
         Self {
             g: Box::new(MaybeUninit::new(g)),
         }
-    }
-}
-
-impl std::fmt::Debug for BoxedGain<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.g.as_ref().dyn_fmt(f)
     }
 }
 
@@ -185,11 +173,5 @@ pub mod tests {
         );
 
         Ok(())
-    }
-
-    #[test]
-    fn boxed_gain_dbg_unsafe() {
-        let g = TestGain::null();
-        assert_eq!(format!("{g:?}"), format!("{:?}", BoxedGain::new(g)));
     }
 }

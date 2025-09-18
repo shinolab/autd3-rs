@@ -11,7 +11,7 @@ pub use error::ModulationError;
 /// See also [`Modulation`] derive macro.
 ///
 /// [`Modulation`]: autd3_derive::Modulation
-pub trait Modulation: core::fmt::Debug {
+pub trait Modulation {
     /// Calculate the modulation data.
     fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError>;
 

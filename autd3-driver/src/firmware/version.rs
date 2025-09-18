@@ -1,12 +1,11 @@
-use derive_more::{Debug, Display};
 use itertools::Itertools;
 
 /// Major version number.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Major(pub u8);
 
 /// Minor version number.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Minor(pub u8);
 
 #[must_use]
@@ -69,8 +68,7 @@ impl std::fmt::Display for FPGAVersion {
 }
 
 /// CPU firmware version.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
-#[display("{}", version_map(self.major, self.minor))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CPUVersion {
     #[doc(hidden)]
     pub major: Major,
@@ -78,15 +76,14 @@ pub struct CPUVersion {
     pub minor: Minor,
 }
 
+impl std::fmt::Display for CPUVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", version_map(self.major, self.minor))
+    }
+}
+
 /// Firmware version.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display)]
-#[display(
-    "{}: CPU = {}, FPGA = {}",
-    idx,
-    self.cpu,
-    self.fpga,
-)]
-#[debug("{}", self)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FirmwareVersion {
     #[doc(hidden)]
     pub idx: usize,
@@ -94,6 +91,12 @@ pub struct FirmwareVersion {
     pub cpu: CPUVersion,
     #[doc(hidden)]
     pub fpga: FPGAVersion,
+}
+
+impl std::fmt::Display for FirmwareVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: CPU = {}, FPGA = {}", self.idx, self.cpu, self.fpga)
+    }
 }
 
 impl FirmwareVersion {
@@ -249,6 +252,5 @@ mod tests {
     )]
     fn display(#[case] expected: &str, #[case] info: FirmwareVersion) {
         assert_eq!(expected, format!("{info}"));
-        assert_eq!(expected, format!("{info:?}"));
     }
 }

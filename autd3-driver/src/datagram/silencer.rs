@@ -8,7 +8,7 @@ use autd3_core::{
     geometry::Geometry,
 };
 
-pub trait SilencerConfig: std::fmt::Debug + Clone + Copy {}
+pub trait SilencerConfig: Clone + Copy {}
 impl SilencerConfig for () {}
 
 /// To configure the silencer by the completion time.

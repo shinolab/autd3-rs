@@ -6,12 +6,10 @@ use autd3_core::{
     firmware::{FirmwareLimits, GPIOIn},
     geometry::{Device, Geometry},
 };
-use derive_more::Debug;
 
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct EmulateGPIOIn<F> {
-    #[debug(ignore)]
     pub(crate) f: F,
 }
 

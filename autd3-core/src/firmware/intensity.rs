@@ -1,11 +1,15 @@
-use derive_more::Debug;
 use zerocopy::{Immutable, IntoBytes};
 
 /// The intensity of the ultrasound.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, IntoBytes, Immutable)]
-#[debug("{:#04X}", self.0)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, IntoBytes, Immutable)]
 #[repr(C)]
 pub struct Intensity(pub u8);
+
+impl core::fmt::Debug for Intensity {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "0x{:02X}", self.0)
+    }
+}
 
 impl Intensity {
     /// Maximum intensity.

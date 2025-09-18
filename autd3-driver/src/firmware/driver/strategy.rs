@@ -63,8 +63,6 @@ impl<S: Sleep> TimerStrategy<S> for Box<dyn TimerStrategy<S>> {
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use derive_more::Debug;
-
     use super::*;
 
     #[derive(Debug)]

@@ -8,12 +8,9 @@ use autd3_core::{
     geometry::Geometry,
 };
 
-use derive_more::Deref;
-
 /// A wrapper of [`DatagramS`] to specify the segment to write the data.
-#[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WithSegment<T: TransitionMode, D> {
-    #[deref]
     /// The original [`DatagramS`]
     pub inner: D,
     /// The segment to write the data

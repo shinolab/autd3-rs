@@ -1,9 +1,8 @@
 use alloc::string::{String, ToString};
-use derive_more::Display;
 use thiserror::Error;
 
-#[derive(Error, Debug, Display, PartialEq, Clone)]
-#[display("{}", msg)]
+#[derive(Error, Debug, PartialEq, Clone)]
+#[error("{msg}")]
 /// An error occurred during gain calculation.
 pub struct GainError {
     msg: String,

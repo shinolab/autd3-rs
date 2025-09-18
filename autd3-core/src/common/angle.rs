@@ -6,14 +6,17 @@ pub struct deg;
 #[allow(non_camel_case_types)]
 pub struct rad;
 
-use derive_more::Debug;
-
 /// Angle
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq, Debug)]
-#[debug("{}rad", radian)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Angle {
     radian: f32,
+}
+
+impl core::fmt::Debug for Angle {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{} rad", self.radian)
+    }
 }
 
 impl Angle {
@@ -62,6 +65,6 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(alloc::format!("{:?}", 1.0 * rad), "1rad");
+        assert_eq!(alloc::format!("{:?}", 1.0 * rad), "1 rad");
     }
 }

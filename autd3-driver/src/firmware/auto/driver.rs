@@ -5,14 +5,18 @@ use crate::{
     firmware::driver::{Driver, FixedSchedule, Sender, TimerStrategy, Version},
 };
 
-use getset::CopyGetters;
-
 /// A driver with firmware version auto-detection.
-#[derive(CopyGetters)]
 pub struct Auto {
-    #[getset(get_copy = "pub")]
     /// The estimated firmware version.
     pub(crate) version: Version,
+}
+
+impl Auto {
+    #[doc(hidden)]
+    #[must_use]
+    pub const fn version(&self) -> Version {
+        self.version
+    }
 }
 
 impl<'a, L: Link, S: Sleep, T: TimerStrategy<S>> Sender<'a, L, S, T>

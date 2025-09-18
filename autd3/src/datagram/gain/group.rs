@@ -8,8 +8,6 @@ use std::{
     hash::Hash,
 };
 
-use derive_more::Debug;
-
 /// [`Gain`] for grouping transducers and sending different [`Gain`] to each group.
 ///
 /// If grouping by device is sufficient, [`autd3_driver::datagram::Group`] is recommended.
@@ -51,10 +49,8 @@ where
     F: Fn(&'geo Device) -> FK,
 {
     /// Mapping function from transducer to group key.
-    #[debug(ignore)]
     pub key_map: F,
     /// Map from group key to [`Gain`].
-    #[debug(ignore)]
     pub gain_map: HashMap<K, G>,
     _phantom: std::marker::PhantomData<(&'geo (), &'geo ())>,
 }

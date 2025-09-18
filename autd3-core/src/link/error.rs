@@ -1,9 +1,8 @@
 use alloc::string::{String, ToString};
-use derive_more::Display;
 use thiserror::Error;
 
-#[derive(Error, Debug, Display, PartialEq, Clone)]
-#[display("{}", msg)]
+#[derive(Error, Debug, PartialEq, Clone)]
+#[error("{msg}")]
 /// An error produced by the link.
 pub struct LinkError {
     msg: String,

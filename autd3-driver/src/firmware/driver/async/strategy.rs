@@ -45,8 +45,6 @@ impl<S: Sleep> TimerStrategy<S> for FixedDelay<S> {
 mod tests {
     use std::sync::{Arc, RwLock};
 
-    use derive_more::Debug;
-
     use super::*;
 
     #[derive(Debug)]

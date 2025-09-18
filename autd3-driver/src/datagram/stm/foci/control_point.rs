@@ -1,7 +1,6 @@
 use crate::geometry::{Isometry, Point3};
 
 use autd3_core::firmware::{Intensity, Phase};
-use derive_more::{Deref, DerefMut};
 
 /// A pair of a focal point and a phase offset.
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
@@ -49,15 +48,21 @@ impl From<&Point3> for ControlPoint {
 }
 
 /// A collection of control points and the intensity of all control points.
-#[derive(Clone, PartialEq, Debug, Deref, DerefMut)]
+#[derive(Clone, PartialEq, Debug)]
 #[repr(C)]
 pub struct ControlPoints<const N: usize> {
-    #[deref]
-    #[deref_mut]
     /// The control points.
     pub points: [ControlPoint; N],
     /// The intensity of all control points.
     pub intensity: Intensity,
+}
+
+impl<const N: usize> std::ops::Deref for ControlPoints<N> {
+    type Target = [ControlPoint; N];
+
+    fn deref(&self) -> &Self::Target {
+        &self.points
+    }
 }
 
 impl<const N: usize> Default for ControlPoints<N> {

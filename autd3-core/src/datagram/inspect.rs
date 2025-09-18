@@ -6,12 +6,10 @@ use crate::{
 };
 
 use alloc::vec::Vec;
-use derive_more::Deref;
 
 /// Inspection result of a [`Datagram`].
-#[derive(Clone, Deref)]
+#[derive(Clone)]
 pub struct InspectionResult<T> {
-    #[deref]
     /// The inspection result for each device.
     pub result: Vec<Option<T>>,
 }
@@ -30,6 +28,14 @@ impl<T> InspectionResult<T> {
                 .map(|dev| filter.is_enabled(dev).then(|| f(dev)))
                 .collect(),
         }
+    }
+}
+
+impl<T> core::ops::Deref for InspectionResult<T> {
+    type Target = [Option<T>];
+
+    fn deref(&self) -> &Self::Target {
+        &self.result
     }
 }
 

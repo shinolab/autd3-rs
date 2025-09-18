@@ -111,7 +111,7 @@ impl LinAlgBackend for NalgebraBackend {
                     n,
                     geometry.iter().flat_map(|dev| {
                         dev.iter().map(move |tr| {
-                            propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), f)
+                            propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), *f)
                         })
                     }),
                 )
@@ -128,7 +128,7 @@ impl LinAlgBackend for NalgebraBackend {
                                 tr,
                                 env.wavenumber(),
                                 dev.axial_direction(),
-                                f,
+                                *f,
                             ));
                         });
                     });
@@ -143,7 +143,7 @@ impl LinAlgBackend for NalgebraBackend {
                         n,
                         geometry.iter().filter(|dev| filter.has_enabled(dev)).flat_map(|dev| {
                             dev.iter().filter(|tr| filter.is_enabled(tr)).map(move |tr| {
-                                propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), f)
+                                propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), *f)
                             })
                         }),
                     )
@@ -163,7 +163,7 @@ impl LinAlgBackend for NalgebraBackend {
                                         tr,
                                         env.wavenumber(),
                                         dev.axial_direction(),
-                                        f,
+                                        *f,
                                     ));
                                 });
                             }
@@ -1885,7 +1885,7 @@ mod tests {
                         transducers[j].1,
                         env.wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
-                        &foci[i],
+                        foci[i],
                     )
                 })
             });
@@ -1942,7 +1942,7 @@ mod tests {
                         transducers[j].1,
                         env.wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
-                        &foci[i],
+                        foci[i],
                     )
                 })
             });
@@ -2011,7 +2011,7 @@ mod tests {
                         transducers[j].1,
                         env.wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
-                        &foci[i],
+                        foci[i],
                     )
                 })
             });
@@ -2090,7 +2090,7 @@ mod tests {
                         transducers[j].1,
                         env.wavenumber(),
                         geometry[transducers[j].0].axial_direction(),
-                        &foci[i],
+                        foci[i],
                     )
                 })
             });

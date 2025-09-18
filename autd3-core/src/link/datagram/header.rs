@@ -1,4 +1,3 @@
-use derive_more::Debug;
 use zerocopy::{FromZeros, Immutable, IntoBytes};
 
 use super::msg_id::MsgId;
@@ -8,7 +7,6 @@ use super::msg_id::MsgId;
 #[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromZeros)]
 pub struct Header {
     pub msg_id: MsgId,
-    #[debug(ignore)]
     __: u8,
     pub slot_2_offset: u16,
 }

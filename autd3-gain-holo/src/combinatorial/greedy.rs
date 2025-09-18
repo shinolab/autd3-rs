@@ -12,7 +12,6 @@ use autd3_core::{
     geometry::{Point3, UnitVector3},
 };
 
-use derive_more::Debug;
 use nalgebra::ComplexField;
 use rand::prelude::*;
 
@@ -83,12 +82,12 @@ impl<D: Directivity> Greedy<D> {
     fn transfer_foci(
         trans: &Transducer,
         wavenumber: f32,
-        dir: &UnitVector3,
+        dir: UnitVector3,
         foci: &[Point3],
         res: &mut [Complex],
     ) {
         res.iter_mut().zip(foci.iter()).for_each(|(r, f)| {
-            *r = propagate::<D>(trans, wavenumber, dir, f);
+            *r = propagate::<D>(trans, wavenumber, dir, *f);
         });
     }
 

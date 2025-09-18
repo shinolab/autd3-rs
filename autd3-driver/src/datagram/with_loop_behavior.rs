@@ -10,14 +10,11 @@ use autd3_core::{
     geometry::Geometry,
 };
 
-use derive_more::Deref;
-
 /// A wrapper of [`DatagramL`] to specify the loop behavior.
 ///
 /// Note that the loop behavior only affects when switching segments.
-#[derive(Deref, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WithFiniteLoop<T: TransitionMode, D> {
-    #[deref]
     /// The original [`DatagramL`]
     pub inner: D,
     /// The loop count

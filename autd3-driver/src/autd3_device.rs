@@ -2,11 +2,10 @@ use crate::{
     common::mm,
     geometry::{Device, Isometry, Point3, Transducer, Translation, UnitQuaternion},
 };
-use getset::Getters;
 use std::fmt::Debug;
 
 /// AUTD3 device.
-#[derive(Clone, Copy, Debug, Getters)]
+#[derive(Clone, Copy, Debug)]
 pub struct AUTD3<R: Into<UnitQuaternion> + Debug> {
     /// The global position of the AUTD3 device.
     pub pos: Point3,

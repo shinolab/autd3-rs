@@ -1,14 +1,10 @@
-use getset::Getters;
-
 use super::Point3;
 
 /// A ultrasound transducer.
-#[derive(Clone, Debug, PartialEq, Getters)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Transducer {
     pub(crate) idx: u8,
     pub(crate) dev_idx: u16,
-    #[getset(get = "pub")]
-    /// The position of the transducer.
     position: Point3,
 }
 
@@ -33,6 +29,12 @@ impl Transducer {
     #[must_use]
     pub const fn dev_idx(&self) -> usize {
         self.dev_idx as _
+    }
+
+    /// Gets the position of the transducer.
+    #[must_use]
+    pub const fn position(&self) -> Point3 {
+        self.position
     }
 }
 

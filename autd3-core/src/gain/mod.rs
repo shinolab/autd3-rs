@@ -43,7 +43,7 @@ pub trait GainCalculatorGenerator<'a> {
 /// See also [`Gain`] derive macro.
 ///
 /// [`Gain`]: autd3_derive::Gain
-pub trait Gain<'a>: core::fmt::Debug + Sized {
+pub trait Gain<'a>: Sized {
     /// The type of the calculator generator.
     type G: GainCalculatorGenerator<'a>;
 

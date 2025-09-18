@@ -37,8 +37,8 @@ impl From<&autd3_core::geometry::Geometry> for Geometry {
             devices: value
                 .iter()
                 .map(|dev| geometry::Autd3 {
-                    pos: Some((*dev[0].position()).into()),
-                    rot: Some((*dev.rotation()).into()),
+                    pos: Some(dev[0].position().into()),
+                    rot: Some(dev.rotation().into()),
                 })
                 .collect(),
         }

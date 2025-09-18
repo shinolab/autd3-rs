@@ -136,13 +136,4 @@ pub mod tests {
 
         Ok(())
     }
-
-    #[test]
-    fn boxed_fmt() {
-        let d = TestDatagram {
-            option: Default::default(),
-        };
-        let bd = BoxedDatagram::new(d);
-        assert_eq!(format!("{bd:?}"), "test");
-    }
 }

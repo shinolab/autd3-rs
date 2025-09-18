@@ -11,7 +11,6 @@ use autd3_core::{
     derive::*,
     geometry::Point3,
 };
-use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`LM`].
@@ -57,7 +56,6 @@ pub struct LM<D: Directivity, B: LinAlgBackend> {
     pub foci: Vec<(Point3, Amplitude)>,
     /// The option of the Gain.
     pub option: LMOption,
-    #[debug("{}", tynm::type_name::<B>())]
     /// The backend of linear algebra calculation.
     pub backend: Arc<B>,
     /// The directivity of the transducers.

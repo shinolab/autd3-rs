@@ -24,9 +24,9 @@ pub trait Directivity: Send + Sync {
 
     /// Calculates the directivity based on the axial direction and target direction.
     #[must_use]
-    fn directivity_from_dir(axial_direction: &UnitVector3, target: &Vector3) -> f32 {
+    fn directivity_from_dir(axial_direction: UnitVector3, target: Vector3) -> f32 {
         Self::directivity(
-            (axial_direction.cross(target).norm()).atan2(axial_direction.dot(target)) * rad,
+            (axial_direction.cross(&target).norm()).atan2(axial_direction.dot(&target)) * rad,
         )
     }
 }
@@ -52,9 +52,6 @@ pub(crate) mod tests {
         #[case] target: Vector3,
         #[case] dir: UnitVector3,
     ) {
-        approx::assert_abs_diff_eq!(
-            expected,
-            TestDirectivity::directivity_from_dir(&dir, &target)
-        );
+        approx::assert_abs_diff_eq!(expected, TestDirectivity::directivity_from_dir(dir, target));
     }
 }

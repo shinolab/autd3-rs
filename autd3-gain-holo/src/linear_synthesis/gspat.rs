@@ -11,7 +11,6 @@ use autd3_core::{
     derive::*,
     geometry::Point3,
 };
-use derive_more::Debug;
 use zerocopy::{FromBytes, IntoBytes};
 
 /// The option of [`GSPAT`].
@@ -42,7 +41,6 @@ pub struct GSPAT<D: Directivity, B: LinAlgBackend> {
     /// The option of the Gain.
     pub option: GSPATOption,
     /// The backend of linear algebra calculation.
-    #[debug("{}", tynm::type_name::<B>())]
     pub backend: Arc<B>,
     /// The directivity of the transducers.
     pub directivity: std::marker::PhantomData<D>,

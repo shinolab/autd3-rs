@@ -17,7 +17,7 @@ pub struct TransitionModeParams {
 }
 
 /// Transition mode between segments.
-pub trait TransitionMode: core::fmt::Debug + Clone + Copy + Send + Sync {
+pub trait TransitionMode: Clone + Copy + Send + Sync {
     #[doc(hidden)]
     fn params(self) -> TransitionModeParams;
 }
