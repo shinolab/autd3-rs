@@ -29,7 +29,6 @@ rayon = { workspace = true }
 seq-macro = { workspace = true }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["macros", "std"] }
-tynm = { workspace = true }
 zerocopy = { workspace = true }
 
 [dev-dependencies]

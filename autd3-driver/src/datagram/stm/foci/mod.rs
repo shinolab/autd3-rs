@@ -163,7 +163,6 @@ impl<const N: usize, G: FociSTMGenerator<N> + std::fmt::Debug, C: Into<STMConfig
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FociSTMInspectionResult<const N: usize> {
-    pub name: String,
     pub data: Vec<ControlPoints<N>>,
     pub config: SamplingConfig,
 }
@@ -191,7 +190,6 @@ impl<
         let mut g = self.foci.init()?;
         Ok(InspectionResult::new(geometry, filter, |dev| {
             FociSTMInspectionResult {
-                name: tynm::type_name::<Self>().to_string(),
                 data: {
                     let mut d = g.generate(dev);
                     (0..n).map(|_| d.next()).collect()
@@ -256,7 +254,6 @@ mod tests {
         .for_each(|r| {
             assert_eq!(
                 &Some(FociSTMInspectionResult {
-                    name: "FociSTM".to_string(),
                     data: vec![
                         ControlPoints {
                             points: [ControlPoint {
@@ -314,7 +311,6 @@ mod tests {
             assert_eq!(
                 &Some(WithSegmentInspectionResult {
                     inner: FociSTMInspectionResult {
-                        name: "FociSTM".to_string(),
                         data: vec![
                             ControlPoints {
                                 points: [ControlPoint {
@@ -376,7 +372,6 @@ mod tests {
             assert_eq!(
                 &Some(WithFiniteLoopInspectionResult {
                     inner: FociSTMInspectionResult {
-                        name: "FociSTM".to_string(),
                         data: vec![
                             ControlPoints {
                                 points: [ControlPoint {

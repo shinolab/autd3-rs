@@ -155,7 +155,6 @@ pub mod tests {
         .for_each(|r| {
             assert_eq!(
                 &Some(GainInspectionResult {
-                    name: "TestGain".to_string(),
                     data: vec![
                         Drive {
                             phase: Phase(0xFF),
@@ -199,7 +198,6 @@ pub mod tests {
             assert_eq!(
                 &Some(WithSegmentInspectionResult {
                     inner: GainInspectionResult {
-                        name: "TestGain".to_string(),
                         data: vec![
                             Drive {
                                 phase: Phase(0xFF),

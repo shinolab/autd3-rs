@@ -53,7 +53,6 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                     geometry,
                     filter,
                     |_| ModulationInspectionResult {
-                            name: tynm::type_name::<Self>().to_string(),
                             data: data.clone(),
                             config: sampling_config,
                     }

@@ -201,7 +201,6 @@ impl<'a, G: GainSTMGenerator<'a>, C: Into<STMConfig> + std::fmt::Debug> Datagram
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GainSTMInspectionResult {
-    pub name: String,
     pub data: Vec<Vec<Drive>>,
     pub config: SamplingConfig,
     pub mode: GainSTMMode,
@@ -229,7 +228,6 @@ impl<'a, T: GainSTMGenerator<'a>, C: Into<STMConfig> + Copy + std::fmt::Debug> I
         let mode = self.option.mode;
         Ok(InspectionResult::new(geometry, filter, |dev| {
             GainSTMInspectionResult {
-                name: tynm::type_name::<Self>().to_string(),
                 data: {
                     use autd3_core::gain::GainCalculator;
                     let mut d = g.generate(dev);
@@ -297,7 +295,6 @@ mod tests {
         .for_each(|r| {
             assert_eq!(
                 &Some(GainSTMInspectionResult {
-                    name: "GainSTM<[TestGain; 2], SamplingConfig>".to_string(),
                     data: vec![
                         vec![Drive::NULL; 1],
                         vec![
@@ -353,7 +350,6 @@ mod tests {
             assert_eq!(
                 &Some(WithSegmentInspectionResult {
                     inner: GainSTMInspectionResult {
-                        name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
                         data: vec![
                             vec![Drive::NULL; 1],
                             vec![
@@ -413,7 +409,6 @@ mod tests {
             assert_eq!(
                 &Some(WithFiniteLoopInspectionResult {
                     inner: GainSTMInspectionResult {
-                        name: "GainSTM<Vec<TestGain>, SamplingConfig>".to_string(),
                         data: vec![
                             vec![Drive::NULL; 1],
                             vec![

@@ -15,7 +15,6 @@ nalgebra = { workspace = true, features = ["alloc"] }
 rand = { workspace = true, features = ["thread_rng"] }
 rayon = { workspace = true }
 thiserror = { workspace = true }
-tynm = { workspace = true }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
