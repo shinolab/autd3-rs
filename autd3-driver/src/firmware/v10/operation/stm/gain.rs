@@ -163,28 +163,72 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                     }
                 }
                 GainSTMMode::PhaseFull => {
-                    seq_macro::seq!(N in 0..2 {
-                        #(
-                            if let Some(g) = self.iter.next() {
-                                tx[offset..].chunks_exact_mut(size_of::<PhaseFull>()).zip(device.iter()).for_each(|(dst, tr)| {
-                                    PhaseFull::mut_from_bytes(dst).unwrap().phase_~N = g.calc(tr).phase.0;
-                                });
-                                send += 1;
-                            }
-                        )*
-                    });
+                    if let Some(g) = self.iter.next() {
+                        tx[offset..]
+                            .chunks_exact_mut(size_of::<PhaseFull>())
+                            .zip(device.iter())
+                            .for_each(|(dst, tr)| {
+                                PhaseFull::mut_from_bytes(dst).unwrap().phase_0 =
+                                    g.calc(tr).phase.0;
+                            });
+                        send += 1;
+                    }
+                    if let Some(g) = self.iter.next() {
+                        tx[offset..]
+                            .chunks_exact_mut(size_of::<PhaseFull>())
+                            .zip(device.iter())
+                            .for_each(|(dst, tr)| {
+                                PhaseFull::mut_from_bytes(dst).unwrap().phase_1 =
+                                    g.calc(tr).phase.0;
+                            });
+                        send += 1;
+                    }
                 }
                 GainSTMMode::PhaseHalf => {
-                    seq_macro::seq!(N in 0..4 {
-                        #(
-                            if let Some(g) = self.iter.next() {
-                                tx[offset..].chunks_exact_mut(size_of::<PhaseHalf>()).zip(device.iter()).for_each(|(dst, tr)| {
-                                    PhaseHalf::mut_from_bytes(dst).unwrap().set_phase_~N(g.calc(tr).phase.0 >> 4);
-                                });
-                                send += 1;
-                            }
-                        )*
-                    });
+                    if let Some(g) = self.iter.next() {
+                        tx[offset..]
+                            .chunks_exact_mut(size_of::<PhaseHalf>())
+                            .zip(device.iter())
+                            .for_each(|(dst, tr)| {
+                                PhaseHalf::mut_from_bytes(dst)
+                                    .unwrap()
+                                    .set_phase_0(g.calc(tr).phase.0 >> 4);
+                            });
+                        send += 1;
+                    }
+                    if let Some(g) = self.iter.next() {
+                        tx[offset..]
+                            .chunks_exact_mut(size_of::<PhaseHalf>())
+                            .zip(device.iter())
+                            .for_each(|(dst, tr)| {
+                                PhaseHalf::mut_from_bytes(dst)
+                                    .unwrap()
+                                    .set_phase_1(g.calc(tr).phase.0 >> 4);
+                            });
+                        send += 1;
+                    }
+                    if let Some(g) = self.iter.next() {
+                        tx[offset..]
+                            .chunks_exact_mut(size_of::<PhaseHalf>())
+                            .zip(device.iter())
+                            .for_each(|(dst, tr)| {
+                                PhaseHalf::mut_from_bytes(dst)
+                                    .unwrap()
+                                    .set_phase_2(g.calc(tr).phase.0 >> 4);
+                            });
+                        send += 1;
+                    }
+                    if let Some(g) = self.iter.next() {
+                        tx[offset..]
+                            .chunks_exact_mut(size_of::<PhaseHalf>())
+                            .zip(device.iter())
+                            .for_each(|(dst, tr)| {
+                                PhaseHalf::mut_from_bytes(dst)
+                                    .unwrap()
+                                    .set_phase_3(g.calc(tr).phase.0 >> 4);
+                            });
+                        send += 1;
+                    }
                 }
             }
             send
@@ -335,11 +379,7 @@ mod tests {
         let segment = Segment::S0;
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = transition_mode::SysTime(
-            DcSysTime::from_utc(
-                time::macros::datetime!(2000-01-01 0:00 UTC)
-                    + std::time::Duration::from_nanos(transition_value),
-            )
-            .unwrap(),
+            DcSysTime::ZERO + std::time::Duration::from_nanos(transition_value),
         );
 
         let mut op = GainSTMOp::new(

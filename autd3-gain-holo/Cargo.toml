@@ -10,7 +10,7 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-autd3-core = { workspace = true, features = ["std", "acoustics", "derive", "gain"] }
+autd3-core = { workspace = true, features = ["acoustics", "derive", "gain", "std"] }
 nalgebra = { workspace = true, features = ["alloc"] }
 rand = { workspace = true, features = ["thread_rng"] }
 rayon = { workspace = true }

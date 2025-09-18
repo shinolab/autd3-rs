@@ -77,7 +77,7 @@ where
         geometry: &'a Geometry,
         tr_filter: &TransducerMask,
     ) -> HashMap<K, TransducerMask> {
-        let mut filters: HashMap<K, HashMap<usize, bit_vec::BitVec<u32>>> = HashMap::new();
+        let mut filters: HashMap<K, HashMap<usize, DeviceTransducerMask>> = HashMap::new();
         geometry
             .iter()
             .filter(|dev| tr_filter.has_enabled(dev))
@@ -87,13 +87,12 @@ where
                         if let Some(v) = filters.get_mut(&key) {
                             match v.entry(dev.idx()) {
                                 Entry::Occupied(mut e) => {
-                                    e.get_mut().set(tr.idx(), true);
+                                    e.get_mut().set(dev, tr, true);
                                 }
                                 Entry::Vacant(e) => {
-                                    e.insert(bit_vec::BitVec::from_fn(
-                                        dev.num_transducers(),
-                                        |i| i == tr.idx(),
-                                    ));
+                                    e.insert(DeviceTransducerMask::from_fn(dev, |t| {
+                                        t.idx() == tr.idx()
+                                    }));
                                 }
                             }
                         } else {
@@ -101,9 +100,7 @@ where
                                 key,
                                 [(
                                     dev.idx(),
-                                    bit_vec::BitVec::from_fn(dev.num_transducers(), |i| {
-                                        i == tr.idx()
-                                    }),
+                                    DeviceTransducerMask::from_fn(dev, |t| t.idx() == tr.idx()),
                                 )]
                                 .into(),
                             );
@@ -117,8 +114,8 @@ where
                 (
                     k,
                     TransducerMask::new(geometry.iter().map(|dev| {
-                        if let Some(bits) = v.remove(&dev.idx()) {
-                            DeviceTransducerMask::Masked(bits)
+                        if let Some(mask) = v.remove(&dev.idx()) {
+                            mask
                         } else {
                             DeviceTransducerMask::AllDisabled
                         }

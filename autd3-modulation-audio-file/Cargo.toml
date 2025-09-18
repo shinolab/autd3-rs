@@ -10,15 +10,16 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [features]
-default = []
+default = ["csv", "wav"]
+csv = ["autd3-core", "thiserror", "dep:csv"]
+wav = ["autd3-core", "thiserror", "hound"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["derive", "modulation"] }
-autd3-derive = { workspace = true }
-csv = { workspace = true }
-hound = { workspace = true }
-thiserror = { workspace = true }
+autd3-core = { workspace = true, features = ["derive", "modulation"], optional = true }
+csv = { version = "1.3.1", default-features = false, optional = true }
+hound = { version = "3.5.1", default-features = false, optional = true }
+thiserror = { workspace = true, optional = true }
 
 [dev-dependencies]
 rstest = { workspace = true }
-tempfile = { workspace = true }
+tempfile = { version = "3.19.1", default-features = false }

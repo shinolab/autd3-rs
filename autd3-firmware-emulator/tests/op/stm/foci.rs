@@ -16,7 +16,7 @@ use autd3_driver::{
         PhaseCorrection, Silencer, SwapSegmentFociSTM, WithFiniteLoop, WithSegment,
     },
     error::AUTDDriverError,
-    ethercat::{DcSysTime, ECAT_DC_SYS_TIME_BASE},
+    ethercat::DcSysTime,
     firmware::v12_1::fpga::{FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT},
     geometry::Point3,
 };
@@ -24,7 +24,6 @@ use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARG
 
 use crate::{create_geometry, op::gain::TestGain, send};
 use rand::*;
-use time::OffsetDateTime;
 use zerocopy::FromZeros;
 
 pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
@@ -435,13 +434,13 @@ fn send_foci_stm_invalid_transition_mode() -> Result<(), Box<dyn std::error::Err
 }
 
 #[rstest::rstest]
-#[case(Ok(()), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
-#[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE, ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN)-autd3_driver::ethercat::EC_CYCLE_TIME_BASE)]
-#[case(Err(AUTDDriverError::MissTransitionTime), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(1), ECAT_DC_SYS_TIME_BASE + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
+#[case(Ok(()), DcSysTime::ZERO, DcSysTime::ZERO + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
+#[case(Err(AUTDDriverError::MissTransitionTime), DcSysTime::ZERO, DcSysTime::ZERO + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN)-autd3_driver::ethercat::EC_CYCLE_TIME_BASE)]
+#[case(Err(AUTDDriverError::MissTransitionTime), DcSysTime::ZERO + Duration::from_nanos(1), DcSysTime::ZERO + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
 fn test_miss_transition_time(
     #[case] expect: Result<(), AUTDDriverError>,
-    #[case] systime: OffsetDateTime,
-    #[case] transition_time: OffsetDateTime,
+    #[case] systime: DcSysTime,
+    #[case] transition_time: DcSysTime,
 ) -> Result<(), Box<dyn std::error::Error>> {
     use autd3_core::firmware::transition_mode;
 
@@ -450,7 +449,7 @@ fn test_miss_transition_time(
     let mut tx = vec![TxMessage::new_zeroed(); 1];
     let mut msg_id = MsgId::new(0);
 
-    let transition_mode = transition_mode::SysTime(DcSysTime::from_utc(transition_time).unwrap());
+    let transition_mode = transition_mode::SysTime(transition_time);
 
     let stm = WithFiniteLoop {
         inner: FociSTM {
@@ -462,7 +461,7 @@ fn test_miss_transition_time(
         loop_count: NonZeroU16::MIN,
     };
 
-    cpu.update_with_sys_time(DcSysTime::from_utc(systime).unwrap());
+    cpu.update_with_sys_time(systime);
     assert_eq!(
         expect,
         send(&mut msg_id, &mut cpu, stm, &mut geometry, &mut tx)

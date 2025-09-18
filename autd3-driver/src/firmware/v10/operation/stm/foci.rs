@@ -292,11 +292,7 @@ mod tests {
         let freq_div = rng.random_range(0x0001..=0xFFFF);
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = transition_mode::SysTime(
-            DcSysTime::from_utc(
-                time::macros::datetime!(2000-01-01 0:00 UTC)
-                    + std::time::Duration::from_nanos(transition_value),
-            )
-            .unwrap(),
+            DcSysTime::ZERO + std::time::Duration::from_nanos(transition_value),
         );
 
         let mut op = FociSTMOp::new(
@@ -397,11 +393,7 @@ mod tests {
         let freq_div = rng.random_range(0x0001..=0xFFFF);
         let transition_value = 0x0123456789ABCDEF;
         let transition_mode = transition_mode::SysTime(
-            DcSysTime::from_utc(
-                time::macros::datetime!(2000-01-01 0:00 UTC)
-                    + std::time::Duration::from_nanos(transition_value),
-            )
-            .unwrap(),
+            DcSysTime::ZERO + std::time::Duration::from_nanos(transition_value),
         );
 
         let mut op = FociSTMOp::new(

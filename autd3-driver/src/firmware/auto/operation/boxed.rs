@@ -102,12 +102,6 @@ pub mod tests {
         }
     }
 
-    impl std::fmt::Debug for TestDatagram {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "test")
-        }
-    }
-
     #[test]
     fn boxed_datagram() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::autd3_device::tests::create_geometry(1);
