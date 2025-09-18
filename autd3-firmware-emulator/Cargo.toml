@@ -21,7 +21,6 @@ time = { workspace = true, features = ["std"] }
 zerocopy = { workspace = true }
 
 [dev-dependencies]
-anyhow = { workspace = true }
 autd3-core = { workspace = true, features = ["derive"] }
 itertools = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }

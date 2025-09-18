@@ -156,7 +156,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn line() -> anyhow::Result<()> {
+    fn line() -> Result<(), Box<dyn std::error::Error>> {
         let env = Environment::default();
 
         let length = 30.0 * mm;

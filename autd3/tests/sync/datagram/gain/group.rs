@@ -6,7 +6,7 @@ use autd3::{
 };
 
 #[test]
-fn only_for_enabled() -> anyhow::Result<()> {
+fn only_for_enabled() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::<_, firmware::V12_1>::open_with(
         [AUTD3::default(), AUTD3::default()],
         Audit::<version::V12_1>::new(AuditOption::default()),

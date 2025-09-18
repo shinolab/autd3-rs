@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use autd3::{core::link::Link, prelude::*};
 
-pub fn group_by_device(autd: &mut Controller<impl Link, firmware::Auto>) -> anyhow::Result<bool> {
+pub fn group_by_device(
+    autd: &mut Controller<impl Link, firmware::Auto>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
     autd.send(Group {
@@ -23,12 +25,12 @@ pub fn group_by_device(autd: &mut Controller<impl Link, firmware::Auto>) -> anyh
         ]),
     })?;
 
-    Ok(true)
+    Ok(())
 }
 
 pub fn group_by_transducer(
     autd: &mut Controller<impl Link, firmware::Auto>,
-) -> anyhow::Result<bool> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let pos = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
     let g = GainGroup::new(
@@ -59,5 +61,5 @@ pub fn group_by_transducer(
     };
     autd.send((m, g))?;
 
-    Ok(true)
+    Ok(())
 }

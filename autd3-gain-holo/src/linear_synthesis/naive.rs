@@ -158,7 +158,7 @@ mod tests {
     }
 
     #[test]
-    fn test_naive_all_disabled() -> anyhow::Result<()> {
+    fn test_naive_all_disabled() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = create_geometry(2, 1);
         let backend = std::sync::Arc::new(NalgebraBackend);
 
@@ -236,7 +236,7 @@ mod tests {
     }
 
     #[test]
-    fn test_naive_filtered_disabled() -> anyhow::Result<()> {
+    fn test_naive_filtered_disabled() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = create_geometry(2, 1);
         let backend = std::sync::Arc::new(NalgebraBackend);
 

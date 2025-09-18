@@ -9,7 +9,7 @@ use autd3_core::link::MsgId;
 mod link;
 
 #[tokio::test]
-async fn initial_msg_id() -> anyhow::Result<()> {
+async fn initial_msg_id() -> Result<(), Box<dyn std::error::Error>> {
     let cnt = Controller::open(
         [AUTD3::default()],
         Audit::<version::V12_1>::new(AuditOption {
@@ -32,7 +32,7 @@ async fn initial_msg_id() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-async fn test_retry_with_disabled_device() -> anyhow::Result<()> {
+async fn test_retry_with_disabled_device() -> Result<(), Box<dyn std::error::Error>> {
     let mut cnt = Controller::open(
         [AUTD3::default(); 2],
         Audit::<version::V12_1>::new(Default::default()),

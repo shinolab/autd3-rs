@@ -238,7 +238,7 @@ mod tests {
     }
 
     #[test]
-    fn test_close() -> anyhow::Result<()> {
+    fn test_close() -> Result<(), Box<dyn std::error::Error>> {
         let mut link = MockLink::default();
         link.open(&Geometry::new(Vec::new()))?;
 

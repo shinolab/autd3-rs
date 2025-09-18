@@ -42,6 +42,5 @@ tokio = { workspace = true, features = ["time", "rt-multi-thread"], optional = t
 
 [dev-dependencies]
 autd3 = { path = ".", features = ["link-audit", "link-audit-v10", "link-audit-v11", "link-audit-v12", "link-nop"] }
-anyhow = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }

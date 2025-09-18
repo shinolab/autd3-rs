@@ -30,7 +30,7 @@ fn firmware_v11_by_v12_driver() {
 }
 
 #[test]
-fn firmware_v12_by_v12_driver() -> anyhow::Result<()> {
+fn firmware_v12_by_v12_driver() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::<_, firmware::V12>::open_with(
         [AUTD3::default()],
         Audit::<version::V12>::new(AuditOption::default()),
@@ -98,7 +98,7 @@ fn firmware_v12_by_v12_driver() -> anyhow::Result<()> {
                 .map(|v| unsafe { std::mem::transmute(v) })
                 .collect::<Vec<_>>()
         );
-        anyhow::Ok(())
+        Result::<(), Box<dyn std::error::Error>>::Ok(())
     })?;
 
     autd.close()?;

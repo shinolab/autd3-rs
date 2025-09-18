@@ -52,7 +52,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn new() -> anyhow::Result<()> {
+    fn new() -> Result<(), Box<dyn std::error::Error>> {
         let mut rng = rand::rng();
 
         let test_buf = (0..2).map(|_| rng.random()).collect::<Vec<u8>>();

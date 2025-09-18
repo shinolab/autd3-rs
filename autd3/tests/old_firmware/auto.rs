@@ -12,7 +12,7 @@ use autd3::{
 use autd3_driver::datagram::Nop;
 
 #[test]
-fn firmware_v10_by_auto_driver() -> anyhow::Result<()> {
+fn firmware_v10_by_auto_driver() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::open(
         [AUTD3::default()],
         Audit::<version::V10>::new(AuditOption::default()),
@@ -87,7 +87,7 @@ fn firmware_v10_by_auto_driver() -> anyhow::Result<()> {
                 .map(|v| unsafe { std::mem::transmute(v) })
                 .collect::<Vec<_>>()
         );
-        anyhow::Ok(())
+        Result::<(), Box<dyn std::error::Error>>::Ok(())
     })?;
 
     autd.close()?;
@@ -141,7 +141,7 @@ fn firmware_v10_by_auto_driver_focistm_out_of_range() {
 }
 
 #[test]
-fn firmware_v11_by_auto_driver() -> anyhow::Result<()> {
+fn firmware_v11_by_auto_driver() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::open(
         [AUTD3::default()],
         Audit::<version::V11>::new(AuditOption::default()),
@@ -216,7 +216,7 @@ fn firmware_v11_by_auto_driver() -> anyhow::Result<()> {
                 .map(|v| unsafe { std::mem::transmute(v) })
                 .collect::<Vec<_>>()
         );
-        anyhow::Ok(())
+        Result::<(), Box<dyn std::error::Error>>::Ok(())
     })?;
 
     autd.close()?;
@@ -247,7 +247,7 @@ fn firmware_v11_by_auto_driver_nop() {
 }
 
 #[test]
-fn firmware_v12_by_auto_driver() -> anyhow::Result<()> {
+fn firmware_v12_by_auto_driver() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::open(
         [AUTD3::default()],
         Audit::<version::V12>::new(AuditOption::default()),
@@ -322,7 +322,7 @@ fn firmware_v12_by_auto_driver() -> anyhow::Result<()> {
                 .map(|v| unsafe { std::mem::transmute(v) })
                 .collect::<Vec<_>>()
         );
-        anyhow::Ok(())
+        Result::<(), Box<dyn std::error::Error>>::Ok(())
     })?;
 
     autd.close()?;
@@ -345,7 +345,7 @@ fn firmware_v12_by_auto_driver_output_mask() {
 }
 
 #[test]
-fn firmware_v12_1_by_auto_driver() -> anyhow::Result<()> {
+fn firmware_v12_1_by_auto_driver() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::open(
         [AUTD3::default()],
         Audit::<version::V12_1>::new(AuditOption::default()),
@@ -408,7 +408,7 @@ fn firmware_v12_1_by_auto_driver() -> anyhow::Result<()> {
             dev.iter().map(|tr| f.calc(tr)).collect::<Vec<_>>(),
             autd.link()[dev.idx()].fpga().drives_at(Segment::S0, 1)
         );
-        anyhow::Ok(())
+        Result::<(), Box<dyn std::error::Error>>::Ok(())
     })?;
 
     autd.close()?;

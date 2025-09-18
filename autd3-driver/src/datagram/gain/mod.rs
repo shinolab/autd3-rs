@@ -105,7 +105,10 @@ pub mod tests {
             (4, vec![Drive { phase: Phase(0x05), intensity: Intensity(0x05) }; NUM_TRANSDUCERS]),
         ].into_iter().collect(),
         5)]
-    fn gain(#[case] expect: HashMap<usize, Vec<Drive>>, #[case] n: usize) -> anyhow::Result<()> {
+    fn gain(
+        #[case] expect: HashMap<usize, Vec<Drive>>,
+        #[case] n: usize,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let geometry = create_geometry(n, NUM_TRANSDUCERS);
 
         let g = TestGain::new(
@@ -133,7 +136,7 @@ pub mod tests {
     }
 
     #[test]
-    fn inspect() -> anyhow::Result<()> {
+    fn inspect() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = create_geometry(2, 1);
 
         TestGain::new(
@@ -171,7 +174,7 @@ pub mod tests {
     }
 
     #[test]
-    fn inspect_with_segment() -> anyhow::Result<()> {
+    fn inspect_with_segment() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = create_geometry(2, 1);
 
         crate::datagram::WithSegment {

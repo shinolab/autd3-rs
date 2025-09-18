@@ -2,12 +2,10 @@ mod tests;
 
 use std::time::Duration;
 
-use anyhow::Result;
-
 use autd3::prelude::*;
 use autd3_link_simulator::Simulator;
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let autd = Controller::open_with_option(
         [
             AUTD3 {

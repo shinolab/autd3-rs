@@ -124,7 +124,7 @@ mod tests {
     };
 
     #[test]
-    fn test_fourier() -> anyhow::Result<()> {
+    fn test_fourier() -> Result<(), Box<dyn std::error::Error>> {
         let f0 = Sine {
             freq: 50. * Hz,
             option: SineOption {
@@ -182,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn mismatch_sampling_config() -> anyhow::Result<()> {
+    fn mismatch_sampling_config() -> Result<(), Box<dyn std::error::Error>> {
         assert_eq!(
             Err(ModulationError::new(
                 "All components must have the same sampling configuration"

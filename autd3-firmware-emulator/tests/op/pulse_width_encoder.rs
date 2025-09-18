@@ -12,7 +12,7 @@ use crate::{create_geometry, send};
 use zerocopy::FromZeros;
 
 #[test]
-fn config_pwe_unsafe() -> anyhow::Result<()> {
+fn config_pwe_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);

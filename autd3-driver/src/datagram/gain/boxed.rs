@@ -136,7 +136,7 @@ pub mod tests {
     fn boxed_gain_unsafe(
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] n: u16,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let geometry = Geometry::new(
             (0..n)
                 .map(|_| {

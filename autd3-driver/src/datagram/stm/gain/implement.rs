@@ -196,7 +196,7 @@ mod tests {
     fn from_sampling_config(
         #[case] config: SamplingConfig,
         #[case] n: usize,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         assert_eq!(
             Ok(config),
             GainSTM {

@@ -203,7 +203,7 @@ mod tests {
     use crate::datagram::Clear;
 
     #[test]
-    fn unknown_key() -> anyhow::Result<()> {
+    fn unknown_key() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::autd3_device::tests::create_geometry(2);
 
         assert_eq!(
@@ -222,7 +222,7 @@ mod tests {
     }
 
     #[test]
-    fn unused_key() -> anyhow::Result<()> {
+    fn unused_key() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::autd3_device::tests::create_geometry(2);
 
         assert_eq!(
