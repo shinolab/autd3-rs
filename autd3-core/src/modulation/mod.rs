@@ -3,7 +3,7 @@ mod error;
 use crate::firmware::{
     FirmwareLimits, SamplingConfig, Segment, transition_mode::TransitionModeParams,
 };
-use alloc::{string::String, sync::Arc, vec::Vec};
+use alloc::{sync::Arc, vec::Vec};
 pub use error::ModulationError;
 
 /// Trait for applying amplitude modulation.
@@ -33,8 +33,6 @@ pub struct ModulationOperationGenerator {
 #[derive(Debug, Clone, PartialEq)]
 /// The result of the [`Modulation`] inspection.
 pub struct ModulationInspectionResult {
-    /// The type name of the modulation.
-    pub name: String,
     /// The data of the modulation.
     pub data: Vec<u8>,
     /// The sampling configuration.

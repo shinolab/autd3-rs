@@ -68,5 +68,4 @@ tokio-test = { version = "0.4.4", default-features = false }
 tonic = { version = "0.14.0", default-features = false }
 tonic-prost = { version = "0.14.0", default-features = false }
 tonic-prost-build = { version = "0.14.0", default-features = false }
-tynm = { version = "0.2.0", default-features = false }
 zerocopy = { version = "0.8.24", default-features = false }

@@ -45,7 +45,6 @@ pub mod tests {
         .for_each(|r| {
             assert_eq!(
                 &Some(ModulationInspectionResult {
-                    name: "TestModulation".to_string(),
                     data: vec![0, 0],
                     config: SamplingConfig::FREQ_4K,
                 }),
@@ -78,7 +77,6 @@ pub mod tests {
             assert_eq!(
                 &Some(WithSegmentInspectionResult {
                     inner: ModulationInspectionResult {
-                        name: "TestModulation".to_string(),
                         data: vec![0, 0],
                         config: SamplingConfig::FREQ_4K,
                     },
@@ -115,7 +113,6 @@ pub mod tests {
             assert_eq!(
                 &Some(WithFiniteLoopInspectionResult {
                     inner: ModulationInspectionResult {
-                        name: "TestModulation".to_string(),
                         data: vec![0, 0],
                         config: SamplingConfig::FREQ_4K,
                     },

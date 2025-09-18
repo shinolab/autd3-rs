@@ -79,7 +79,6 @@ pub(crate) fn impl_gain_macro(ast: syn::DeriveInput) -> TokenStream {
                     geometry,
                     filter,
                     |dev| GainInspectionResult {
-                            name: tynm::type_name::<Self>().to_string(),
                             data: {
                                 let d = g.generate(dev);
                                 dev.iter().map(|tr| d.calc(tr)).collect::<Vec<_>>()

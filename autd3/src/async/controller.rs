@@ -474,7 +474,6 @@ mod tests {
         assert_eq!(autd.geometry.len(), r.len());
         assert_eq!(
             Some(ModulationInspectionResult {
-                name: "Static".to_string(),
                 data: vec![0xFF, 0xFF],
                 config: Static::default().sampling_config(),
             }),
