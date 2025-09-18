@@ -157,7 +157,6 @@ pub mod derive {
             firmware::{FirmwareLimits, Segment, transition_mode},
             geometry::Geometry,
         };
-        pub use tynm;
     }
     #[cfg(any(feature = "gain", feature = "modulation"))]
     pub use common::*;

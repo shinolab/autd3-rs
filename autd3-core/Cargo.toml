@@ -21,7 +21,7 @@ acoustics = ["common", "geometry", "num-complex", "num-traits"]
 async = ["tokio"]
 datagram = ["common", "firmware", "geometry", "ethercat", "smallvec", "environment"]
 common = []
-derive = ["autd3-derive", "tynm"]
+derive = ["autd3-derive"]
 ethercat = ["time", "thiserror"]
 gain = ["common", "datagram", "geometry", "thiserror", "bit-vec", "environment", "firmware"]
 geometry = ["nalgebra", "simba", "pastey", "common"]
@@ -44,7 +44,6 @@ spin_sleep = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
 time = { workspace = true, optional = true, features = ["macros"] }
 tokio = { workspace = true, optional = true, features = ["time", "rt"] }
-tynm = { workspace = true, optional = true }
 zerocopy = { workspace = true, optional = true, features = ["derive"] }
 simba = { workspace = true, optional = true, features = ["libm"] }
 num-complex = { workspace = true, optional = true, features = ["libm"] }

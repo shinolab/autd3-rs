@@ -1,7 +1,7 @@
 mod error;
 mod filter;
 
-use alloc::{boxed::Box, string::String, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
 pub use error::GainError;
 pub use filter::{DeviceTransducerMask, TransducerMask};
 
@@ -88,8 +88,6 @@ impl<'a, C: GainCalculatorGenerator<'a>> GainOperationGenerator<'a, C> {
 #[derive(Debug, Clone, PartialEq)]
 /// The result of the [`Gain`] inspection.
 pub struct GainInspectionResult {
-    /// The type name of the gain.
-    pub name: String,
     /// The data of the gain.
     pub data: Vec<Drive>,
 }
