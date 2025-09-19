@@ -17,7 +17,7 @@ all = ["async", "twincat", "remote_twincat", "simulator"]
 
 [dependencies]
 autd3 = { workspace = true, features = ["gain", "modulation", "stm"] }
-autd3-gain-holo = { workspace = true }
+autd3-gain-holo = { workspace = true, features = ["greedy", "gs", "gspat", "naive"] }
 autd3-link-simulator = { workspace = true, optional = true, features = ["blocking"] }
 autd3-link-twincat = { workspace = true, optional = true }
 autd3-modulation-audio-file = { workspace = true, features = ["wav"] }
