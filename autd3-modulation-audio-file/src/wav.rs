@@ -58,6 +58,40 @@ impl Wav {
 
         Ok(Self { spec, buffer })
     }
+
+    /// Encode a [`Modulation`] into a mono 8-bit PCM WAV file.
+    ///
+    /// This writes the provided modulation's data into a wav file with:
+    /// - `channels = 1`
+    /// - `bits_per_sample = 8`
+    /// - `sample_format = Int`
+    /// - `sample_rate = sampling frequency of the modulation`
+    ///
+    /// The sample rate must be an integer number of hertz; otherwise this returns error.
+    pub fn encode<P: AsRef<Path>, M: Modulation>(m: M, path: P) -> Result<(), AudioFileError> {
+        let sample_rate = m.sampling_config().freq()?.hz();
+        if !autd3_core::utils::float::is_integer(sample_rate as f64) {
+            return Err(AudioFileError::Wav(hound::Error::Unsupported));
+        }
+        let sample_rate = sample_rate as u32;
+        let buffer = m.calc(&FirmwareLimits {
+            mod_buf_size_max: u32::MAX,
+            ..FirmwareLimits::unused()
+        })?;
+
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate,
+            bits_per_sample: 8,
+            sample_format: SampleFormat::Int,
+        };
+        let mut writer = hound::WavWriter::create(&path, spec)?;
+        buffer
+            .into_iter()
+            .try_for_each(|b| writer.write_sample(b.wrapping_add(128) as i8))?;
+        writer.finalize()?;
+        Ok(())
+    }
 }
 
 impl Modulation for Wav {
@@ -156,7 +190,7 @@ mod tests {
         },
         &[1., 0., -1.]
     )]
-    fn test_wav(
+    fn wav(
         #[case] expect: Vec<u8>,
         #[case] spec: hound::WavSpec,
         #[case] data: &[impl hound::Sample + Copy],
@@ -172,7 +206,7 @@ mod tests {
     }
 
     #[test]
-    fn test_wav_new_unsupported() -> Result<(), Box<dyn std::error::Error>> {
+    fn wav_new_unsupported() -> Result<(), Box<dyn std::error::Error>> {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("tmp.wav");
         create_wav(
@@ -186,6 +220,70 @@ mod tests {
             &[0, 0],
         )?;
         assert!(Wav::new(path).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn encode_writes_expected_wav() -> Result<(), Box<dyn std::error::Error>> {
+        #[derive(Clone)]
+        struct TestMod {
+            data: Vec<u8>,
+            rate: f32,
+        }
+        impl Modulation for TestMod {
+            fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+                Ok(self.data)
+            }
+            fn sampling_config(&self) -> SamplingConfig {
+                SamplingConfig::new(self.rate * Hz)
+            }
+        }
+
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("enc.wav");
+        let data = vec![0u8, 128u8, 255u8];
+        let m = TestMod {
+            data: data.clone(),
+            rate: 4000.0,
+        };
+        Wav::encode(m, &path)?;
+
+        let mut reader = hound::WavReader::open(&path)?;
+        let spec = reader.spec();
+        assert_eq!(spec.channels, 1);
+        assert_eq!(spec.bits_per_sample, 8);
+        assert_eq!(spec.sample_format, hound::SampleFormat::Int);
+        assert_eq!(spec.sample_rate, 4000);
+
+        let samples = reader.samples::<i8>().collect::<Result<Vec<_>, _>>()?;
+        assert_eq!(samples, vec![-128, 0, 127]);
+
+        let decoded = Wav::new(&path)?;
+        assert_eq!(decoded.calc(&FirmwareLimits::unused())?, data);
+
+        Ok(())
+    }
+
+    #[test]
+    fn encode_rejects_non_integer_rate() -> Result<(), Box<dyn std::error::Error>> {
+        struct TestMod;
+        impl Modulation for TestMod {
+            // GRCOV_EXCL_START
+            fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+                unreachable!()
+            }
+            // GRCOV_EXCL_STOP
+            fn sampling_config(&self) -> SamplingConfig {
+                SamplingConfig::new(std::num::NonZeroU16::new(3).unwrap())
+            }
+        }
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("enc_err.wav");
+        let err = Wav::encode(TestMod, &path);
+        match err {
+            Err(AudioFileError::Wav(hound::Error::Unsupported)) => {}
+            _ => panic!("unexpected error: {err:?}"), // GRCOV_EXCL_LINE
+        }
         Ok(())
     }
 }
