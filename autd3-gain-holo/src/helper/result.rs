@@ -1,7 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
 use autd3_core::{
-    common::rad,
     firmware::{Drive, Phase},
     gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerMask},
     geometry::{Device, Geometry, Transducer},
@@ -9,51 +8,17 @@ use autd3_core::{
 use nalgebra::ComplexField;
 use rayon::iter::Either;
 
-use crate::EmissionConstraint;
-
-pub trait IntoDrive {
-    #[must_use]
-    fn into_phase(self) -> Phase;
-    #[must_use]
-    fn into_intensity(self) -> f32;
-}
-
-impl IntoDrive for f32 {
-    fn into_intensity(self) -> f32 {
-        1.
-    }
-
-    fn into_phase(self) -> Phase {
-        Phase::from(self * rad)
-    }
-}
-
-impl IntoDrive for crate::Complex {
-    fn into_intensity(self) -> f32 {
-        self.abs()
-    }
-
-    fn into_phase(self) -> Phase {
-        Phase::from(self)
-    }
-}
+use crate::{EmissionConstraint, VectorXc};
 
 #[allow(clippy::type_complexity)]
-pub struct HoloCalculator<T: IntoDrive + Copy + Send + Sync + 'static> {
-    q: Arc<
-        nalgebra::Matrix<
-            T,
-            nalgebra::Dyn,
-            nalgebra::U1,
-            nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
-        >,
-    >,
+pub struct HoloCalculator {
+    q: Arc<VectorXc>,
     map: Either<Option<Vec<Option<usize>>>, usize>,
     max_coefficient: f32,
     constraint: EmissionConstraint,
 }
 
-impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculator<'_> for HoloCalculator<T> {
+impl GainCalculator<'_> for HoloCalculator {
     fn calc(&self, tr: &Transducer) -> Drive {
         match &self.map {
             Either::Left(map) => map
@@ -61,20 +26,16 @@ impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculator<'_> for HoloCal
                 .and_then(|map| {
                     map[tr.idx()].map(|idx| {
                         let x = self.q[idx];
-                        let phase = x.into_phase();
-                        let intensity = self
-                            .constraint
-                            .convert(x.into_intensity(), self.max_coefficient);
+                        let phase = Phase::from(x);
+                        let intensity = self.constraint.convert(x.abs(), self.max_coefficient);
                         Drive { phase, intensity }
                     })
                 })
                 .unwrap_or(Drive::NULL),
             Either::Right(base_idx) => {
                 let x = self.q[base_idx + tr.idx()];
-                let phase = x.into_phase();
-                let intensity = self
-                    .constraint
-                    .convert(x.into_intensity(), self.max_coefficient);
+                let phase = Phase::from(x);
+                let intensity = self.constraint.convert(x.abs(), self.max_coefficient);
                 Drive { phase, intensity }
             }
         }
@@ -82,24 +43,15 @@ impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculator<'_> for HoloCal
 }
 
 #[allow(clippy::type_complexity)]
-pub struct HoloCalculatorGenerator<T: IntoDrive + Copy + Send + Sync + 'static> {
-    q: Arc<
-        nalgebra::Matrix<
-            T,
-            nalgebra::Dyn,
-            nalgebra::U1,
-            nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
-        >,
-    >,
+pub struct HoloCalculatorGenerator {
+    q: Arc<VectorXc>,
     map: Either<HashMap<usize, Vec<Option<usize>>>, HashMap<usize, usize>>,
     max_coefficient: f32,
     constraint: EmissionConstraint,
 }
 
-impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculatorGenerator<'_>
-    for HoloCalculatorGenerator<T>
-{
-    type Calculator = HoloCalculator<T>;
+impl GainCalculatorGenerator<'_> for HoloCalculatorGenerator {
+    type Calculator = HoloCalculator;
 
     fn generate(&mut self, device: &Device) -> Self::Calculator {
         match &mut self.map {
@@ -119,21 +71,13 @@ impl<T: IntoDrive + Copy + Send + Sync + 'static> GainCalculatorGenerator<'_>
     }
 }
 
-pub(crate) fn generate_result<T>(
+pub(crate) fn generate_result(
     geometry: &Geometry,
-    q: nalgebra::Matrix<
-        T,
-        nalgebra::Dyn,
-        nalgebra::U1,
-        nalgebra::VecStorage<T, nalgebra::Dyn, nalgebra::U1>,
-    >,
+    q: VectorXc,
     max_coefficient: f32,
     constraint: EmissionConstraint,
     filter: &TransducerMask,
-) -> Result<HoloCalculatorGenerator<T>, GainError>
-where
-    T: IntoDrive + Copy + Send + Sync + 'static,
-{
+) -> Result<HoloCalculatorGenerator, GainError> {
     let q = std::sync::Arc::new(q);
     if filter.is_all_enabled() {
         Ok(HoloCalculatorGenerator {

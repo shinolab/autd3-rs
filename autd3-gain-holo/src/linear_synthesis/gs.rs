@@ -1,9 +1,11 @@
-use std::{num::NonZeroUsize, sync::Arc};
+use std::num::NonZeroUsize;
 
 use crate::{
-    Amplitude, Complex, LinAlgBackend, Trans,
+    Amplitude, Complex, VectorXc,
     constraint::EmissionConstraint,
-    helper::{HoloCalculatorGenerator, generate_result},
+    helper::{
+        HoloCalculatorGenerator, gen_back_prop, generate_propagation_matrix, generate_result,
+    },
 };
 
 use autd3_core::{
@@ -11,7 +13,8 @@ use autd3_core::{
     derive::*,
     geometry::Point3,
 };
-use zerocopy::{FromBytes, IntoBytes};
+
+use nalgebra::{ComplexField, Normed};
 
 /// The option of [`GS`].
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -35,48 +38,40 @@ impl Default for GSOption {
 ///
 /// See [Marzo, et al., 2019](https://www.pnas.org/doi/full/10.1073/pnas.1813047115) for more details.
 #[derive(Gain, Debug)]
-pub struct GS<D: Directivity, B: LinAlgBackend> {
+pub struct GS<D: Directivity> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
     /// The option of the Gain.
     pub option: GSOption,
-    /// The backend of calculation.
-    pub backend: Arc<B>,
     /// The directivity of the transducers.
     pub directivity: std::marker::PhantomData<D>,
 }
 
-impl<B: LinAlgBackend> GS<Sphere, B> {
+impl GS<Sphere> {
     /// Create a new [`GS`].
     #[must_use]
-    pub fn new(
-        foci: impl IntoIterator<Item = (Point3, Amplitude)>,
-        option: GSOption,
-        backend: Arc<B>,
-    ) -> Self {
-        Self::with_directivity(foci, option, backend)
+    pub fn new(foci: impl IntoIterator<Item = (Point3, Amplitude)>, option: GSOption) -> Self {
+        Self::with_directivity(foci, option)
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend> GS<D, B> {
+impl<D: Directivity> GS<D> {
     /// Create a new [`GS`] with directivity.
     #[must_use]
     pub fn with_directivity(
         foci: impl IntoIterator<Item = (Point3, Amplitude)>,
         option: GSOption,
-        backend: Arc<B>,
     ) -> Self {
         Self {
             foci: foci.into_iter().collect(),
             option,
-            backend,
             directivity: std::marker::PhantomData,
         }
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend> Gain<'_> for GS<D, B> {
-    type G = HoloCalculatorGenerator<Complex>;
+impl<D: Directivity> Gain<'_> for GS<D> {
+    type G = HoloCalculatorGenerator;
 
     fn init(
         self,
@@ -86,51 +81,30 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for GS<D, B> {
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
-        let g = self
-            .backend
-            .generate_propagation_matrix::<D>(geometry, env, &foci, filter)?;
+        let g = generate_propagation_matrix::<D>(geometry, env, &foci, filter);
 
         let m = foci.len();
-        let n = self.backend.cols_c(&g)?;
+        let n = g.ncols();
         let ones = vec![1.; n];
 
-        let b = self.backend.gen_back_prop(n, m, &g)?;
+        let b = gen_back_prop(n, m, &g);
 
-        let mut q = self.backend.cv_from_slice(&ones)?;
+        let mut q = VectorXc::from_iterator(ones.len(), ones.iter().map(|&r| Complex::new(r, 0.)));
+        let q0 = q.clone();
 
-        let q0 = self.backend.cv_from_slice(&ones)?;
+        let amps = VectorXc::from_iterator(
+            amps.len(),
+            amps.into_iter().map(|a| Complex::new(a.pascal(), 0.)),
+        );
+        let mut p = VectorXc::zeros(m);
+        (0..self.option.repeat.get()).for_each(|_| {
+            q.zip_apply(&q0, |b, a| *b = *b / b.abs() * a);
+            p.gemv(Complex::new(1., 0.), &g, &q, Complex::new(0., 0.));
+            p.zip_apply(&amps, |b, a| *b = *b / b.abs() * a);
+            q.gemv(Complex::new(1., 0.), &b, &p, Complex::new(0., 0.));
+        });
 
-        let amps = self
-            .backend
-            .cv_from_slice(<[f32]>::ref_from_bytes(amps.as_bytes()).unwrap())?;
-        let mut p = self.backend.alloc_zeros_cv(m)?;
-        (0..self.option.repeat.get()).try_for_each(|_| -> Result<(), GainError> {
-            self.backend.scaled_to_assign_cv(&q0, &mut q)?;
-            self.backend.gemv_c(
-                Trans::NoTrans,
-                Complex::new(1., 0.),
-                &g,
-                &q,
-                Complex::new(0., 0.),
-                &mut p,
-            )?;
-            self.backend.scaled_to_assign_cv(&amps, &mut p)?;
-
-            self.backend.gemv_c(
-                Trans::NoTrans,
-                Complex::new(1., 0.),
-                &b,
-                &p,
-                Complex::new(0., 0.),
-                &mut q,
-            )?;
-            Ok(())
-        })?;
-
-        let mut abs = self.backend.alloc_v(n)?;
-        self.backend.norm_squared_cv(&q, &mut abs)?;
-        let max_coefficient = self.backend.max_v(&abs)?.sqrt();
-        let q = self.backend.to_host_cv(q)?;
+        let max_coefficient = q.map(|v| v.norm_squared()).max().sqrt();
         generate_result(geometry, q, max_coefficient, self.option.constraint, filter)
     }
 }
@@ -144,7 +118,7 @@ mod tests {
 
     use crate::tests::create_geometry;
 
-    use super::{super::super::NalgebraBackend, super::super::Pa, *};
+    use super::{super::super::Pa, *};
 
     #[test]
     fn gs_option_default() {
@@ -159,7 +133,6 @@ mod tests {
     #[test]
     fn test_gs_all() {
         let geometry = create_geometry(1, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = GS::new(
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
@@ -167,7 +140,6 @@ mod tests {
                 repeat: NonZeroUsize::new(5).unwrap(),
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
             },
-            backend,
         );
 
         assert_eq!(
@@ -186,11 +158,9 @@ mod tests {
     #[test]
     fn test_gs_filtered() {
         let geometry = create_geometry(2, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = GS {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
-            backend,
             option: GSOption {
                 repeat: NonZeroUsize::new(5).unwrap(),
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
