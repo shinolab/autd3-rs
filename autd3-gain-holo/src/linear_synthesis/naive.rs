@@ -92,7 +92,7 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for Naive<D, B> {
 
         let p = self
             .backend
-            .from_slice_cv(<[f32]>::ref_from_bytes(amps.as_bytes()).unwrap())?;
+            .cv_from_slice(<[f32]>::ref_from_bytes(amps.as_bytes()).unwrap())?;
         let mut q = self.backend.alloc_zeros_cv(n)?;
         self.backend.gemv_c(
             Trans::NoTrans,

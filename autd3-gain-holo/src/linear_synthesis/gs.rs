@@ -96,13 +96,13 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for GS<D, B> {
 
         let b = self.backend.gen_back_prop(n, m, &g)?;
 
-        let mut q = self.backend.from_slice_cv(&ones)?;
+        let mut q = self.backend.cv_from_slice(&ones)?;
 
-        let q0 = self.backend.from_slice_cv(&ones)?;
+        let q0 = self.backend.cv_from_slice(&ones)?;
 
         let amps = self
             .backend
-            .from_slice_cv(<[f32]>::ref_from_bytes(amps.as_bytes()).unwrap())?;
+            .cv_from_slice(<[f32]>::ref_from_bytes(amps.as_bytes()).unwrap())?;
         let mut p = self.backend.alloc_zeros_cv(m)?;
         (0..self.option.repeat.get()).try_for_each(|_| -> Result<(), GainError> {
             self.backend.scaled_to_assign_cv(&q0, &mut q)?;

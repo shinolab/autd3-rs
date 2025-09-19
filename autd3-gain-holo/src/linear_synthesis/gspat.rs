@@ -97,7 +97,7 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for GSPAT<D, B> {
 
         let amps = self
             .backend
-            .from_slice_cv(<[f32]>::ref_from_bytes(amps.as_bytes()).unwrap())?;
+            .cv_from_slice(<[f32]>::ref_from_bytes(amps.as_bytes()).unwrap())?;
 
         let b = self.backend.gen_back_prop(n, m, &g)?;
 
