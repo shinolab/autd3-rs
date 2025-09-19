@@ -18,6 +18,10 @@ fn main() {}
 #[unsafe(no_mangle)]
 fn __libc_start_main(_main: fn() -> isize) {}
 
+#[cfg(target_os = "linux")]
+#[unsafe(no_mangle)]
+fn rust_eh_personality() {}
+
 use alloc::alloc::*;
 
 #[derive(Default)]
