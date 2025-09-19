@@ -39,6 +39,12 @@ impl<L: Link, V: Driver> std::ops::Deref for Controller<L, V> {
     }
 }
 
+impl<L: Link, V: Driver> std::ops::DerefMut for Controller<L, V> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.geometry
+    }
+}
+
 impl<L: Link> Controller<L, Auto> {
     /// Equivalent to [`Self::open_with_option`] with default [`SenderOption`], [`FixedSchedule`] and [`Auto`] diver.
     pub fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
@@ -398,6 +404,14 @@ pub(crate) mod tests {
             (0..dev_num).map(|_| AUTD3::default()),
             Audit::<version::V12_1>::new(AuditOption::default()),
         )
+    }
+
+    #[test]
+    fn deref_mut() -> Result<(), Box<dyn std::error::Error>> {
+        let mut autd = create_controller(1)?;
+        assert_eq!(1, autd.len());
+        autd.reconfigure(|dev| dev);
+        Ok(())
     }
 
     #[test]
