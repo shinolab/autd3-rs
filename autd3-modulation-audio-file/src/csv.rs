@@ -9,51 +9,43 @@ use crate::error::AudioFileError;
 pub struct CsvOption {
     /// The delimiter of CSV file.
     pub delimiter: u8,
+    /// Whether the CSV file has headers.
+    pub has_headers: bool,
 }
 
 impl Default for CsvOption {
     fn default() -> Self {
-        Self { delimiter: b',' }
+        Self {
+            delimiter: b',',
+            has_headers: false,
+        }
     }
 }
 
 /// [`Modulation`] from CSV data.
 #[derive(Modulation, Debug, Clone)]
-pub struct Csv<P, Config>
-where
-    P: AsRef<Path> + Clone + Debug,
-    Config: Into<SamplingConfig> + Debug + Copy,
-{
-    /// The path to the CSV file.
-    pub path: P,
-    /// The sampling configuration of the CSV file.
-    pub sampling_config: Config,
-    /// The option of [`Csv`].
-    pub option: CsvOption,
+pub struct Csv {
+    sampling_config: SamplingConfig,
+    buffer: Vec<u8>,
 }
 
-impl<P, Config> Csv<P, Config>
-where
-    P: AsRef<Path> + Clone + Debug,
-    Config: Into<SamplingConfig> + Debug + Copy,
-{
+impl Csv {
     /// Create a new [`Csv`].
-    #[must_use]
-    pub const fn new(path: P, sampling_config: Config, option: CsvOption) -> Self {
-        Self {
-            path,
-            sampling_config,
-            option,
-        }
-    }
-
-    fn read_buf(&self) -> Result<Vec<u8>, AudioFileError> {
-        let f = File::open(&self.path)?;
+    pub fn new<P, Config>(
+        path: P,
+        sampling_config: Config,
+        option: CsvOption,
+    ) -> Result<Self, AudioFileError>
+    where
+        P: AsRef<Path> + Clone + Debug,
+        Config: Into<SamplingConfig> + Debug + Copy,
+    {
+        let f = File::open(&path)?;
         let mut rdr = csv::ReaderBuilder::new()
-            .has_headers(false)
-            .delimiter(self.option.delimiter)
+            .has_headers(option.has_headers)
+            .delimiter(option.delimiter)
             .from_reader(f);
-        Ok(rdr
+        let buffer = rdr
             .records()
             .map(|r| {
                 let record = r?;
@@ -68,21 +60,44 @@ where
             .into_iter()
             .flatten()
             .map(|s| s.parse::<u8>())
-            .collect::<Result<Vec<u8>, _>>()?)
+            .collect::<Result<Vec<u8>, _>>()?;
+        Ok(Self {
+            sampling_config: sampling_config.into(),
+            buffer,
+        })
+    }
+
+    /// Write a [`Modulation`] into a writer as CSV format.
+    pub fn write<Writer: std::io::Write, M: Modulation>(
+        m: M,
+        writer: Writer,
+        option: CsvOption,
+    ) -> Result<(), AudioFileError> {
+        let sample_rate = m.sampling_config().freq()?.hz();
+        let buffer = m.calc(&FirmwareLimits {
+            mod_buf_size_max: u32::MAX,
+            ..FirmwareLimits::unused()
+        })?;
+        let mut writer = csv::WriterBuilder::new()
+            .delimiter(option.delimiter)
+            .from_writer(writer);
+        if option.has_headers {
+            writer.write_record(&[format!("Buffer (sampling rate = {sample_rate} Hz)")])?;
+        }
+        buffer
+            .into_iter()
+            .try_for_each(|b| writer.write_record(&[b.to_string()]))?;
+        Ok(())
     }
 }
 
-impl<P, Config> Modulation for Csv<P, Config>
-where
-    P: AsRef<Path> + Clone + Debug,
-    Config: Into<SamplingConfig> + Debug + Copy,
-{
+impl Modulation for Csv {
     fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
-        Ok(self.read_buf()?)
+        Ok(self.buffer)
     }
 
     fn sampling_config(&self) -> SamplingConfig {
-        self.sampling_config.into()
+        self.sampling_config
     }
 }
 
@@ -109,21 +124,63 @@ mod tests {
         let path = dir.path().join("tmp.csv");
         create_csv(&path, &data)?;
 
-        let m = Csv::new(path, sample_rate, CsvOption::default());
+        let m = Csv::new(path, sample_rate, CsvOption::default())?;
         assert_eq!(sample_rate.hz(), m.sampling_config().freq()?.hz());
         assert_eq!(data, *m.calc(&FirmwareLimits::unused())?);
 
         Ok(())
     }
 
+    #[rstest::rstest]
+    #[case("Buffer (sampling rate = 4000 Hz)\n0\n128\n255\n", true)]
+    #[case("0\n128\n255\n", false)]
+    fn write(
+        #[case] expect: &str,
+        #[case] has_headers: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        #[derive(Clone)]
+        struct TestMod {
+            data: Vec<u8>,
+            rate: f32,
+        }
+        impl Modulation for TestMod {
+            fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+                Ok(self.data)
+            }
+            fn sampling_config(&self) -> SamplingConfig {
+                SamplingConfig::new(self.rate * Hz)
+            }
+        }
+
+        let m = TestMod {
+            data: vec![0u8, 128u8, 255u8],
+            rate: 4000.0,
+        };
+        let mut wtr = Vec::new();
+        Csv::write(
+            m,
+            &mut wtr,
+            CsvOption {
+                delimiter: b',',
+                has_headers,
+            },
+        )?;
+
+        assert_eq!(expect, String::from_utf8(wtr)?);
+
+        Ok(())
+    }
+
     #[test]
     fn not_exists() -> Result<(), Box<dyn std::error::Error>> {
-        let m = Csv {
-            path: Path::new("not_exists.csv"),
-            sampling_config: 4000. * Hz,
-            option: CsvOption::default(),
-        };
-        assert!(m.calc(&FirmwareLimits::unused()).is_err());
+        assert!(
+            Csv::new(
+                Path::new("not_exists.csv"),
+                4000. * Hz,
+                CsvOption::default(),
+            )
+            .is_err()
+        );
         Ok(())
     }
 }
