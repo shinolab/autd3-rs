@@ -1,4 +1,4 @@
-use autd3_core::derive::*;
+use autd3_core::{derive::*, gain::Mask};
 
 use autd3_driver::geometry::{Device, Transducer};
 
@@ -77,7 +77,7 @@ where
         geometry: &'a Geometry,
         tr_filter: &TransducerMask,
     ) -> HashMap<K, TransducerMask> {
-        let mut filters: HashMap<K, HashMap<usize, DeviceTransducerMask>> = HashMap::new();
+        let mut filters: HashMap<K, HashMap<usize, Mask>> = HashMap::new();
         geometry
             .iter()
             .filter(|dev| tr_filter.has_enabled(dev))
@@ -87,11 +87,11 @@ where
                         if let Some(v) = filters.get_mut(&key) {
                             match v.entry(dev.idx()) {
                                 Entry::Occupied(mut e) => {
-                                    e.get_mut().set(dev, tr, true);
+                                    e.get_mut().set(tr.idx(), true);
                                 }
                                 Entry::Vacant(e) => {
-                                    e.insert(DeviceTransducerMask::from_fn(dev, |t| {
-                                        t.idx() == tr.idx()
+                                    e.insert(Mask::from_fn(dev.num_transducers(), |t| {
+                                        t == tr.idx()
                                     }));
                                 }
                             }
@@ -100,7 +100,7 @@ where
                                 key,
                                 [(
                                     dev.idx(),
-                                    DeviceTransducerMask::from_fn(dev, |t| t.idx() == tr.idx()),
+                                    Mask::from_fn(dev.num_transducers(), |t| t == tr.idx()),
                                 )]
                                 .into(),
                             );
@@ -115,7 +115,7 @@ where
                     k,
                     TransducerMask::new(geometry.iter().map(|dev| {
                         if let Some(mask) = v.remove(&dev.idx()) {
-                            mask
+                            DeviceTransducerMask::Masked(mask)
                         } else {
                             DeviceTransducerMask::AllDisabled
                         }
