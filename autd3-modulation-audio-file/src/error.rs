@@ -17,6 +17,8 @@ pub enum AudioFileError {
     Csv(#[from] csv::Error),
     #[error("{0}")]
     SamplingConfig(#[from] SamplingConfigError),
+    #[error("{0}")]
+    Modulation(#[from] ModulationError),
 }
 
 // GRCOV_EXCL_START
