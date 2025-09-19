@@ -10,7 +10,6 @@ pub fn holo(
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
     let p = Vector3::new(30. * mm, 0., 0.);
-    let backend = std::sync::Arc::new(NalgebraBackend);
     let target_amp = 2.5e3 * autd.num_devices() as f32 * Pa;
     let foci = [(center + p, target_amp), (center - p, target_amp)];
 
@@ -20,7 +19,6 @@ pub fn holo(
             BoxedGain::new(GS {
                 foci: foci.to_vec(),
                 option: Default::default(),
-                backend: backend.clone(),
                 directivity: std::marker::PhantomData::<Sphere>,
             }),
         ),
@@ -29,7 +27,6 @@ pub fn holo(
             BoxedGain::new(GSPAT {
                 foci: foci.to_vec(),
                 option: Default::default(),
-                backend: backend.clone(),
                 directivity: std::marker::PhantomData::<Sphere>,
             }),
         ),
@@ -38,16 +35,6 @@ pub fn holo(
             BoxedGain::new(Naive {
                 foci: foci.to_vec(),
                 option: Default::default(),
-                backend: backend.clone(),
-                directivity: std::marker::PhantomData::<Sphere>,
-            }),
-        ),
-        (
-            "LM",
-            BoxedGain::new(LM {
-                foci: foci.to_vec(),
-                option: Default::default(),
-                backend: backend.clone(),
                 directivity: std::marker::PhantomData::<Sphere>,
             }),
         ),
