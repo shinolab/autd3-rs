@@ -81,10 +81,8 @@ impl Geometry {
     }
 
     /// Reconfigure the geometry.
-    pub fn reconfigure<D: Into<Device>, F: Fn(&Device) -> D>(&mut self, f: F) {
-        self.devices.iter_mut().for_each(|dev| {
-            *dev = f(dev).into();
-        });
+    pub fn reconfigure<D: Into<Device>, F: Fn(Device) -> D>(&mut self, f: F) {
+        self.devices = self.devices.drain(..).map(|dev| f(dev).into()).collect();
         self.assign_idx();
         self.version += 1;
     }
