@@ -40,7 +40,7 @@ pub fn run<L: Link>(
         }),
     ];
     if autd.num_devices() >= 2 {
-        examples.push(("Group (by Device) test", |autd| (group_by_device(autd))));
+        examples.push(("Group (by Device) test", |autd| group_by_device(autd)));
     }
 
     loop {

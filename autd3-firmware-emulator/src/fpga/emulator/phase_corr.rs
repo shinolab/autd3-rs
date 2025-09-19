@@ -6,7 +6,11 @@ impl FPGAEmulator {
     #[must_use]
     fn _phase_corr(&self, idx: usize) -> Phase {
         let p = &self.mem.phase_corr_bram.read(idx >> 1);
-        let p = if idx % 2 == 0 { p & 0xFF } else { p >> 8 };
+        let p = if idx.is_multiple_of(2) {
+            p & 0xFF
+        } else {
+            p >> 8
+        };
         Phase(p as _)
     }
 
