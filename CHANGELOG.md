@@ -1,6 +1,64 @@
 # Changelog
 
 
+# 36.0.0-alpha.2 (2025-09-19)
+
+## 🚀 Features
+
+- Add `Wav::encode` and `Csv::write`
+
+## 🗑️ Removals
+
+- `getset` and `derive_more` dependencies
+- `tynm` dependency
+- [**breaking**] `LM` gain
+- [**breaking**] `Backend` and `NalgebraBackend`
+
+## ⚙️ Miscellaneous Tasks
+
+- Tidy up dependencies
+
+
+# 36.0.0-alpha.1 (2025-08-14)
+
+## 🚀 Features
+
+- Add `no_std` support to `autd3-core` (#338)
+
+## 🗑️ Removals
+
+- [**breaking**] `aabb` from `Device` and `Geometry`
+
+## ⬆️ Update Dependencies
+
+- Replace `paste` with `pastey`
+- Update criterion requirement from 0.6.0 to 0.7.0
+- Update rstest requirement from 0.25.0 to 0.26.1
+- Update tonic requirement from 0.13.0 to 0.14.0
+- Update nalgebra requirement from 0.33.2 to 0.34.0
+
+
+# 36.0.0-alpha.0 (2025-07-23)
+
+## 🚀 Features
+
+- [**breaking**] Remove generics from `PulseWidth`
+- [**breaking**] Explicate lifetime and make lifetime analysis for nested closures correct
+- [**breaking**] Remove `PhantomData` from `autd3-gain-holo`'s options
+- [**breaking**] Prevent invalid transition mode at compile time
+- Allow to construct `GainSTM` and `FociSTM` from array
+
+## 🗑️ Removals
+
+- [**breaking**] `async-trait` features
+- `num_cpus` dependency
+
+## 🐛 Bug Fixes
+
+- Convergence condition is wrong in `LM` (#313)
+- [**breaking**] Remove default implementation of `max_abs_v` in `LinAlgBackend`
+
+
 # 35.0.1 (2025-06-30)
 
 ## 🐛 Bug Fixes
