@@ -9,13 +9,24 @@ edition = { workspace = true }
 license = { workspace = true }
 repository = { workspace = true }
 
+[package.metadata.docs.rs]
+features = ["greedy", "gs", "gspat", "naive"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["greedy", "gs", "gspat", "naive"]
+greedy = ["nalgebra", "rand"]
+gs = ["nalgebra", "rayon"]
+gspat = ["nalgebra", "rayon"]
+naive = ["nalgebra", "rayon"]
+
 [dependencies]
 autd3-core = { workspace = true, features = ["acoustics", "derive", "gain", "std"] }
-nalgebra = { workspace = true, features = ["alloc"] }
-rand = { workspace = true, features = ["thread_rng"] }
-rayon = { workspace = true }
 thiserror = { workspace = true }
 zerocopy = { workspace = true }
+nalgebra = { workspace = true, optional = true, features = ["alloc"] }
+rand = { workspace = true, optional = true, features = ["thread_rng"] }
+rayon = { workspace = true, optional = true }
 
 [dev-dependencies]
 approx = { workspace = true }
