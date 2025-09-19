@@ -48,7 +48,7 @@ impl Operation<'_> for FixedCompletionTimeOp {
         let validate = |value: Duration| {
             const NANOSEC: u128 = 1_000_000_000;
             let v = value.as_nanos() * ULTRASOUND_FREQ.hz() as u128;
-            let v = if v % NANOSEC == 0 {
+            let v = if v.is_multiple_of(NANOSEC) {
                 v / NANOSEC
             } else {
                 return Err(AUTDDriverError::InvalidSilencerCompletionTime(value));
