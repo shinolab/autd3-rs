@@ -7,6 +7,7 @@
 //!
 //! [`Gain`]: autd3_core::gain::Gain
 
+#[allow(unused_imports)]
 use nalgebra::{Dyn, U1, VecStorage};
 
 #[allow(dead_code)]
@@ -17,23 +18,17 @@ pub(crate) type MatrixXc = nalgebra::Matrix<Complex, Dyn, Dyn, VecStorage<Comple
 pub(crate) type VectorXc = nalgebra::Matrix<Complex, Dyn, U1, VecStorage<Complex, Dyn, U1>>;
 
 mod amp;
-mod backend;
-mod backend_nalgebra;
 #[cfg(feature = "greedy")]
 mod combinatorial;
 mod constraint;
-mod error;
 #[cfg(any(feature = "naive", feature = "gs", feature = "gspat"))]
 mod helper;
 #[cfg(any(feature = "naive", feature = "gs", feature = "gspat"))]
 mod linear_synthesis;
 
-pub use backend::*;
-pub use backend_nalgebra::NalgebraBackend;
 #[cfg(feature = "greedy")]
 pub use combinatorial::*;
 pub use constraint::*;
-pub use error::HoloError;
 #[cfg(any(feature = "naive", feature = "gs", feature = "gspat"))]
 pub use linear_synthesis::*;
 

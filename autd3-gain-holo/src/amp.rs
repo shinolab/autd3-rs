@@ -1,7 +1,5 @@
 use autd3_core::common::ABSOLUTE_THRESHOLD_OF_HEARING;
 
-use zerocopy::{Immutable, IntoBytes};
-
 /// \[dB\]
 #[allow(non_camel_case_types)]
 pub struct dB;
@@ -14,7 +12,7 @@ pub struct Pa;
 pub struct kPa;
 
 /// Amplitude
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, IntoBytes, Immutable)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Amplitude {
     pub(crate) value: f32,
 }

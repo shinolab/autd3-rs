@@ -22,8 +22,6 @@ naive = ["nalgebra", "rayon"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["acoustics", "derive", "gain", "std"] }
-thiserror = { workspace = true }
-zerocopy = { workspace = true }
 nalgebra = { workspace = true, optional = true, features = ["alloc"] }
 rand = { workspace = true, optional = true, features = ["thread_rng"] }
 rayon = { workspace = true, optional = true }

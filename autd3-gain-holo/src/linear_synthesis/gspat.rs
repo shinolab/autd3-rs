@@ -1,9 +1,11 @@
-use std::{num::NonZeroUsize, sync::Arc};
+use std::num::NonZeroUsize;
 
 use crate::{
-    Amplitude, Complex, LinAlgBackend, Trans,
+    Amplitude, Complex, MatrixXc, VectorXc,
     constraint::EmissionConstraint,
-    helper::{HoloCalculatorGenerator, generate_result},
+    helper::{
+        HoloCalculatorGenerator, gen_back_prop, generate_propagation_matrix, generate_result,
+    },
 };
 
 use autd3_core::{
@@ -11,7 +13,7 @@ use autd3_core::{
     derive::*,
     geometry::Point3,
 };
-use zerocopy::{FromBytes, IntoBytes};
+use nalgebra::{ComplexField, Normed};
 
 /// The option of [`GSPAT`].
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -35,48 +37,40 @@ impl Default for GSPATOption {
 ///
 /// See [Plasencia, et al., 2020](https://dl.acm.org/doi/10.1145/3386569.3392492) for more details.
 #[derive(Gain, Debug)]
-pub struct GSPAT<D: Directivity, B: LinAlgBackend> {
+pub struct GSPAT<D: Directivity> {
     /// The focal positions and amplitudes.
     pub foci: Vec<(Point3, Amplitude)>,
     /// The option of the Gain.
     pub option: GSPATOption,
-    /// The backend of linear algebra calculation.
-    pub backend: Arc<B>,
     /// The directivity of the transducers.
     pub directivity: std::marker::PhantomData<D>,
 }
 
-impl<B: LinAlgBackend> GSPAT<Sphere, B> {
+impl GSPAT<Sphere> {
     /// Create a new [`GSPAT`].
     #[must_use]
-    pub fn new(
-        foci: impl IntoIterator<Item = (Point3, Amplitude)>,
-        option: GSPATOption,
-        backend: Arc<B>,
-    ) -> Self {
-        Self::with_directivity(foci, option, backend)
+    pub fn new(foci: impl IntoIterator<Item = (Point3, Amplitude)>, option: GSPATOption) -> Self {
+        Self::with_directivity(foci, option)
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend> GSPAT<D, B> {
+impl<D: Directivity> GSPAT<D> {
     /// Create a new [`GSPAT`] with directivity.
     #[must_use]
     pub fn with_directivity(
         foci: impl IntoIterator<Item = (Point3, Amplitude)>,
         option: GSPATOption,
-        backend: Arc<B>,
     ) -> Self {
         Self {
             foci: foci.into_iter().collect(),
             option,
-            backend,
             directivity: std::marker::PhantomData,
         }
     }
 }
 
-impl<D: Directivity, B: LinAlgBackend> Gain<'_> for GSPAT<D, B> {
-    type G = HoloCalculatorGenerator<Complex>;
+impl<D: Directivity> Gain<'_> for GSPAT<D> {
+    type G = HoloCalculatorGenerator;
 
     fn init(
         self,
@@ -86,68 +80,34 @@ impl<D: Directivity, B: LinAlgBackend> Gain<'_> for GSPAT<D, B> {
     ) -> Result<Self::G, GainError> {
         let (foci, amps): (Vec<_>, Vec<_>) = self.foci.into_iter().unzip();
 
-        let g = self
-            .backend
-            .generate_propagation_matrix::<D>(geometry, env, &foci, filter)?;
+        let g = generate_propagation_matrix::<D>(geometry, env, &foci, filter);
 
         let m = foci.len();
-        let n = self.backend.cols_c(&g)?;
+        let n = g.ncols();
 
-        let mut q = self.backend.alloc_zeros_cv(n)?;
+        let mut q = VectorXc::zeros(n);
 
-        let amps = self
-            .backend
-            .cv_from_slice(<[f32]>::ref_from_bytes(amps.as_bytes()).unwrap())?;
+        let amps = VectorXc::from_iterator(
+            amps.len(),
+            amps.into_iter().map(|a| Complex::new(a.pascal(), 0.)),
+        );
 
-        let b = self.backend.gen_back_prop(n, m, &g)?;
+        let b = gen_back_prop(n, m, &g);
 
-        let mut r = self.backend.alloc_zeros_cm(m, m)?;
-        self.backend.gemm_c(
-            Trans::NoTrans,
-            Trans::NoTrans,
-            Complex::new(1., 0.),
-            &g,
-            &b,
-            Complex::new(0., 0.),
-            &mut r,
-        )?;
+        let mut r = MatrixXc::zeros(m, m);
+        r.gemm(Complex::new(1., 0.), &g, &b, Complex::new(0., 0.));
 
-        let mut p = self.backend.clone_cv(&amps)?;
-        let mut gamma = self.backend.clone_cv(&amps)?;
-        self.backend.gemv_c(
-            Trans::NoTrans,
-            Complex::new(1., 0.),
-            &r,
-            &p,
-            Complex::new(0., 0.),
-            &mut gamma,
-        )?;
-        (0..self.option.repeat.get()).try_for_each(|_| -> Result<(), GainError> {
-            self.backend.scaled_to_cv(&gamma, &amps, &mut p)?;
-            self.backend.gemv_c(
-                Trans::NoTrans,
-                Complex::new(1., 0.),
-                &r,
-                &p,
-                Complex::new(0., 0.),
-                &mut gamma,
-            )?;
-            Ok(())
-        })?;
+        let mut p = amps.clone();
+        let mut gamma = amps.clone();
+        gamma.gemv(Complex::new(1., 0.), &r, &p, Complex::new(0., 0.));
+        (0..self.option.repeat.get()).for_each(|_| {
+            p = gamma.zip_map(&amps, |a, b| a / a.abs() * b);
+            gamma.gemv(Complex::new(1., 0.), &r, &p, Complex::new(0., 0.));
+        });
 
-        self.backend.gemv_c(
-            Trans::NoTrans,
-            Complex::new(1., 0.),
-            &b,
-            &p,
-            Complex::new(0., 0.),
-            &mut q,
-        )?;
+        q.gemv(Complex::new(1., 0.), &b, &p, Complex::new(0., 0.));
 
-        let mut abs = self.backend.alloc_v(n)?;
-        self.backend.norm_squared_cv(&q, &mut abs)?;
-        let max_coefficient = self.backend.max_v(&abs)?.sqrt();
-        let q = self.backend.to_host_cv(q)?;
+        let max_coefficient = q.map(|v| v.norm_squared()).max().sqrt();
         generate_result(geometry, q, max_coefficient, self.option.constraint, filter)
     }
 }
@@ -161,7 +121,7 @@ mod tests {
 
     use crate::tests::create_geometry;
 
-    use super::{super::super::NalgebraBackend, super::super::Pa, *};
+    use super::{super::super::Pa, *};
 
     #[test]
     fn gspat_option_default() {
@@ -176,7 +136,6 @@ mod tests {
     #[test]
     fn test_gspat_all() {
         let geometry = create_geometry(1, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = GSPAT::new(
             vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
@@ -184,7 +143,6 @@ mod tests {
                 repeat: NonZeroUsize::new(5).unwrap(),
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),
             },
-            backend,
         );
 
         assert_eq!(
@@ -203,11 +161,9 @@ mod tests {
     #[test]
     fn test_gspat_filtered() {
         let geometry = create_geometry(2, 1);
-        let backend = std::sync::Arc::new(NalgebraBackend);
 
         let g = GSPAT {
             foci: vec![(Point3::origin(), 1. * Pa), (Point3::origin(), 1. * Pa)],
-            backend,
             option: GSPATOption {
                 repeat: NonZeroUsize::new(5).unwrap(),
                 constraint: EmissionConstraint::Uniform(Intensity::MAX),

@@ -16,7 +16,7 @@ dependencies = ["format", "lint", "build", "test"]
 
 [tasks.build]
 command = "cargo"
-args = ["build", "--workspace", "${@}"]
+args = ["build", "--workspace", "--bins", "${@}"]
 
 [tasks.lint]
 command = "cargo"
