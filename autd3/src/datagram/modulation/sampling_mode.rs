@@ -98,7 +98,7 @@ impl SamplingMode {
             }
             let fnd = (fd * n as f64) as u64;
             let fs = ULTRASOUND_FREQ.hz() as u64;
-            if fnd % fs != 0 {
+            if !fnd.is_multiple_of(fs) {
                 return None;
             }
             let k = fnd / fs;

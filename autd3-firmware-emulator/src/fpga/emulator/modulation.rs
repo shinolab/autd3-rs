@@ -33,7 +33,11 @@ impl FPGAEmulator {
     #[must_use]
     pub fn modulation_at(&self, segment: Segment, idx: usize) -> u8 {
         let m = &self.mem.modulation_bram[&segment].read(idx >> 1);
-        let m = if idx % 2 == 0 { m & 0xFF } else { m >> 8 };
+        let m = if idx.is_multiple_of(2) {
+            m & 0xFF
+        } else {
+            m >> 8
+        };
         m as u8
     }
 
