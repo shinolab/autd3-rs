@@ -1,6 +1,13 @@
 # Changelog
 
 
+# 36.0.1 (2025-09-20)
+
+## 🐛 Bug Fixes
+
+- Missing impl `IntoIterator` for `Device`
+
+
 # 36.0.0 (2025-09-20)
 
 ## 🚀 Features
