@@ -119,6 +119,15 @@ impl core::ops::Deref for Device {
     }
 }
 
+impl core::iter::IntoIterator for Device {
+    type Item = Transducer;
+    type IntoIter = alloc::vec::IntoIter<Transducer>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.transducers.into_iter()
+    }
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
@@ -133,6 +142,17 @@ pub(crate) mod tests {
             approx::assert_abs_diff_eq!($a.y, $b.y, epsilon = 1e-3);
             approx::assert_abs_diff_eq!($a.z, $b.z, epsilon = 1e-3);
         };
+    }
+
+    #[test]
+    fn into_iter() {
+        let device = create_device(249);
+        let mut count = 0;
+        device.into_iter().for_each(|tr| {
+            assert_eq!(count, tr.idx());
+            count += 1;
+        });
+        assert_eq!(249, count);
     }
 
     #[test]
