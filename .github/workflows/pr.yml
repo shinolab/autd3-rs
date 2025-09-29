@@ -50,6 +50,8 @@ jobs:
         with:
           submodules: true
       - uses: ./.github/actions/setup-build
+        with:
+          components: rustfmt
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
