@@ -7,6 +7,7 @@ members = [
     "autd3-driver",
     "autd3-firmware-emulator",
     "autd3-gain-holo",
+    "autd3-link-ethercrab",
     "autd3-link-simulator",
     "autd3-link-twincat",
     "autd3-modulation-audio-file",
@@ -32,6 +33,7 @@ autd3-derive = { path = "./autd3-derive", version = "36.0.1", default-features =
 autd3-driver = { path = "./autd3-driver", version = "36.0.1", default-features = false }
 autd3-firmware-emulator = { path = "./autd3-firmware-emulator", version = "36.0.1", default-features = false }
 autd3-gain-holo = { path = "./autd3-gain-holo", version = "36.0.1", default-features = false }
+autd3-link-ethercrab = { path = "./autd3-link-ethercrab", version = "36.0.1", default-features = false }
 autd3-link-simulator = { path = "./autd3-link-simulator", version = "36.0.1", default-features = false }
 autd3-link-twincat = { path = "./autd3-link-twincat", version = "36.0.1", default-features = false }
 autd3-modulation-audio-file = { path = "./autd3-modulation-audio-file", version = "36.0.1", default-features = false }
@@ -44,6 +46,7 @@ rand = { version = "0.9.1", default-features = false }
 rayon = { version = "1.10.0", default-features = false }
 rstest = { version = "0.26.1", default-features = false }
 smallvec = { version = "1.15.0", default-features = false }
+spin_sleep = { version = "1.3.1", default-features = false }
 thiserror = { version = "2.0.12", default-features = false }
 tokio = { version = "1.45.1", default-features = false }
 tokio-test = { version = "0.4.4", default-features = false }
