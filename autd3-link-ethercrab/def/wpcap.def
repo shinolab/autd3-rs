@@ -16,6 +16,7 @@ pcap_dump_close
 pcap_offline_filter
 pcap_freecode
 pcap_activate
+pcap_setmintocopy
 pcap_set_timeout
 pcap_set_tstamp_type
 pcap_set_promisc
