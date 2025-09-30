@@ -22,13 +22,13 @@ async-channel = { version = "2.5.0", default-features = false }
 autd3-core = { workspace = true, features = ["std", "link", "async", "sleep"] }
 core_affinity = { version = "0.8.3", default-features = false }
 ethercrab = { version = "0.6.0", default-features = false, features = ["std"] }
+pnet_datalink = { version = "0.35.0", default-features = false, features = ["std"] }
+spin_sleep = { workspace = true }
 thiserror = { workspace = true }
 thread-priority = { version = "3.0.0", default-features = false }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time"] }
 tracing = { version = "0.1.41", default-features = false }
-pnet_datalink = { version = "0.35.0", default-features = false, features = ["std"] }
 zerocopy = { workspace = true }
-spin_sleep = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62.1", default-features = false, features = ["Win32_Media_Multimedia", "Win32_System_Threading", "Win32_Foundation"] }
