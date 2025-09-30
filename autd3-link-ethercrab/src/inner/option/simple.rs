@@ -9,7 +9,7 @@ use super::EtherCrabOptionFull;
 /// A option for [`EtherCrab`].
 ///
 /// [`EtherCrab`]: crate::EtherCrab
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EtherCrabOption {
     /// The network interface name. If `None`, the network interface will be automatically selected to which the AUTD3 device is connected. The default is `None`.
     pub ifname: Option<String>,

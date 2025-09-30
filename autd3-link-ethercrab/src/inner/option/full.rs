@@ -44,6 +44,42 @@ impl Default for EtherCrabOptionFull {
     }
 }
 
+impl PartialEq for EtherCrabOptionFull {
+    fn eq(&self, other: &Self) -> bool {
+        let Timeouts {
+            state_transition,
+            pdu,
+            eeprom,
+            wait_loop_delay,
+            mailbox_echo,
+            mailbox_response,
+        } = self.timeouts;
+        let DcConfiguration {
+            start_delay,
+            sync0_period,
+            sync0_shift,
+        } = self.dc_configuration;
+        self.ifname == other.ifname
+            && self.buf_size == other.buf_size
+            && state_transition == other.timeouts.state_transition
+            && pdu == other.timeouts.pdu
+            && eeprom == other.timeouts.eeprom
+            && wait_loop_delay == other.timeouts.wait_loop_delay
+            && mailbox_echo == other.timeouts.mailbox_echo
+            && mailbox_response == other.timeouts.mailbox_response
+            && self.main_device_config == other.main_device_config
+            && start_delay == other.dc_configuration.start_delay
+            && sync0_period == other.dc_configuration.sync0_period
+            && sync0_shift == other.dc_configuration.sync0_shift
+            && self.state_check_period == other.state_check_period
+            && self.sync_tolerance == other.sync_tolerance
+            && self.sync_timeout == other.sync_timeout
+            && self.tx_rx_thread_affinity == other.tx_rx_thread_affinity
+            && self.main_thread_affinity == other.main_thread_affinity
+    }
+}
+impl Eq for EtherCrabOptionFull {}
+
 impl EtherCrabOptionFull {
     pub(crate) async fn ifname(&self) -> Result<String, EtherCrabError> {
         match self.ifname.as_ref() {
