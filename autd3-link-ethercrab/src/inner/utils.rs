@@ -58,9 +58,10 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
         {
             Ok(group) => {
                 tracing::trace!(target: "autd3-link-ethercrab", "Find EtherCAT device on {}", interface.name);
-                group
-                    .iter(&main_device)
-                    .all(|sub_device| sub_device.name() == "AUTD")
+                !group.is_empty()
+                    && group
+                        .iter(&main_device)
+                        .all(|sub_device| sub_device.name() == "AUTD")
             }
             Err(e) => {
                 tracing::trace!(target: "autd3-link-ethercrab", "Failed to initialize EtherCAT on {}: {}", interface.name, e);

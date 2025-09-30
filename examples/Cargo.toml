@@ -25,7 +25,7 @@ autd3-link-ethercrab = { workspace = true, optional = true, features = ["blockin
 autd3-modulation-audio-file = { workspace = true, features = ["wav"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"], optional = true }
 tracing = { version = "0.1.41", optional = true }
-tracing-subscriber = { version = "0.3.20", features = ["fmt"], optional = true }
+tracing-subscriber = { version = "0.3.20", features = ["fmt", "env-filter"], optional = true }
 
 [[bin]]
 name = "nop"

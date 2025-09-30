@@ -94,14 +94,26 @@ impl EtherCrabHandler {
                     let e = crate::inner::windows::tx_rx_task_blocking(&interface, tx, rx, is_open);
                     #[cfg(not(target_os = "windows"))]
                     let e = {
-                        let ex = smol::LocalExecutor::new();
                         match ethercrab::std::tx_rx_task(&interface, tx, rx) {
-                            Ok(fut) => futures_lite::future::block_on(ex.run(fut)).map_err(EtherCrabError::from),
+                            Ok(fut) =>
+                                tokio::runtime::Builder::new_current_thread()
+                                    .build()
+                                    .expect("Create runtime")
+                                    .block_on(fut)
+                                    .map_err(EtherCrabError::from),
                             Err(e) => {
                                 tracing::trace!(target: "autd3-link-ethercrab", "Failed to start TX/RX task: {}", e);
                                 Err(EtherCrabError::from(e))
                             }
                         }
+                        // let ex = smol::LocalExecutor::new();
+                        // match ethercrab::std::tx_rx_task(&interface, tx, rx) {
+                        //     Ok(fut) => futures_lite::future::block_on(ex.run(fut)).map_err(EtherCrabError::from),
+                        //     Err(e) => {
+                        //         tracing::trace!(target: "autd3-link-ethercrab", "Failed to start TX/RX task: {}", e);
+                        //         Err(EtherCrabError::from(e))
+                        //     }
+                        // }
                     };
                     tracing::debug!(target: "autd3-link-ethercrab", "TX/RX task exited");
                     e.map(|_| ())
