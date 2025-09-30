@@ -1,0 +1,24 @@
+[package]
+name = "autd3-link-remote"
+description = "autd3 link for remote server"
+readme = "README.md"
+keywords = { workspace = true }
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+features = ["blocking"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["blocking"]
+blocking = ["tokio"]
+
+[dependencies]
+autd3-core = { workspace = true, features = ["async", "link"] }
+autd3-protobuf = { workspace = true }
+tokio = { workspace = true, optional = true, features = ["rt-multi-thread"] }
+tonic = { workspace = true }
