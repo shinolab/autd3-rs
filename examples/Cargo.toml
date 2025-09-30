@@ -13,13 +13,15 @@ async = ["autd3/async", "autd3/link-nop", "tokio"]
 simulator = ["autd3-link-simulator"]
 twincat = ["autd3-link-twincat/local"]
 ethercrab = ["autd3-link-ethercrab", "tracing", "tracing-subscriber"]
+remote = ["autd3-link-remote", "tracing", "tracing-subscriber"]
 remote_twincat = ["autd3-link-twincat/remote"]
-all = ["async", "twincat", "remote_twincat", "simulator"]
+all = ["async", "twincat", "ethercrab", "remote", "remote_twincat", "simulator"]
 
 [dependencies]
 autd3 = { workspace = true, features = ["gain", "modulation", "stm"] }
 autd3-gain-holo = { workspace = true, features = ["greedy", "gs", "gspat", "naive"] }
 autd3-link-ethercrab = { workspace = true, optional = true, features = ["blocking"] }
+autd3-link-remote = { workspace = true, optional = true, features = ["blocking"] }
 autd3-link-simulator = { workspace = true, optional = true, features = ["blocking"] }
 autd3-link-twincat = { workspace = true, optional = true }
 autd3-modulation-audio-file = { workspace = true, features = ["wav"] }
@@ -35,7 +37,12 @@ required-features = ["nop"]
 [[bin]]
 name = "ethercrab"
 path = "src/ethercrab.rs"
-required-features = ["autd3-link-ethercrab"]
+required-features = ["ethercrab"]
+
+[[bin]]
+name = "remote"
+path = "src/remote.rs"
+required-features = ["remote"]
 
 [[bin]]
 name = "twincat"
