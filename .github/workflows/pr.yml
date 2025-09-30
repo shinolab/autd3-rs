@@ -105,6 +105,7 @@ jobs:
       - run: cargo +nightly docs-rs -pautd3-firmware-emulator
       - run: cargo +nightly docs-rs -pautd3-gain-holo
       - run: cargo +nightly docs-rs -pautd3-link-simulator
+      - run: cargo +nightly docs-rs -pautd3-link-ethercrab
       - run: cargo +nightly docs-rs -pautd3-link-twincat
       - run: cargo +nightly docs-rs -pautd3-modulation-audio-file
       - run: cargo +nightly docs-rs -pautd3-protobuf

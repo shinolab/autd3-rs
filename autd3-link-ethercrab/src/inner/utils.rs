@@ -3,7 +3,7 @@ use std::sync::{Arc, atomic::AtomicBool};
 use ethercrab::{MainDevice, MainDeviceConfig, PduStorage, Timeouts, std::ethercat_now};
 
 use crate::{
-    EtherCrabError,
+    error::EtherCrabError,
     inner::handler::{MAX_FRAMES, MAX_PDU_DATA, MAX_SUBDEVICES, PDI_LEN},
 };
 

@@ -4,7 +4,7 @@ use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{sync::Arc, task::Waker};
 
-use crate::EtherCrabError;
+use crate::error::EtherCrabError;
 
 struct ParkSignal {
     current_thread: std::thread::Thread,
@@ -39,8 +39,6 @@ pub fn tx_rx_task_blocking<'sto>(
 
     let mut cap = pcap::Capture::from_device(device)?
         .immediate_mode(true)
-        .precision(pcap::Precision::Nano)
-        .promisc(false)
         .timeout(-1)
         .open()?
         .setnonblock()?;

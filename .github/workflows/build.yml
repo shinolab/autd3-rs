@@ -68,17 +68,17 @@ jobs:
           toolchain: nightly
       - run: cargo make doc
       - uses: dtolnay/install@cargo-docs-rs
-      - run: | 
-          cargo +nightly docs-rs -pautd3
-          cargo +nightly docs-rs -pautd3-core
-          cargo +nightly docs-rs -pautd3-derive
-          cargo +nightly docs-rs -pautd3-driver
-          cargo +nightly docs-rs -pautd3-firmware-emulator
-          cargo +nightly docs-rs -pautd3-gain-holo
-          cargo +nightly docs-rs -pautd3-link-simulator
-          cargo +nightly docs-rs -pautd3-link-twincat
-          cargo +nightly docs-rs -pautd3-modulation-audio-file
-          cargo +nightly docs-rs -pautd3-protobuf
+      - run: cargo +nightly docs-rs -pautd3 
+      - run: cargo +nightly docs-rs -pautd3-core
+      - run: cargo +nightly docs-rs -pautd3-derive
+      - run: cargo +nightly docs-rs -pautd3-driver
+      - run: cargo +nightly docs-rs -pautd3-firmware-emulator
+      - run: cargo +nightly docs-rs -pautd3-gain-holo
+      - run: cargo +nightly docs-rs -pautd3-link-simulator
+      - run: cargo +nightly docs-rs -pautd3-link-ethercrab
+      - run: cargo +nightly docs-rs -pautd3-link-twincat
+      - run: cargo +nightly docs-rs -pautd3-modulation-audio-file
+      - run: cargo +nightly docs-rs -pautd3-protobuf
 
   coverage:
     runs-on: ubuntu-latest

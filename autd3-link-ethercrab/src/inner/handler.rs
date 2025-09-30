@@ -63,9 +63,9 @@ impl EtherCrabHandler {
             sync_tolerance,
             sync_timeout,
             tx_rx_thread_builder,
-            tx_rx_thread_core,
+            tx_rx_thread_affinity: tx_rx_thread_core,
             main_thread_builder,
-            main_thread_core,
+            main_thread_affinity: main_thread_core,
             state_check_period,
         } = option;
 
