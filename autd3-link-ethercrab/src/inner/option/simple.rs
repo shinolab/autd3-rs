@@ -30,7 +30,7 @@ pub struct EtherCrabOption {
     /// The [`ThreadBuilder`] for the main thread. This is set to use real-time scheduling with the highest possible priority by default.
     pub main_thread_builder: ThreadBuilder,
     /// The CPU affinity for the main thread. The default is `None`, which means no affinity is set.
-    pub main_thread_core: Option<CoreId>,
+    pub main_thread_affinity: Option<CoreId>,
 }
 
 impl Default for EtherCrabOption {
@@ -74,7 +74,7 @@ impl Default for EtherCrabOption {
                 .policy(thread_priority::ThreadSchedulePolicy::Realtime(
                     thread_priority::RealtimeThreadSchedulePolicy::Fifo,
                 )),
-            main_thread_core: None,
+            main_thread_affinity: None,
             tx_rx_thread_affinity: None,
         }
     }
@@ -105,7 +105,7 @@ impl From<EtherCrabOption> for EtherCrabOptionFull {
             sync_timeout: opt.sync_timeout,
             tx_rx_thread_builder: opt.tx_rx_thread_builder,
             main_thread_builder: opt.main_thread_builder,
-            main_thread_affinity: opt.main_thread_core,
+            main_thread_affinity: opt.main_thread_affinity,
             tx_rx_thread_affinity: opt.tx_rx_thread_affinity,
         }
     }

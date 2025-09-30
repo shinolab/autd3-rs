@@ -19,11 +19,11 @@ blocking = []
 
 [dependencies]
 async-channel = { version = "2.5.0", default-features = false }
-autd3-core = { workspace = true, features = ["std", "link", "async", "sleep"] }
+autd3-core = { workspace = true, features = ["std", "link", "async"] }
 core_affinity = { version = "0.8.3", default-features = false }
 ethercrab = { version = "0.6.0", default-features = false, features = ["std"] }
+futures = { version = "0.3.31", default-features = false, features = ["alloc"] }
 pnet_datalink = { version = "0.35.0", default-features = false, features = ["std"] }
-spin_sleep = { workspace = true }
 thiserror = { workspace = true }
 thread-priority = { version = "3.0.0", default-features = false }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time"] }

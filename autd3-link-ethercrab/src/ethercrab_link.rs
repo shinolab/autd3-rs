@@ -1,38 +1,23 @@
-use autd3_core::{
-    link::{AsyncLink, LinkError, RxMessage, TxMessage},
-    sleep::Sleep,
-};
-use spin_sleep::SpinSleeper;
+use autd3_core::link::{AsyncLink, LinkError, RxMessage, TxMessage};
 
 use crate::{
     Status,
     inner::{EtherCrabHandler, EtherCrabOptionFull},
 };
 
-/// A [`AsyncLink`] using [ethercrab].
-pub struct EtherCrab<F: Fn(usize, Status) + Send + Sync + 'static, S: Sleep + Send + 'static> {
-    option: Option<(F, EtherCrabOptionFull, S)>,
+/// A [`AsyncLink`] using [EtherCrab](https://github.com/ethercrab-rs/ethercrab).
+pub struct EtherCrab<F: Fn(usize, Status) + Send + Sync + 'static> {
+    option: Option<(F, EtherCrabOptionFull)>,
     inner: Option<EtherCrabHandler>,
     #[cfg(feature = "blocking")]
     runtime: Option<tokio::runtime::Runtime>,
 }
 
-impl<F: Fn(usize, Status) + Send + Sync + 'static> EtherCrab<F, SpinSleeper> {
-    /// Creates a new [`EtherCrab`].
+impl<F: Fn(usize, Status) + Send + Sync + 'static> EtherCrab<F> {
+    /// Creates a new [`EtherCrab`]
     pub fn new(err_handler: F, option: impl Into<EtherCrabOptionFull>) -> Self {
-        Self::with_sleeper(err_handler, option, SpinSleeper::default())
-    }
-}
-
-impl<F: Fn(usize, Status) + Send + Sync + 'static, S: Sleep + Send + 'static> EtherCrab<F, S> {
-    /// Creates a new [`EtherCrab`] with a sleeper.
-    pub fn with_sleeper(
-        err_handler: F,
-        option: impl Into<EtherCrabOptionFull>,
-        sleeper: S,
-    ) -> Self {
         Self {
-            option: Some((err_handler, option.into(), sleeper)),
+            option: Some((err_handler, option.into())),
             inner: None,
             #[cfg(feature = "blocking")]
             runtime: None,
@@ -40,13 +25,10 @@ impl<F: Fn(usize, Status) + Send + Sync + 'static, S: Sleep + Send + 'static> Et
     }
 }
 
-impl<F: Fn(usize, Status) + Send + Sync + 'static, S: Sleep + Send + 'static> AsyncLink
-    for EtherCrab<F, S>
-{
+impl<F: Fn(usize, Status) + Send + Sync + 'static> AsyncLink for EtherCrab<F> {
     async fn open(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
-        if let Some((err_handler, option, sleeper)) = self.option.take() {
-            self.inner =
-                Some(EtherCrabHandler::open(err_handler, geometry, option, sleeper).await?);
+        if let Some((err_handler, option)) = self.option.take() {
+            self.inner = Some(EtherCrabHandler::open(err_handler, geometry, option).await?);
         }
         Ok(())
     }
@@ -97,9 +79,7 @@ use autd3_core::link::Link;
 
 #[cfg_attr(docsrs, doc(cfg(feature = "blocking")))]
 #[cfg(feature = "blocking")]
-impl<F: Fn(usize, Status) + Send + Sync + 'static, S: Sleep + Send + 'static> Link
-    for EtherCrab<F, S>
-{
+impl<F: Fn(usize, Status) + Send + Sync + 'static> Link for EtherCrab<F> {
     fn open(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()

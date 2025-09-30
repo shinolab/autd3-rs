@@ -15,11 +15,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }],
         EtherCrab::new(
             |idx, status| {
-                tracing::info!("Device[{idx}]: {status}");
+                eprintln!("Device[{idx}]: {status}");
             },
-            EtherCrabOption {
-                ..Default::default()
-            },
+            EtherCrabOption::default(),
         ),
     )?;
 
