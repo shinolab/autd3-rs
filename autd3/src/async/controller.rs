@@ -132,6 +132,16 @@ impl<L: AsyncLink, V: Driver> Controller<L, V> {
     }
 
     #[doc(hidden)]
+    pub const fn geometry(&self) -> &Geometry {
+        &self.geometry
+    }
+
+    #[doc(hidden)]
+    pub fn geometry_mut(&mut self) -> &mut Geometry {
+        &mut self.geometry
+    }
+
+    #[doc(hidden)]
     pub const fn driver(&self) -> &V {
         &self.driver
     }
@@ -371,7 +381,6 @@ mod tests {
 
     use super::*;
 
-    // GRCOV_EXCL_START
     pub async fn create_controller(
         dev_num: usize,
     ) -> Result<Controller<Audit<version::V12_1>, V12_1>, AUTDDriverError> {
@@ -381,13 +390,20 @@ mod tests {
         )
         .await
     }
-    // GRCOV_EXCL_STOP
 
     #[tokio::test]
     async fn deref_mut() -> Result<(), Box<dyn std::error::Error>> {
         let mut autd = create_controller(1).await?;
         assert_eq!(1, autd.len());
         autd.reconfigure(|dev| dev);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn geometry() -> Result<(), Box<dyn std::error::Error>> {
+        let mut autd = create_controller(1).await?;
+        assert_eq!(1, autd.geometry().len());
+        autd.geometry_mut().reconfigure(|dev| dev);
         Ok(())
     }
 
