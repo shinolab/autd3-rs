@@ -1,7 +1,25 @@
 # Changelog
 
 
-# 36.0.1 (2025-09-20)
+# 36.0.2 (2025-10-01)
+
+## 🚀 Features
+
+- Impl `PartialEq` and `Eq` for `EtherCrabOption`
+- Add `geometry` and `geometry_mut` to `Controller`
+
+## 🐛 Bug Fixes
+
+- Add `pcap_setmintocopy` to wpcap def
+- Re-export `RetryBehaviour`
+
+
+# 36.0.1 (2025-09-30)
+
+## 🚀 Features
+
+- Add `autd3-link-ethercrab`
+- Add `autd3-link-remote`
 
 ## 🐛 Bug Fixes
 
