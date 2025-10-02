@@ -128,6 +128,15 @@ impl core::iter::IntoIterator for Device {
     }
 }
 
+impl<'a> IntoIterator for &'a Device {
+    type Item = &'a Transducer;
+    type IntoIter = core::slice::Iter<'a, Transducer>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.transducers.iter()
+    }
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
@@ -147,6 +156,13 @@ pub(crate) mod tests {
     #[test]
     fn into_iter() {
         let device = create_device(249);
+        let mut count = 0;
+        for tr in &device {
+            assert_eq!(count, tr.idx());
+            count += 1;
+        }
+        assert_eq!(249, count);
+
         let mut count = 0;
         device.into_iter().for_each(|tr| {
             assert_eq!(count, tr.idx());
