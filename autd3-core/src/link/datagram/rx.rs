@@ -88,6 +88,13 @@ mod tests {
     }
 
     #[test]
+    fn ack_debug() {
+        let ack = Ack::new(0x05, 0x03);
+        let debug = alloc::format!("{:?}", ack);
+        assert_eq!("Ack { msg_id: 5, err: 3 }", debug);
+    }
+
+    #[test]
     fn rx_size() {
         assert_eq!(2, size_of::<RxMessage>());
         assert_eq!(0, offset_of!(RxMessage, data));
