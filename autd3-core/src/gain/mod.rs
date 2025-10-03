@@ -3,7 +3,7 @@ mod filter;
 
 use alloc::{boxed::Box, vec::Vec};
 pub use error::GainError;
-pub use filter::{DeviceTransducerMask, Mask, TransducerMask};
+pub use filter::{DeviceTransducerMask, TransducerMask};
 
 use crate::{
     datagram::DeviceMask,

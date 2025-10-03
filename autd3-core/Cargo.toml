@@ -23,7 +23,7 @@ datagram = ["common", "firmware", "geometry", "ethercat", "environment"]
 common = []
 derive = ["autd3-derive"]
 ethercat = ["time", "thiserror"]
-gain = ["common", "datagram", "geometry", "thiserror", "bit-vec", "environment", "firmware"]
+gain = ["common", "datagram", "geometry", "thiserror", "environment", "firmware"]
 geometry = ["nalgebra", "pastey", "common"]
 left_handed = []
 link = ["zerocopy", "ethercat", "datagram", "geometry"]
@@ -35,7 +35,6 @@ environment = ["num-traits"]
 
 [dependencies]
 autd3-derive = { workspace = true, optional = true }
-bit-vec = { version = "0.8.0", default-features = false, optional = true }
 nalgebra = { workspace = true, optional = true, features = ["libm"] }
 num-traits = { version = "0.2.19", default-features = false, features = ["libm"], optional = true }
 pastey = { workspace = true, optional = true }
