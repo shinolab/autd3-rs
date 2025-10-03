@@ -5,9 +5,6 @@ use crate::{
     geometry::{Device, Geometry, Transducer},
 };
 
-#[doc(hidden)]
-pub type Mask = bit_vec::BitVec<u32>;
-
 #[derive(Debug, Clone, PartialEq)]
 /// A mask that represents which Transducers are enabled in a Device.
 pub enum DeviceTransducerMask {
@@ -16,13 +13,13 @@ pub enum DeviceTransducerMask {
     /// All transducers are disabled.
     AllDisabled,
     /// A filtered mask where each bit represents whether the corresponding transducer is enabled.
-    Masked(Mask),
+    Masked(Vec<bool>),
 }
 
 impl DeviceTransducerMask {
     /// Creates a [`DeviceTransducerMask`] from an iterator.
     pub fn from_fn(dev: &Device, f: impl Fn(&Transducer) -> bool) -> Self {
-        Self::Masked(Mask::from_iter(dev.iter().map(f)))
+        Self::Masked(Vec::from_iter(dev.iter().map(f)))
     }
 
     /// Returns `true` if the transducers is enabled.
@@ -30,7 +27,7 @@ impl DeviceTransducerMask {
         match self {
             Self::AllEnabled => true,
             Self::AllDisabled => false,
-            Self::Masked(bit_vec) => bit_vec[tr.idx()],
+            Self::Masked(mask) => mask[tr.idx()],
         }
     }
 
@@ -46,7 +43,7 @@ impl DeviceTransducerMask {
         match self {
             Self::AllEnabled => dev.num_transducers(),
             Self::AllDisabled => 0,
-            Self::Masked(bit_vec) => bit_vec.count_ones() as _,
+            Self::Masked(mask) => mask.iter().filter(|b| **b).count(),
         }
     }
 }

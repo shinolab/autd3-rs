@@ -1,4 +1,4 @@
-use autd3_core::{derive::*, gain::Mask};
+use autd3_core::derive::*;
 
 use autd3_driver::geometry::{Device, Transducer};
 
@@ -77,7 +77,7 @@ where
         geometry: &'a Geometry,
         tr_filter: &TransducerMask,
     ) -> HashMap<K, TransducerMask> {
-        let mut filters: HashMap<K, HashMap<usize, Mask>> = HashMap::new();
+        let mut filters: HashMap<K, HashMap<usize, Vec<bool>>> = HashMap::new();
         geometry
             .iter()
             .filter(|dev| tr_filter.has_enabled(dev))
@@ -87,12 +87,12 @@ where
                         if let Some(v) = filters.get_mut(&key) {
                             match v.entry(dev.idx()) {
                                 Entry::Occupied(mut e) => {
-                                    e.get_mut().set(tr.idx(), true);
+                                    e.get_mut()[tr.idx()] = true;
                                 }
                                 Entry::Vacant(e) => {
-                                    e.insert(Mask::from_fn(dev.num_transducers(), |t| {
-                                        t == tr.idx()
-                                    }));
+                                    e.insert(
+                                        (0..dev.num_transducers()).map(|t| t == tr.idx()).collect(),
+                                    );
                                 }
                             }
                         } else {
@@ -100,7 +100,7 @@ where
                                 key,
                                 [(
                                     dev.idx(),
-                                    Mask::from_fn(dev.num_transducers(), |t| t == tr.idx()),
+                                    (0..dev.num_transducers()).map(|t| t == tr.idx()).collect(),
                                 )]
                                 .into(),
                             );
