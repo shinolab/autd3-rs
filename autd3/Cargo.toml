@@ -36,7 +36,6 @@ autd3-firmware-emulator-v11 = { version = "=33.0.0", package = "autd3-firmware-e
 autd3-firmware-emulator-v12 = { version = "=34.0.0", package = "autd3-firmware-emulator", optional = true }
 itertools = { workspace = true, optional = true }
 num = { version = "0.4.3", default-features = false, optional = true }
-smallvec = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"], optional = true }
 
 [dev-dependencies]
