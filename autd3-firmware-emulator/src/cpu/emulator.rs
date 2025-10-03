@@ -140,12 +140,7 @@ impl CPUEmulator {
 
     #[must_use]
     pub const fn rx(&self) -> RxMessage {
-        RxMessage::new(
-            self.rx_data,
-            Ack::new()
-                .with_err(self.err)
-                .with_msg_id(self.last_msg_id.get() & 0x0F),
-        )
+        RxMessage::new(self.rx_data, Ack::new(self.last_msg_id.get(), self.err))
     }
 
     pub fn send(&mut self, tx: &[TxMessage]) {

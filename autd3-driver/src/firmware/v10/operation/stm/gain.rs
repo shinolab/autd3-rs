@@ -45,17 +45,25 @@ struct PhaseFull {
     phase_1: u8,
 }
 
-#[bitfield_struct::bitfield(u16)]
 #[derive(IntoBytes, Immutable, FromBytes, KnownLayout)]
-struct PhaseHalf {
-    #[bits(4)]
-    phase_0: u8,
-    #[bits(4)]
-    phase_1: u8,
-    #[bits(4)]
-    phase_2: u8,
-    #[bits(4)]
-    phase_3: u8,
+struct PhaseHalf(u16);
+
+impl PhaseHalf {
+    const fn set_phase_0(&mut self, phase: u8) {
+        self.0 = (self.0 & !0x000F) | ((phase as u16) & 0x000F);
+    }
+
+    const fn set_phase_1(&mut self, phase: u8) {
+        self.0 = (self.0 & !0x00F0) | (((phase as u16) << 4) & 0x00F0);
+    }
+
+    const fn set_phase_2(&mut self, phase: u8) {
+        self.0 = (self.0 & !0x0F00) | (((phase as u16) << 8) & 0x0F00);
+    }
+
+    const fn set_phase_3(&mut self, phase: u8) {
+        self.0 = (self.0 & !0xF000) | (((phase as u16) << 12) & 0xF000);
+    }
 }
 
 #[repr(C, align(2))]

@@ -14,18 +14,19 @@ use autd3_core::{firmware::GPIOOut, geometry::Device};
 
 use zerocopy::{Immutable, IntoBytes};
 
-#[bitfield_struct::bitfield(u64)]
-#[derive(IntoBytes, Immutable)]
-pub struct GPIOOutValue {
-    #[bits(56)]
-    pub(crate) value: u64,
-    #[bits(8)]
-    pub(crate) tag: u8,
+#[allow(dead_code)]
+#[derive(IntoBytes, Immutable, Clone, Copy)]
+pub struct GPIOOutValue(u64);
+
+impl GPIOOutValue {
+    pub const fn new(value: u64, tag: u8) -> Self {
+        Self((value & 0x00FFFFFFFFFFFFFF) | (tag as u64 & 0xFF) << 56)
+    }
 }
 
 fn convert(ty: Option<GPIOOutputType<'_>>) -> Result<GPIOOutValue, AUTDDriverError> {
-    Ok(GPIOOutValue::new()
-        .with_value(match ty {
+    Ok(GPIOOutValue::new(
+        match ty {
             None
             | Some(GPIOOutputType::BaseSignal)
             | Some(GPIOOutputType::Thermo)
@@ -45,8 +46,8 @@ fn convert(ty: Option<GPIOOutputType<'_>>) -> Result<GPIOOutValue, AUTDDriverErr
                     "SyncDiff is supported from v12".to_string(),
                 ));
             }
-        })
-        .with_tag(match ty {
+        },
+        match ty {
             Some(GPIOOutputType::BaseSignal) => 0x01,
             Some(GPIOOutputType::Thermo) => 0x02,
             Some(GPIOOutputType::ForceFan) => 0x03,
@@ -60,7 +61,8 @@ fn convert(ty: Option<GPIOOutputType<'_>>) -> Result<GPIOOutValue, AUTDDriverErr
             Some(GPIOOutputType::PwmOut(_)) => 0xE0,
             Some(GPIOOutputType::Direct(_)) => 0xF0,
             _ => 0x00,
-        }))
+        },
+    ))
 }
 
 #[repr(C, align(2))]
@@ -145,18 +147,10 @@ mod tests {
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let mut op = GPIOOutputsOp::new([
-            Ok(GPIOOutValue::new()
-                .with_tag(0x01)
-                .with_value(0x02030405060708)),
-            Ok(GPIOOutValue::new()
-                .with_tag(0x11)
-                .with_value(0x12131415161718)),
-            Ok(GPIOOutValue::new()
-                .with_tag(0x10)
-                .with_value(0x20304050607080)),
-            Ok(GPIOOutValue::new()
-                .with_tag(0x11)
-                .with_value(0x21314151617181)),
+            Ok(GPIOOutValue::new(0x02030405060708, 0x01)),
+            Ok(GPIOOutValue::new(0x12131415161718, 0x11)),
+            Ok(GPIOOutValue::new(0x20304050607080, 0x10)),
+            Ok(GPIOOutValue::new(0x21314151617181, 0x11)),
         ]);
 
         assert_eq!(size_of::<GPIOOutputMsg>(), op.required_size(&device));

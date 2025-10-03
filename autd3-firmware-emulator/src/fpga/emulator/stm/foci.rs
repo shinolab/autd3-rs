@@ -2,18 +2,39 @@ use autd3_core::firmware::{Drive, Intensity, Phase, Segment};
 
 use super::super::{super::params::*, FPGAEmulator};
 
-#[bitfield_struct::bitfield(u64)]
-struct STMFocus {
-    #[bits(18)]
-    pub x: i32,
-    #[bits(18)]
-    pub y: i32,
-    #[bits(18)]
-    pub z: i32,
-    #[bits(8)]
-    pub intensity: u8,
-    #[bits(2)]
-    __: u8,
+pub struct STMFocus(u64);
+
+impl STMFocus {
+    fn x(&self) -> i32 {
+        let x = (self.0 & 0x3_FFFF) as u32;
+        if x & 0x2_0000 != 0 {
+            (x | 0xFFFC_0000) as i32
+        } else {
+            x as i32
+        }
+    }
+
+    fn y(&self) -> i32 {
+        let y = ((self.0 >> 18) & 0x3_FFFF) as u32;
+        if y & 0x2_0000 != 0 {
+            (y | 0xFFFC_0000) as i32
+        } else {
+            y as i32
+        }
+    }
+
+    fn z(&self) -> i32 {
+        let z = ((self.0 >> 36) & 0x3_FFFF) as u32;
+        if z & 0x2_0000 != 0 {
+            (z | 0xFFFC_0000) as i32
+        } else {
+            z as i32
+        }
+    }
+
+    fn intensity(&self) -> u8 {
+        ((self.0 >> 54) & 0xFF) as u8
+    }
 }
 
 impl FPGAEmulator {

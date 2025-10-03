@@ -16,7 +16,6 @@ thread-safe = []
 [dependencies]
 autd3-core = { workspace = true }
 autd3-driver = { workspace = true }
-bitfield-struct = { workspace = true }
 zerocopy = { workspace = true }
 
 [dev-dependencies]

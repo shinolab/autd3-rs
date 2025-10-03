@@ -225,9 +225,8 @@ mod tests {
             if !self.down {
                 self.recv_cnt += 1;
             }
-            rx.iter_mut().for_each(|r| {
-                *r = RxMessage::new(r.data(), Ack::new().with_msg_id(self.recv_cnt as u8))
-            });
+            rx.iter_mut()
+                .for_each(|r| *r = RxMessage::new(r.data(), Ack::new(self.recv_cnt as u8, 0x00)));
 
             Ok(())
         }
@@ -308,7 +307,7 @@ mod tests {
         let mut link = MockLink::default();
         let mut geometry = crate::autd3_device::tests::create_geometry(1);
         let mut sent_flags = vec![true; 1];
-        let mut rx = vec![RxMessage::new(0, Ack::new())];
+        let mut rx = vec![RxMessage::new(0, Ack::new(0x00, 0x00))];
         let mut msg_id = MsgId::new(1);
 
         assert!(link.open(&geometry).is_ok());
