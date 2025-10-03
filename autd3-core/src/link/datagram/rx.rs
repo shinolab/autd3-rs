@@ -1,13 +1,42 @@
 use zerocopy::{FromBytes, Immutable, IntoBytes};
 
 /// Acknowledgement structure for received messages
-#[bitfield_struct::bitfield(u8)]
-#[derive(IntoBytes, Immutable, FromBytes, PartialEq, Eq)]
-pub struct Ack {
-    #[bits(4)]
-    pub msg_id: u8,
-    #[bits(4)]
-    pub err: u8,
+#[derive(IntoBytes, Immutable, FromBytes, PartialEq, Eq, Copy, Clone)]
+pub struct Ack(u8);
+
+impl Ack {
+    #[doc(hidden)]
+    #[must_use]
+    pub const fn new(msg_id: u8, err: u8) -> Self {
+        Self((err & 0x0F) << 4 | (msg_id & 0x0F))
+    }
+
+    #[must_use]
+    /// Returns the message ID.
+    pub const fn msg_id(&self) -> u8 {
+        self.0 & 0x0F
+    }
+
+    #[must_use]
+    /// Returns the error code.
+    pub const fn err(&self) -> u8 {
+        (self.0 >> 4) & 0x0F
+    }
+
+    #[doc(hidden)]
+    #[must_use]
+    pub const fn bits(self) -> u8 {
+        self.0
+    }
+}
+
+impl core::fmt::Debug for Ack {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Ack")
+            .field("msg_id", &self.msg_id())
+            .field("err", &self.err())
+            .finish()
+    }
 }
 
 /// PDO input data representation
@@ -44,6 +73,26 @@ mod tests {
     use core::mem::size_of;
 
     use super::*;
+
+    #[test]
+    fn ack_size() {
+        assert_eq!(1, size_of::<Ack>());
+    }
+
+    #[test]
+    fn ack_bitfield() {
+        let ack = Ack::new(0x05, 0x03);
+        assert_eq!(5, ack.msg_id());
+        assert_eq!(3, ack.err());
+        assert_eq!(0x35, ack.0);
+    }
+
+    #[test]
+    fn ack_debug() {
+        let ack = Ack::new(0x05, 0x03);
+        let debug = alloc::format!("{:?}", ack);
+        assert_eq!("Ack { msg_id: 5, err: 3 }", debug);
+    }
 
     #[test]
     fn rx_size() {

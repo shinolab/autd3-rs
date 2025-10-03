@@ -13,7 +13,7 @@ const INVALID_TRANSITION_MODE: u8 = 0x8F;
 
 #[doc(hidden)]
 pub const fn check_firmware_err(ack: Ack) -> Result<(), AUTDDriverError> {
-    let ack = ack.into_bits();
+    let ack = ack.bits();
     if ack & 0x80 == 0x00 {
         return Ok(());
     }
@@ -37,9 +37,7 @@ mod tests {
 
     #[test]
     fn unknown_firmware_err() {
-        let err = check_firmware_err(Ack::new().with_msg_id(0x0F).with_err(0x0F))
-            .err()
-            .unwrap();
+        let err = check_firmware_err(Ack::new(0x0F, 0x0F)).err().unwrap();
         assert!(err.source().is_none());
         assert_eq!(format!("{err}"), "Unknown firmware error: 255");
         assert_eq!(format!("{err:?}"), "UnknownFirmwareError(255)");

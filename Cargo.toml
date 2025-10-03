@@ -40,7 +40,6 @@ autd3-link-simulator = { path = "./autd3-link-simulator", version = "36.0.2", de
 autd3-link-twincat = { path = "./autd3-link-twincat", version = "36.0.2", default-features = false }
 autd3-modulation-audio-file = { path = "./autd3-modulation-audio-file", version = "36.0.2", default-features = false }
 autd3-protobuf = { path = "./autd3-protobuf", version = "36.0.2", default-features = false }
-bitfield-struct = { version = "0.11.0", default-features = false }
 itertools = { version = "0.14.0", default-features = false }
 nalgebra = { version = "0.34.1", default-features = false }
 pastey = { version = "0.1.1", default-features = false }

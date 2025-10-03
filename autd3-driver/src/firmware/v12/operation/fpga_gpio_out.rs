@@ -8,8 +8,8 @@ use crate::{
 use autd3_core::{firmware::GPIOOut, geometry::Device};
 
 fn convert(ty: Option<GPIOOutputType<'_>>) -> crate::firmware::v11::operation::GPIOOutValue {
-    crate::firmware::v11::operation::GPIOOutValue::new()
-        .with_value(match &ty {
+    crate::firmware::v11::operation::GPIOOutValue::new(
+        match &ty {
             None
             | Some(GPIOOutputType::BaseSignal)
             | Some(GPIOOutputType::Thermo)
@@ -25,8 +25,8 @@ fn convert(ty: Option<GPIOOutputType<'_>>) -> crate::firmware::v11::operation::G
                 crate::firmware::v12::fpga::ec_time_to_sys_time(time) >> 9
             }
             Some(GPIOOutputType::Direct(v)) => *v as _,
-        })
-        .with_tag(match &ty {
+        },
+        match &ty {
             None => 0x00,
             Some(GPIOOutputType::BaseSignal) => 0x01,
             Some(GPIOOutputType::Thermo) => 0x02,
@@ -41,7 +41,8 @@ fn convert(ty: Option<GPIOOutputType<'_>>) -> crate::firmware::v11::operation::G
             Some(GPIOOutputType::SyncDiff) => 0x70,
             Some(GPIOOutputType::PwmOut(_)) => 0xE0,
             Some(GPIOOutputType::Direct(_)) => 0xF0,
-        })
+        },
+    )
 }
 
 impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator<'_>

@@ -85,7 +85,7 @@ impl<L: Link, V: Driver> Controller<L, V> {
 
         let mut msg_id = MsgId::new(0);
         let mut sent_flags = smallvec::smallvec![false; geometry.len()];
-        let mut rx_buf = vec![RxMessage::new(0, Ack::new()); geometry.len()];
+        let mut rx_buf = vec![RxMessage::new(0, Ack::new(0x00, 0x00)); geometry.len()];
 
         let mut driver = V::new();
         driver.detect_version(

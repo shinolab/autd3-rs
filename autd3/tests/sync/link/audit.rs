@@ -37,13 +37,19 @@ fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
         assert!(autd.send(ReadsFPGAState::new(|_| true)).is_ok());
         autd.link_mut()[0].update();
         assert_eq!(
-            vec![FPGAState::from_rx(&RxMessage::new(0x88, Ack::new()))],
+            vec![FPGAState::from_rx(&RxMessage::new(
+                0x88,
+                Ack::new(0x00, 0x00)
+            ))],
             autd.fpga_state()?
         );
         autd.link_mut()[0].fpga_mut().assert_thermal_sensor();
         autd.link_mut()[0].update();
         assert_eq!(
-            vec![FPGAState::from_rx(&RxMessage::new(0x89, Ack::new()))],
+            vec![FPGAState::from_rx(&RxMessage::new(
+                0x89,
+                Ack::new(0x00, 0x00)
+            ))],
             autd.fpga_state()?
         );
     }

@@ -29,7 +29,7 @@ mod tests {
     #[test]
     fn test_rx_message() {
         let rx = (0..10)
-            .map(|i| autd3_core::link::RxMessage::new(i, Ack::new().with_err(0).with_msg_id(i)))
+            .map(|i| autd3_core::link::RxMessage::new(i, Ack::new(i, 0)))
             .collect::<Vec<_>>();
         let msg: RxMessage = rx.clone().into();
         assert_eq!(

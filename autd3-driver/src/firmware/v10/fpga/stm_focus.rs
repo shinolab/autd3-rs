@@ -4,19 +4,18 @@ use super::*;
 use autd3_core::firmware::FirmwareLimits;
 use zerocopy::{Immutable, IntoBytes};
 
-#[bitfield_struct::bitfield(u64)]
+#[allow(dead_code)]
 #[derive(IntoBytes, Immutable)]
-pub(crate) struct STMFocus {
-    #[bits(18)]
-    pub x: i32,
-    #[bits(18)]
-    pub y: i32,
-    #[bits(18)]
-    pub z: i32,
-    #[bits(8)]
-    pub intensity: u8,
-    #[bits(2)]
-    __: u8,
+pub(crate) struct STMFocus(u64);
+
+impl STMFocus {
+    const fn new(x: i32, y: i32, z: i32, intensity: u8) -> Self {
+        let x = x as u64 & 0x3_FFFF;
+        let y = (y as u64 & 0x3_FFFF) << 18;
+        let z = (z as u64 & 0x3_FFFF) << 36;
+        let intensity = (intensity as u64 & 0xFF) << 54;
+        Self(x | y | z | intensity)
+    }
 }
 
 impl STMFocus {
@@ -46,11 +45,7 @@ impl STMFocus {
             ));
         }
 
-        Ok(Self::new()
-            .with_x(ix)
-            .with_y(iy)
-            .with_z(iz)
-            .with_intensity(intensity_or_offset))
+        Ok(Self::new(ix, iy, iz, intensity_or_offset))
     }
 }
 
@@ -67,14 +62,18 @@ mod tests {
 
     #[test]
     fn bitfield() {
-        let mut f = STMFocus::new();
-        f.set_x(0b11111111111111_111111111111111111u32 as i32);
+        let f = STMFocus::new(0b11111111111111_111111111111111111u32 as i32, 0, 0, 0);
         assert_eq!(
             &[0b11111111, 0b11111111, 0b11, 0x00, 0x00, 0x00, 0x00, 0x00],
             f.as_bytes()
         );
 
-        f.set_y(0b010101010101010101);
+        let f = STMFocus::new(
+            0b11111111111111_111111111111111111u32 as i32,
+            0b010101010101010101,
+            0,
+            0,
+        );
         assert_eq!(
             &[
                 0b11111111, 0b11111111, 0b01010111, 0b01010101, 0b0101, 0x00, 0x00, 0x00
@@ -82,7 +81,12 @@ mod tests {
             f.as_bytes()
         );
 
-        f.set_z(0b11111111111111_101010101010101010u32 as i32);
+        let f = STMFocus::new(
+            0b11111111111111_111111111111111111u32 as i32,
+            0b010101010101010101,
+            0b11111111111111_101010101010101010u32 as i32,
+            0,
+        );
         assert_eq!(
             &[
                 0b11111111, 0b11111111, 0b01010111, 0b01010101, 0b10100101, 0b10101010, 0b101010,
@@ -91,7 +95,12 @@ mod tests {
             f.as_bytes()
         );
 
-        f.set_intensity(0xFF);
+        let f = STMFocus::new(
+            0b11111111111111_111111111111111111u32 as i32,
+            0b010101010101010101,
+            0b11111111111111_101010101010101010u32 as i32,
+            0xFF,
+        );
         assert_eq!(
             &[
                 0b11111111, 0b11111111, 0b01010111, 0b01010101, 0b10100101, 0b10101010, 0b11101010,
@@ -136,11 +145,6 @@ mod tests {
             &limits,
         );
         assert!(p.is_ok());
-        let p = p.unwrap();
-        assert_eq!({ x }, p.x());
-        assert_eq!({ y }, p.y());
-        assert_eq!({ z }, p.z());
-        assert_eq!(intensity, p.intensity());
     }
 
     #[rstest::rstest]
@@ -156,12 +160,6 @@ mod tests {
                 &limits,
             );
             assert_eq!(expect, p.is_ok());
-            if expect {
-                let p = p.unwrap();
-                assert_eq!({ x }, p.x());
-                assert_eq!({ y }, p.y());
-                assert_eq!({ z }, p.z());
-            }
         };
 
         check(
