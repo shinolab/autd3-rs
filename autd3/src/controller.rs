@@ -25,7 +25,7 @@ pub struct Controller<L: Link, V: Driver> {
     /// THe environment where the devices are placed.
     pub environment: Environment,
     msg_id: MsgId,
-    sent_flags: smallvec::SmallVec<[bool; 32]>,
+    sent_flags: Vec<bool>,
     rx_buf: Vec<RxMessage>,
     /// The default sender option used for [`send`](Controller::send).
     pub default_sender_option: SenderOption,
@@ -84,7 +84,7 @@ impl<L: Link, V: Driver> Controller<L, V> {
         link.open(&geometry)?;
 
         let mut msg_id = MsgId::new(0);
-        let mut sent_flags = smallvec::smallvec![false; geometry.len()];
+        let mut sent_flags = vec![false; geometry.len()];
         let mut rx_buf = vec![RxMessage::new(0, Ack::new(0x00, 0x00)); geometry.len()];
 
         let mut driver = V::new();
