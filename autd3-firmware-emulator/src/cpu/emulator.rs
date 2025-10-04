@@ -75,7 +75,7 @@ impl CPUEmulator {
             min_freq_div_intensity: 10,
             min_freq_div_phase: 40,
             is_rx_data_used: false,
-            dc_sys_time: DcSysTime::now(),
+            dc_sys_time: DcSysTime::ZERO,
             stm_rep: [0xFFFF, 0xFFFF],
             mod_rep: [0xFFFF, 0xFFFF],
             port_a_podr: 0x00,
@@ -157,6 +157,7 @@ impl CPUEmulator {
         }
     }
 
+    #[cfg(feature = "time")]
     pub fn update(&mut self) {
         self.update_with_sys_time(DcSysTime::now());
     }
@@ -329,7 +330,7 @@ mod tests {
     fn dc_sys_time() {
         let mut cpu = CPUEmulator::new(0, 249);
 
-        let sys_time = DcSysTime::now() + std::time::Duration::from_nanos(1111);
+        let sys_time = DcSysTime::ZERO + std::time::Duration::from_nanos(1111);
         cpu.update_with_sys_time(sys_time);
         assert_eq!(sys_time, cpu.dc_sys_time());
     }

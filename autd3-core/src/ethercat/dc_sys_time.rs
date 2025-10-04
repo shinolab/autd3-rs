@@ -1,11 +1,9 @@
-use time::OffsetDateTime;
-
-use thiserror::Error;
-
-#[derive(Error, Debug, PartialEq, Clone)]
+#[cfg(feature = "time")]
+#[derive(thiserror::Error, Debug, PartialEq, Clone)]
 #[error("Invalid date time")]
 pub struct InvalidDateTime;
 
+#[cfg(feature = "time")]
 use super::ECAT_DC_SYS_TIME_BASE;
 
 /// The system time of the Distributed Clock
@@ -31,12 +29,14 @@ impl DcSysTime {
 
     /// Converts the system time to the UTC time
     #[must_use]
-    pub fn to_utc(&self) -> OffsetDateTime {
+    #[cfg(feature = "time")]
+    pub fn to_utc(&self) -> time::OffsetDateTime {
         ECAT_DC_SYS_TIME_BASE + core::time::Duration::from_nanos(self.dc_sys_time)
     }
 
     /// Creates a new instance from the UTC time
-    pub fn from_utc(utc: OffsetDateTime) -> Result<Self, InvalidDateTime> {
+    #[cfg(feature = "time")]
+    pub fn from_utc(utc: time::OffsetDateTime) -> Result<Self, InvalidDateTime> {
         Ok(Self {
             dc_sys_time: u64::try_from((utc - ECAT_DC_SYS_TIME_BASE).whole_nanoseconds())
                 .map_err(|_| InvalidDateTime)?,
@@ -45,9 +45,9 @@ impl DcSysTime {
 
     /// Returns the system time of now
     #[must_use]
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "time", feature = "std"))]
     pub fn now() -> Self {
-        Self::from_utc(OffsetDateTime::now_utc()).unwrap()
+        Self::from_utc(time::OffsetDateTime::now_utc()).unwrap()
     }
 }
 
@@ -73,31 +73,39 @@ impl core::ops::Sub<core::time::Duration> for DcSysTime {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "time")]
     use super::*;
 
+    #[cfg(feature = "time")]
     #[test]
     fn now_dc_sys_time() {
         let t = DcSysTime::now();
         assert!(t.sys_time() > 0);
     }
 
+    #[cfg(feature = "time")]
     #[rstest::rstest]
     #[case(Ok(DcSysTime { dc_sys_time: 0 }), time::macros::datetime!(2000-01-01 0:0:0 UTC))]
     #[case(Ok(DcSysTime { dc_sys_time: 1000000000 }), time::macros::datetime!(2000-01-01 0:0:1 UTC))]
     #[case(Ok(DcSysTime { dc_sys_time: 31622400000000000 }), time::macros::datetime!(2001-01-01 0:0:0 UTC))]
     #[case(Err(InvalidDateTime), time::macros::datetime!(1999-01-01 0:0:1 UTC))]
     #[case(Err(InvalidDateTime), time::macros::datetime!(9999-01-01 0:0:1 UTC))]
-    fn from_utc(#[case] expect: Result<DcSysTime, InvalidDateTime>, #[case] utc: OffsetDateTime) {
+    fn from_utc(
+        #[case] expect: Result<DcSysTime, InvalidDateTime>,
+        #[case] utc: time::OffsetDateTime,
+    ) {
         assert_eq!(expect, DcSysTime::from_utc(utc));
     }
 
+    #[cfg(feature = "time")]
     #[rstest::rstest]
     #[case(time::macros::datetime!(2000-01-01 0:0:1 UTC))]
     #[case(time::macros::datetime!(2001-01-01 0:0:0 UTC))]
-    fn to_utc(#[case] utc: OffsetDateTime) {
+    fn to_utc(#[case] utc: time::OffsetDateTime) {
         assert_eq!(utc, DcSysTime::from_utc(utc).unwrap().to_utc());
     }
 
+    #[cfg(feature = "time")]
     #[test]
     fn add_sub() {
         let utc = time::macros::datetime!(2000-01-01 0:0:0 UTC);

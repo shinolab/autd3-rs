@@ -12,6 +12,7 @@ repository = { workspace = true }
 [features]
 default = []
 thread-safe = []
+time = ["autd3-core/time"]
 
 [dependencies]
 autd3-core = { workspace = true }

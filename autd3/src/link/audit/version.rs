@@ -1,6 +1,9 @@
 use crate::link::AuditOption;
 
-use autd3_core::link::{RxMessage, TxMessage};
+use autd3_core::{
+    ethercat::DcSysTime,
+    link::{RxMessage, TxMessage},
+};
 
 pub use autd3_firmware_emulator::CPUEmulator as V12_1;
 #[cfg(feature = "link-audit-v10")]
@@ -37,7 +40,7 @@ impl Emulator for V12_1 {
     }
 
     fn update(&mut self) {
-        V12_1::update(self);
+        V12_1::update_with_sys_time(self, DcSysTime::ZERO);
     }
 
     fn rx(&self) -> RxMessage {
@@ -60,8 +63,9 @@ impl Emulator for V12 {
         V12::send(self, unsafe { std::mem::transmute(tx) })
     }
 
+    #[allow(clippy::missing_transmute_annotations)]
     fn update(&mut self) {
-        V12::update(self);
+        V12::update_with_sys_time(self, unsafe { std::mem::transmute(DcSysTime::ZERO) });
     }
 
     fn rx(&self) -> RxMessage {
@@ -84,8 +88,9 @@ impl Emulator for V11 {
         V11::send(self, unsafe { std::mem::transmute(tx) })
     }
 
+    #[allow(clippy::missing_transmute_annotations)]
     fn update(&mut self) {
-        V11::update(self);
+        V11::update_with_sys_time(self, unsafe { std::mem::transmute(DcSysTime::ZERO) });
     }
 
     fn rx(&self) -> RxMessage {
@@ -108,8 +113,9 @@ impl Emulator for V10 {
         V10::send(self, unsafe { std::mem::transmute(tx) })
     }
 
+    #[allow(clippy::missing_transmute_annotations)]
     fn update(&mut self) {
-        V10::update(self);
+        V10::update_with_sys_time(self, unsafe { std::mem::transmute(DcSysTime::ZERO) });
     }
 
     fn rx(&self) -> RxMessage {
