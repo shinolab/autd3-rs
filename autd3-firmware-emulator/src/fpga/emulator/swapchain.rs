@@ -46,7 +46,7 @@ impl<const SET: u16> Swapchain<SET> {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            sys_time: DcSysTime::now(),
+            sys_time: DcSysTime::ZERO,
             fpga_clk_freq: FPGA_MAIN_CLK_FREQ * Hz,
             rep: 0,
             freq_div: [(Segment::S0, 10u16), (Segment::S1, 10u16)]

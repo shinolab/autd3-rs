@@ -76,6 +76,7 @@ impl FPGAEmulator {
     }
 
     // GRCOV_EXCL_START
+    #[cfg(feature = "time")]
     pub fn update(&mut self) {
         self.update_with_sys_time(DcSysTime::now());
     }

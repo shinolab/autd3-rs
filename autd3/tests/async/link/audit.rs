@@ -38,7 +38,7 @@ async fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
     {
         assert_eq!(vec![None], autd.fpga_state().await?);
         assert!(autd.send(ReadsFPGAState::new(|_| true)).await.is_ok());
-        autd.link_mut()[0].update();
+        autd.link_mut()[0].update_with_sys_time(DcSysTime::ZERO);
         assert_eq!(
             vec![FPGAState::from_rx(&RxMessage::new(
                 0x88,
@@ -47,7 +47,7 @@ async fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
             autd.fpga_state().await?
         );
         autd.link_mut()[0].fpga_mut().assert_thermal_sensor();
-        autd.link_mut()[0].update();
+        autd.link_mut()[0].update_with_sys_time(DcSysTime::ZERO);
         assert_eq!(
             vec![FPGAState::from_rx(&RxMessage::new(
                 0x89,

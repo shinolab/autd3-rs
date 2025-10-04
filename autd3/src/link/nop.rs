@@ -1,4 +1,5 @@
 use autd3_core::{
+    ethercat::DcSysTime,
     geometry::Geometry,
     link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
 };
@@ -57,7 +58,7 @@ impl Link for Nop {
 
     fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         self.cpus.iter_mut().for_each(|cpu| {
-            cpu.update();
+            cpu.update_with_sys_time(DcSysTime::ZERO);
             rx[cpu.idx()] = cpu.rx();
         });
         Ok(())

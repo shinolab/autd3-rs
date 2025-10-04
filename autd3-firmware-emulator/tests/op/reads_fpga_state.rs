@@ -1,4 +1,5 @@
 use autd3_core::{
+    ethercat::DcSysTime,
     firmware::{SamplingConfig, Segment, transition_mode::Immediate},
     link::{MsgId, TxMessage},
 };
@@ -33,7 +34,7 @@ fn send_reads_fpga_state_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(0, cpu.rx().data());
 
     cpu.fpga_mut().assert_thermal_sensor();
-    cpu.update();
+    cpu.update_with_sys_time(DcSysTime::ZERO);
     let state = fpga_state(&cpu);
     assert!(state.is_thermal_assert());
     assert!(state.is_gain_mode());
@@ -43,7 +44,7 @@ fn send_reads_fpga_state_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(Segment::S0, state.current_mod_segment());
 
     cpu.fpga_mut().deassert_thermal_sensor();
-    cpu.update();
+    cpu.update_with_sys_time(DcSysTime::ZERO);
     let state = fpga_state(&cpu);
     assert!(!state.is_thermal_assert());
     assert!(state.is_gain_mode());
@@ -81,7 +82,7 @@ fn send_reads_fpga_state_unsafe() -> Result<(), Box<dyn std::error::Error>> {
             send(&mut msg_id, &mut cpu, d, &mut geometry, &mut tx)
         );
     }
-    cpu.update();
+    cpu.update_with_sys_time(DcSysTime::ZERO);
     let state = fpga_state(&cpu);
     assert!(!state.is_thermal_assert());
     assert!(!state.is_gain_mode());
