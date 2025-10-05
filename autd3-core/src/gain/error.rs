@@ -1,12 +1,18 @@
 use alloc::string::{String, ToString};
-use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq, Clone)]
-#[error("{msg}")]
+#[derive(Debug, PartialEq, Clone)]
 /// An error occurred during gain calculation.
 pub struct GainError {
     msg: String,
 }
+
+impl core::fmt::Display for GainError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.msg)
+    }
+}
+
+impl core::error::Error for GainError {}
 
 impl GainError {
     /// Creates a new [`GainError`].

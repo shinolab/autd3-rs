@@ -1,24 +1,85 @@
 use std::num::ParseIntError;
 
 use autd3_core::{firmware::SamplingConfigError, modulation::ModulationError};
-use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum AudioFileError {
-    #[error("{0}")]
-    Io(#[from] std::io::Error),
-    #[error("{0}")]
-    Parse(#[from] ParseIntError),
+    Io(std::io::Error),
+    Parse(ParseIntError),
     #[cfg(feature = "wav")]
-    #[error("{0}")]
-    Wav(#[from] hound::Error),
+    Wav(hound::Error),
     #[cfg(feature = "csv")]
-    #[error("{0}")]
-    Csv(#[from] csv::Error),
-    #[error("{0}")]
-    SamplingConfig(#[from] SamplingConfigError),
-    #[error("{0}")]
-    Modulation(#[from] ModulationError),
+    Csv(csv::Error),
+    SamplingConfig(SamplingConfigError),
+    Modulation(ModulationError),
+}
+
+impl std::fmt::Display for AudioFileError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AudioFileError::Io(e) => write!(f, "{}", e),
+            AudioFileError::Parse(e) => write!(f, "{}", e),
+            #[cfg(feature = "wav")]
+            AudioFileError::Wav(e) => write!(f, "{}", e),
+            #[cfg(feature = "csv")]
+            AudioFileError::Csv(e) => write!(f, "{}", e),
+            AudioFileError::SamplingConfig(e) => write!(f, "{}", e),
+            AudioFileError::Modulation(e) => write!(f, "{}", e),
+        }
+    }
+}
+
+impl std::error::Error for AudioFileError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            AudioFileError::Io(e) => Some(e),
+            AudioFileError::Parse(e) => Some(e),
+            #[cfg(feature = "wav")]
+            AudioFileError::Wav(e) => Some(e),
+            #[cfg(feature = "csv")]
+            AudioFileError::Csv(e) => Some(e),
+            AudioFileError::SamplingConfig(e) => Some(e),
+            AudioFileError::Modulation(e) => Some(e),
+        }
+    }
+}
+
+impl From<std::io::Error> for AudioFileError {
+    fn from(e: std::io::Error) -> Self {
+        AudioFileError::Io(e)
+    }
+}
+
+impl From<ParseIntError> for AudioFileError {
+    fn from(e: ParseIntError) -> Self {
+        AudioFileError::Parse(e)
+    }
+}
+
+#[cfg(feature = "wav")]
+impl From<hound::Error> for AudioFileError {
+    fn from(e: hound::Error) -> Self {
+        AudioFileError::Wav(e)
+    }
+}
+
+#[cfg(feature = "csv")]
+impl From<csv::Error> for AudioFileError {
+    fn from(e: csv::Error) -> Self {
+        AudioFileError::Csv(e)
+    }
+}
+
+impl From<SamplingConfigError> for AudioFileError {
+    fn from(e: SamplingConfigError) -> Self {
+        AudioFileError::SamplingConfig(e)
+    }
+}
+
+impl From<ModulationError> for AudioFileError {
+    fn from(e: ModulationError) -> Self {
+        AudioFileError::Modulation(e)
+    }
 }
 
 // GRCOV_EXCL_START

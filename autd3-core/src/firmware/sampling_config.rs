@@ -8,33 +8,76 @@ use crate::{
     utils::float::is_integer,
 };
 
-use thiserror::Error;
-
-#[derive(Error, Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 /// An error produced by the sampling configuration.
 pub enum SamplingConfigError {
     /// Invalid sampling divide.
-    #[error("Sampling divide must not be zero")]
     DivideInvalid,
     /// Invalid sampling frequency.
-    #[error("Sampling frequency ({0:?}) must divide the ultrasound frequency")]
     FreqInvalid(Freq<u32>),
     /// Invalid sampling frequency.
-    #[error("Sampling frequency ({0:?}) must divide the ultrasound frequency")]
     FreqInvalidF(Freq<f32>),
     /// Invalid sampling period.
-    #[error("Sampling period ({0:?}) must be a multiple of the ultrasound period")]
     PeriodInvalid(Duration),
     /// Sampling frequency is out of range.
-    #[error("Sampling frequency ({0:?}) is out of range ([{1:?}, {2:?}])")]
     FreqOutOfRange(Freq<u32>, Freq<u32>, Freq<u32>),
     /// Sampling frequency is out of range.
-    #[error("Sampling frequency ({0:?}) is out of range ([{1:?}, {2:?}])")]
     FreqOutOfRangeF(Freq<f32>, Freq<f32>, Freq<f32>),
     /// Sampling period is out of range.
-    #[error("Sampling period ({0:?}) is out of range ([{1:?}, {2:?}])")]
     PeriodOutOfRange(Duration, Duration, Duration),
 }
+
+impl core::fmt::Display for SamplingConfigError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            SamplingConfigError::DivideInvalid => write!(f, "Sampling divide must not be zero"),
+            SamplingConfigError::FreqInvalid(freq) => {
+                write!(
+                    f,
+                    "Sampling frequency ({:?}) must divide the ultrasound frequency",
+                    freq
+                )
+            }
+            SamplingConfigError::FreqInvalidF(freq) => {
+                write!(
+                    f,
+                    "Sampling frequency ({:?}) must divide the ultrasound frequency",
+                    freq
+                )
+            }
+            SamplingConfigError::PeriodInvalid(period) => {
+                write!(
+                    f,
+                    "Sampling period ({:?}) must be a multiple of the ultrasound period",
+                    period
+                )
+            }
+            SamplingConfigError::FreqOutOfRange(freq, min, max) => {
+                write!(
+                    f,
+                    "Sampling frequency ({:?}) is out of range ([{:?}, {:?}])",
+                    freq, min, max
+                )
+            }
+            SamplingConfigError::FreqOutOfRangeF(freq, min, max) => {
+                write!(
+                    f,
+                    "Sampling frequency ({:?}) is out of range ([{:?}, {:?}])",
+                    freq, min, max
+                )
+            }
+            SamplingConfigError::PeriodOutOfRange(period, min, max) => {
+                write!(
+                    f,
+                    "Sampling period ({:?}) is out of range ([{:?}, {:?}])",
+                    period, min, max
+                )
+            }
+        }
+    }
+}
+
+impl core::error::Error for SamplingConfigError {}
 
 // GRCOV_EXCL_START
 impl From<Infallible> for SamplingConfigError {

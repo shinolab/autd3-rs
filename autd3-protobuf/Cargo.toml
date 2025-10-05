@@ -21,7 +21,6 @@ autd3 = { workspace = true, optional = true }
 autd3-core = { workspace = true, features = ["geometry"] }
 autd3-driver = { workspace = true }
 prost = { version = "0.14.1", default-features = false }
-thiserror = { workspace = true }
 tonic = { workspace = true, features = ["channel", "codegen", "server"] }
 tonic-prost = { version = "0.14.0", default-features = false }
 zerocopy = { workspace = true }

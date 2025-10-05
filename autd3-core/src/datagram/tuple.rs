@@ -1,5 +1,3 @@
-use thiserror::Error;
-
 use crate::{environment::Environment, firmware::FirmwareLimits, geometry::Geometry};
 
 use super::{Datagram, DatagramOption, DeviceMask};
@@ -11,13 +9,37 @@ pub struct CombinedOperationGenerator<O1, O2> {
     pub o2: O2,
 }
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 #[doc(hidden)]
 pub enum CombinedError<E1, E2> {
-    #[error("{0}")]
     E1(E1),
-    #[error("{0}")]
     E2(E2),
+}
+
+impl<E1, E2> core::error::Error for CombinedError<E1, E2>
+where
+    E1: core::error::Error + core::fmt::Display + 'static,
+    E2: core::error::Error + core::fmt::Display + 'static,
+{
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            Self::E1(e) => Some(e),
+            Self::E2(e) => Some(e),
+        }
+    }
+}
+
+impl<E1, E2> core::fmt::Display for CombinedError<E1, E2>
+where
+    E1: core::fmt::Display,
+    E2: core::fmt::Display,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::E1(e) => write!(f, "E1: {}", e),
+            Self::E2(e) => write!(f, "E2: {}", e),
+        }
+    }
 }
 
 impl<'a, G1, G2, D1, D2, E1, E2> Datagram<'a> for (D1, D2)

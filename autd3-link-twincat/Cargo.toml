@@ -24,7 +24,7 @@ all = ["local", "remote"]
 autd3-core = { workspace = true, features = ["link"] }
 itertools = { workspace = true, optional = true }
 libloading = { version = "0.8.6", optional = true }
-thiserror = { workspace = true }
+
 zerocopy = { workspace = true }
 
 [build-dependencies]

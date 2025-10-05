@@ -1,32 +1,42 @@
 use autd3_core::link::LinkError;
-use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 #[non_exhaustive]
 pub enum AdsError {
-    #[error("TcAdsDll not found. Please install TwinCAT3.")]
     DllNotFound,
-    #[error("Function {0} not found in TcAdsDll")]
     FunctionNotFound(String),
-    #[error("Failed to open port")]
     OpenPort,
-    #[error("Failed to close port")]
     ClosePort,
-    #[error("The number of devices is invalid")]
     DeviceInvalidSize,
-    #[error("Failed to get local address: {0}")]
     GetLocalAddress(i32),
-    #[error("Ams net id must have 6 octets")]
     AmsNetIdParse,
-    #[error("Failed to add route: {0}")]
     AmsAddRoute(i32),
-    #[error("Failed to send data: {0}")]
     SendData(i32),
-    #[error("Failed to read data: {0}")]
     ReadData(i32),
-    #[error("Invalid IP address: {0}")]
     InvalidIp(String),
 }
+
+impl std::fmt::Display for AdsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AdsError::DllNotFound => write!(f, "TcAdsDll not found. Please install TwinCAT3."),
+            AdsError::FunctionNotFound(name) => {
+                write!(f, "Function {} not found in TcAdsDll", name)
+            }
+            AdsError::OpenPort => write!(f, "Failed to open port"),
+            AdsError::ClosePort => write!(f, "Failed to close port"),
+            AdsError::DeviceInvalidSize => write!(f, "The number of devices is invalid"),
+            AdsError::GetLocalAddress(code) => write!(f, "Failed to get local address: {}", code),
+            AdsError::AmsNetIdParse => write!(f, "Ams net id must have 6 octets"),
+            AdsError::AmsAddRoute(code) => write!(f, "Failed to add route: {}", code),
+            AdsError::SendData(code) => write!(f, "Failed to send data: {}", code),
+            AdsError::ReadData(code) => write!(f, "Failed to read data: {}", code),
+            AdsError::InvalidIp(ip) => write!(f, "Invalid IP address: {}", ip),
+        }
+    }
+}
+
+impl std::error::Error for AdsError {}
 
 impl From<AdsError> for LinkError {
     fn from(err: AdsError) -> Self {
