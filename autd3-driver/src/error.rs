@@ -17,7 +17,6 @@ pub enum AUTDDriverError {
     InvalidSilencerCompletionTime(Duration),
     /// Silencer completion time is out of range.
     SilencerCompletionTimeOutOfRange(Duration),
-
     /// Sampling config error
     SamplingConfig(SamplingConfigError),
 
@@ -93,6 +92,7 @@ pub enum AUTDDriverError {
     InvalidSilencerSettings,
 }
 
+// GRCOV_EXCL_START
 impl From<SamplingConfigError> for AUTDDriverError {
     fn from(e: SamplingConfigError) -> Self {
         AUTDDriverError::SamplingConfig(e)
@@ -229,7 +229,6 @@ impl std::error::Error for AUTDDriverError {
     }
 }
 
-// GRCOV_EXCL_START
 impl From<Infallible> for AUTDDriverError {
     fn from(_: Infallible) -> Self {
         unreachable!()

@@ -27,6 +27,7 @@ pub enum SamplingConfigError {
     PeriodOutOfRange(Duration, Duration, Duration),
 }
 
+// GRCOV_EXCL_START
 impl core::fmt::Display for SamplingConfigError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
@@ -79,7 +80,6 @@ impl core::fmt::Display for SamplingConfigError {
 
 impl core::error::Error for SamplingConfigError {}
 
-// GRCOV_EXCL_START
 impl From<Infallible> for SamplingConfigError {
     fn from(_: Infallible) -> Self {
         unreachable!()

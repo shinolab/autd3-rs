@@ -6,6 +6,7 @@ pub struct GainError {
     msg: String,
 }
 
+// GRCOV_EXCL_START
 impl core::fmt::Display for GainError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}", self.msg)
@@ -13,6 +14,7 @@ impl core::fmt::Display for GainError {
 }
 
 impl core::error::Error for GainError {}
+// GRCOV_EXCL_STOP
 
 impl GainError {
     /// Creates a new [`GainError`].

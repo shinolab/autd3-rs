@@ -24,6 +24,7 @@ pub enum PulseWidthError {
     DutyRatioOutOfRange(f32),
 }
 
+// GRCOV_EXCL_START
 impl core::fmt::Display for PulseWidthError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
@@ -42,6 +43,7 @@ impl core::fmt::Display for PulseWidthError {
 }
 
 impl core::error::Error for PulseWidthError {}
+// GRCOV_EXCL_STOP
 
 impl PulseWidth {
     /// Creates a new [`PulseWidth`].

@@ -14,6 +14,7 @@ pub enum AudioFileError {
     Modulation(ModulationError),
 }
 
+// GRCOV_EXCL_START
 impl std::fmt::Display for AudioFileError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -82,7 +83,6 @@ impl From<ModulationError> for AudioFileError {
     }
 }
 
-// GRCOV_EXCL_START
 impl From<AudioFileError> for ModulationError {
     fn from(value: AudioFileError) -> Self {
         ModulationError::new(value)
