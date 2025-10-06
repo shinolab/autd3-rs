@@ -2,8 +2,11 @@ use core::time::Duration;
 
 use alloc::boxed::Box;
 
-#[cfg(feature = "std")]
-pub use spin_sleep::{SpinSleeper, SpinStrategy};
+#[cfg(target_os = "windows")]
+unsafe extern "C" {
+    fn timeBeginPeriod(u: u32) -> u32;
+    fn timeEndPeriod(u: u32) -> u32;
+}
 
 /// A trait for sleep operations.
 pub trait Sleeper {
@@ -26,17 +29,16 @@ pub struct StdSleeper;
 
 #[cfg(feature = "std")]
 impl Sleeper for StdSleeper {
-    // GRCOV_EXCL_START
     fn sleep(&self, duration: Duration) {
+        #[cfg(target_os = "windows")]
+        unsafe {
+            timeBeginPeriod(1);
+        }
         std::thread::sleep(duration);
-    }
-    // GRCOV_EXCL_STOP
-}
-
-#[cfg(feature = "std")]
-impl Sleeper for SpinSleeper {
-    fn sleep(&self, duration: Duration) {
-        SpinSleeper::sleep(*self, duration);
+        #[cfg(target_os = "windows")]
+        unsafe {
+            timeEndPeriod(1);
+        }
     }
 }
 
