@@ -6,8 +6,6 @@ use super::{sampling_mode::SamplingMode, sine::Sine};
 
 use autd3_core::derive::*;
 
-use num::integer::lcm;
-
 /// The option of [`Fourier`].
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct FourierOption {
@@ -84,7 +82,12 @@ impl<S: Into<SamplingMode> + Clone + Copy + Debug> Modulation for Fourier<S> {
             .option
             .scale_factor
             .unwrap_or(1. / buffers.len() as f32);
-        let res = vec![0f32; buffers.iter().fold(1, |acc, x| lcm(acc, x.len()))];
+        let res = vec![
+            0f32;
+            buffers
+                .iter()
+                .fold(1, |acc, x| autd3_core::utils::int::lcm(acc, x.len()))
+        ];
         buffers
             .into_iter()
             .fold(res, |mut acc, x| {

@@ -4,7 +4,6 @@ use autd3_core::{
     utils::float::is_integer,
 };
 use autd3_driver::common::{Freq, Hz, ULTRASOUND_FREQ};
-use num::integer::gcd;
 use std::fmt::Debug;
 
 /// Nearest frequency type.
@@ -56,7 +55,7 @@ impl SamplingMode {
         let fd = freq.hz() as u64 * sampling_config.divide()? as u64;
         let fs = ULTRASOUND_FREQ.hz() as u64;
 
-        let k = gcd(fs, fd);
+        let k = autd3_core::utils::int::gcd(fs, fd);
         Ok((fs / k, fd / k))
     }
 }
