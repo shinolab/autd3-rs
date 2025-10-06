@@ -1,6 +1,3 @@
-#[cfg(not(feature = "std"))]
-use num_traits::float::Float;
-
 const EPSILON: f64 = 1e-6;
 
 #[doc(hidden)]
@@ -11,7 +8,6 @@ pub fn is_integer(a: f64) -> bool {
 
 #[cfg(test)]
 mod tests {
-
     #[rstest::rstest]
     #[case(true, 1.0)]
     #[case(false, 1.5)]

@@ -117,6 +117,15 @@ mod tests {
         approx::assert_abs_diff_eq!(expect, Phase(value).radian());
     }
 
+    #[rstest::rstest]
+    #[case(Phase(0x00), Complex::new(1.0, 0.0))]
+    #[case(Phase(0x40), Complex::new(0.0, 1.0))]
+    #[case(Phase(0x80), Complex::new(-1.0, 0.0))]
+    #[case(Phase(0xC0), Complex::new(0.0, -1.0))]
+    fn from_complex(#[case] expect: Phase, #[case] value: Complex) {
+        assert_eq!(expect, Phase::from(value));
+    }
+
     #[test]
     fn dbg() {
         assert_eq!(alloc::format!("{:?}", Phase::ZERO), "0x00");
