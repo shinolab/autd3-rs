@@ -29,7 +29,6 @@ autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulati
 autd3-driver = { workspace = true }
 autd3-firmware-emulator = { workspace = true, optional = true }
 num = { version = "0.4.3", default-features = false, optional = true }
-spin_sleep = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"], optional = true }
 
 [dev-dependencies]

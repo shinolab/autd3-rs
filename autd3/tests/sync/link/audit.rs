@@ -17,7 +17,7 @@ fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()
         },
-        SpinSleeper::default(),
+        StdSleeper,
     )?;
     assert_eq!(0, autd.link()[0].idx());
 
@@ -27,7 +27,7 @@ fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
                 timeout: Some(Duration::from_millis(20)),
                 ..Default::default()
             },
-            SpinSleeper::default(),
+            StdSleeper,
         )
         .send(Null {})?;
     }

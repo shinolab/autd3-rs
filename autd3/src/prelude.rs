@@ -22,7 +22,7 @@ pub use autd3_core::{
         transition_mode,
     },
     modulation::Modulation,
-    sleep::{self, SpinSleeper},
+    sleep::{self, StdSleeper},
 };
 
 pub use autd3_driver::{

@@ -3,7 +3,7 @@ use autd3_core::{
     datagram::{Inspectable, InspectionResult},
     environment::Environment,
     link::{Ack, Link, MsgId, RxMessage},
-    sleep::Sleeper,
+    sleep::{Sleeper, StdSleeper},
 };
 
 use autd3_driver::{
@@ -13,7 +13,6 @@ use autd3_driver::{
 };
 
 pub use autd3_driver::firmware::transmission::{ParallelMode, SenderOption};
-use spin_sleep::SpinSleeper;
 
 /// A controller for the AUTD devices.
 ///
@@ -45,12 +44,12 @@ impl<L: Link> std::ops::DerefMut for Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
-    /// Equivalent to [`Self::open_with`] with default [`SenderOption`] and [`SpinSleeper`].
+    /// Equivalent to [`Self::open_with`] with default [`SenderOption`] and [`StdSleeper`].
     pub fn open<D: Into<Device>, F: IntoIterator<Item = D>>(
         devices: F,
         link: L,
     ) -> Result<Self, AUTDDriverError> {
-        Self::open_with(devices, link, Default::default(), SpinSleeper::default())
+        Self::open_with(devices, link, Default::default(), StdSleeper)
     }
 
     /// Opens a controller with a [`SenderOption`].
@@ -126,8 +125,7 @@ impl<L: Link> Controller<L> {
         AUTDDriverError: From<<<D::G as autd3_driver::firmware::operation::OperationGenerator<'a>>::O1 as autd3_driver::firmware::operation::Operation<'a>>::Error>
             + From<<<D::G as autd3_driver::firmware::operation::OperationGenerator<'a>>::O2 as autd3_driver::firmware::operation::Operation<'a>>::Error>,
     {
-        self.sender(self.default_sender_option, SpinSleeper::default())
-            .send(s)
+        self.sender(self.default_sender_option, StdSleeper).send(s)
     }
 
     /// Returns the inspection result.
@@ -140,12 +138,12 @@ impl<L: Link> Controller<L> {
 
     /// Closes the controller.
     pub fn close(mut self) -> Result<(), AUTDDriverError> {
-        self.close_impl(self.default_sender_option, SpinSleeper::default())
+        self.close_impl(self.default_sender_option, StdSleeper)
     }
 
     /// Returns the firmware version of the devices.
     pub fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDDriverError> {
-        self.sender(self.default_sender_option, SpinSleeper::default())
+        self.sender(self.default_sender_option, StdSleeper)
             .firmware_version()
     }
 
@@ -261,7 +259,7 @@ impl<L: Link> Drop for Controller<L> {
         if !self.link.is_open() {
             return;
         }
-        let _ = self.close_impl(self.default_sender_option, SpinSleeper::default());
+        let _ = self.close_impl(self.default_sender_option, StdSleeper);
     }
 }
 
@@ -458,7 +456,7 @@ pub(crate) mod tests {
     fn close() -> Result<(), Box<dyn std::error::Error>> {
         {
             let mut autd = create_controller(1)?;
-            autd.close_impl(SenderOption::default(), SpinSleeper::default())?;
+            autd.close_impl(SenderOption::default(), StdSleeper)?;
             autd.close()?;
         }
 
@@ -545,7 +543,7 @@ pub(crate) mod tests {
             [AUTD3::default()],
             Audit::new(AuditOption::default()),
             SenderOption::default(),
-            SpinSleeper::default(),
+            StdSleeper,
         )?;
 
         let mut autd = autd.into_boxed_link();
