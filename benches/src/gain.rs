@@ -13,7 +13,6 @@ use autd3_driver::{
 };
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use zerocopy::FromZeros;
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
@@ -107,7 +106,7 @@ fn focus(c: &mut Criterion) {
             BenchmarkId::new("Gain::Focus", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = vec![TxMessage::new_zeroed(); size];
+                let mut tx = vec![TxMessage::new(); size];
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
@@ -145,7 +144,7 @@ fn focus_parallel(c: &mut Criterion) {
             BenchmarkId::new("Gain::FocusParallel", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = vec![TxMessage::new_zeroed(); size];
+                let mut tx = vec![TxMessage::new(); size];
                 b.iter(|| {
                     let g =
                         Focus::new(Point3::new(black_box(90.), black_box(70.), black_box(150.)));
@@ -183,7 +182,7 @@ fn focus_boxed(c: &mut Criterion) {
             BenchmarkId::new("Gain::FocusBoxed", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = vec![TxMessage::new_zeroed(); size];
+                let mut tx = vec![TxMessage::new(); size];
                 b.iter(|| {
                     let g = BoxedGain::new(Focus::new(Point3::new(
                         black_box(90.),

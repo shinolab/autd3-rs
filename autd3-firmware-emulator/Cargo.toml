@@ -17,7 +17,6 @@ time = ["autd3-core/time"]
 [dependencies]
 autd3-core = { workspace = true }
 autd3-driver = { workspace = true }
-zerocopy = { workspace = true }
 
 [dev-dependencies]
 autd3-core = { workspace = true, features = ["derive"] }

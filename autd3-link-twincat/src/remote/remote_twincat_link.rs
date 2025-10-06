@@ -1,7 +1,5 @@
 use std::ffi::{CString, c_long};
 
-use zerocopy::IntoBytes;
-
 use autd3_core::{
     geometry::Geometry,
     link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
@@ -157,7 +155,7 @@ impl Link for RemoteTwinCAT {
                 &addr as _,
                 INDEX_GROUP,
                 INDEX_OFFSET_BASE,
-                tx.as_bytes().len() as _,
+                (tx.len() * std::mem::size_of::<TxMessage>()) as _,
                 tx.as_ptr() as _,
             )
         };

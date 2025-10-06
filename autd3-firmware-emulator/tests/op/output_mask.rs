@@ -11,8 +11,6 @@ use rand::*;
 
 use crate::{create_geometry, send};
 
-use zerocopy::FromZeros;
-
 #[rstest::rstest]
 #[case(Segment::S0)]
 #[case(Segment::S1)]
@@ -22,7 +20,7 @@ fn output_mask_unsafe(#[case] segment: Segment) -> Result<(), Box<dyn std::error
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let buf: Vec<_> = (0..geometry.num_transducers())

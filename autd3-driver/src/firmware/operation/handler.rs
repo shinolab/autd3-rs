@@ -116,8 +116,6 @@ pub(crate) mod tests {
 
     use super::*;
 
-    use zerocopy::FromZeros;
-
     struct OperationMock {
         pub pack_size: usize,
         pub required_size: usize,
@@ -169,7 +167,7 @@ pub(crate) mod tests {
         assert!(!OperationHandler::is_done(&op));
 
         let msg_id = MsgId::new(0);
-        let mut tx = vec![TxMessage::new_zeroed(); 1];
+        let mut tx = vec![TxMessage::new(); 1];
 
         assert!(OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, parallel).is_ok());
         assert_eq!(op[0].as_ref().unwrap().0.num_frames, 2);
@@ -208,7 +206,7 @@ pub(crate) mod tests {
         assert!(OperationHandler::is_done(&op));
 
         let msg_id = MsgId::new(0);
-        let mut tx = vec![TxMessage::new_zeroed(); 1];
+        let mut tx = vec![TxMessage::new(); 1];
 
         assert!(OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, parallel).is_ok());
         assert!(OperationHandler::is_done(&op));
@@ -238,7 +236,7 @@ pub(crate) mod tests {
         assert!(!OperationHandler::is_done(&op));
 
         let msg_id = MsgId::new(0);
-        let mut tx = vec![TxMessage::new_zeroed(); 1];
+        let mut tx = vec![TxMessage::new(); 1];
 
         assert!(OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false).is_ok());
         assert!(op[0].as_ref().unwrap().0.is_done());
@@ -270,7 +268,7 @@ pub(crate) mod tests {
         assert!(!OperationHandler::is_done(&op));
 
         let msg_id = MsgId::new(0);
-        let mut tx = vec![TxMessage::new_zeroed(); 1];
+        let mut tx = vec![TxMessage::new(); 1];
 
         assert!(OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false).is_ok());
         assert!(op[0].as_ref().unwrap().0.is_done());
@@ -298,7 +296,7 @@ pub(crate) mod tests {
         ))];
 
         let msg_id = MsgId::new(0);
-        let mut tx = vec![TxMessage::new_zeroed(); 1];
+        let mut tx = vec![TxMessage::new(); 1];
 
         assert_eq!(
             Err(AUTDDriverError::NotSupportedTag),
@@ -354,7 +352,7 @@ pub(crate) mod tests {
         assert!(OperationHandler::is_done(&op));
 
         let msg_id = MsgId::new(0);
-        let mut tx = vec![TxMessage::new_zeroed(); 1];
+        let mut tx = vec![TxMessage::new(); 1];
 
         assert!(OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, false).is_ok());
         assert!(OperationHandler::is_done(&op));

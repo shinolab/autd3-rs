@@ -27,7 +27,6 @@ use autd3_firmware_emulator::CPUEmulator;
 use crate::{create_geometry, send};
 
 use rand::*;
-use zerocopy::FromZeros;
 
 use super::super::gain::TestGain;
 
@@ -59,7 +58,7 @@ fn send_gain_stm_phase_intensity_full_infinite() -> Result<(), Box<dyn std::erro
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let phase_corr: Vec<_> = (0..geometry.num_transducers())
@@ -119,7 +118,7 @@ fn send_gain_stm_phase_intensity_full_unsafe() -> Result<(), Box<dyn std::error:
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let phase_corr: Vec<_> = (0..geometry.num_transducers())
@@ -181,7 +180,7 @@ fn send_gain_stm_phase_intensity_full_unsafe() -> Result<(), Box<dyn std::error:
 fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let bufs = gen_random_buf(n, &geometry);
@@ -236,7 +235,7 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::
 fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     [
@@ -302,7 +301,7 @@ fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::
 fn change_gain_stm_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
@@ -344,7 +343,7 @@ fn change_gain_stm_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
 fn gain_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     {
@@ -430,7 +429,7 @@ fn gain_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
 fn send_gain_stm_invalid_segment_transition() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     // segment 0: Gain
@@ -490,7 +489,7 @@ fn send_gain_stm_invalid_segment_transition() -> Result<(), Box<dyn std::error::
 fn send_gain_stm_invalid_transition_mode() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     // segment 0 to 0
@@ -549,7 +548,7 @@ fn send_gain_stm_invalid_transition_mode() -> Result<(), Box<dyn std::error::Err
 fn invalid_gain_stm_mode() -> Result<(), Box<dyn std::error::Error>> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let msg_id = MsgId::new(0);
 
     let bufs = gen_random_buf(2, &geometry);

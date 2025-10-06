@@ -6,10 +6,7 @@ use crate::{datagram::ForceFan, firmware::tag::TypeTag};
 
 use autd3_core::geometry::Device;
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct ForceFanMsg {
     tag: TypeTag,
     value: bool,

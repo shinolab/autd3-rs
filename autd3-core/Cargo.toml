@@ -16,7 +16,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 std = ["time?/std", "spin_sleep"]
 default = []
-firmware = ["common", "ethercat", "utils", "zerocopy", "num-traits"]
+firmware = ["common", "ethercat", "utils", "num-traits"]
 acoustics = ["common", "geometry", "num-traits"]
 async = ["tokio"]
 datagram = ["common", "firmware", "geometry", "ethercat", "environment"]
@@ -27,7 +27,7 @@ ethercat = []
 gain = ["common", "datagram", "geometry", "environment", "firmware"]
 geometry = ["nalgebra", "common"]
 left_handed = []
-link = ["zerocopy", "ethercat", "datagram", "geometry"]
+link = ["ethercat", "datagram", "geometry"]
 modulation = ["firmware", "utils", "common", "datagram"]
 use_meter = []
 utils = ["num-traits"]
@@ -41,7 +41,6 @@ num-traits = { version = "0.2.19", default-features = false, features = ["libm"]
 spin_sleep = { workspace = true, optional = true }
 time = { version = "0.3.41", default-features = false, optional = true, features = ["macros"] }
 tokio = { workspace = true, optional = true, features = ["rt", "time"] }
-zerocopy = { workspace = true, optional = true, features = ["derive"] }
 
 [dev-dependencies]
 approx = { workspace = true }

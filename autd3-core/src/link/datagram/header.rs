@@ -1,13 +1,11 @@
-use zerocopy::{FromZeros, Immutable, IntoBytes};
-
 use super::msg_id::MsgId;
 
 #[doc(hidden)]
 #[repr(C, align(2))]
-#[derive(Clone, Debug, PartialEq, Eq, IntoBytes, Immutable, FromZeros)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Header {
     pub msg_id: MsgId,
-    __: u8,
+    pub(crate) __: u8,
     pub slot_2_offset: u16,
 }
 

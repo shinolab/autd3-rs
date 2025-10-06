@@ -11,15 +11,13 @@ use rand::*;
 
 use crate::{create_geometry, send};
 
-use zerocopy::FromZeros;
-
 #[test]
 fn send_silencer_fixed_update_rate_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     unsafe {
@@ -65,7 +63,7 @@ fn send_silencer_fixed_completion_time_unsafe() {
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     {
@@ -124,7 +122,7 @@ fn send_silencer_fixed_completion_steps_unsafe() {
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     {
@@ -174,7 +172,7 @@ fn silencer_completion_steps_too_large_mod(
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let d = Silencer {
@@ -230,7 +228,7 @@ fn silencer_completion_steps_too_large_stm(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let d = Silencer {
@@ -280,7 +278,7 @@ fn send_silencer_fixed_completion_steps_permissive() -> Result<(), Box<dyn std::
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let config = FixedCompletionSteps {
@@ -312,7 +310,7 @@ fn send_silencer_fixed_completion_time_permissive() {
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let config = FixedCompletionSteps {

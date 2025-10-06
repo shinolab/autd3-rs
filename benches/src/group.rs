@@ -13,7 +13,6 @@ use autd3_driver::{
 };
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use zerocopy::FromZeros;
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
@@ -39,7 +38,7 @@ fn without_group(c: &mut Criterion) {
             BenchmarkId::new("Null", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = vec![TxMessage::new_zeroed(); size];
+                let mut tx = vec![TxMessage::new(); size];
                 b.iter(|| {
                     let g = black_box(Null {});
                     let mut generator = g
@@ -76,7 +75,7 @@ fn group(c: &mut Criterion) {
             BenchmarkId::new("GroupNull", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = vec![TxMessage::new_zeroed(); size];
+                let mut tx = vec![TxMessage::new(); size];
                 b.iter(|| {
                     let g = Group {
                         key_map: |dev| Some(dev.idx()),
@@ -116,7 +115,7 @@ fn group_boxed(c: &mut Criterion) {
             BenchmarkId::new("GroupNullBoxed", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = vec![TxMessage::new_zeroed(); size];
+                let mut tx = vec![TxMessage::new(); size];
                 b.iter(|| {
                     let g = Group {
                         key_map: |dev| Some(dev.idx()),
@@ -159,7 +158,7 @@ fn gain_group(c: &mut Criterion) {
             BenchmarkId::new("GainGroupNull", size),
             &generate_geometry(size),
             |b, geometry| {
-                let mut tx = vec![TxMessage::new_zeroed(); size];
+                let mut tx = vec![TxMessage::new(); size];
                 b.iter(|| {
                     let g = autd3::gain::Group::new(
                         |dev| move |_tr| Some(dev.idx()),

@@ -8,8 +8,6 @@ use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, op::modulation::TestModulation, send};
 
-use zerocopy::FromZeros;
-
 fn fpga_state(cpu: &CPUEmulator) -> FPGAState {
     unsafe { std::mem::transmute(cpu.rx().data()) }
 }
@@ -18,7 +16,7 @@ fn fpga_state(cpu: &CPUEmulator) -> FPGAState {
 fn send_reads_fpga_state_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     assert!(!cpu.reads_fpga_state());

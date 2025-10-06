@@ -18,7 +18,6 @@ use futures::stream::{FuturesUnordered, StreamExt};
 use tokio::sync::watch::{Receiver as WatchReceiver, Sender as WatchSender};
 
 use tokio::{task::JoinHandle, time::Instant};
-use zerocopy::FromZeros;
 
 use crate::{
     error::EtherCrabError,
@@ -241,7 +240,7 @@ impl EtherCrabHandler {
         let (buffer_queue_sender, buffer_queue_receiver) = bounded(buf_size);
         for _ in 0..buf_size {
             let _ = buffer_queue_sender
-                .send(vec![TxMessage::new_zeroed(); groups.len()])
+                .send(vec![TxMessage::new(); groups.len()])
                 .await;
         }
         let (inputs_tx, inputs_rx) =

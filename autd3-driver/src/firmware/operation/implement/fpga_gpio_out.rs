@@ -9,10 +9,8 @@ use crate::{
 
 use autd3_core::{firmware::GPIOOut, geometry::Device};
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[allow(dead_code)]
-#[derive(IntoBytes, Immutable, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct GPIOOutValue(u64);
 
 impl GPIOOutValue {
@@ -60,7 +58,6 @@ fn convert(ty: Option<GPIOOutputType<'_>>) -> GPIOOutValue {
 }
 
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct GPIOOutputMsg {
     tag: TypeTag,
     __: [u8; 7],

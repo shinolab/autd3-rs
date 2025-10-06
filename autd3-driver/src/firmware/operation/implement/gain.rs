@@ -10,9 +10,7 @@ use autd3_core::{
     geometry::Device,
 };
 
-use zerocopy::{Immutable, IntoBytes};
-
-#[derive(Clone, Copy, IntoBytes, Immutable)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub struct GainControlFlags(u8);
 
@@ -24,7 +22,6 @@ bitflags::bitflags! {
 }
 
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct Gain {
     tag: TypeTag,
     segment: u8,

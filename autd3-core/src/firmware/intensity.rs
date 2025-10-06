@@ -1,7 +1,5 @@
-use zerocopy::{Immutable, IntoBytes};
-
 /// The intensity of the ultrasound.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, IntoBytes, Immutable)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct Intensity(pub u8);
 

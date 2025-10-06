@@ -14,9 +14,7 @@ use autd3_core::{
     modulation::ModulationOperationGenerator,
 };
 
-use zerocopy::{Immutable, IntoBytes};
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, IntoBytes, Immutable)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct ModulationControlFlags(u8);
 
@@ -31,7 +29,6 @@ bitflags::bitflags! {
 }
 
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct ModulationHead {
     tag: TypeTag,
     flag: ModulationControlFlags,
@@ -43,7 +40,6 @@ struct ModulationHead {
 }
 
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct ModulationSubseq {
     tag: TypeTag,
     flag: ModulationControlFlags,

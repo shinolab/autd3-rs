@@ -23,7 +23,6 @@ autd3-driver = { workspace = true }
 prost = { version = "0.14.1", default-features = false }
 tonic = { workspace = true, features = ["channel", "codegen", "server"] }
 tonic-prost = { version = "0.14.0", default-features = false }
-zerocopy = { workspace = true }
 
 [build-dependencies]
 tonic-prost-build = { version = "0.14.0", default-features = false, optional = true }

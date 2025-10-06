@@ -19,9 +19,7 @@ use autd3_core::{
     geometry::Device,
 };
 
-use zerocopy::{Immutable, IntoBytes};
-
-#[derive(Clone, Copy, PartialEq, Debug, IntoBytes, Immutable)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 #[repr(C)]
 pub struct FociSTMControlFlags(u8);
 
@@ -35,7 +33,7 @@ bitflags::bitflags! {
 }
 
 #[repr(C, align(2))]
-#[derive(PartialEq, Debug, IntoBytes, Immutable)]
+#[derive(PartialEq, Debug)]
 struct FociSTMHead {
     tag: TypeTag,
     flag: FociSTMControlFlags,
@@ -51,7 +49,6 @@ struct FociSTMHead {
 }
 
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct FociSTMSubseq {
     tag: TypeTag,
     flag: FociSTMControlFlags,
@@ -437,7 +434,7 @@ mod tests {
                 (0..N).for_each(|i| {
                     let mut buf = [0x00u8; 8];
                     buf.copy_from_slice(
-                        STMFocus::create(
+                        &STMFocus::create(
                             &p[i].point,
                             if i == 0 {
                                 p.intensity.0

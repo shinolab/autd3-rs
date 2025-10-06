@@ -1,10 +1,8 @@
-use zerocopy::{Immutable, IntoBytes};
-
 /// [`GainSTM`] transmission mode.
 ///
 /// [`GainSTM`]: crate::datagram::GainSTM
 #[repr(u8)]
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, IntoBytes, Immutable)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum GainSTMMode {
     #[default]
     /// This mode uses both phase and intensity data.

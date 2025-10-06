@@ -6,10 +6,7 @@ use crate::{datagram::Nop, firmware::tag::TypeTag};
 
 use autd3_core::geometry::Device;
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct NopMsg {
     tag: TypeTag,
     _pad: u8,

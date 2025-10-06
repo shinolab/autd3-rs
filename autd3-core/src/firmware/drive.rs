@@ -1,9 +1,7 @@
 use super::{intensity::Intensity, phase::Phase};
 
-use zerocopy::{Immutable, IntoBytes};
-
 /// A container for the phase and intensity of the ultrasound.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, IntoBytes, Immutable)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct Drive {
     /// The phase of the ultrasound.

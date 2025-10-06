@@ -9,10 +9,7 @@ use autd3_core::{
     geometry::{Device, Transducer},
 };
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct PhaseCorr {
     tag: TypeTag,
     __: u8,

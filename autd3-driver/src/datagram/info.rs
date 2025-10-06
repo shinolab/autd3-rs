@@ -6,10 +6,8 @@ use autd3_core::{
     geometry::Geometry,
 };
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, IntoBytes, Immutable)]
+#[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
 pub enum FirmwareVersionType {
     CPUMajor = 0x01,

@@ -13,10 +13,7 @@ use autd3_core::{
     geometry::{Device, Transducer},
 };
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct OutputMaskT {
     tag: TypeTag,
     segment: u8,

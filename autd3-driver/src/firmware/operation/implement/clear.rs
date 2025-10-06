@@ -6,10 +6,7 @@ use crate::{datagram::Clear, firmware::tag::TypeTag};
 
 use autd3_core::geometry::Device;
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct ClearMsg {
     tag: TypeTag,
     __: u8,

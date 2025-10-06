@@ -23,8 +23,6 @@ use rand::*;
 
 use crate::{create_geometry, send};
 
-use zerocopy::FromZeros;
-
 #[derive(Modulation, Debug)]
 pub struct TestModulation {
     pub buf: Vec<u8>,
@@ -63,7 +61,7 @@ where
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let m: Vec<_> = (0..n).map(|_| rng.random()).collect();
@@ -142,7 +140,7 @@ where
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let m: Vec<_> = (0..n).map(|_| rng.random()).collect();
@@ -188,7 +186,7 @@ where
 fn swap_mod_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let m: Vec<_> = (0..MOD_BUF_SIZE_MIN).map(|_| 0x00).collect();
@@ -222,7 +220,7 @@ fn swap_mod_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
 fn mod_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     {
@@ -293,7 +291,7 @@ fn mod_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
 fn send_mod_invalid_transition_mode() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     // segment 0 to 0
@@ -348,7 +346,7 @@ fn test_miss_transition_time(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let transition_mode = transition_mode::SysTime(transition_time);

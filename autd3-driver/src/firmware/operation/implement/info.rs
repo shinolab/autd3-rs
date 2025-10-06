@@ -9,10 +9,7 @@ use crate::{
 
 use autd3_core::geometry::Device;
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct FirmInfo {
     tag: TypeTag,
     ty: FirmwareVersionType,
