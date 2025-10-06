@@ -135,7 +135,117 @@ mod tests {
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 0. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XYZ(0. * deg, 90. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XYZ(90. * deg, 90. * deg, 0. * deg))]
-    fn xyz_intrinsic(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+    fn xyz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::XZY(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XZY(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XZY(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XZY(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XZY(90. * deg, 90. * deg, 0. * deg))]
+    fn xzy(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::YXZ(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::YXZ(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::YXZ(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::YXZ(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::YXZ(90. * deg, 90. * deg, 0. * deg))]
+    fn yxz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::YZX(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::YZX(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::YZX(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::YZX(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::YZX(90. * deg, 90. * deg, 0. * deg))]
+    fn yzx(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZXY(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::ZXY(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZXY(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZXY(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::ZXY(90. * deg, 90. * deg, 0. * deg))]
+    fn zxy(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYX(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYX(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::ZYX(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::ZYX(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYX(90. * deg, 90. * deg, 0. * deg))]
+    fn zyx(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::XYX(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XYX(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::XYX(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::XYX(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::XYX(90. * deg, 90. * deg, 0. * deg))]
+    fn xyx(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::XZX(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XZX(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::XZX(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::XZX(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::XZX(90. * deg, 90. * deg, 0. * deg))]
+    fn xzx(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::YXY(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::YXY(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::YXY(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::YXY(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::YXY(90. * deg, 90. * deg, 0. * deg))]
+    fn yxy(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::YZY(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::YZY(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::YZY(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::YZY(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::YZY(90. * deg, 90. * deg, 0. * deg))]
+    fn yzy(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+        let angle: UnitQuaternion = angle.into();
+        assert_approx_eq_quat!(expected, angle);
+    }
+
+    #[rstest::rstest]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZXZ(90. * deg, 0. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::ZXZ(0. * deg, 90. * deg, 0. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZXZ(0. * deg, 0. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZXZ(0. * deg, 90. * deg, 90. * deg))]
+    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngle::ZXZ(90. * deg, 90. * deg, 0. * deg))]
+    fn zxz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);
     }
@@ -146,7 +256,7 @@ mod tests {
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 0. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngle::ZYZ(0. * deg, 90. * deg, 90. * deg))]
     #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngle::ZYZ(90. * deg, 90. * deg, 0. * deg))]
-    fn zyz_intrinsic(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
+    fn zyz(#[case] expected: UnitQuaternion, #[case] angle: EulerAngle) {
         let angle: UnitQuaternion = angle.into();
         assert_approx_eq_quat!(expected, angle);
     }
