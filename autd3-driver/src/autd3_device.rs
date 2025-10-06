@@ -1,6 +1,6 @@
 use crate::{
     common::mm,
-    geometry::{Device, Isometry, Point3, Transducer, Translation, UnitQuaternion},
+    geometry::{Device, Isometry3, Point3, Transducer, Translation3, UnitQuaternion},
 };
 use std::fmt::Debug;
 
@@ -68,9 +68,9 @@ impl<R: Into<UnitQuaternion> + Debug> AUTD3<R> {
 impl<R: Into<UnitQuaternion> + Debug> From<AUTD3<R>> for Device {
     fn from(autd3: AUTD3<R>) -> Self {
         let rot = autd3.rot.into();
-        let isometry = Isometry {
+        let isometry = Isometry3 {
             rotation: rot,
-            translation: Translation::from(autd3.pos),
+            translation: Translation3::from(autd3.pos),
         };
         Self::new(
             rot,
@@ -87,7 +87,7 @@ impl<R: Into<UnitQuaternion> + Debug> From<AUTD3<R>> for Device {
                                 )
                         })
                 })
-                .map(|p| Transducer::new(p.xyz()))
+                .map(Transducer::new)
                 .collect(),
         )
     }

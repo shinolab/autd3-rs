@@ -1,6 +1,8 @@
 use alloc::vec::Vec;
 
-use super::{Isometry, Point3, Quaternion, Transducer, UnitQuaternion, UnitVector3, Vector3};
+use super::{
+    Isometry3, Point3, Quaternion, Transducer, Translation3, UnitQuaternion, UnitVector3, Vector3,
+};
 
 /// An AUTD device unit.
 pub struct Device {
@@ -11,7 +13,7 @@ pub struct Device {
     x_direction: UnitVector3,
     y_direction: UnitVector3,
     axial_direction: UnitVector3,
-    inv: Isometry,
+    inv: Isometry3,
 }
 
 impl Device {
@@ -30,9 +32,7 @@ impl Device {
         } else {
             Self::get_direction(Vector3::z(), &self.rotation)
         };
-        self.inv = (nalgebra::Translation3::<f32>::from(self.transducers[0].position())
-            * self.rotation)
-            .inverse();
+        self.inv = (Translation3::from(self.transducers[0].position()) * self.rotation).inverse();
     }
 
     #[doc(hidden)]
@@ -50,7 +50,7 @@ impl Device {
             x_direction: Vector3::x_axis(),
             y_direction: Vector3::y_axis(),
             axial_direction: Vector3::z_axis(),
-            inv: nalgebra::Isometry3::identity(),
+            inv: Isometry3::identity(),
         };
         dev.init();
         dev
@@ -100,7 +100,7 @@ impl Device {
 
     #[doc(hidden)]
     #[must_use]
-    pub const fn inv(&self) -> &Isometry {
+    pub const fn inv(&self) -> &Isometry3 {
         &self.inv
     }
 
@@ -188,7 +188,7 @@ pub(crate) mod tests {
         let device: Device = TestDevice::new_autd3(Point3::origin()).into();
         let expected =
             device.iter().map(|t| t.position().coords).sum::<Vector3>() / device.len() as f32;
-        assert_approx_eq_vec3!(expected, device.center());
+        assert_approx_eq_vec3!(expected, device.center().coords);
     }
 
     #[test]
@@ -235,6 +235,6 @@ pub(crate) mod tests {
         #[case] rot: UnitQuaternion,
     ) {
         let device: Device = TestDevice::new_autd3_with_rot(origin, rot).into();
-        assert_approx_eq_vec3!(expected, device.inv.transform_point(&Point3::from(target)));
+        assert_approx_eq_vec3!(expected, device.inv * Point3::from(target));
     }
 }

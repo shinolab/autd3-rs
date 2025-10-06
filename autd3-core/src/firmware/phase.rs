@@ -5,8 +5,6 @@ use crate::{
     geometry::Complex,
 };
 
-use nalgebra::ComplexField;
-
 /// The phase of the ultrasound.
 #[derive(Clone, Copy, PartialEq, Eq, Default)]
 #[repr(C)]
@@ -39,7 +37,7 @@ impl From<Angle> for Phase {
 
 impl From<Complex> for Phase {
     fn from(v: Complex) -> Self {
-        Self::from(v.argument() * rad)
+        Self::from(v.arg() * rad)
     }
 }
 

@@ -1,14 +1,14 @@
 use std::mem::{ManuallyDrop, MaybeUninit};
 
-use crate::{Complex, MatrixXc};
+use crate::{Complex, MatrixXc, helper::propagate};
 
 use autd3_core::{
-    acoustics::{directivity::Directivity, propagate},
+    acoustics::directivity::Directivity,
     environment::Environment,
     gain::TransducerMask,
     geometry::{Geometry, Point3},
 };
-use nalgebra::{Dyn, Normed, U1, VecStorage};
+use nalgebra::{Dyn, U1, VecStorage};
 
 struct Ptr(*mut Complex);
 impl Ptr {
@@ -150,7 +150,7 @@ pub fn gen_back_prop(m: usize, n: usize, transfer: &MatrixXc) -> MatrixXc {
                     / transfer
                         .rows(i, 1)
                         .iter()
-                        .map(|x| x.norm_squared())
+                        .map(|x| x.norm_sqr())
                         .sum::<f32>();
                 (0..m).map(move |j| transfer[(i, j)].conj() * x)
             })
@@ -161,7 +161,7 @@ pub fn gen_back_prop(m: usize, n: usize, transfer: &MatrixXc) -> MatrixXc {
 #[cfg(test)]
 mod tests {
     use autd3_core::{
-        acoustics::{directivity::Sphere, propagate},
+        acoustics::directivity::Sphere,
         derive::{Device, Transducer},
         environment::Environment,
         gain::{DeviceTransducerMask, TransducerMask},

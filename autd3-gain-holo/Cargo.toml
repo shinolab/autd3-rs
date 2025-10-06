@@ -14,7 +14,8 @@ features = ["greedy", "gs", "gspat", "naive"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["greedy", "gs", "gspat", "naive"]
+use_nalgebra = ["autd3-core/use_nalgebra"]
+default = ["use_nalgebra", "greedy", "gs", "gspat", "naive"]
 greedy = ["nalgebra", "rand"]
 gs = ["nalgebra", "rayon"]
 gspat = ["nalgebra", "rayon"]
@@ -22,7 +23,7 @@ naive = ["nalgebra", "rayon"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["acoustics", "derive", "gain", "std"] }
-nalgebra = { workspace = true, optional = true, features = ["alloc"] }
+nalgebra = { workspace = true, optional = true, features = ["std", "alloc"] }
 rand = { workspace = true, optional = true, features = ["thread_rng"] }
 rayon = { workspace = true, optional = true }
 

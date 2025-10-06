@@ -1,11 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
 use autd3_core::{
+    common::rad,
     firmware::{Drive, Phase},
     gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerMask},
     geometry::{Device, Geometry, Transducer},
 };
-use nalgebra::ComplexField;
 use rayon::iter::Either;
 
 use crate::{EmissionConstraint, VectorXc};
@@ -26,16 +26,16 @@ impl GainCalculator<'_> for HoloCalculator {
                 .and_then(|map| {
                     map[tr.idx()].map(|idx| {
                         let x = self.q[idx];
-                        let phase = Phase::from(x);
-                        let intensity = self.constraint.convert(x.abs(), self.max_coefficient);
+                        let phase = Phase::from(x.arg() * rad);
+                        let intensity = self.constraint.convert(x.norm(), self.max_coefficient);
                         Drive { phase, intensity }
                     })
                 })
                 .unwrap_or(Drive::NULL),
             Either::Right(base_idx) => {
                 let x = self.q[base_idx + tr.idx()];
-                let phase = Phase::from(x);
-                let intensity = self.constraint.convert(x.abs(), self.max_coefficient);
+                let phase = Phase::from(x.arg() * rad);
+                let intensity = self.constraint.convert(x.norm(), self.max_coefficient);
                 Drive { phase, intensity }
             }
         }
