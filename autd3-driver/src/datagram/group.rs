@@ -8,8 +8,6 @@ use autd3_core::{
     geometry::{Device, Geometry},
 };
 
-use itertools::Itertools;
-
 /// [`Datagram`] that divide the devices into groups by given function and send different data to each group.
 ///
 /// If the key is `None`, nothing is done for the devices corresponding to the key.
@@ -121,9 +119,13 @@ where
             .collect::<Result<_, AUTDDriverError>>()?;
 
         if !datagram_map.is_empty() {
-            return Err(AUTDDriverError::UnusedKey(
-                datagram_map.keys().map(|k| format!("{k:?}")).join(", "),
-            ));
+            return Err(AUTDDriverError::UnusedKey(format!(
+                "{:?}",
+                datagram_map
+                    .keys()
+                    .map(|k| format!("{k:?}"))
+                    .collect::<Vec<_>>()
+            )));
         }
 
         Ok(GroupOpGenerator {
@@ -218,7 +220,7 @@ mod tests {
         let geometry = crate::autd3_device::tests::create_geometry(2);
 
         assert_eq!(
-            Some(AUTDDriverError::UnusedKey("2".to_owned())),
+            Some(AUTDDriverError::UnusedKey("[\"2\"]".to_owned())),
             Group::new(
                 |dev| Some(dev.idx()),
                 HashMap::from([(0, Clear {}), (1, Clear {}), (2, Clear {})])

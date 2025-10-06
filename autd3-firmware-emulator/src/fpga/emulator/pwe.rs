@@ -42,11 +42,13 @@ mod tests {
     #[test]
     fn test_to_pulse_width() {
         let fpga = FPGAEmulator::new(249);
-        itertools::iproduct!(0x00..=0xFF, 0x00..=0xFF).for_each(|(a, b)| {
-            assert_eq!(
-                to_pulse_width_actual(a, b),
-                fpga.to_pulse_width(Intensity(a), b)
-            );
+        (0x00..=0xFF).for_each(|a| {
+            (0x00..=0xFF).for_each(|b| {
+                assert_eq!(
+                    to_pulse_width_actual(a, b),
+                    fpga.to_pulse_width(Intensity(a), b)
+                );
+            });
         });
     }
 }

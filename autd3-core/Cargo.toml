@@ -45,6 +45,5 @@ zerocopy = { workspace = true, optional = true, features = ["derive"] }
 
 [dev-dependencies]
 approx = { workspace = true }
-itertools = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }

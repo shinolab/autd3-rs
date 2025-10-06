@@ -15,7 +15,6 @@ pub fn check_if_msg_is_processed(msg_id: MsgId, rx: &[RxMessage]) -> impl Iterat
 #[cfg(test)]
 mod tests {
     use autd3_core::link::{Ack, MsgId};
-    use itertools::Itertools;
 
     use super::*;
 
@@ -33,7 +32,7 @@ mod tests {
     fn test_check_if_msg_is_processed(#[case] rx: Vec<RxMessage>, #[case] expect: Vec<bool>) {
         assert_eq!(
             expect,
-            check_if_msg_is_processed(MsgId::new(0), &rx).collect_vec()
+            check_if_msg_is_processed(MsgId::new(0), &rx).collect::<Vec<_>>()
         );
     }
 }

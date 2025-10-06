@@ -18,7 +18,7 @@ default = ["gain", "modulation", "stm"]
 left_handed = ["autd3-core/left_handed"]
 use_meter = ["autd3-core/use_meter"]
 async = ["tokio", "autd3-core/async", "autd3-driver/async"]
-gain = ["itertools"]
+gain = []
 modulation = ["num"]
 stm = []
 link-audit = ["autd3-firmware-emulator"]
@@ -28,7 +28,6 @@ link-nop = ["autd3-firmware-emulator"]
 autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulation"] }
 autd3-driver = { workspace = true }
 autd3-firmware-emulator = { workspace = true, optional = true }
-itertools = { workspace = true, optional = true }
 num = { version = "0.4.3", default-features = false, optional = true }
 spin_sleep = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"], optional = true }

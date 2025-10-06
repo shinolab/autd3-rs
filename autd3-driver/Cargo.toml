@@ -20,9 +20,7 @@ default = []
 [dependencies]
 autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulation", "sleep", "std"] }
 bitflags = { version = "2.9.1", default-features = false }
-itertools = { workspace = true, features = ["use_alloc"] }
 rayon = { workspace = true }
-
 zerocopy = { workspace = true }
 
 [dev-dependencies]

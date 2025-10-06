@@ -16,13 +16,12 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = ["local"]
 local = ["libloading"]
-remote = ["itertools", "cc"]
+remote = ["cc"]
 async = ["autd3-core/async"]
 all = ["local", "remote"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["link"] }
-itertools = { workspace = true, optional = true }
 libloading = { version = "0.8.6", optional = true }
 
 zerocopy = { workspace = true }

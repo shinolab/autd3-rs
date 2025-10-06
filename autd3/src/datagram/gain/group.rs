@@ -2,7 +2,6 @@ use autd3_core::derive::*;
 
 use autd3_driver::geometry::{Device, Transducer};
 
-use itertools::Itertools;
 use std::{
     collections::{HashMap, hash_map::Entry},
     hash::Hash,
@@ -186,8 +185,11 @@ where
 
         if !gain_map.is_empty() {
             return Err(GainError::new(format!(
-                "Unused group keys: {}",
-                gain_map.keys().map(|k| format!("{k:?}")).join(", "),
+                "Unused group keys: {:?}",
+                gain_map
+                    .keys()
+                    .map(|k| format!("{k:?}"))
+                    .collect::<Vec<_>>()
             )));
         }
 
@@ -338,7 +340,7 @@ mod tests {
         let geometry = create_geometry(1);
         let env = Environment::new();
         assert_eq!(
-            Some(GainError::new("Unused group keys: 2")),
+            Some(GainError::new("Unused group keys: [\"2\"]")),
             gain.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .err()
         );
