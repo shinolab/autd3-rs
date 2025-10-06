@@ -4,8 +4,6 @@ use std::ffi::c_void;
 
 use lib::Library;
 
-use zerocopy::IntoBytes;
-
 use autd3_core::{
     geometry::Geometry,
     link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
@@ -127,7 +125,7 @@ impl Link for TwinCAT {
                     &raw const self.send_addr,
                     INDEX_GROUP,
                     INDEX_OFFSET_BASE,
-                    tx.as_bytes().len() as _,
+                    (tx.len() * std::mem::size_of::<TxMessage>()) as _,
                     tx.as_ptr() as _,
             );
 

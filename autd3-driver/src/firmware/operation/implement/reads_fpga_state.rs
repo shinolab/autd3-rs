@@ -6,10 +6,7 @@ use crate::{datagram::ReadsFPGAState, firmware::tag::TypeTag};
 
 use autd3_core::geometry::Device;
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct ReadsFPGAStateMsg {
     tag: TypeTag,
     value: bool,

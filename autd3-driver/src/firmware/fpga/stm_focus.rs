@@ -6,10 +6,7 @@ use autd3_core::firmware::{
     FOCI_STM_FIXED_NUM_UPPER_Z,
 };
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[allow(dead_code)]
-#[derive(IntoBytes, Immutable)]
 pub(crate) struct STMFocus(u64);
 
 impl STMFocus {
@@ -42,6 +39,12 @@ impl STMFocus {
 
         Ok(Self::new(ix, iy, iz, intensity_or_offset))
     }
+
+    #[cfg(test)]
+    #[doc(hidden)]
+    pub fn as_bytes(&self) -> [u8; 8] {
+        self.0.to_le_bytes()
+    }
 }
 
 #[cfg(test)]
@@ -57,7 +60,7 @@ mod tests {
     fn bitfield() {
         let f = STMFocus::new(0b11111111111111_111111111111111111u32 as i32, 0, 0, 0);
         assert_eq!(
-            &[0b11111111, 0b11111111, 0b11, 0x00, 0x00, 0x00, 0x00, 0x00],
+            [0b11111111, 0b11111111, 0b11, 0x00, 0x00, 0x00, 0x00, 0x00],
             f.as_bytes()
         );
 
@@ -68,7 +71,7 @@ mod tests {
             0,
         );
         assert_eq!(
-            &[
+            [
                 0b11111111, 0b11111111, 0b01010111, 0b01010101, 0b0101, 0x00, 0x00, 0x00
             ],
             f.as_bytes()
@@ -81,7 +84,7 @@ mod tests {
             0,
         );
         assert_eq!(
-            &[
+            [
                 0b11111111, 0b11111111, 0b01010111, 0b01010101, 0b10100101, 0b10101010, 0b101010,
                 0x00
             ],
@@ -95,7 +98,7 @@ mod tests {
             0xFF,
         );
         assert_eq!(
-            &[
+            [
                 0b11111111, 0b11111111, 0b01010111, 0b01010101, 0b10100101, 0b10101010, 0b11101010,
                 0b00111111
             ],

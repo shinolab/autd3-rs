@@ -24,7 +24,6 @@ use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARG
 
 use crate::{create_geometry, op::gain::TestGain, send};
 use rand::*;
-use zerocopy::FromZeros;
 
 pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
     let mut rng = rand::rng();
@@ -57,7 +56,7 @@ fn test_send_foci_stm_infinite() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let env = Environment::new();
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let phase_corr: Vec<_> = (0..geometry.num_transducers())
@@ -133,7 +132,7 @@ fn test_send_foci_stm_finite_unsafe() -> Result<(), Box<dyn std::error::Error>> 
     let mut geometry = create_geometry(1);
     let env = Environment::new();
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let phase_corr: Vec<_> = (0..geometry.num_transducers())
@@ -205,7 +204,7 @@ fn test_send_foci_stm_finite_unsafe() -> Result<(), Box<dyn std::error::Error>> 
 fn change_foci_stm_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     assert!(cpu.fpga().is_stm_gain_mode(Segment::S1));
@@ -242,7 +241,7 @@ fn change_foci_stm_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
 fn test_foci_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     {
@@ -320,7 +319,7 @@ fn test_foci_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> 
 fn send_foci_stm_invalid_segment_transition() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     // segment 0: Gain
@@ -387,7 +386,7 @@ fn send_foci_stm_invalid_segment_transition() -> Result<(), Box<dyn std::error::
 fn send_foci_stm_invalid_transition_mode() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     // segment 0 to 0
@@ -446,7 +445,7 @@ fn test_miss_transition_time(
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let transition_mode = transition_mode::SysTime(transition_time);
@@ -482,7 +481,7 @@ fn test_send_foci_stm_n<const N: usize>() -> Result<(), Box<dyn std::error::Erro
     let mut geometry = create_geometry(1);
     let env = Environment::new();
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     {

@@ -1,22 +1,28 @@
 use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
-use zerocopy::{FromBytes, IntoBytes};
-
 impl From<Vec<autd3_core::link::RxMessage>> for RxMessage {
     fn from(value: Vec<autd3_core::link::RxMessage>) -> Self {
-        Self {
-            data: value.as_bytes().to_vec(),
+        let mut data = vec![0; value.len() * std::mem::size_of::<autd3_core::link::RxMessage>()];
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                value.as_ptr() as *const u8,
+                data.as_mut_ptr(),
+                data.len(),
+            );
         }
+        Self { data }
     }
 }
 
 impl FromMessage<RxMessage> for Vec<autd3_core::link::RxMessage> {
     fn from_msg(msg: RxMessage) -> Result<Self, AUTDProtoBufError> {
-        Ok(
-            <[autd3_core::link::RxMessage]>::ref_from_bytes(msg.data.as_bytes())
-                .unwrap()
-                .to_vec(),
-        )
+        let len = msg.data.len() / std::mem::size_of::<autd3_core::link::RxMessage>();
+        let mut res =
+            vec![autd3_core::link::RxMessage::new(0, autd3_core::link::Ack::new(0, 0)); len];
+        unsafe {
+            std::ptr::copy_nonoverlapping(msg.data.as_ptr(), res.as_mut_ptr() as _, msg.data.len());
+        }
+        Ok(res)
     }
 }
 

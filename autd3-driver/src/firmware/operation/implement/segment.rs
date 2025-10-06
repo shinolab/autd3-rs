@@ -17,17 +17,13 @@ use autd3_core::{
     geometry::Device,
 };
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct SwapSegmentT {
     tag: TypeTag,
     segment: u8,
 }
 
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct SwapSegmentTWithTransition {
     tag: TypeTag,
     segment: u8,

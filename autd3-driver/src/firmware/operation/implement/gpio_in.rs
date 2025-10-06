@@ -6,9 +6,7 @@ use crate::{datagram::EmulateGPIOIn, firmware::tag::TypeTag};
 
 use autd3_core::{firmware::GPIOIn, geometry::Device};
 
-use zerocopy::{Immutable, IntoBytes};
-
-#[derive(Clone, Copy, IntoBytes, Immutable)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub struct GPIOInFlags(u8);
 
@@ -23,7 +21,6 @@ bitflags::bitflags! {
 }
 
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct EmulateGPIOInMsg {
     tag: TypeTag,
     flag: GPIOInFlags,

@@ -14,7 +14,6 @@ use autd3_driver::{
 use autd3_gain_holo::{Greedy, Pa};
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use zerocopy::FromZeros;
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(
@@ -42,7 +41,7 @@ fn greedy(c: &mut Criterion) {
                 format!("Gain::Greedy(NumDev={num_dev}, NumFoci={num_foci}"),
                 &generate_geometry(num_dev),
                 |b, geometry| {
-                    let mut tx = vec![TxMessage::new_zeroed(); num_dev];
+                    let mut tx = vec![TxMessage::new(); num_dev];
                     let target_amp = 2.5e3 * geometry.num_devices() as f32 * Pa;
                     b.iter(|| {
                         let foci = (0..num_foci)

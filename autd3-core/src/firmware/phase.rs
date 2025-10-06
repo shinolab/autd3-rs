@@ -6,10 +6,9 @@ use crate::{
 };
 
 use nalgebra::ComplexField;
-use zerocopy::{Immutable, IntoBytes};
 
 /// The phase of the ultrasound.
-#[derive(Clone, Copy, PartialEq, Eq, IntoBytes, Immutable, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
 #[repr(C)]
 pub struct Phase(pub u8);
 

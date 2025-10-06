@@ -19,9 +19,8 @@ use autd3_core::{
     gain::{GainCalculator, GainCalculatorGenerator},
     geometry::Device,
 };
-use zerocopy::{FromBytes, Immutable, IntoBytes, KnownLayout};
 
-#[derive(Clone, Copy, IntoBytes, Immutable)]
+#[derive(Clone, Copy)]
 #[repr(C)]
 pub struct GainSTMControlFlags(u8);
 
@@ -37,13 +36,17 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(IntoBytes, Immutable, FromBytes, KnownLayout)]
 struct PhaseFull {
     phase_0: u8,
     phase_1: u8,
 }
 
-#[derive(IntoBytes, Immutable, FromBytes, KnownLayout)]
+impl PhaseFull {
+    fn mut_from_bytes(bytes: &mut [u8]) -> &mut Self {
+        unsafe { &mut *(bytes.as_mut_ptr() as *mut Self) }
+    }
+}
+
 struct PhaseHalf(u16);
 
 impl PhaseHalf {
@@ -62,10 +65,13 @@ impl PhaseHalf {
     const fn set_phase_3(&mut self, phase: u8) {
         self.0 = (self.0 & !0xF000) | (((phase as u16) << 12) & 0xF000);
     }
+
+    fn mut_from_bytes(bytes: &mut [u8]) -> &mut Self {
+        unsafe { &mut *(bytes.as_mut_ptr() as *mut Self) }
+    }
 }
 
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct GainSTMHead {
     tag: TypeTag,
     flag: GainSTMControlFlags,
@@ -77,7 +83,6 @@ struct GainSTMHead {
 }
 
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct GainSTMSubseq {
     tag: TypeTag,
     flag: GainSTMControlFlags,
@@ -168,8 +173,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                             .chunks_exact_mut(size_of::<PhaseFull>())
                             .zip(device.iter())
                             .for_each(|(dst, tr)| {
-                                PhaseFull::mut_from_bytes(dst).unwrap().phase_0 =
-                                    g.calc(tr).phase.0;
+                                PhaseFull::mut_from_bytes(dst).phase_0 = g.calc(tr).phase.0;
                             });
                         send += 1;
                     } // GRCOV_EXCL_LINE
@@ -178,8 +182,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                             .chunks_exact_mut(size_of::<PhaseFull>())
                             .zip(device.iter())
                             .for_each(|(dst, tr)| {
-                                PhaseFull::mut_from_bytes(dst).unwrap().phase_1 =
-                                    g.calc(tr).phase.0;
+                                PhaseFull::mut_from_bytes(dst).phase_1 = g.calc(tr).phase.0;
                             });
                         send += 1;
                     }
@@ -190,9 +193,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                             .chunks_exact_mut(size_of::<PhaseHalf>())
                             .zip(device.iter())
                             .for_each(|(dst, tr)| {
-                                PhaseHalf::mut_from_bytes(dst)
-                                    .unwrap()
-                                    .set_phase_0(g.calc(tr).phase.0 >> 4);
+                                PhaseHalf::mut_from_bytes(dst).set_phase_0(g.calc(tr).phase.0 >> 4);
                             });
                         send += 1;
                     } // GRCOV_EXCL_LINE
@@ -201,9 +202,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                             .chunks_exact_mut(size_of::<PhaseHalf>())
                             .zip(device.iter())
                             .for_each(|(dst, tr)| {
-                                PhaseHalf::mut_from_bytes(dst)
-                                    .unwrap()
-                                    .set_phase_1(g.calc(tr).phase.0 >> 4);
+                                PhaseHalf::mut_from_bytes(dst).set_phase_1(g.calc(tr).phase.0 >> 4);
                             });
                         send += 1;
                     }
@@ -212,9 +211,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                             .chunks_exact_mut(size_of::<PhaseHalf>())
                             .zip(device.iter())
                             .for_each(|(dst, tr)| {
-                                PhaseHalf::mut_from_bytes(dst)
-                                    .unwrap()
-                                    .set_phase_2(g.calc(tr).phase.0 >> 4);
+                                PhaseHalf::mut_from_bytes(dst).set_phase_2(g.calc(tr).phase.0 >> 4);
                             });
                         send += 1;
                     }
@@ -223,9 +220,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                             .chunks_exact_mut(size_of::<PhaseHalf>())
                             .zip(device.iter())
                             .for_each(|(dst, tr)| {
-                                PhaseHalf::mut_from_bytes(dst)
-                                    .unwrap()
-                                    .set_phase_3(g.calc(tr).phase.0 >> 4);
+                                PhaseHalf::mut_from_bytes(dst).set_phase_3(g.calc(tr).phase.0 >> 4);
                             });
                         send += 1;
                     }
@@ -330,7 +325,6 @@ mod tests {
     };
 
     use rand::Rng;
-    use zerocopy::FromZeros;
 
     struct Impl {
         g: Vec<Drive>,
@@ -639,7 +633,7 @@ mod tests {
 
         let device = crate::autd3_device::tests::create_device();
 
-        let mut tx = vec![TxMessage::new_zeroed(); 1];
+        let mut tx = vec![TxMessage::new(); 1];
         let tx = tx[0].payload_mut();
 
         let mut rng = rand::rng();

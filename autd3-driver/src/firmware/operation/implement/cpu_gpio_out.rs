@@ -6,10 +6,7 @@ use crate::{datagram::CpuGPIOOutputs, firmware::tag::TypeTag};
 
 use autd3_core::{firmware::CpuGPIOPort, geometry::Device};
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct CpuGPIOOutMsg {
     tag: TypeTag,
     pa_podr: u8,

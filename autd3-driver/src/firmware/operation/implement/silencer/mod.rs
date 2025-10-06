@@ -2,9 +2,7 @@ mod completion_steps;
 mod completion_time;
 mod update_rate;
 
-use zerocopy::{Immutable, IntoBytes};
-
-#[derive(Clone, Copy, PartialEq, Debug, IntoBytes, Immutable)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 #[repr(C)]
 pub struct SilencerControlFlags(u8);
 

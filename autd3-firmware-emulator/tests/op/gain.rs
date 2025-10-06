@@ -12,8 +12,6 @@ use rand::*;
 
 use crate::{create_geometry, send};
 
-use zerocopy::FromZeros;
-
 #[derive(Gain, Debug)]
 pub(crate) struct TestGain {
     pub(crate) data: HashMap<usize, Vec<Drive>>,
@@ -58,7 +56,7 @@ fn send_gain_unsafe() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     {
@@ -146,7 +144,7 @@ fn send_gain_unsafe() -> Result<(), Box<dyn std::error::Error>> {
 fn send_gain_invalid_segment_transition() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     // segment 0: FociSTM

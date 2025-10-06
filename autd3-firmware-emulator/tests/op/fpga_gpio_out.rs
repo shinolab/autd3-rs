@@ -7,8 +7,6 @@ use autd3_firmware_emulator::{CPUEmulator, fpga::params::*};
 
 use crate::{create_geometry, send};
 
-use zerocopy::FromZeros;
-
 #[rstest::rstest]
 #[case([GPIO_O_TYPE_NONE, GPIO_O_TYPE_BASE_SIG, GPIO_O_TYPE_THERMO, GPIO_O_TYPE_FORCE_FAN], [0, 0, 0, 0], [None, Some(GPIOOutputType::BaseSignal), Some(GPIOOutputType::Thermo), Some(GPIOOutputType::ForceFan)])]
 #[case([GPIO_O_TYPE_SYNC, GPIO_O_TYPE_MOD_SEGMENT, GPIO_O_TYPE_MOD_IDX, GPIO_O_TYPE_STM_SEGMENT], [0, 0, 0x01, 0], [Some(GPIOOutputType::Sync), Some(GPIOOutputType::ModSegment), Some(GPIOOutputType::ModIdx(0x01)), Some(GPIOOutputType::StmSegment)])]
@@ -21,7 +19,7 @@ fn send_gpio_output(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let d = GPIOOutputs::new(|_, gpio| match gpio {
@@ -46,7 +44,7 @@ fn send_gpio_output(
 fn send_gpio_output_pwm() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let d = GPIOOutputs::new(|dev, gpio| match gpio {

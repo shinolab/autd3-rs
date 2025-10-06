@@ -1,11 +1,14 @@
 use crate::{AUTDProtoBufError, pb::*, traits::FromMessage};
 
-use zerocopy::{FromZeros, IntoBytes};
-
 impl From<&[autd3_core::link::TxMessage]> for TxRawData {
     fn from(value: &[autd3_core::link::TxMessage]) -> Self {
+        let len = std::mem::size_of_val(value);
+        let mut data = vec![0; len];
+        unsafe {
+            std::ptr::copy_nonoverlapping(value.as_ptr() as *const u8, data.as_mut_ptr(), len);
+        }
         Self {
-            data: value.as_bytes().to_vec(),
+            data,
             n: value.len() as _,
         }
     }
@@ -13,7 +16,7 @@ impl From<&[autd3_core::link::TxMessage]> for TxRawData {
 
 impl FromMessage<TxRawData> for Vec<autd3_core::link::TxMessage> {
     fn from_msg(msg: TxRawData) -> Result<Self, AUTDProtoBufError> {
-        let mut tx = vec![autd3_core::link::TxMessage::new_zeroed(); msg.n as _];
+        let mut tx = vec![autd3_core::link::TxMessage::new(); msg.n as _];
         unsafe {
             std::ptr::copy_nonoverlapping(msg.data.as_ptr(), tx.as_mut_ptr() as _, msg.data.len());
         }
@@ -29,7 +32,7 @@ mod tests {
     #[test]
     fn test_tx_datagram_unsafe() {
         let mut rng = rand::rng();
-        let mut tx = vec![autd3_core::link::TxMessage::new_zeroed(); 10];
+        let mut tx = vec![autd3_core::link::TxMessage::new(); 10];
         (0..10).for_each(|i| {
             tx[i].header.msg_id = autd3_core::link::MsgId::new(rng.random());
             tx[i].header.slot_2_offset = rng.random();

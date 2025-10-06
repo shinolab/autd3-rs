@@ -11,10 +11,7 @@ use crate::{
 
 use autd3_core::geometry::Device;
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct SilencerFixedCompletionSteps {
     tag: TypeTag,
     flag: SilencerControlFlags,

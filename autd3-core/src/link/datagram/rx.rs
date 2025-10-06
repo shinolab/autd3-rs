@@ -1,7 +1,5 @@
-use zerocopy::{FromBytes, Immutable, IntoBytes};
-
 /// Acknowledgement structure for received messages
-#[derive(IntoBytes, Immutable, FromBytes, PartialEq, Eq, Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub struct Ack(u8);
 
 impl Ack {
@@ -34,7 +32,7 @@ impl core::fmt::Debug for Ack {
 }
 
 /// PDO input data representation
-#[derive(Clone, Copy, PartialEq, Eq, Debug, IntoBytes, Immutable, FromBytes)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(C)]
 pub struct RxMessage {
     data: u8,

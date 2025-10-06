@@ -12,10 +12,7 @@ use crate::{
 
 use autd3_core::{common::ULTRASOUND_FREQ, geometry::Device};
 
-use zerocopy::{Immutable, IntoBytes};
-
 #[repr(C, align(2))]
-#[derive(IntoBytes, Immutable)]
 struct SilencerFixedCompletionTime {
     tag: TypeTag,
     flag: SilencerControlFlags,

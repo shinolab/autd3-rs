@@ -14,7 +14,6 @@ use autd3_driver::{
     },
 };
 use autd3_firmware_emulator::CPUEmulator;
-use zerocopy::FromZeros;
 
 mod op;
 
@@ -71,7 +70,7 @@ where
 fn send_invalid_tag() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
 
     tx[0].header.msg_id = MsgId::new(1);
     tx[0].payload_mut()[0] = 0xFF;
@@ -87,7 +86,7 @@ fn send_invalid_tag() {
 fn send_invalid_msg_id() {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
 
     tx[0].header.msg_id = MsgId::new(0x80);
 
@@ -102,7 +101,7 @@ fn send_invalid_msg_id() {
 fn send_ignore_same_data() -> Result<(), Box<dyn std::error::Error>> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let msg_id = MsgId::new(0x0A);
 
     let d = Clear::new();
@@ -135,7 +134,7 @@ fn send_ignore_same_data() -> Result<(), Box<dyn std::error::Error>> {
 fn send_slot_2_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let msg_id = MsgId::new(0x0E);
 
     let d = (Clear::new(), Synchronize::new());
@@ -159,7 +158,7 @@ fn send_slot_2_unsafe() -> Result<(), Box<dyn std::error::Error>> {
 fn send_slot_2_err() -> Result<(), Box<dyn std::error::Error>> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let msg_id = MsgId::new(0);
 
     let d = (Clear::new(), Synchronize::new());

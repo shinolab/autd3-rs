@@ -3,8 +3,6 @@ mod implement;
 
 use crate::geometry::Device;
 
-use zerocopy::{Immutable, IntoBytes};
-
 pub use handler::OperationHandler;
 pub use implement::{BoxedDatagram, BoxedOperation, DOperationGenerator, DynOperationGenerator};
 
@@ -20,8 +18,10 @@ pub trait Operation<'a>: Send + Sync {
 }
 
 #[inline(always)]
-pub(crate) fn write_to_tx<T: IntoBytes + Immutable>(tx: &mut [u8], data: T) {
-    tx[..size_of::<T>()].copy_from_slice(data.as_bytes());
+pub(crate) fn write_to_tx<T: Sized>(tx: &mut [u8], data: T) {
+    unsafe {
+        std::ptr::copy_nonoverlapping(&raw const data as _, tx.as_mut_ptr(), size_of::<T>());
+    }
 }
 
 #[doc(hidden)]

@@ -7,8 +7,6 @@ use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, send};
 
-use zerocopy::FromZeros;
-
 #[rstest::rstest]
 #[case(0b10100000, true, true)]
 #[case(0b00100000, true, false)]
@@ -21,7 +19,7 @@ fn send_cpu_gpio_out(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
-    let mut tx = vec![TxMessage::new_zeroed(); 1];
+    let mut tx = vec![TxMessage::new(); 1];
     let mut msg_id = MsgId::new(0);
 
     let d = CpuGPIOOutputs::new(|_| CpuGPIOPort::new(pa5, pa7));
