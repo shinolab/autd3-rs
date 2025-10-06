@@ -31,13 +31,22 @@ impl Phase {
 
 impl From<Angle> for Phase {
     fn from(v: Angle) -> Self {
-        Self((((v.radian() / (2.0 * PI) * 256.0).round() as i32) & 0xFF) as _)
+        let p = v.radian() / (2.0 * PI) * 256.0;
+        #[cfg(feature = "std")]
+        let p = p.round();
+        #[cfg(feature = "libm")]
+        let p = libm::roundf(p);
+        Self(((p as i32) & 0xFF) as _)
     }
 }
 
 impl From<Complex> for Phase {
     fn from(v: Complex) -> Self {
-        Self::from(v.arg() * rad)
+        #[cfg(feature = "std")]
+        let p = Self::from(v.arg() * rad);
+        #[cfg(feature = "libm")]
+        let p = Self::from(libm::atan2f(v.im, v.re) * rad);
+        p
     }
 }
 

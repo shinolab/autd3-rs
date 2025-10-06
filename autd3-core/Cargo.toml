@@ -15,7 +15,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 std = ["time?/std", "nalgebra?/std"]
-libm = ["nalgebra?/libm"]
+libm = ["dep:libm", "nalgebra?/libm"]
 default = []
 firmware = ["common", "ethercat", "utils"]
 acoustics = ["common"]
@@ -38,6 +38,7 @@ use_nalgebra = ["dep:nalgebra"]
 
 [dependencies]
 autd3-derive = { workspace = true, optional = true }
+libm = { version = "0.2.15", optional = true }
 nalgebra = { workspace = true, optional = true }
 time = { version = "0.3.41", default-features = false, optional = true, features = ["macros"] }
 
