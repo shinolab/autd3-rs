@@ -26,5 +26,3 @@ rayon = { workspace = true }
 approx = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
-tokio = { workspace = true, features = ["macros"] }
-tokio-test = { workspace = true }
