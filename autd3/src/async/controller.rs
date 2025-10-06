@@ -208,25 +208,6 @@ impl<'a, L: AsyncLink> IntoIterator for &'a mut Controller<L> {
     }
 }
 
-impl<L: AsyncLink> Drop for Controller<L> {
-    fn drop(&mut self) {
-        if !self.link.is_open() {
-            return;
-        }
-        match tokio::runtime::Handle::current().runtime_flavor() {
-            tokio::runtime::RuntimeFlavor::CurrentThread => {}
-            tokio::runtime::RuntimeFlavor::MultiThread => tokio::task::block_in_place(|| {
-                tokio::runtime::Handle::current().block_on(async {
-                    let _ = self
-                        .close_impl(self.default_sender_option, AsyncSleeper)
-                        .await;
-                });
-            }),
-            _ => unimplemented!(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;

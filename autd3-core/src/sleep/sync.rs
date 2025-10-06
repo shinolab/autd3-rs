@@ -2,7 +2,7 @@ use core::time::Duration;
 
 use alloc::boxed::Box;
 
-#[cfg(target_os = "windows")]
+#[cfg(all(target_os = "windows", feature = "std"))]
 unsafe extern "C" {
     fn timeBeginPeriod(u: u32) -> u32;
     fn timeEndPeriod(u: u32) -> u32;
