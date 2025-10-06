@@ -13,7 +13,7 @@ use autd3_driver::{
     },
 };
 
-pub use autd3_core::sleep::r#async::AsyncSleeper;
+use super::AsyncSleeper;
 
 /// An asynchronous controller for the AUTD devices.
 ///

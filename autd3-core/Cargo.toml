@@ -18,7 +18,7 @@ std = ["time?/std"]
 default = []
 firmware = ["common", "ethercat", "utils", "num-traits"]
 acoustics = ["common", "geometry", "num-traits"]
-async = ["tokio"]
+async = []
 datagram = ["common", "firmware", "geometry", "ethercat", "environment"]
 common = []
 derive = ["autd3-derive"]
@@ -39,7 +39,6 @@ autd3-derive = { workspace = true, optional = true }
 nalgebra = { workspace = true, optional = true, features = ["libm"] }
 num-traits = { version = "0.2.19", default-features = false, features = ["libm"], optional = true }
 time = { version = "0.3.41", default-features = false, optional = true, features = ["macros"] }
-tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 
 [dev-dependencies]
 approx = { workspace = true }
