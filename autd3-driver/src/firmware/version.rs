@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 /// Major version number.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Major(pub u8);
@@ -56,12 +54,8 @@ impl FPGAVersion {
 impl std::fmt::Display for FPGAVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", version_map(self.major, self.minor))?;
-        let features = [self.is_emulator().then_some("Emulator")]
-            .iter()
-            .filter_map(Option::as_ref)
-            .join(", ");
-        if !features.is_empty() {
-            write!(f, " [{features}]")?;
+        if self.is_emulator() {
+            write!(f, " [Emulator]")?;
         }
         Ok(())
     }

@@ -9,7 +9,6 @@ autd3-core = { path = "../autd3-core", default-features = false, features = ["de
 autd3-driver = { path = "../autd3-driver", default-features = false }
 autd3-gain-holo = { path = "../autd3-gain-holo", default-features = false, features = ["greedy"] }
 criterion = { version = "0.7.0", default-features = false }
-itertools = { version = "0.14.0", default-features = false }
 zerocopy = { version = "0.8.26", default-features = false }
 
 [lib]

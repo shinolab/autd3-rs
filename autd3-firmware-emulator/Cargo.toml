@@ -21,6 +21,5 @@ zerocopy = { workspace = true }
 
 [dev-dependencies]
 autd3-core = { workspace = true, features = ["derive"] }
-itertools = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }

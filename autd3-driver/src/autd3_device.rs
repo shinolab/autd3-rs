@@ -74,15 +74,18 @@ impl<R: Into<UnitQuaternion> + Debug> From<AUTD3<R>> for Device {
         };
         Self::new(
             rot,
-            itertools::iproduct!(0..AUTD3::NUM_TRANS_Y, 0..AUTD3::NUM_TRANS_X)
-                .filter(|&(y, x)| !AUTD3::is_missing_transducer(x, y))
-                .map(|(y, x)| {
-                    isometry
-                        * Point3::new(
-                            x as f32 * AUTD3::TRANS_SPACING,
-                            y as f32 * AUTD3::TRANS_SPACING,
-                            0.,
-                        )
+            (0..AUTD3::NUM_TRANS_Y)
+                .flat_map(|y| {
+                    (0..AUTD3::NUM_TRANS_X)
+                        .filter(move |&x| !AUTD3::is_missing_transducer(x, y))
+                        .map(move |x| {
+                            isometry
+                                * Point3::new(
+                                    x as f32 * AUTD3::TRANS_SPACING,
+                                    y as f32 * AUTD3::TRANS_SPACING,
+                                    0.,
+                                )
+                        })
                 })
                 .map(|p| Transducer::new(p.xyz()))
                 .collect(),
@@ -458,11 +461,15 @@ pub(crate) mod tests {
 
     #[test]
     fn test_is_missing_transducer_out_of_range() {
-        itertools::iproduct!(18..=256, 0..=256).for_each(|(x, y)| {
-            assert!(AUTD3::is_missing_transducer(x, y));
+        (18..=256).for_each(|x| {
+            (0..=256).for_each(|y| {
+                assert!(AUTD3::is_missing_transducer(x, y));
+            });
         });
-        itertools::iproduct!(0..=256, 14..=256).for_each(|(x, y)| {
-            assert!(AUTD3::is_missing_transducer(x, y));
+        (0..=256).for_each(|x| {
+            (14..=256).for_each(|y| {
+                assert!(AUTD3::is_missing_transducer(x, y));
+            });
         });
     }
 

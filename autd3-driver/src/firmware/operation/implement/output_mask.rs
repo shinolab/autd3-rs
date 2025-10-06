@@ -13,7 +13,6 @@ use autd3_core::{
     geometry::{Device, Transducer},
 };
 
-use itertools::Itertools;
 use zerocopy::{Immutable, IntoBytes};
 
 #[repr(C, align(2))]
@@ -53,15 +52,11 @@ impl<'a, F: Fn(&'a Transducer) -> bool + Send + Sync> Operation<'a> for OutputMa
 
         tx[size_of::<OutputMaskT>()..]
             .iter_mut()
-            .zip(&dev.iter().chunks(8))
+            .zip(dev.chunks(8))
             .for_each(|(dst, chunk)| {
-                *dst =
-                    chunk.enumerate().fold(
-                        0x00u8,
-                        |acc, (i, tr)| {
-                            if (self.f)(tr) { acc | (1 << i) } else { acc }
-                        },
-                    );
+                *dst = chunk.iter().enumerate().fold(0x00u8, |acc, (i, tr)| {
+                    if (self.f)(tr) { acc | (1 << i) } else { acc }
+                });
             });
 
         self.is_done = true;

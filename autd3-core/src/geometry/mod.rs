@@ -157,11 +157,14 @@ pub(crate) mod tests {
             };
             Self {
                 rotation,
-                transducers: itertools::iproduct!(0..14, 0..18)
-                    .map(|(y, x)| {
-                        Transducer::new(
-                            (isometry * (10.16 * mm * Point3::new(x as f32, y as f32, 0.))).xyz(),
-                        )
+                transducers: (0..14)
+                    .flat_map(|y| {
+                        (0..18).map(move |x| {
+                            Transducer::new(
+                                (isometry * (10.16 * mm * Point3::new(x as f32, y as f32, 0.)))
+                                    .xyz(),
+                            )
+                        })
                     })
                     .collect(),
             }

@@ -231,8 +231,8 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case(itertools::iproduct!(0..2, 0..249).collect::<Vec<_>>(), TransducerMask::AllEnabled)]
-    #[case(itertools::iproduct!(1..2, 0..249).collect::<Vec<_>>(), TransducerMask::new([DeviceTransducerMask::AllDisabled, DeviceTransducerMask::AllEnabled]))]
+    #[case([(0..249).map(|i| (0, i)).collect::<Vec<_>>(), (0..249).map(|i| (1, i)).collect::<Vec<_>>()].concat(), TransducerMask::AllEnabled)]
+    #[case((0..249).map(|i| (1, i)).collect::<Vec<_>>(), TransducerMask::new([DeviceTransducerMask::AllDisabled, DeviceTransducerMask::AllEnabled]))]
     #[test]
     fn test_greedy_indices(#[case] expected: Vec<(usize, usize)>, #[case] filter: TransducerMask) {
         let geometry = create_geometry(2, 1);

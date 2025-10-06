@@ -1,7 +1,5 @@
 use std::ffi::{CString, c_long};
 
-use itertools::Itertools;
-
 use zerocopy::IntoBytes;
 
 use autd3_core::{
@@ -71,7 +69,7 @@ impl Link for RemoteTwinCAT {
         }
 
         let ip = if server_ip.is_empty() {
-            octets[0..4].iter().map(|v| v.to_string()).join(".")
+            format!("{}.{}.{}.{}", octets[0], octets[1], octets[2], octets[3])
         } else {
             server_ip.to_owned()
         };
