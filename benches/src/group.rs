@@ -8,10 +8,7 @@ use autd3_core::{
 use autd3_driver::{
     autd3_device::AUTD3,
     datagram::Group,
-    firmware::{
-        driver::{BoxedDatagram, Driver, OperationHandler},
-        v12_1::{operation::OperationGenerator, V12_1},
-    },
+    firmware::operation::{BoxedDatagram, OperationGenerator, OperationHandler},
     geometry::{Geometry, Point3},
 };
 
@@ -50,7 +47,6 @@ fn without_group(c: &mut Criterion) {
                             geometry,
                             &Environment::default(),
                             &DeviceMask::AllEnabled,
-                            &V12_1.firmware_limits(),
                         )
                         .unwrap();
                     let mut operations = geometry
@@ -91,7 +87,6 @@ fn group(c: &mut Criterion) {
                             geometry,
                             &Environment::default(),
                             &DeviceMask::AllEnabled,
-                            &V12_1.firmware_limits(),
                         )
                         .unwrap();
                     let mut operations = geometry
@@ -135,7 +130,6 @@ fn group_boxed(c: &mut Criterion) {
                             geometry,
                             &Environment::default(),
                             &DeviceMask::AllEnabled,
-                            &V12_1.firmware_limits(),
                         )
                         .unwrap();
                     let mut operations = geometry
@@ -176,7 +170,6 @@ fn gain_group(c: &mut Criterion) {
                             geometry,
                             &Environment::default(),
                             &DeviceMask::AllEnabled,
-                            &V12_1.firmware_limits(),
                         )
                         .unwrap();
                     let mut operations = geometry

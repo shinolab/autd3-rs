@@ -9,8 +9,8 @@ use autd3_driver::{
     datagram::*,
     error::AUTDDriverError,
     firmware::{
-        driver::{Driver, Operation, OperationHandler},
-        v12_1::{V12_1, cpu::check_firmware_err, operation::OperationGenerator},
+        cpu::check_firmware_err,
+        operation::{Operation, OperationGenerator, OperationHandler},
     },
 };
 use autd3_firmware_emulator::CPUEmulator;
@@ -48,12 +48,8 @@ where
 {
     let option = d.option();
     let parallel = geometry.num_devices() > option.parallel_threshold;
-    let mut generator = d.operation_generator(
-        geometry,
-        &Environment::new(),
-        &DeviceMask::AllEnabled,
-        &V12_1.firmware_limits(),
-    )?;
+    let mut generator =
+        d.operation_generator(geometry, &Environment::new(), &DeviceMask::AllEnabled)?;
     let mut op = geometry
         .iter()
         .map(|dev| generator.generate(dev))
@@ -110,12 +106,8 @@ fn send_ignore_same_data() -> Result<(), Box<dyn std::error::Error>> {
     let msg_id = MsgId::new(0x0A);
 
     let d = Clear::new();
-    let mut generator = d.operation_generator(
-        &geometry,
-        &Environment::new(),
-        &DeviceMask::AllEnabled,
-        &V12_1.firmware_limits(),
-    )?;
+    let mut generator =
+        d.operation_generator(&geometry, &Environment::new(), &DeviceMask::AllEnabled)?;
     let mut op = geometry
         .iter()
         .map(|dev| generator.generate(dev))
@@ -125,12 +117,8 @@ fn send_ignore_same_data() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(cpu.rx().ack().msg_id(), tx[0].header.msg_id.get());
 
     let d = Synchronize::new();
-    let mut generator = d.operation_generator(
-        &geometry,
-        &Environment::new(),
-        &DeviceMask::AllEnabled,
-        &V12_1.firmware_limits(),
-    )?;
+    let mut generator =
+        d.operation_generator(&geometry, &Environment::new(), &DeviceMask::AllEnabled)?;
     let mut op = geometry
         .iter()
         .map(|dev| generator.generate(dev))
@@ -151,12 +139,8 @@ fn send_slot_2_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let msg_id = MsgId::new(0x0E);
 
     let d = (Clear::new(), Synchronize::new());
-    let mut generator = d.operation_generator(
-        &geometry,
-        &Environment::new(),
-        &DeviceMask::AllEnabled,
-        &V12_1.firmware_limits(),
-    )?;
+    let mut generator =
+        d.operation_generator(&geometry, &Environment::new(), &DeviceMask::AllEnabled)?;
     let mut op = geometry
         .iter()
         .map(|dev| generator.generate(dev))
@@ -179,12 +163,8 @@ fn send_slot_2_err() -> Result<(), Box<dyn std::error::Error>> {
     let msg_id = MsgId::new(0);
 
     let d = (Clear::new(), Synchronize::new());
-    let mut generator = d.operation_generator(
-        &geometry,
-        &Environment::new(),
-        &DeviceMask::AllEnabled,
-        &V12_1.firmware_limits(),
-    )?;
+    let mut generator =
+        d.operation_generator(&geometry, &Environment::new(), &DeviceMask::AllEnabled)?;
     let mut op = geometry
         .iter()
         .map(|dev| generator.generate(dev))

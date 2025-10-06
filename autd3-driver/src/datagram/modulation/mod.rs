@@ -19,7 +19,7 @@ pub mod tests {
     }
 
     impl Modulation for TestModulation {
-        fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+        fn calc(self) -> Result<Vec<u8>, ModulationError> {
             Ok(vec![0; 2])
         }
 
@@ -35,12 +35,7 @@ pub mod tests {
         TestModulation {
             sampling_config: SamplingConfig::FREQ_4K,
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -66,12 +61,7 @@ pub mod tests {
             segment: Segment::S1,
             transition_mode: transition_mode::Later,
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -102,12 +92,7 @@ pub mod tests {
             transition_mode: transition_mode::SyncIdx,
             loop_count: NonZeroU16::MIN,
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(

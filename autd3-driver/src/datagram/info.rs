@@ -3,7 +3,6 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DeviceMask},
     environment::Environment,
-    firmware::FirmwareLimits,
     geometry::Geometry,
 };
 
@@ -34,7 +33,6 @@ impl Datagram<'_> for FirmwareVersionType {
         _: &Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(Self::G { inner: self })
     }

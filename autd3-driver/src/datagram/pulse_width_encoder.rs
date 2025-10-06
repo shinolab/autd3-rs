@@ -4,7 +4,7 @@ use autd3_core::{
     common::DEFAULT_TIMEOUT,
     datagram::{Datagram, DatagramOption, DeviceMask},
     environment::Environment,
-    firmware::{FirmwareLimits, Intensity, PulseWidth},
+    firmware::{Intensity, PulseWidth},
     geometry::{Device, Geometry},
 };
 
@@ -12,8 +12,7 @@ use autd3_core::{
 ///
 /// The pulse width encoder table is a table to determine the pulse width (or duty ratio) from the intensity.
 /// In the firmware, the intensity (0-255) is used as the index of the table to determine the pulse width.
-/// For firmware v11 or later, the period of the ultrasound is mapped to 512, therefore, the ultrasound output becomes maximum when the pulse width is 256 (50% in duty ratio).
-/// For firmware v10, the period of the ultrasound is mapped to 256, therefore, the ultrasound output becomes maximum when the pulse width is 128 (50% in duty ratio).
+/// The period of the ultrasound is mapped to 512, therefore, the ultrasound output becomes maximum when the pulse width is 256 (50% in duty ratio).
 ///
 /// The default table is set by the arcsin function so that [`Intensity`] is linearly proportional to output ultrasound pressure; that is, `table[i] = round(T*arcsin(i/255)/π)` where `T` is the period of the ultrasound.
 ///
@@ -53,12 +52,8 @@ impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> Datagram
         _: &Geometry,
         _: &Environment,
         _: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
-        Ok(Self::G {
-            f: self.f,
-            limits: *limits,
-        })
+        Ok(Self::G { f: self.f })
     }
 
     fn option(&self) -> DatagramOption {
@@ -82,5 +77,4 @@ impl Default for PulseWidthEncoder<fn(&Device) -> fn(Intensity) -> PulseWidth> {
 #[doc(hidden)]
 pub struct PulseWidthEncoderOperationGenerator<F> {
     pub f: F,
-    pub limits: FirmwareLimits,
 }

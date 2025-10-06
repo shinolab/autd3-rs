@@ -1,8 +1,6 @@
 use autd3::{core::link::Link, prelude::*};
 
-pub fn foci_stm(
-    autd: &mut Controller<impl Link, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn foci_stm(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(Silencer::disable())?;
 
     let stm = FociSTM {
@@ -23,9 +21,7 @@ pub fn foci_stm(
     Ok(())
 }
 
-pub fn gain_stm(
-    autd: &mut Controller<impl Link, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn gain_stm(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(Silencer::disable())?;
 
     let stm = GainSTM {

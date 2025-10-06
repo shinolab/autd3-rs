@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 
 use autd3::{
-    link::{Audit, AuditOption, audit::version},
+    link::{Audit, AuditOption},
     prelude::*,
 };
 
 #[test]
 fn only_for_enabled() -> Result<(), Box<dyn std::error::Error>> {
-    let mut autd = Controller::<_, firmware::V12_1>::open_with(
+    let mut autd = Controller::open(
         [AUTD3::default(), AUTD3::default()],
-        Audit::<version::V12_1>::new(AuditOption::default()),
+        Audit::new(AuditOption::default()),
     )?;
 
     let check = std::sync::Arc::new(std::sync::Mutex::new(vec![false; autd.num_devices()]));

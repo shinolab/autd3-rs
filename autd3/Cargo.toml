@@ -22,23 +22,18 @@ gain = ["itertools"]
 modulation = ["num"]
 stm = []
 link-audit = ["autd3-firmware-emulator"]
-link-audit-v10 = ["autd3-firmware-emulator-v10"]
-link-audit-v11 = ["autd3-firmware-emulator-v11"]
-link-audit-v12 = ["autd3-firmware-emulator-v12"]
 link-nop = ["autd3-firmware-emulator"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulation"] }
 autd3-driver = { workspace = true }
 autd3-firmware-emulator = { workspace = true, optional = true }
-autd3-firmware-emulator-v10 = { version = "=31.0.1", package = "autd3-firmware-emulator", optional = true }
-autd3-firmware-emulator-v11 = { version = "=33.0.0", package = "autd3-firmware-emulator", optional = true }
-autd3-firmware-emulator-v12 = { version = "=34.0.0", package = "autd3-firmware-emulator", optional = true }
 itertools = { workspace = true, optional = true }
 num = { version = "0.4.3", default-features = false, optional = true }
+spin_sleep = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"], optional = true }
 
 [dev-dependencies]
-autd3 = { path = ".", features = ["link-audit", "link-audit-v10", "link-audit-v11", "link-audit-v12", "link-nop"] }
+autd3 = { path = ".", features = ["link-audit", "link-nop"] }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }

@@ -1,23 +1,23 @@
 use std::time::Duration;
 
 use autd3::{
-    controller::{FixedSchedule, SenderOption},
-    link::{Audit, AuditOption, audit::version},
+    controller::SenderOption,
+    link::{Audit, AuditOption},
     prelude::*,
 };
 use autd3_core::link::{Ack, LinkError, RxMessage};
-use autd3_driver::firmware::v12_1::fpga::FPGAState;
+use autd3_driver::firmware::fpga::FPGAState;
 
 #[test]
 fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
-    let mut autd = Controller::<_, firmware::V12_1>::open_with_option(
+    let mut autd = Controller::open_with(
         [AUTD3::default()],
-        Audit::<version::V12_1>::new(AuditOption::default()),
+        Audit::new(AuditOption::default()),
         SenderOption {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()
         },
-        FixedSchedule::default(),
+        SpinSleeper::default(),
     )?;
     assert_eq!(0, autd.link()[0].idx());
 
@@ -27,7 +27,7 @@ fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
                 timeout: Some(Duration::from_millis(20)),
                 ..Default::default()
             },
-            FixedSchedule::default(),
+            SpinSleeper::default(),
         )
         .send(Null {})?;
     }

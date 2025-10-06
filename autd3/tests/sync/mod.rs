@@ -1,8 +1,7 @@
 use autd3::{
     Controller,
-    firmware::V12_1,
     gain::Null,
-    link::{Audit, AuditOption, audit::version},
+    link::{Audit, AuditOption},
     prelude::{AUTD3, AUTDDriverError},
 };
 use autd3_core::link::MsgId;
@@ -12,9 +11,9 @@ mod link;
 
 #[test]
 fn initial_msg_id() -> Result<(), Box<dyn std::error::Error>> {
-    let cnt = Controller::<_, V12_1>::open_with(
+    let cnt = Controller::<_>::open(
         [AUTD3::default()],
-        Audit::<version::V12_1>::new(AuditOption {
+        Audit::new(AuditOption {
             initial_msg_id: Some(MsgId::new(0x01)),
             initial_phase_corr: Some(0xFF),
             ..Default::default()
@@ -34,10 +33,7 @@ fn initial_msg_id() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn test_retry_with_disabled_device() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cnt = Controller::<_, V12_1>::open_with(
-        [AUTD3::default(); 2],
-        Audit::<version::V12_1>::new(Default::default()),
-    )?;
+    let mut cnt = Controller::open([AUTD3::default(); 2], Audit::new(Default::default()))?;
 
     assert_eq!(Ok(()), cnt.send(Null {}));
 

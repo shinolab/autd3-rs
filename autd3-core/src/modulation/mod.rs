@@ -1,8 +1,6 @@
 mod error;
 
-use crate::firmware::{
-    FirmwareLimits, SamplingConfig, Segment, transition_mode::TransitionModeParams,
-};
+use crate::firmware::{SamplingConfig, Segment, transition_mode::TransitionModeParams};
 use alloc::{sync::Arc, vec::Vec};
 pub use error::ModulationError;
 
@@ -13,7 +11,7 @@ pub use error::ModulationError;
 /// [`Modulation`]: autd3_derive::Modulation
 pub trait Modulation {
     /// Calculate the modulation data.
-    fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError>;
+    fn calc(self) -> Result<Vec<u8>, ModulationError>;
 
     /// The sampling configuration.
     #[must_use]
@@ -24,7 +22,6 @@ pub trait Modulation {
 pub struct ModulationOperationGenerator {
     pub g: Arc<Vec<u8>>,
     pub config: SamplingConfig,
-    pub limits: FirmwareLimits,
     pub rep: u16,
     pub segment: Segment,
     pub transition_params: TransitionModeParams,

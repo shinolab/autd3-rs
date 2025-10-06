@@ -1,8 +1,6 @@
 use autd3::{core::link::Link, prelude::*};
 
-pub fn flag(
-    autd: &mut Controller<impl Link, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn flag(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(ReadsFPGAState::new(|_dev| true))?;
 
     println!("press any key to force fan...");

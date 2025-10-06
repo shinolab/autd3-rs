@@ -1,7 +1,7 @@
 use autd3::{
     r#async::Controller,
     gain::Null,
-    link::{Audit, AuditOption, audit::version},
+    link::{Audit, AuditOption},
     prelude::{AUTD3, AUTDDriverError},
 };
 use autd3_core::link::MsgId;
@@ -12,7 +12,7 @@ mod link;
 async fn initial_msg_id() -> Result<(), Box<dyn std::error::Error>> {
     let cnt = Controller::open(
         [AUTD3::default()],
-        Audit::<version::V12_1>::new(AuditOption {
+        Audit::new(AuditOption {
             initial_msg_id: Some(MsgId::new(0x01)),
             initial_phase_corr: Some(0xFF),
             ..Default::default()
@@ -33,11 +33,7 @@ async fn initial_msg_id() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tokio::test]
 async fn test_retry_with_disabled_device() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cnt = Controller::open(
-        [AUTD3::default(); 2],
-        Audit::<version::V12_1>::new(Default::default()),
-    )
-    .await?;
+    let mut cnt = Controller::open([AUTD3::default(); 2], Audit::new(Default::default())).await?;
 
     assert_eq!(Ok(()), cnt.send(Null {}).await);
 

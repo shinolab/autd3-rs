@@ -3,7 +3,7 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DeviceMask},
     environment::Environment,
-    firmware::{FirmwareLimits, Segment, transition_mode::TransitionMode},
+    firmware::{Segment, transition_mode::TransitionMode},
     geometry::Geometry,
 };
 
@@ -40,7 +40,6 @@ impl Datagram<'_> for SwapSegmentGain {
         _: &Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self)
     }
@@ -55,7 +54,6 @@ impl<T: TransitionMode> Datagram<'_> for SwapSegmentModulation<T> {
         _: &Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self)
     }
@@ -70,7 +68,6 @@ impl<T: TransitionMode> Datagram<'_> for SwapSegmentFociSTM<T> {
         _: &Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self)
     }
@@ -85,7 +82,6 @@ impl<T: TransitionMode> Datagram<'_> for SwapSegmentGainSTM<T> {
         _: &Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self)
     }

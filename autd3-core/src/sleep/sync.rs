@@ -6,13 +6,13 @@ use alloc::boxed::Box;
 pub use spin_sleep::{SpinSleeper, SpinStrategy};
 
 /// A trait for sleep operations.
-pub trait Sleep {
+pub trait Sleeper {
     /// Sleep until the specified deadline.
     fn sleep(&self, duration: Duration);
 }
 
 // GRCOV_EXCL_START
-impl Sleep for Box<dyn Sleep> {
+impl Sleeper for Box<dyn Sleeper> {
     fn sleep(&self, duration: Duration) {
         self.as_ref().sleep(duration);
     }
@@ -25,14 +25,14 @@ impl Sleep for Box<dyn Sleep> {
 pub struct StdSleeper;
 
 #[cfg(feature = "std")]
-impl Sleep for StdSleeper {
+impl Sleeper for StdSleeper {
     fn sleep(&self, duration: Duration) {
         std::thread::sleep(duration);
     }
 }
 
 #[cfg(feature = "std")]
-impl Sleep for SpinSleeper {
+impl Sleeper for SpinSleeper {
     fn sleep(&self, duration: Duration) {
         SpinSleeper::sleep(*self, duration);
     }
@@ -44,7 +44,7 @@ impl Sleep for SpinSleeper {
 pub struct SpinWaitSleeper;
 
 #[cfg(feature = "std")]
-impl Sleep for SpinWaitSleeper {
+impl Sleeper for SpinWaitSleeper {
     fn sleep(&self, duration: Duration) {
         use std::time::Instant;
 

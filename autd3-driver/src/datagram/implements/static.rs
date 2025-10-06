@@ -18,7 +18,7 @@ impl Static {
 }
 
 impl Modulation for Static {
-    fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         let intensity = self.intensity;
         Ok(vec![intensity; 2])
     }
@@ -43,10 +43,7 @@ mod tests {
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity);
         assert_eq!(SamplingConfig::Divide(NonZeroU16::MAX), m.sampling_config());
-        assert_eq!(
-            Ok(vec![u8::MAX, u8::MAX]),
-            m.calc(&FirmwareLimits::unused())
-        );
+        assert_eq!(Ok(vec![u8::MAX, u8::MAX]), m.calc());
     }
 
     #[test]
@@ -54,9 +51,6 @@ mod tests {
         let m = Static::new(u8::MIN);
         assert_eq!(u8::MIN, m.intensity);
         assert_eq!(SamplingConfig::Divide(NonZeroU16::MAX), m.sampling_config());
-        assert_eq!(
-            Ok(vec![u8::MIN, u8::MIN]),
-            m.calc(&FirmwareLimits::unused())
-        );
+        assert_eq!(Ok(vec![u8::MIN, u8::MIN]), m.calc());
     }
 }

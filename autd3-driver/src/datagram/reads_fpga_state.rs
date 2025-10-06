@@ -3,7 +3,6 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DeviceMask},
     environment::Environment,
-    firmware::FirmwareLimits,
     geometry::{Device, Geometry},
 };
 
@@ -31,7 +30,6 @@ impl<F: Fn(&Device) -> bool> Datagram<'_> for ReadsFPGAState<F> {
         _: &Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self)
     }

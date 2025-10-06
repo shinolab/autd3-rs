@@ -148,12 +148,7 @@ pub mod tests {
             },
             &geometry,
         )
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -190,12 +185,7 @@ pub mod tests {
             segment: Segment::S1,
             transition_mode: transition_mode::Later,
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(

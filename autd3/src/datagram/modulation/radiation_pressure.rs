@@ -16,8 +16,8 @@ impl<M: Modulation> RadiationPressure<M> {
 }
 
 impl<M: Modulation> Modulation for RadiationPressure<M> {
-    fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
-        let src = self.target.calc(limits)?;
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
+        let src = self.target.calc()?;
         Ok(src
             .iter()
             .map(|v| ((*v as f32 / 255.).sqrt() * 255.).round() as u8)
@@ -66,7 +66,7 @@ mod tests {
                     sampling_config: 4. * kHz,
                 }
             }
-            .calc(&FirmwareLimits::unused())?
+            .calc()?
         );
 
         Ok(())

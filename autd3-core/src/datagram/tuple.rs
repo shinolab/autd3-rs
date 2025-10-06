@@ -1,4 +1,4 @@
-use crate::{environment::Environment, firmware::FirmwareLimits, geometry::Geometry};
+use crate::{environment::Environment, geometry::Geometry};
 
 use super::{Datagram, DatagramOption, DeviceMask};
 
@@ -57,11 +57,10 @@ where
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         match (
-            self.0.operation_generator(geometry, env, filter, limits),
-            self.1.operation_generator(geometry, env, filter, limits),
+            self.0.operation_generator(geometry, env, filter),
+            self.1.operation_generator(geometry, env, filter),
         ) {
             (Ok(g1), Ok(g2)) => Ok(CombinedOperationGenerator { o1: g1, o2: g2 }),
             (Err(e1), _) => Err(Self::Error::E1(e1)),
@@ -95,7 +94,6 @@ mod tests {
             _: &Geometry,
             _: &Environment,
             _: &DeviceMask,
-            _: &FirmwareLimits,
         ) -> Result<Self::G, Self::Error> {
             self.result
         }
@@ -131,7 +129,6 @@ mod tests {
                     &Geometry::new(Default::default()),
                     &Environment::new(),
                     &DeviceMask::AllEnabled,
-                    &FirmwareLimits::unused()
                 )
         );
     }

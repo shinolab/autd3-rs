@@ -1,8 +1,6 @@
 use autd3::{core::link::Link, prelude::*};
 
-pub fn custom(
-    autd: &mut Controller<impl Link, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn custom(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(Silencer::disable())?;
 
     let m = autd3::modulation::Custom {

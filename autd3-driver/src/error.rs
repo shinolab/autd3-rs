@@ -1,9 +1,13 @@
 use std::{convert::Infallible, time::Duration};
 
 use autd3_core::{
-    common::{FOCI_STM_FOCI_NUM_MIN, MOD_BUF_SIZE_MIN, STM_BUF_SIZE_MIN},
     datagram::CombinedError,
-    firmware::{FirmwareLimits, PulseWidthError, SamplingConfigError},
+    firmware::{
+        FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FOCI_NUM_MAX, FOCI_STM_FOCI_NUM_MIN, FOCI_STM_LOWER_X,
+        FOCI_STM_LOWER_Y, FOCI_STM_LOWER_Z, FOCI_STM_UPPER_X, FOCI_STM_UPPER_Y, FOCI_STM_UPPER_Z,
+        GAIN_STM_BUF_SIZE_MAX, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, PulseWidthError,
+        STM_BUF_SIZE_MIN, SamplingConfigError,
+    },
     gain::GainError,
     link::LinkError,
     modulation::ModulationError,
@@ -24,16 +28,16 @@ pub enum AUTDDriverError {
     STMPeriodInvalid(usize, Duration),
 
     /// Modulation buffer size is out of range.
-    ModulationSizeOutOfRange(usize, FirmwareLimits),
+    ModulationSizeOutOfRange(usize),
 
     /// FociSTM buffer size is out of range.
-    FociSTMTotalSizeOutOfRange(usize, FirmwareLimits),
+    FociSTMTotalSizeOutOfRange(usize),
     /// Number of foci is out of range.
-    FociSTMNumFociOutOfRange(usize, FirmwareLimits),
+    FociSTMNumFociOutOfRange(usize),
     /// FociSTM point is out of range.
-    FociSTMPointOutOfRange(f32, f32, f32, FirmwareLimits),
+    FociSTMPointOutOfRange(f32, f32, f32),
     /// GainSTM buffer size is out of range.
-    GainSTMSizeOutOfRange(usize, FirmwareLimits),
+    GainSTMSizeOutOfRange(usize),
 
     /// GPIO output type is not supported.
     UnsupportedGPIOOutputType(String),
@@ -140,38 +144,38 @@ impl std::fmt::Display for AUTDDriverError {
                 "STM sampling period ({:?}/{}) must be integer",
                 period, size
             ),
-            AUTDDriverError::ModulationSizeOutOfRange(size, limits) => write!(
+            AUTDDriverError::ModulationSizeOutOfRange(size) => write!(
                 f,
                 "Modulation buffer size ({}) is out of range ([{}, {}])",
-                size, MOD_BUF_SIZE_MIN, limits.mod_buf_size_max
+                size, MOD_BUF_SIZE_MIN, MOD_BUF_SIZE_MAX
             ),
-            AUTDDriverError::FociSTMTotalSizeOutOfRange(size, limits) => write!(
+            AUTDDriverError::FociSTMTotalSizeOutOfRange(size) => write!(
                 f,
                 "The number of total foci ({}) is out of range ([{}, {}])",
-                size, STM_BUF_SIZE_MIN, limits.foci_stm_buf_size_max
+                size, STM_BUF_SIZE_MIN, FOCI_STM_BUF_SIZE_MAX
             ),
-            AUTDDriverError::FociSTMNumFociOutOfRange(size, limits) => write!(
+            AUTDDriverError::FociSTMNumFociOutOfRange(size) => write!(
                 f,
                 "Number of foci ({}) is out of range ([{}, {}])",
-                size, FOCI_STM_FOCI_NUM_MIN, limits.num_foci_max
+                size, FOCI_STM_FOCI_NUM_MIN, FOCI_STM_FOCI_NUM_MAX
             ),
-            AUTDDriverError::FociSTMPointOutOfRange(x, y, z, limits) => write!(
+            AUTDDriverError::FociSTMPointOutOfRange(x, y, z) => write!(
                 f,
                 "Point coordinate ({}, {}, {}) is out of range ([{}, {}], [{}, {}], [{}, {}])",
                 x,
                 y,
                 z,
-                limits.foci_stm_lower_x(),
-                limits.foci_stm_upper_x(),
-                limits.foci_stm_lower_y(),
-                limits.foci_stm_upper_y(),
-                limits.foci_stm_lower_z(),
-                limits.foci_stm_upper_z()
+                FOCI_STM_LOWER_X,
+                FOCI_STM_UPPER_X,
+                FOCI_STM_LOWER_Y,
+                FOCI_STM_UPPER_Y,
+                FOCI_STM_LOWER_Z,
+                FOCI_STM_UPPER_Z,
             ),
-            AUTDDriverError::GainSTMSizeOutOfRange(size, limits) => write!(
+            AUTDDriverError::GainSTMSizeOutOfRange(size) => write!(
                 f,
                 "GainSTM size ({}) is out of range ([{}, {}])",
-                size, STM_BUF_SIZE_MIN, limits.gain_stm_buf_size_max
+                size, STM_BUF_SIZE_MIN, GAIN_STM_BUF_SIZE_MAX
             ),
             AUTDDriverError::UnsupportedGPIOOutputType(t) => {
                 write!(f, "GPIO output type ({}) is not supported", t)

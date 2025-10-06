@@ -1,6 +1,8 @@
 #[cfg(not(feature = "std"))]
 use num_traits::float::Float;
 
+use crate::firmware::ULTRASOUND_PERIOD_COUNT_BITS;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 enum PulseWidthInner {
@@ -67,19 +69,20 @@ impl PulseWidth {
     }
 
     /// Returns the pulse width.
-    pub fn pulse_width<T>(self, period: u32) -> Result<T, PulseWidthError>
+    pub fn pulse_width<T>(self) -> Result<T, PulseWidthError>
     where
         T: TryFrom<u32> + TryInto<u32>,
     {
+        const PERIOD: u32 = 1 << ULTRASOUND_PERIOD_COUNT_BITS;
         let pulse_width = match self.inner {
-            PulseWidthInner::Duty(duty) => (duty * period as f32).round() as u32,
+            PulseWidthInner::Duty(duty) => (duty * PERIOD as f32).round() as u32,
             PulseWidthInner::Raw(raw) => raw,
         };
-        if pulse_width >= period {
-            return Err(PulseWidthError::PulseWidthOutOfRange(pulse_width, period));
+        if pulse_width >= PERIOD {
+            return Err(PulseWidthError::PulseWidthOutOfRange(pulse_width, PERIOD));
         }
         T::try_from(pulse_width)
-            .map_err(|_| PulseWidthError::PulseWidthOutOfRange(pulse_width, period))
+            .map_err(|_| PulseWidthError::PulseWidthOutOfRange(pulse_width, PERIOD))
     }
 }
 
@@ -88,45 +91,33 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[case(Ok(0), 0, 256)]
-    #[case(Ok(128), 128, 256)]
-    #[case(Ok(255), 255, 256)]
-    #[case(Err(PulseWidthError::PulseWidthOutOfRange(256, 256)), 256, 256)]
-    #[case(Ok(0), 0, 512)]
-    #[case(Ok(256), 256, 512)]
-    #[case(Ok(511), 511, 512)]
-    #[case(Err(PulseWidthError::PulseWidthOutOfRange(512, 512)), 512, 512)]
+    #[case(Ok(0), 0)]
+    #[case(Ok(256), 256)]
+    #[case(Ok(511), 511)]
+    #[case(Err(PulseWidthError::PulseWidthOutOfRange(512, 512)), 512)]
     #[test]
     fn test_pulse_width_new(
         #[case] expected: Result<u16, PulseWidthError>,
         #[case] pulse_width: u32,
-        #[case] period: u32,
     ) {
-        assert_eq!(expected, PulseWidth::new(pulse_width).pulse_width(period));
+        assert_eq!(expected, PulseWidth::new(pulse_width).pulse_width());
     }
 
     #[rstest::rstest]
-    #[case(Ok(0), 0.0, 256)]
-    #[case(Ok(128), 0.5, 256)]
-    #[case(Ok(255), 255.0 / 256.0, 256)]
-    #[case(Err(PulseWidthError::DutyRatioOutOfRange(-0.5)), -0.5, 256)]
-    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.0)), 1.0, 256)]
-    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.5)), 1.5, 256)]
-    #[case(Ok(0), 0.0, 512)]
-    #[case(Ok(256), 0.5, 512)]
-    #[case(Ok(511), 511.0 / 512.0, 512)]
-    #[case(Err(PulseWidthError::DutyRatioOutOfRange(-0.5)), -0.5, 512)]
-    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.0)), 1.0, 512)]
-    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.5)), 1.5, 512)]
+    #[case(Ok(0), 0.0)]
+    #[case(Ok(256), 0.5)]
+    #[case(Ok(511), 511.0 / 512.0)]
+    #[case(Err(PulseWidthError::DutyRatioOutOfRange(-0.5)), -0.5)]
+    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.0)), 1.0)]
+    #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.5)), 1.5)]
     #[test]
     fn test_pulse_width_from_duty(
         #[case] expected: Result<u16, PulseWidthError>,
         #[case] duty: f32,
-        #[case] period: u32,
     ) {
         assert_eq!(
             expected,
-            PulseWidth::from_duty(duty).and_then(|p| p.pulse_width(period))
+            PulseWidth::from_duty(duty).and_then(|p| p.pulse_width())
         );
     }
 }

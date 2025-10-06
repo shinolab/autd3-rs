@@ -174,11 +174,11 @@ impl FociSTMGenerator<1> for Circle {
 
 #[cfg(test)]
 mod tests {
-    use autd3_driver::common::mm;
+    use super::*;
 
     use crate::assert_near_vector3;
 
-    use super::*;
+    use autd3_driver::common::mm;
 
     #[rstest::rstest]
     #[case(
@@ -187,8 +187,7 @@ mod tests {
             Vector3::new(0., 0., -30.0 * mm),
             Vector3::new(0., 30.0 * mm, 0.),
             Vector3::new(0., 0., 30.0 * mm),
-        ]
-        ,
+        ],
         Vector3::x_axis()
     )]
     #[case(
@@ -197,8 +196,7 @@ mod tests {
             Vector3::new(0., 0., -30.0 * mm),
             Vector3::new(-30.0 * mm, 0., 0.),
             Vector3::new(0., 0., 30.0 * mm),
-        ]
-        ,
+        ],
         Vector3::y_axis()
     )]
     #[case(
@@ -207,8 +205,7 @@ mod tests {
             Vector3::new(0., -30.0 * mm, 0.),
             Vector3::new(30.0 * mm, 0., 0.),
             Vector3::new(0., 30.0 * mm, 0.),
-        ]
-        ,
+        ],
         Vector3::z_axis()
     )]
     #[test]

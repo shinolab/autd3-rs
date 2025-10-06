@@ -3,7 +3,7 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DeviceMask},
     environment::Environment,
-    firmware::{CpuGPIOPort, FirmwareLimits},
+    firmware::CpuGPIOPort,
     geometry::{Device, Geometry},
 };
 
@@ -30,7 +30,6 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram<'_> for CpuGPIOOutput
         _: &Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self)
     }

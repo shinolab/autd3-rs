@@ -49,7 +49,7 @@ impl<S: Into<SamplingMode> + Clone + Copy + Debug> Modulation for Fourier<S> {
             .unwrap_or(SamplingConfig::FREQ_40K)
     }
 
-    fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         if self.components.is_empty() {
             return Err(ModulationError::new("Components must not be empty"));
         }
@@ -78,7 +78,7 @@ impl<S: Into<SamplingMode> + Clone + Copy + Debug> Modulation for Fourier<S> {
 
         let buffers = components
             .iter()
-            .map(|c| Ok(c.calc_raw(limits)?.collect::<Vec<_>>()))
+            .map(|c| Ok(c.calc_raw()?.collect::<Vec<_>>()))
             .collect::<Result<Vec<_>, ModulationError>>()?;
         let scale = self
             .option
@@ -118,10 +118,7 @@ mod tests {
     use super::*;
 
     use autd3_core::common::Freq;
-    use autd3_driver::{
-        common::{Hz, PI, rad},
-        firmware::{driver::Driver, v12_1::V12_1},
-    };
+    use autd3_driver::common::{Hz, PI, rad};
 
     #[test]
     fn test_fourier() -> Result<(), Box<dyn std::error::Error>> {
@@ -155,15 +152,15 @@ mod tests {
             option: SineOption::default(),
         };
 
-        let f0_buf = f0.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
-        let f1_buf = f1.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
-        let f2_buf = f2.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
-        let f3_buf = f3.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
-        let f4_buf = f4.calc_raw(&V12_1.firmware_limits())?.collect::<Vec<_>>();
+        let f0_buf = f0.calc_raw()?.collect::<Vec<_>>();
+        let f1_buf = f1.calc_raw()?.collect::<Vec<_>>();
+        let f2_buf = f2.calc_raw()?.collect::<Vec<_>>();
+        let f3_buf = f3.calc_raw()?.collect::<Vec<_>>();
+        let f4_buf = f4.calc_raw()?.collect::<Vec<_>>();
 
         let f = Fourier::new([f0, f1, f2, f3, f4], FourierOption::default());
 
-        let buf = &f.calc(&V12_1.firmware_limits())?;
+        let buf = &f.calc()?;
 
         (0..buf.len()).for_each(|i| {
             assert_eq!(
@@ -206,7 +203,7 @@ mod tests {
                 ],
                 option: FourierOption::default(),
             }
-            .calc(&V12_1.firmware_limits())
+            .calc()
         );
         Ok(())
     }
@@ -219,7 +216,7 @@ mod tests {
                 components: vec![],
                 option: FourierOption::default(),
             }
-            .calc(&V12_1.firmware_limits())
+            .calc()
         );
     }
 
@@ -265,7 +262,7 @@ mod tests {
                     ..Default::default()
                 },
             }
-            .calc(&V12_1.firmware_limits())
+            .calc()
         );
     }
 }

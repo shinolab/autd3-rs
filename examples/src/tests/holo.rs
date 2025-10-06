@@ -3,9 +3,7 @@ use autd3_gain_holo::*;
 
 use std::io::{self, Write};
 
-pub fn holo(
-    autd: &mut Controller<impl Link, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn holo(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(Silencer::default())?;
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);

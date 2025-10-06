@@ -1,8 +1,6 @@
 use autd3::{core::link::Link, prelude::*};
 
-pub fn bessel(
-    autd: &mut Controller<impl Link, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn bessel(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(Silencer::default())?;
 
     let center = autd.center();

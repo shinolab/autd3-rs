@@ -10,8 +10,8 @@ pub use tuple::{CombinedError, CombinedOperationGenerator};
 
 use crate::{
     environment::Environment,
+    firmware::Segment,
     firmware::transition_mode::{Immediate, TransitionMode, TransitionModeParams},
-    firmware::{FirmwareLimits, Segment},
     geometry::Geometry,
 };
 
@@ -39,7 +39,6 @@ pub trait DatagramL<'a> {
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
         segment: Segment,
         transition_params: TransitionModeParams,
         rep: u16,
@@ -63,7 +62,6 @@ pub trait DatagramS<'a> {
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
         segment: Segment,
         transition_params: TransitionModeParams,
     ) -> Result<Self::G, Self::Error>;
@@ -82,7 +80,6 @@ impl<'a, D: DatagramL<'a>> DatagramS<'a> for D {
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
         segment: Segment,
         transition_params: TransitionModeParams,
     ) -> Result<Self::G, Self::Error> {
@@ -90,7 +87,6 @@ impl<'a, D: DatagramL<'a>> DatagramS<'a> for D {
             geometry,
             env,
             filter,
-            limits,
             segment,
             transition_params,
             INFINITE_REP,
@@ -115,7 +111,6 @@ pub trait Datagram<'a> {
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error>;
 
     /// Returns the option of the datagram.
@@ -134,13 +129,11 @@ impl<'a, D: DatagramS<'a>> Datagram<'a> for D {
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         self.operation_generator_with_segment(
             geometry,
             env,
             filter,
-            limits,
             Segment::S0,
             Immediate.params(),
         )

@@ -6,7 +6,7 @@ use autd3_core::{
         internal::HasFiniteLoop,
     },
     environment::Environment,
-    firmware::{FirmwareLimits, Segment, transition_mode::TransitionMode},
+    firmware::{Segment, transition_mode::TransitionMode},
     geometry::Geometry,
 };
 
@@ -60,14 +60,12 @@ where
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramL>::operation_generator_with_finite_loop(
             self.inner,
             geometry,
             env,
             filter,
-            limits,
             self.segment,
             self.transition_mode.params(),
             self.loop_count.get() - 1,
@@ -100,12 +98,11 @@ where
         geometry: &'a Geometry,
         env: &autd3_core::environment::Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
         Ok(InspectionResult {
             result: self
                 .inner
-                .inspect(geometry, env, filter, limits)?
+                .inspect(geometry, env, filter)?
                 .result
                 .into_iter()
                 .map(|r| {

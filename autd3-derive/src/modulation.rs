@@ -13,13 +13,12 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
             type G = ModulationOperationGenerator;
             type Error = ModulationError;
 
-            fn operation_generator_with_finite_loop(self, _: &Geometry, _: &Environment, _: &DeviceMask, limits: &FirmwareLimits, segment: Segment, transition_params: transition_mode::TransitionModeParams, rep: u16) -> Result<Self::G, Self::Error> {
+            fn operation_generator_with_finite_loop(self, _: &Geometry, _: &Environment, _: &DeviceMask, segment: Segment, transition_params: transition_mode::TransitionModeParams, rep: u16) -> Result<Self::G, Self::Error> {
                 let config = <Self as Modulation>::sampling_config(&self);
-                let g = self.calc(limits)?;
+                let g = self.calc()?;
                 Ok(Self::G {
                     g: std::sync::Arc::new(g),
                     config,
-                    limits: *limits,
                     rep,
                     segment,
                     transition_params,
@@ -44,11 +43,10 @@ pub(crate) fn impl_mod_macro(input: syn::DeriveInput) -> TokenStream {
                 geometry: &Geometry,
                 _: &Environment,
                 filter: &DeviceMask,
-                limits: &FirmwareLimits
             ) -> Result<InspectionResult<Self::Result>, ModulationError> {
                 let sampling_config = self.sampling_config();
                 sampling_config.divide()?;
-                let data = self.calc(limits)?;
+                let data = self.calc()?;
                 Ok(InspectionResult::new(
                     geometry,
                     filter,

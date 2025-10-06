@@ -4,16 +4,16 @@ use autd3_core::derive::*;
 
 /// A dyn-compatible version of [`Modulation`].
 pub trait DModulation {
-    fn dyn_calc(&mut self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError>;
+    fn dyn_calc(&mut self) -> Result<Vec<u8>, ModulationError>;
 }
 
 impl<T: Modulation> DModulation for MaybeUninit<T> {
-    fn dyn_calc(&mut self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+    fn dyn_calc(&mut self) -> Result<Vec<u8>, ModulationError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
         // SAFETY: This function is called only once from `Modulation::calc`.
         let g = unsafe { tmp.assume_init() };
-        g.calc(limits)
+        g.calc()
     }
 }
 
@@ -38,9 +38,9 @@ impl BoxedModulation {
 }
 
 impl Modulation for BoxedModulation {
-    fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         let Self { mut m, .. } = self;
-        m.dyn_calc(limits)
+        m.dyn_calc()
     }
 
     fn sampling_config(&self) -> SamplingConfig {
@@ -62,6 +62,6 @@ pub mod tests {
         let mb = BoxedModulation::new(m.clone());
 
         assert_eq!(SamplingConfig::FREQ_4K, mb.sampling_config());
-        assert_eq!(Ok(vec![0; 2]), mb.calc(&FirmwareLimits::unused()));
+        assert_eq!(Ok(vec![0; 2]), mb.calc());
     }
 }
