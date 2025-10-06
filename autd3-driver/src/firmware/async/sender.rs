@@ -153,8 +153,6 @@ impl<'a, L: AsyncLink, S: Sleep> Sender<'a, L, S> {
         O2: Operation<'a>,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
     {
-        let strict = self.option.strict;
-
         operations
             .iter()
             .zip(self.sent_flags.iter_mut())
@@ -178,7 +176,7 @@ impl<'a, L: AsyncLink, S: Sleep> Sender<'a, L, S> {
             self.msg_id.increment();
             OperationHandler::pack(*self.msg_id, operations, self.geometry, &mut tx, parallel)?;
 
-            self.send_receive(tx, timeout, strict).await?;
+            self.send_receive(tx, timeout).await?;
 
             if OperationHandler::is_done(operations) {
                 return Ok(());
@@ -196,17 +194,15 @@ impl<'a, L: AsyncLink, S: Sleep> Sender<'a, L, S> {
         &mut self,
         tx: Vec<TxMessage>,
         timeout: Duration,
-        strict: bool,
     ) -> Result<(), AUTDDriverError> {
         self.link.ensure_is_open()?;
         self.link.send(tx).await?;
-        self.wait_msg_processed(timeout, strict).await
+        self.wait_msg_processed(timeout).await
     }
 
     pub(crate) async fn wait_msg_processed(
         &mut self,
         timeout: Duration,
-        strict: bool,
     ) -> Result<(), AUTDDriverError> {
         let start = Instant::now();
         let mut receive_timing = Instant::now();
@@ -223,11 +219,7 @@ impl<'a, L: AsyncLink, S: Sleep> Sender<'a, L, S> {
             }
 
             if start.elapsed() > timeout {
-                return if !strict && timeout == Duration::ZERO {
-                    Ok(())
-                } else {
-                    Err(AUTDDriverError::ConfirmResponseFailed)
-                };
+                return Err(AUTDDriverError::ConfirmResponseFailed);
             }
 
             let next = receive_timing + self.option.receive_interval;

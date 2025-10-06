@@ -46,9 +46,11 @@ mod tests {
         type O1 = NullOp;
         type O2 = NullOp;
 
+        // GRCOV_EXCL_START
         fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
             Some((NullOp, NullOp))
         }
+        // GRCOV_EXCL_STOP
     }
 
     #[test]
@@ -90,7 +92,7 @@ mod tests {
         assert_eq!(
             option1.merge(option2),
             Group::new(
-                |dev| Some(dev.idx()),
+                |dev| Some(dev.idx()), // GRCOV_EXCL_LINE
                 HashMap::from([
                     (0, TestDatagram { option: option1 }),
                     (1, TestDatagram { option: option2 }),

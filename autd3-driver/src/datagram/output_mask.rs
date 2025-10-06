@@ -75,3 +75,14 @@ impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync, F: Fn(&'a Device) -> FT> 
         DatagramOption::default()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new() {
+        let datagram = OutputMask::new(|_dev| |_tr| true);
+        assert_eq!(datagram.segment, Segment::S0);
+    }
+}

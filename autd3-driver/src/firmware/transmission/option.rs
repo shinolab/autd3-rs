@@ -15,8 +15,6 @@ pub struct SenderOption {
     pub timeout: Option<Duration>,
     /// The parallel processing mode.
     pub parallel: ParallelMode,
-    /// If `true`, force firmware error checking.
-    pub strict: bool,
 }
 
 impl Default for SenderOption {
@@ -26,7 +24,6 @@ impl Default for SenderOption {
             receive_interval: Duration::from_millis(1),
             timeout: None,
             parallel: ParallelMode::Auto,
-            strict: true,
         }
     }
 }

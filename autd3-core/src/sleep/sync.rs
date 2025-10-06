@@ -26,9 +26,11 @@ pub struct StdSleeper;
 
 #[cfg(feature = "std")]
 impl Sleeper for StdSleeper {
+    // GRCOV_EXCL_START
     fn sleep(&self, duration: Duration) {
         std::thread::sleep(duration);
     }
+    // GRCOV_EXCL_STOP
 }
 
 #[cfg(feature = "std")]
@@ -45,6 +47,7 @@ pub struct SpinWaitSleeper;
 
 #[cfg(feature = "std")]
 impl Sleeper for SpinWaitSleeper {
+    // GRCOV_EXCL_START
     fn sleep(&self, duration: Duration) {
         use std::time::Instant;
 
@@ -53,4 +56,5 @@ impl Sleeper for SpinWaitSleeper {
             core::hint::spin_loop();
         }
     }
+    // GRCOV_EXCL_STOP
 }

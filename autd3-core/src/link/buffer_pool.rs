@@ -6,6 +6,7 @@ use crate::geometry::Geometry;
 use super::TxMessage;
 
 /// A tx buffer pool for single-threaded use
+#[derive(Default)]
 pub struct TxBufferPoolSync {
     num_devices: usize,
     buffer: Option<Vec<TxMessage>>,
@@ -36,11 +37,5 @@ impl TxBufferPoolSync {
     pub fn return_buffer(&mut self, buffer: Vec<TxMessage>) {
         assert_eq!(buffer.len(), self.num_devices);
         self.buffer = Some(buffer);
-    }
-}
-
-impl Default for TxBufferPoolSync {
-    fn default() -> Self {
-        Self::new()
     }
 }

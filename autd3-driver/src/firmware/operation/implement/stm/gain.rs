@@ -160,7 +160,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                                 crate::firmware::operation::write_to_tx(dst, g.calc(tr));
                             });
                         send += 1;
-                    }
+                    } // GRCOV_EXCL_LINE
                 }
                 GainSTMMode::PhaseFull => {
                     if let Some(g) = self.iter.next() {
@@ -172,7 +172,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                                     g.calc(tr).phase.0;
                             });
                         send += 1;
-                    }
+                    } // GRCOV_EXCL_LINE
                     if let Some(g) = self.iter.next() {
                         tx[offset..]
                             .chunks_exact_mut(size_of::<PhaseFull>())
@@ -195,7 +195,7 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                                     .set_phase_0(g.calc(tr).phase.0 >> 4);
                             });
                         send += 1;
-                    }
+                    } // GRCOV_EXCL_LINE
                     if let Some(g) = self.iter.next() {
                         tx[offset..]
                             .chunks_exact_mut(size_of::<PhaseHalf>())

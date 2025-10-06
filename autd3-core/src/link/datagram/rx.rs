@@ -22,12 +22,6 @@ impl Ack {
     pub const fn err(&self) -> u8 {
         (self.0 >> 4) & 0x0F
     }
-
-    #[doc(hidden)]
-    #[must_use]
-    pub const fn bits(self) -> u8 {
-        self.0
-    }
 }
 
 impl core::fmt::Debug for Ack {
