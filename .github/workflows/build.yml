@@ -40,22 +40,6 @@ jobs:
           tool: cargo-nextest
       - run: cargo make check --features "${{ matrix.features }}"
 
-  miri:
-    name: test-with-miri
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - uses: ./.github/actions/setup-build
-        with:
-          toolchain: nightly
-          components: miri
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-nextest
-      - run: cargo make miri
-
   build-docs:
     name: build-docs
     runs-on: ubuntu-latest

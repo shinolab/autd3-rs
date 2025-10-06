@@ -176,9 +176,7 @@ fn send_gain_stm_phase_intensity_full_unsafe() -> Result<(), Box<dyn std::error:
 
 #[rstest::rstest]
 #[case(2)]
-#[cfg_attr(miri, ignore)]
 #[case(3)]
-#[cfg_attr(miri, ignore)]
 #[case(GAIN_STM_BUF_SIZE_MAX)]
 fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
@@ -230,13 +228,9 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::
 
 #[rstest::rstest]
 #[case(2)]
-#[cfg_attr(miri, ignore)]
 #[case(3)]
-#[cfg_attr(miri, ignore)]
 #[case(4)]
-#[cfg_attr(miri, ignore)]
 #[case(5)]
-#[cfg_attr(miri, ignore)]
 #[case(GAIN_STM_BUF_SIZE_MAX)]
 
 fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::error::Error>> {

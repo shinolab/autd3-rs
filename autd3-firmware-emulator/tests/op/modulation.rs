@@ -102,28 +102,24 @@ where
 }
 
 #[rstest::rstest]
-#[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
     NonZeroU16::MIN,
     Segment::S1,
     transition_mode::GPIO(GPIOIn::I0)
 )]
-#[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
     NonZeroU16::MIN,
     Segment::S1,
     transition_mode::GPIO(GPIOIn::I1)
 )]
-#[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
     NonZeroU16::MIN,
     Segment::S1,
     transition_mode::GPIO(GPIOIn::I2)
 )]
-#[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
     NonZeroU16::MIN,

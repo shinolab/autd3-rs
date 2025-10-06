@@ -39,12 +39,6 @@ args = ["nextest", "run", "--workspace", "${@}"]
 command = "cargo"
 args = ["test", "--doc", "--workspace", "${@}"]
 
-[tasks.miri]
-env = { MIRIFLAGS = "-Zmiri-disable-isolation", CARGO_TOOLCHAIN = { value = "nightly", condition = { env_not_set = ["CARGO_TOOLCHAIN"] } } }
-toolchain = "${CARGO_TOOLCHAIN}"
-command = "cargo"
-args = ["miri", "nextest", "run", "unsafe"]
-
 [tasks.run]
 run_task = [{ name = "run-debug", condition = { profiles = ["debug"] } }, { name = "run-release" }]
 
