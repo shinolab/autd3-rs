@@ -1,8 +1,6 @@
 #[cfg(not(feature = "std"))]
 use num_traits::float::Float;
 
-use thiserror::Error;
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 enum PulseWidthInner {
@@ -17,16 +15,35 @@ pub struct PulseWidth {
     inner: PulseWidthInner,
 }
 
-#[derive(Debug, Error, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 /// Error type for [`PulseWidth`].
 pub enum PulseWidthError {
     /// Error when the pulse width is out of range.
-    #[error("Pulse width ({0}) is out of range [0, {1})")]
     PulseWidthOutOfRange(u32, u32),
     /// Error when the duty ratio is out of range.
-    #[error("Duty ratio ({0}) is out of range [0, 1)")]
     DutyRatioOutOfRange(f32),
 }
+
+// GRCOV_EXCL_START
+impl core::fmt::Display for PulseWidthError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            PulseWidthError::PulseWidthOutOfRange(pulse_width, period) => {
+                write!(
+                    f,
+                    "Pulse width ({}) is out of range [0, {})",
+                    pulse_width, period
+                )
+            }
+            PulseWidthError::DutyRatioOutOfRange(duty) => {
+                write!(f, "Duty ratio ({}) is out of range [0, 1)", duty)
+            }
+        }
+    }
+}
+
+impl core::error::Error for PulseWidthError {}
+// GRCOV_EXCL_STOP
 
 impl PulseWidth {
     /// Creates a new [`PulseWidth`].

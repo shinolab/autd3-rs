@@ -23,7 +23,7 @@ bitflags = { version = "2.9.1", default-features = false }
 itertools = { workspace = true, features = ["use_alloc"] }
 pastey = { workspace = true }
 rayon = { workspace = true }
-thiserror = { workspace = true }
+
 zerocopy = { workspace = true }
 
 [dev-dependencies]

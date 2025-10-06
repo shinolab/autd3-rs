@@ -1,16 +1,23 @@
 use core::convert::Infallible;
 
 use alloc::string::{String, ToString};
-use thiserror::Error;
 
 use crate::firmware::SamplingConfigError;
 
-#[derive(Error, Debug, PartialEq, Clone)]
-#[error("{msg}")]
+#[derive(Debug, PartialEq, Clone)]
 /// An error occurred during modulation calculation.
 pub struct ModulationError {
     msg: String,
 }
+
+// GRCOV_EXCL_START
+impl core::fmt::Display for ModulationError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.msg)
+    }
+}
+
+impl core::error::Error for ModulationError {}
 
 impl ModulationError {
     /// Creates a new [`ModulationError`].
@@ -22,7 +29,6 @@ impl ModulationError {
     }
 }
 
-// GRCOV_EXCL_START
 impl From<Infallible> for ModulationError {
     fn from(_: Infallible) -> Self {
         unreachable!()

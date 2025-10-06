@@ -11,14 +11,13 @@ repository = { workspace = true }
 
 [features]
 default = ["csv", "wav"]
-csv = ["autd3-core", "thiserror", "dep:csv"]
-wav = ["autd3-core", "thiserror", "hound"]
+csv = ["autd3-core", "dep:csv"]
+wav = ["autd3-core", "hound"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["derive", "modulation", "utils"], optional = true }
 csv = { version = "1.3.1", default-features = false, optional = true }
 hound = { version = "3.5.1", default-features = false, optional = true }
-thiserror = { workspace = true, optional = true }
 
 [dev-dependencies]
 rstest = { workspace = true }

@@ -1,7 +1,16 @@
 #[cfg(feature = "time")]
-#[derive(thiserror::Error, Debug, PartialEq, Clone)]
-#[error("Invalid date time")]
+#[derive(Debug, PartialEq, Clone)]
 pub struct InvalidDateTime;
+
+#[cfg(feature = "time")]
+impl core::fmt::Display for InvalidDateTime {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Invalid date time")
+    }
+}
+
+#[cfg(all(feature = "time", feature = "std"))]
+impl std::error::Error for InvalidDateTime {}
 
 #[cfg(feature = "time")]
 use super::ECAT_DC_SYS_TIME_BASE;
