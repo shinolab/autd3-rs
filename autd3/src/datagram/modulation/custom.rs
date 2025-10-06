@@ -35,7 +35,7 @@ impl<Config> Modulation for Custom<Config>
 where
     Config: Into<SamplingConfig> + Debug + Copy,
 {
-    fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buffer)
     }
 
@@ -58,7 +58,7 @@ mod tests {
         let test_buf = (0..2).map(|_| rng.random()).collect::<Vec<u8>>();
         let custom = Custom::new(test_buf.clone(), 4. * kHz);
 
-        let d = custom.calc(&FirmwareLimits::unused())?;
+        let d = custom.calc()?;
         assert_eq!(test_buf, *d);
 
         Ok(())

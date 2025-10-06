@@ -16,7 +16,7 @@ use autd3_core::{
     },
     environment::Environment,
     firmware::{
-        Drive, FirmwareLimits, SamplingConfig, Segment,
+        Drive, SamplingConfig, Segment,
         transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
     },
     gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerMask},
@@ -147,7 +147,7 @@ pub struct GainSTMOperationGenerator<'a, G> {
     pub(crate) size: usize,
     pub(crate) mode: GainSTMMode,
     pub(crate) sampling_config: SamplingConfig,
-    pub(crate) limits: FirmwareLimits,
+
     pub(crate) rep: u16,
     pub(crate) segment: Segment,
     pub(crate) transition_params: TransitionModeParams,
@@ -165,7 +165,7 @@ impl<'a, G: GainSTMGenerator<'a>, C: Into<STMConfig> + std::fmt::Debug> Datagram
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
+
         segment: Segment,
         transition_params: TransitionModeParams,
         rep: u16,
@@ -173,14 +173,12 @@ impl<'a, G: GainSTMGenerator<'a>, C: Into<STMConfig> + std::fmt::Debug> Datagram
         let size = self.gains.len();
         let stm_config: STMConfig = self.config.into();
         let sampling_config = stm_config.into_sampling_config(size)?;
-        let limits = *limits;
         let GainSTMOption { mode } = self.option;
         let gains = self.gains;
         Ok(GainSTMOperationGenerator {
             g: gains.init(geometry, env, &TransducerMask::from(filter))?,
             size,
             sampling_config,
-            limits,
             mode,
             rep,
             segment,
@@ -216,7 +214,6 @@ impl<'a, T: GainSTMGenerator<'a>, C: Into<STMConfig> + Copy + std::fmt::Debug> I
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<InspectionResult<<Self as Inspectable<'a>>::Result>, <Self as Datagram<'a>>::Error>
     {
         let sampling_config = self.sampling_config()?;
@@ -285,12 +282,7 @@ mod tests {
             config: SamplingConfig::FREQ_4K,
             option: GainSTMOption::default(),
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -339,12 +331,7 @@ mod tests {
             segment: Segment::S1,
             transition_mode: Later,
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -398,12 +385,7 @@ mod tests {
             transition_mode: transition_mode::SyncIdx,
             loop_count: NonZeroU16::MIN,
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(

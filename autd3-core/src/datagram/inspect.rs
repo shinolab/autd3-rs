@@ -1,7 +1,6 @@
 use super::{Datagram, DeviceMask};
 use crate::{
     environment::Environment,
-    firmware::FirmwareLimits,
     geometry::{Device, Geometry},
 };
 
@@ -50,6 +49,5 @@ pub trait Inspectable<'a>: Datagram<'a> {
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error>;
 }

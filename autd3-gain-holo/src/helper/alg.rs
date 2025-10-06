@@ -10,26 +10,6 @@ use autd3_core::{
 };
 use nalgebra::{Dyn, Normed, U1, VecStorage};
 
-macro_rules! par_map {
-    ($iter:expr, $f:expr) => {
-        if cfg!(miri) {
-            $iter.iter().map($f).collect::<Vec<_>>()
-        } else {
-            $iter.par_iter().map($f).collect::<Vec<_>>()
-        }
-    };
-}
-
-macro_rules! par_for_each {
-    ($iter:expr, $f:expr) => {
-        if cfg!(miri) {
-            $iter.for_each($f)
-        } else {
-            $iter.par_bridge().for_each($f)
-        }
-    };
-}
-
 struct Ptr(*mut Complex);
 impl Ptr {
     #[inline]
@@ -85,7 +65,7 @@ pub fn generate_propagation_matrix<D: Directivity>(
 
     if filter.is_all_enabled() {
         if do_parallel_in_col {
-            let columns = par_map!(foci, |f| {
+            let columns = foci.par_iter().map(|f| {
                 nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
                     n,
                     geometry.iter().flat_map(|dev| {
@@ -94,12 +74,12 @@ pub fn generate_propagation_matrix<D: Directivity>(
                         })
                     }),
                 )
-            });
+            }).collect::<Vec<_>>();
             MatrixXc::from_rows(&columns)
         } else {
             let mut r = uninit_mat(foci.len(), n);
             let ptr = Ptr(r.as_mut_ptr());
-            par_for_each!(geometry.iter(), move |dev| {
+            geometry.iter().par_bridge().for_each(move |dev| {
                 let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
                 dev.iter().for_each(move |tr| {
                     foci.iter().for_each(|f| {
@@ -117,7 +97,7 @@ pub fn generate_propagation_matrix<D: Directivity>(
     } else {
         #[allow(clippy::collapsible_else_if)]
         if do_parallel_in_col {
-            let columns = par_map!(foci, |f| {
+            let columns = foci.par_iter().map(|f| {
                 nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
                     n,
                     geometry
@@ -131,14 +111,16 @@ pub fn generate_propagation_matrix<D: Directivity>(
                                 })
                         }),
                 )
-            });
+            }).collect::<Vec<_>>();
             MatrixXc::from_rows(&columns)
         } else {
             let mut r = uninit_mat(foci.len(), n);
             let ptr = Ptr(r.as_mut_ptr());
-            par_for_each!(
-                geometry.iter().filter(|dev| filter.has_enabled(dev)),
-                move |dev| {
+            geometry
+                .iter()
+                .filter(|dev| filter.has_enabled(dev))
+                .par_bridge()
+                .for_each(move |dev| {
                     let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
                     dev.iter().for_each(move |tr| {
                         if filter.is_enabled(tr) {
@@ -152,8 +134,7 @@ pub fn generate_propagation_matrix<D: Directivity>(
                             });
                         }
                     });
-                }
-            );
+                });
             r
         }
     }

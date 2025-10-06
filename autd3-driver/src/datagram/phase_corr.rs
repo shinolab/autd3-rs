@@ -3,7 +3,6 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DeviceMask},
     environment::Environment,
-    firmware::FirmwareLimits,
     firmware::Phase,
     geometry::{Device, Geometry, Transducer},
 };
@@ -52,7 +51,6 @@ impl<'a, FT: Fn(&'a Transducer) -> Phase + Send + Sync, F: Fn(&'a Device) -> FT>
         _: &'a Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self)
     }

@@ -3,7 +3,7 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DatagramOption, DeviceMask},
     environment::Environment,
-    firmware::{FirmwareLimits, Segment},
+    firmware::Segment,
     geometry::{Device, Geometry, Transducer},
 };
 
@@ -64,7 +64,6 @@ impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync, F: Fn(&'a Device) -> FT> 
         _: &'a Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(OutputMaskOperationGenerator {
             f: self.f,
@@ -74,5 +73,16 @@ impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync, F: Fn(&'a Device) -> FT> 
 
     fn option(&self) -> DatagramOption {
         DatagramOption::default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new() {
+        let datagram = OutputMask::new(|_dev| |_tr| true);
+        assert_eq!(datagram.segment, Segment::S0);
     }
 }

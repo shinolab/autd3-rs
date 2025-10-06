@@ -14,10 +14,7 @@ pub use crate::datagram::stm::{Circle, Line};
 #[cfg(feature = "link-nop")]
 pub use crate::link::Nop;
 
-pub use crate::{
-    controller::{Controller, FixedSchedule, ParallelMode, SenderOption},
-    firmware,
-};
+pub use crate::controller::{Controller, ParallelMode, SenderOption};
 
 pub use autd3_core::{
     firmware::{
@@ -40,6 +37,6 @@ pub use autd3_driver::{
     },
     error::AUTDDriverError,
     ethercat::DcSysTime,
-    firmware::driver::BoxedDatagram,
+    firmware::operation::BoxedDatagram,
     geometry::{EulerAngle, Geometry, Point3, Quaternion, UnitQuaternion, UnitVector3, Vector3},
 };

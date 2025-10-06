@@ -4,7 +4,8 @@ use autd3_core::{
     common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     environment::Environment,
     firmware::{
-        Drive, Intensity, Phase, SamplingConfig, Segment,
+        Drive, FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT, Intensity, Phase, SamplingConfig,
+        Segment,
         transition_mode::{Immediate, Later, SyncIdx, TransitionMode},
     },
     link::{MsgId, TxMessage},
@@ -17,7 +18,6 @@ use autd3_driver::{
     },
     error::AUTDDriverError,
     ethercat::DcSysTime,
-    firmware::v12_1::fpga::{FOCI_STM_BUF_SIZE_MAX, FOCI_STM_FIXED_NUM_UNIT},
     geometry::Point3,
 };
 use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARGIN};

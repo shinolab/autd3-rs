@@ -74,10 +74,7 @@ impl Wav {
             return Err(AudioFileError::Wav(hound::Error::Unsupported));
         }
         let sample_rate = sample_rate as u32;
-        let buffer = m.calc(&FirmwareLimits {
-            mod_buf_size_max: u32::MAX,
-            ..FirmwareLimits::unused()
-        })?;
+        let buffer = m.calc()?;
 
         let spec = hound::WavSpec {
             channels: 1,
@@ -95,7 +92,7 @@ impl Wav {
 }
 
 impl Modulation for Wav {
-    fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buffer)
     }
 
@@ -200,7 +197,7 @@ mod tests {
         create_wav(&path, spec, data)?;
         let m = Wav::new(path)?;
         assert_eq!(spec.sample_rate, m.sampling_config().freq()?.hz() as u32);
-        assert_eq!(Ok(expect), m.calc(&FirmwareLimits::unused()));
+        assert_eq!(Ok(expect), m.calc());
 
         Ok(())
     }
@@ -231,7 +228,7 @@ mod tests {
             rate: f32,
         }
         impl Modulation for TestMod {
-            fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+            fn calc(self) -> Result<Vec<u8>, ModulationError> {
                 Ok(self.data)
             }
             fn sampling_config(&self) -> SamplingConfig {
@@ -259,7 +256,7 @@ mod tests {
         assert_eq!(samples, vec![-128, 0, 127]);
 
         let decoded = Wav::new(&path)?;
-        assert_eq!(decoded.calc(&FirmwareLimits::unused())?, data);
+        assert_eq!(decoded.calc()?, data);
 
         Ok(())
     }
@@ -269,7 +266,7 @@ mod tests {
         struct TestMod;
         impl Modulation for TestMod {
             // GRCOV_EXCL_START
-            fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+            fn calc(self) -> Result<Vec<u8>, ModulationError> {
                 unreachable!()
             }
             // GRCOV_EXCL_STOP

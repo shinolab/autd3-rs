@@ -3,7 +3,7 @@ use autd3_core::link::{Link, LinkError};
 
 #[test]
 fn nop_test() -> Result<(), Box<dyn std::error::Error>> {
-    let mut autd = Controller::<_, firmware::V12_1>::open_with([AUTD3::default()], Nop::new())?;
+    let mut autd = Controller::open([AUTD3::default()], Nop::new())?;
 
     assert!(autd.send(Static::default()).is_ok());
 

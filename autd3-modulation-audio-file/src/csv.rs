@@ -74,10 +74,7 @@ impl Csv {
         option: CsvOption,
     ) -> Result<(), AudioFileError> {
         let sample_rate = m.sampling_config().freq()?.hz();
-        let buffer = m.calc(&FirmwareLimits {
-            mod_buf_size_max: u32::MAX,
-            ..FirmwareLimits::unused()
-        })?;
+        let buffer = m.calc()?;
         let mut writer = csv::WriterBuilder::new()
             .delimiter(option.delimiter)
             .from_writer(writer);
@@ -92,7 +89,7 @@ impl Csv {
 }
 
 impl Modulation for Csv {
-    fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buffer)
     }
 
@@ -126,7 +123,7 @@ mod tests {
 
         let m = Csv::new(path, sample_rate, CsvOption::default())?;
         assert_eq!(sample_rate.hz(), m.sampling_config().freq()?.hz());
-        assert_eq!(data, *m.calc(&FirmwareLimits::unused())?);
+        assert_eq!(data, *m.calc()?);
 
         Ok(())
     }
@@ -144,7 +141,7 @@ mod tests {
             rate: f32,
         }
         impl Modulation for TestMod {
-            fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+            fn calc(self) -> Result<Vec<u8>, ModulationError> {
                 Ok(self.data)
             }
             fn sampling_config(&self) -> SamplingConfig {

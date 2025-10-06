@@ -7,12 +7,10 @@ use super::{
     stm::*, user_defined_gain_modulation::*,
 };
 
-pub fn run<L: Link>(
-    mut autd: Controller<L, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run<L: Link>(mut autd: Controller<L>) -> Result<(), Box<dyn std::error::Error>> {
     type Test<L> = (
         &'static str,
-        fn(&'_ mut Controller<L, firmware::Auto>) -> Result<(), Box<dyn std::error::Error>>,
+        fn(&'_ mut Controller<L>) -> Result<(), Box<dyn std::error::Error>>,
     );
 
     println!("======== AUTD3 firmware information ========");

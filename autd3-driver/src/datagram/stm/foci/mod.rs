@@ -20,7 +20,7 @@ use autd3_core::{
     },
     environment::Environment,
     firmware::{
-        FirmwareLimits, SamplingConfig, Segment,
+        SamplingConfig, Segment,
         transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
     },
 };
@@ -110,7 +110,7 @@ pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMIteratorGenerator
     pub(crate) size: usize,
     pub(crate) config: SamplingConfig,
     pub(crate) sound_speed: f32,
-    pub(crate) limits: FirmwareLimits,
+
     pub(crate) rep: u16,
     pub(crate) segment: Segment,
     pub(crate) transition_params: TransitionModeParams,
@@ -127,7 +127,6 @@ impl<const N: usize, G: FociSTMGenerator<N> + std::fmt::Debug, C: Into<STMConfig
         _: &Geometry,
         env: &Environment,
         _: &DeviceMask,
-        limits: &FirmwareLimits,
         segment: Segment,
         transition_params: TransitionModeParams,
         rep: u16,
@@ -140,7 +139,6 @@ impl<const N: usize, G: FociSTMGenerator<N> + std::fmt::Debug, C: Into<STMConfig
             size,
             config: sampling_config,
             sound_speed: env.sound_speed,
-            limits: *limits,
             rep,
             segment,
             transition_params,
@@ -181,7 +179,6 @@ impl<
         geometry: &'a Geometry,
         _: &Environment,
         filter: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<InspectionResult<<Self as Inspectable<'a>>::Result>, <Self as Datagram<'a>>::Error>
     {
         let sampling_config = self.sampling_config()?;
@@ -244,12 +241,7 @@ mod tests {
             ],
             config: SamplingConfig::FREQ_4K,
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -300,12 +292,7 @@ mod tests {
             segment: Segment::S1,
             transition_mode: Later,
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(
@@ -361,12 +348,7 @@ mod tests {
             transition_mode: transition_mode::SyncIdx,
             loop_count: NonZeroU16::MIN,
         }
-        .inspect(
-            &geometry,
-            &Environment::default(),
-            &DeviceMask::AllEnabled,
-            &FirmwareLimits::unused(),
-        )?
+        .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?
         .iter()
         .for_each(|r| {
             assert_eq!(

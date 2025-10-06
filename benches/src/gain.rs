@@ -8,10 +8,7 @@ use autd3_driver::{
     autd3_device::AUTD3,
     common::rad,
     datagram::BoxedGain,
-    firmware::{
-        driver::{Driver, OperationHandler},
-        v12_1::{operation::OperationGenerator, V12_1},
-    },
+    firmware::operation::{OperationGenerator, OperationHandler},
     geometry::{Device, Geometry, Point3, Transducer},
 };
 
@@ -119,7 +116,6 @@ fn focus(c: &mut Criterion) {
                             geometry,
                             &Environment::default(),
                             &DeviceMask::AllEnabled,
-                            &V12_1.firmware_limits(),
                         )
                         .unwrap();
                     let mut operations = geometry
@@ -158,7 +154,6 @@ fn focus_parallel(c: &mut Criterion) {
                             geometry,
                             &Environment::default(),
                             &DeviceMask::AllEnabled,
-                            &V12_1.firmware_limits(),
                         )
                         .unwrap();
                     let mut operations = geometry
@@ -200,7 +195,6 @@ fn focus_boxed(c: &mut Criterion) {
                             geometry,
                             &Environment::default(),
                             &DeviceMask::AllEnabled,
-                            &V12_1.firmware_limits(),
                         )
                         .unwrap();
                     let mut operations = geometry

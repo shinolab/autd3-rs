@@ -2,9 +2,7 @@ use std::collections::HashMap;
 
 use autd3::{core::link::Link, prelude::*};
 
-pub fn group_by_device(
-    autd: &mut Controller<impl Link, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn group_by_device(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 
     autd.send(Group {
@@ -29,7 +27,7 @@ pub fn group_by_device(
 }
 
 pub fn group_by_transducer(
-    autd: &mut Controller<impl Link, firmware::Auto>,
+    autd: &mut Controller<impl Link>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let pos = autd.center() + Vector3::new(0., 0., 150.0 * mm);
 

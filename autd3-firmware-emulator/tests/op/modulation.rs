@@ -1,11 +1,11 @@
 use std::{num::NonZeroU16, time::Duration};
 
 use autd3_core::{
-    common::{MOD_BUF_SIZE_MIN, SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
+    common::{SILENCER_STEPS_INTENSITY_DEFAULT, SILENCER_STEPS_PHASE_DEFAULT},
     datagram::internal::{HasFiniteLoop, HasSegment},
     derive::*,
     firmware::{
-        GPIOIn,
+        GPIOIn, MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN,
         transition_mode::{Later, TransitionMode},
     },
     link::{MsgId, TxMessage},
@@ -16,7 +16,6 @@ use autd3_driver::{
     },
     error::AUTDDriverError,
     ethercat::DcSysTime,
-    firmware::v12_1::fpga::MOD_BUF_SIZE_MAX,
 };
 use autd3_firmware_emulator::{CPUEmulator, cpu::params::SYS_TIME_TRANSITION_MARGIN};
 
@@ -33,7 +32,7 @@ pub struct TestModulation {
 }
 
 impl Modulation for TestModulation {
-    fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok(self.buf.clone())
     }
 
@@ -103,28 +102,24 @@ where
 }
 
 #[rstest::rstest]
-#[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
     NonZeroU16::MIN,
     Segment::S1,
     transition_mode::GPIO(GPIOIn::I0)
 )]
-#[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
     NonZeroU16::MIN,
     Segment::S1,
     transition_mode::GPIO(GPIOIn::I1)
 )]
-#[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
     NonZeroU16::MIN,
     Segment::S1,
     transition_mode::GPIO(GPIOIn::I2)
 )]
-#[cfg_attr(miri, ignore)]
 #[case(
     MOD_BUF_SIZE_MIN,
     NonZeroU16::MIN,

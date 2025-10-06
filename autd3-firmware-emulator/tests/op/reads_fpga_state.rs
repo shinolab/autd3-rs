@@ -3,7 +3,7 @@ use autd3_core::{
     firmware::{SamplingConfig, Segment, transition_mode::Immediate},
     link::{MsgId, TxMessage},
 };
-use autd3_driver::{datagram::*, firmware::v12_1::fpga::FPGAState, geometry::Point3};
+use autd3_driver::{datagram::*, firmware::fpga::FPGAState, geometry::Point3};
 use autd3_firmware_emulator::CPUEmulator;
 
 use crate::{create_geometry, op::modulation::TestModulation, send};

@@ -4,7 +4,7 @@ use autd3_core::{
         internal::HasSegment,
     },
     environment::Environment,
-    firmware::{FirmwareLimits, Segment, transition_mode::TransitionMode},
+    firmware::{Segment, transition_mode::TransitionMode},
     geometry::Geometry,
 };
 
@@ -48,14 +48,12 @@ where
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         <D as DatagramS>::operation_generator_with_segment(
             self.inner,
             geometry,
             env,
             filter,
-            limits,
             self.segment,
             self.transition_mode.params(),
         )
@@ -86,12 +84,11 @@ where
         geometry: &'a Geometry,
         env: &Environment,
         filter: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, Self::Error> {
         Ok(InspectionResult {
             result: self
                 .inner
-                .inspect(geometry, env, filter, limits)?
+                .inspect(geometry, env, filter)?
                 .result
                 .into_iter()
                 .map(|r| {

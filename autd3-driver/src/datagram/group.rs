@@ -5,7 +5,6 @@ use crate::error::AUTDDriverError;
 use autd3_core::{
     datagram::{Datagram, DatagramOption, DeviceMask, Inspectable, InspectionResult},
     environment::Environment,
-    firmware::FirmwareLimits,
     geometry::{Device, Geometry},
 };
 
@@ -98,7 +97,6 @@ where
         geometry: &'a Geometry,
         env: &Environment,
         _: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         let Self {
             key_map,
@@ -116,7 +114,7 @@ where
                 Ok((
                     k,
                     datagram
-                        .operation_generator(geometry, env, &filter, limits)
+                        .operation_generator(geometry, env, &filter)
                         .map_err(AUTDDriverError::from)?,
                 ))
             })
@@ -159,7 +157,6 @@ where
         geometry: &'a Geometry,
         env: &Environment,
         _: &DeviceMask,
-        limits: &FirmwareLimits,
     ) -> Result<InspectionResult<Self::Result>, AUTDDriverError> {
         let Self {
             key_map,
@@ -178,7 +175,7 @@ where
                             .ok_or(AUTDDriverError::UnknownKey(format!("{k:?}")))?;
 
                         let r = datagram
-                            .inspect(geometry, env, &filter, limits)
+                            .inspect(geometry, env, &filter)
                             .map_err(AUTDDriverError::from)?;
 
                         Ok(r.result)
@@ -209,12 +206,7 @@ mod tests {
         assert_eq!(
             Some(AUTDDriverError::UnknownKey("1".to_owned())),
             Group::new(|dev| Some(dev.idx()), HashMap::from([(0, Clear {})]))
-                .operation_generator(
-                    &geometry,
-                    &Environment::default(),
-                    &DeviceMask::AllEnabled,
-                    &FirmwareLimits::unused()
-                )
+                .operation_generator(&geometry, &Environment::default(), &DeviceMask::AllEnabled,)
                 .err()
         );
 
@@ -231,12 +223,7 @@ mod tests {
                 |dev| Some(dev.idx()),
                 HashMap::from([(0, Clear {}), (1, Clear {}), (2, Clear {})])
             )
-            .operation_generator(
-                &geometry,
-                &Environment::default(),
-                &DeviceMask::AllEnabled,
-                &FirmwareLimits::unused()
-            )
+            .operation_generator(&geometry, &Environment::default(), &DeviceMask::AllEnabled,)
             .err()
         );
 

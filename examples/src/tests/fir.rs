@@ -1,8 +1,6 @@
 use autd3::{core::link::Link, modulation::Fir, prelude::*};
 
-pub fn fir(
-    autd: &mut Controller<impl Link, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn fir(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(Silencer::disable())?;
 
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);

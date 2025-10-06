@@ -7,7 +7,7 @@ use std::convert::Infallible;
 use autd3_core::{
     datagram::{Datagram, DeviceMask},
     environment::Environment,
-    firmware::{FirmwareLimits, GPIOOut},
+    firmware::GPIOOut,
     geometry::{Device, Geometry},
 };
 
@@ -49,7 +49,6 @@ impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> Datagram<'
         _: &Geometry,
         _: &Environment,
         _: &DeviceMask,
-        _: &FirmwareLimits,
     ) -> Result<Self::G, Self::Error> {
         Ok(self)
     }

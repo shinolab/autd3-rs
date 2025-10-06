@@ -132,7 +132,7 @@ pub mod utils;
 /// }
 ///
 /// impl Modulation for Burst {
-///     fn calc(self, _limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError>  {
+///     fn calc(self) -> Result<Vec<u8>, ModulationError>  {
 ///         Ok((0..4000)
 ///             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
 ///             .collect())
@@ -154,7 +154,7 @@ pub mod derive {
         pub use crate::{
             datagram::{DatagramOption, DeviceMask, Inspectable, InspectionResult, internal},
             environment::Environment,
-            firmware::{FirmwareLimits, Segment, transition_mode},
+            firmware::{Segment, transition_mode},
             geometry::Geometry,
         };
     }

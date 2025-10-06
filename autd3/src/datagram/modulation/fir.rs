@@ -21,8 +21,8 @@ impl<M: Modulation> Fir<M> {
 }
 
 impl<M: Modulation> Modulation for Fir<M> {
-    fn calc(self, limits: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
-        let src = self.target.calc(limits)?;
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
+        let src = self.target.calc()?;
         let src_len = src.len() as isize;
         let filter_len = self.coef.len() as isize;
         Ok((0..src_len)
@@ -45,10 +45,7 @@ impl<M: Modulation> Modulation for Fir<M> {
 #[cfg(test)]
 mod tests {
     use crate::modulation::{Custom, Fourier, Sine};
-    use autd3_driver::{
-        common::{Hz, kHz},
-        firmware::{driver::Driver, v12_1::V12_1},
-    };
+    use autd3_driver::common::{Hz, kHz};
 
     use super::*;
 
@@ -197,7 +194,7 @@ mod tests {
                 },
                 coef
             }
-            .calc(&V12_1.firmware_limits())?
+            .calc()?
         );
 
         Ok(())

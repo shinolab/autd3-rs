@@ -56,7 +56,7 @@ impl Burst {
 }
 
 impl Modulation for Burst {
-    fn calc(self, _: &FirmwareLimits) -> Result<Vec<u8>, ModulationError> {
+    fn calc(self) -> Result<Vec<u8>, ModulationError> {
         Ok((0..4000)
             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
             .collect())
@@ -67,9 +67,7 @@ impl Modulation for Burst {
     }
 }
 
-pub fn user_defined(
-    autd: &mut Controller<impl Link, firmware::Auto>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn user_defined(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(Silencer::disable())?;
 
     let g = MyUniform::new();

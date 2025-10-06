@@ -7,8 +7,8 @@ use autd3_driver::{
     datagram::*,
     error::AUTDDriverError,
     firmware::{
-        driver::{Driver, OperationHandler},
-        v12_1::{V12_1, cpu::check_firmware_err, operation::OperationGenerator},
+        cpu::check_firmware_err,
+        operation::{OperationGenerator, OperationHandler},
         version::FirmwareVersion,
     },
 };
@@ -75,12 +75,7 @@ fn invalid_info_type() -> Result<(), Box<dyn std::error::Error>> {
 
     let d = FirmwareVersionType::CPUMajor;
     let operations = d
-        .operation_generator(
-            &geometry,
-            &Environment::new(),
-            &DeviceMask::AllEnabled,
-            &V12_1.firmware_limits(),
-        )?
+        .operation_generator(&geometry, &Environment::new(), &DeviceMask::AllEnabled)?
         .generate(&geometry[0]);
 
     OperationHandler::pack(msg_id, &mut [operations], &geometry, &mut tx, false)?;
