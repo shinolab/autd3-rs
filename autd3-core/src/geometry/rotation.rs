@@ -2,89 +2,109 @@ use crate::common::Angle;
 
 use super::{UnitQuaternion, Vector3};
 
-use pastey::paste;
-
-macro_rules! make_euler_angle_intrinsic {
-    ($({$first:ident, $second:ident, $third:ident}),*) => {
-        paste! {
-            #[derive(Debug, Clone, Copy)]
-            /// Euler angle (intrinsic)
-            pub enum EulerAngleIntrinsic {
-                $(
-                    #[doc = stringify!($first-$second-$third)]
-                    #[doc = "euler angle."]
-                    [<$first:upper $second:upper $third:upper>](Angle, Angle, Angle),
-                )*
-            }
-
-            impl EulerAngleIntrinsic {
-                /// The rotation identity.
-                #[must_use]
-                pub const fn identity() -> Self {
-                    Self::XYZ(Angle::ZERO, Angle::ZERO, Angle::ZERO)
-                }
-            }
-
-            impl From<EulerAngleIntrinsic> for UnitQuaternion {
-                fn from(angle: EulerAngleIntrinsic) -> Self {
-                    match angle {
-                        $(
-                            EulerAngleIntrinsic::[<$first:upper $second:upper $third:upper>](first, second, third) => {
-                                UnitQuaternion::from_axis_angle(&Vector3::[<$first _axis>](), first.radian())
-                                    * UnitQuaternion::from_axis_angle(&Vector3::[<$second _axis>](), second.radian())
-                                    * UnitQuaternion::from_axis_angle(&Vector3::[<$third _axis>](), third.radian())
-                            }
-                        )*
-                    }
-                }
-            }
-        }
-    }
-}
-
-macro_rules! make_euler_angle_extrinsic {
-    ($({$first:ident, $second:ident, $third:ident}),*) => {
-        paste! {
-            #[derive(Debug, Clone, Copy)]
-            /// Euler angle (extrinsic)
-            pub enum EulerAngleExtrinsic {
-                $(
-                    #[doc = stringify!($first-$second-$third)]
-                    #[doc = "euler angle."]
-                    [<$first:upper $second:upper $third:upper>](Angle, Angle, Angle),
-                )*
-            }
-
-            impl EulerAngleExtrinsic {
-                /// The rotation identity.
-                #[must_use]
-                pub const fn identity() -> Self {
-                    Self::XYZ(Angle::ZERO, Angle::ZERO, Angle::ZERO)
-                }
-            }
-
-            impl From<EulerAngleExtrinsic> for UnitQuaternion {
-                fn from(angle: EulerAngleExtrinsic) -> Self {
-                    match angle {
-                        $(
-                            EulerAngleExtrinsic::[<$first:upper $second:upper $third:upper>](first, second, third) => {
-                                UnitQuaternion::from_axis_angle(&Vector3::[<$third _axis>](), third.radian())
-                                    * UnitQuaternion::from_axis_angle(&Vector3::[<$second _axis>](), second.radian())
-                                    * UnitQuaternion::from_axis_angle(&Vector3::[<$first _axis>](), first.radian())
-                            }
-                        )*
-                    }
-                }
-            }
-        }
-    }
-}
-
-make_euler_angle_intrinsic!({x, y, z}, {x, z, y}, {y, x, z}, {y, z, x}, {z, x, y}, {z, y, x}, {x, y, x}, {x, z, x}, {y, x, y}, {y, z, y}, {z, x, z}, {z, y, z});
-make_euler_angle_extrinsic!({x, y, z}, {x, z, y}, {y, x, z}, {y, z, x}, {z, x, y}, {z, y, x}, {x, y, x}, {x, z, x}, {y, x, y}, {y, z, y}, {z, x, z}, {z, y, z});
-
+#[derive(Debug, Clone, Copy)]
 /// Euler angle (intrinsic)
-pub type EulerAngle = EulerAngleIntrinsic;
+pub enum EulerAngle {
+    /// x-y-z euler angle.
+    XYZ(Angle, Angle, Angle),
+    /// x-z-y euler angle.
+    XZY(Angle, Angle, Angle),
+    /// y-x-z euler angle.
+    YXZ(Angle, Angle, Angle),
+    /// y-z-x euler angle.
+    YZX(Angle, Angle, Angle),
+    /// z-x-y euler angle.
+    ZXY(Angle, Angle, Angle),
+    /// z-y-x euler angle.
+    ZYX(Angle, Angle, Angle),
+    /// x-y-x euler angle.
+    XYX(Angle, Angle, Angle),
+    /// x-z-x euler angle.
+    XZX(Angle, Angle, Angle),
+    /// y-x-y euler angle.
+    YXY(Angle, Angle, Angle),
+    /// y-z-y euler angle.
+    YZY(Angle, Angle, Angle),
+    /// z-x-z euler angle.
+    ZXZ(Angle, Angle, Angle),
+    /// z-y-z euler angle.
+    ZYZ(Angle, Angle, Angle),
+}
+
+impl EulerAngle {
+    /// The rotation identity.
+    #[must_use]
+    pub const fn identity() -> Self {
+        Self::XYZ(Angle::ZERO, Angle::ZERO, Angle::ZERO)
+    }
+}
+
+impl From<EulerAngle> for UnitQuaternion {
+    fn from(angle: EulerAngle) -> Self {
+        match angle {
+            EulerAngle::XYZ(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::x_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), third.radian())
+            }
+            EulerAngle::XZY(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::x_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), third.radian())
+            }
+            EulerAngle::YXZ(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::y_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), third.radian())
+            }
+            EulerAngle::YZX(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::y_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), third.radian())
+            }
+            EulerAngle::ZXY(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::z_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), third.radian())
+            }
+            EulerAngle::ZYX(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::z_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), third.radian())
+            }
+            EulerAngle::XYX(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::x_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), third.radian())
+            }
+            EulerAngle::XZX(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::x_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), third.radian())
+            }
+            EulerAngle::YXY(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::y_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), third.radian())
+            }
+            EulerAngle::YZY(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::y_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), third.radian())
+            }
+            EulerAngle::ZXZ(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::z_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), third.radian())
+            }
+            EulerAngle::ZYZ(first, second, third) => {
+                UnitQuaternion::from_axis_angle(&Vector3::z_axis(), first.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), second.radian())
+                    * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), third.radian())
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -131,34 +151,9 @@ mod tests {
         assert_approx_eq_quat!(expected, angle);
     }
 
-    #[rstest::rstest]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(90. * deg, 0. * deg, 0. * deg))]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(0. * deg, 90. * deg, 0. * deg))]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(0. * deg, 0. * deg, 90. * deg))]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(0. * deg, 90. * deg, 90. * deg))]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::x_axis(), PI / 2.), EulerAngleExtrinsic::XYZ(90. * deg, 90. * deg, 0. * deg))]
-    fn xyz_extrinsic(#[case] expected: UnitQuaternion, #[case] angle: EulerAngleExtrinsic) {
-        let angle: UnitQuaternion = angle.into();
-        assert_approx_eq_quat!(expected, angle);
-    }
-
-    #[rstest::rstest]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(90. * deg, 0. * deg, 0. * deg))]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(0. * deg, 90. * deg, 0. * deg))]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(0. * deg, 0. * deg, 90. * deg))]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(0. * deg, 90. * deg, 90. * deg))]
-    #[case(UnitQuaternion::from_axis_angle(&Vector3::y_axis(), PI / 2.) * UnitQuaternion::from_axis_angle(&Vector3::z_axis(), PI / 2.), EulerAngleExtrinsic::ZYZ(90. * deg, 90. * deg, 0. * deg))]
-    fn zyz_extrinsic(#[case] expected: UnitQuaternion, #[case] angle: EulerAngleExtrinsic) {
-        let angle: UnitQuaternion = angle.into();
-        assert_approx_eq_quat!(expected, angle);
-    }
-
-    #[rstest::rstest]
-    #[case(EulerAngleExtrinsic::identity())]
-    #[case(EulerAngleIntrinsic::identity())]
     #[test]
-    fn identity(#[case] angle: impl Into<UnitQuaternion>) {
-        let angle: UnitQuaternion = angle.into();
+    fn identity() {
+        let angle: UnitQuaternion = EulerAngle::identity().into();
         assert_eq!(UnitQuaternion::identity(), angle);
     }
 }

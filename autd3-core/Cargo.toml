@@ -25,7 +25,7 @@ derive = ["autd3-derive"]
 time = ["dep:time"]
 ethercat = []
 gain = ["common", "datagram", "geometry", "environment", "firmware"]
-geometry = ["nalgebra", "pastey", "common"]
+geometry = ["nalgebra", "common"]
 left_handed = []
 link = ["zerocopy", "ethercat", "datagram", "geometry"]
 modulation = ["firmware", "utils", "common", "datagram"]
@@ -38,9 +38,7 @@ environment = ["num-traits"]
 autd3-derive = { workspace = true, optional = true }
 nalgebra = { workspace = true, optional = true, features = ["libm"] }
 num-traits = { version = "0.2.19", default-features = false, features = ["libm"], optional = true }
-pastey = { workspace = true, optional = true }
 spin_sleep = { workspace = true, optional = true }
-
 time = { version = "0.3.41", default-features = false, optional = true, features = ["macros"] }
 tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 zerocopy = { workspace = true, optional = true, features = ["derive"] }
