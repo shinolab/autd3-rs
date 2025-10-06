@@ -30,6 +30,11 @@ impl DcSysTime {
     /// The zero point of the DcSysTime (2000-01-01 0:00:00 UTC)
     pub const ZERO: Self = Self { dc_sys_time: 0 };
 
+    /// Creates a new instance with the given system time in nanoseconds since 2000-01-01 0:00:00 UTC
+    pub const fn new(dc_sys_time: u64) -> Self {
+        Self { dc_sys_time }
+    }
+
     /// Returns the system time in nanoseconds
     #[must_use]
     pub const fn sys_time(&self) -> u64 {
@@ -82,8 +87,13 @@ impl core::ops::Sub<core::time::Duration> for DcSysTime {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "time")]
     use super::*;
+
+    #[test]
+    fn new() {
+        let t = DcSysTime::new(123456789);
+        assert_eq!(123456789, t.sys_time());
+    }
 
     #[cfg(feature = "time")]
     #[test]
