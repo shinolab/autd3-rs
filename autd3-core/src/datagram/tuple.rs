@@ -16,6 +16,7 @@ pub enum CombinedError<E1, E2> {
     E2(E2),
 }
 
+// GRCOV_EXCL_START
 impl<E1, E2> core::error::Error for CombinedError<E1, E2>
 where
     E1: core::error::Error + core::fmt::Display + 'static,
@@ -41,6 +42,7 @@ where
         }
     }
 }
+// GRCOV_EXCL_STOP
 
 impl<'a, G1, G2, D1, D2, E1, E2> Datagram<'a> for (D1, D2)
 where
