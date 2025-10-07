@@ -6,19 +6,20 @@
 
 mod gain;
 mod modulation;
+mod parser;
 
 use proc_macro::TokenStream;
 
 #[proc_macro_derive(Gain)]
 #[doc(hidden)]
 pub fn gain_derive(input: TokenStream) -> TokenStream {
-    let ast = syn::parse(input).unwrap();
-    gain::impl_gain_macro(ast)
+    let parsed = parser::parse_derive_input(input);
+    gain::impl_gain_macro(parsed)
 }
 
 #[doc(hidden)]
 #[proc_macro_derive(Modulation, attributes(manual_option))]
 pub fn modulation_derive(input: TokenStream) -> TokenStream {
-    let ast = syn::parse(input).unwrap();
-    modulation::impl_mod_macro(ast)
+    let parsed = parser::parse_derive_input(input);
+    modulation::impl_mod_macro(parsed)
 }
