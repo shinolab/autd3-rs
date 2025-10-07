@@ -18,6 +18,8 @@ autd3-core = { path = "../../autd3-core", default-features = false, features = [
     "utils",
     "sleep",
     "environment",
+    "use_nalgebra",
+    "libm",
 ] }
 
 [profile.dev]

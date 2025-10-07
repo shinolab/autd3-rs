@@ -68,7 +68,7 @@ impl CircleSTMIterator {
         }
         let theta = 2.0 * PI * self.i as f32 / self.num_points as f32;
         self.i += 1;
-        Some(self.center + self.radius * (theta.cos() * self.u + theta.sin() * self.v))
+        Some(self.center + (self.u * theta.cos() + self.v * theta.sin()) * self.radius)
     }
 }
 

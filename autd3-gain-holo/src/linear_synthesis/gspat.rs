@@ -13,7 +13,6 @@ use autd3_core::{
     derive::*,
     geometry::Point3,
 };
-use nalgebra::{ComplexField, Normed};
 
 /// The option of [`GSPAT`].
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -101,13 +100,13 @@ impl<D: Directivity> Gain<'_> for GSPAT<D> {
         let mut gamma = amps.clone();
         gamma.gemv(Complex::new(1., 0.), &r, &p, Complex::new(0., 0.));
         (0..self.option.repeat.get()).for_each(|_| {
-            p = gamma.zip_map(&amps, |a, b| a / a.abs() * b);
+            p = gamma.zip_map(&amps, |a, b| a / a.norm() * b);
             gamma.gemv(Complex::new(1., 0.), &r, &p, Complex::new(0., 0.));
         });
 
         q.gemv(Complex::new(1., 0.), &b, &p, Complex::new(0., 0.));
 
-        let max_coefficient = q.map(|v| v.norm_squared()).max().sqrt();
+        let max_coefficient = q.map(|v| v.norm_sqr()).max().sqrt();
         generate_result(geometry, q, max_coefficient, self.option.constraint, filter)
     }
 }

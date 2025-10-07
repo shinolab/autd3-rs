@@ -14,8 +14,6 @@ use autd3_core::{
     geometry::Point3,
 };
 
-use nalgebra::{ComplexField, Normed};
-
 /// The option of [`GS`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GSOption {
@@ -98,13 +96,13 @@ impl<D: Directivity> Gain<'_> for GS<D> {
         );
         let mut p = VectorXc::zeros(m);
         (0..self.option.repeat.get()).for_each(|_| {
-            q.zip_apply(&q0, |b, a| *b = *b / b.abs() * a);
+            q.zip_apply(&q0, |b, a| *b = *b / b.norm() * a);
             p.gemv(Complex::new(1., 0.), &g, &q, Complex::new(0., 0.));
-            p.zip_apply(&amps, |b, a| *b = *b / b.abs() * a);
+            p.zip_apply(&amps, |b, a| *b = *b / b.norm() * a);
             q.gemv(Complex::new(1., 0.), &b, &p, Complex::new(0., 0.));
         });
 
-        let max_coefficient = q.map(|v| v.norm_squared()).max().sqrt();
+        let max_coefficient = q.map(|v| v.norm_sqr()).max().sqrt();
         generate_result(geometry, q, max_coefficient, self.option.constraint, filter)
     }
 }

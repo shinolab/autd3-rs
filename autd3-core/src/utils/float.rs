@@ -1,17 +1,20 @@
-#[cfg(not(feature = "std"))]
-use num_traits::float::Float;
-
 const EPSILON: f64 = 1e-6;
 
 #[doc(hidden)]
 #[must_use]
 pub fn is_integer(a: f64) -> bool {
-    0.5 - (a.fract() - 0.5).abs() < EPSILON
+    #[cfg(feature = "std")]
+    {
+        0.5 - (a.fract() - 0.5).abs() < EPSILON
+    }
+    #[cfg(feature = "libm")]
+    {
+        0.5 - ((a - libm::trunc(a)) - 0.5).abs() < EPSILON
+    }
 }
 
 #[cfg(test)]
 mod tests {
-
     #[rstest::rstest]
     #[case(true, 1.0)]
     #[case(false, 1.5)]

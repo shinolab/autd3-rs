@@ -15,7 +15,7 @@ csv = ["autd3-core", "dep:csv"]
 wav = ["autd3-core", "hound"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["derive", "modulation", "utils"], optional = true }
+autd3-core = { workspace = true, features = ["std", "derive", "modulation", "utils"], optional = true }
 csv = { version = "1.3.1", default-features = false, optional = true }
 hound = { version = "3.5.1", default-features = false, optional = true }
 

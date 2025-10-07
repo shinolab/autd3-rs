@@ -1,8 +1,5 @@
 use core::{convert::Infallible, fmt::Debug, num::NonZeroU16, time::Duration};
 
-#[cfg(not(feature = "std"))]
-use num_traits::float::Float;
-
 use crate::{
     common::{Freq, Hz, ULTRASOUND_FREQ},
     utils::float::is_integer,
@@ -198,10 +195,14 @@ impl SamplingConfig {
                 }
                 Ok((duration.as_nanos() / ULTRASOUND_PERIOD.as_nanos()) as _)
             }
-            SamplingConfig::FreqNearest(nearest) => Ok((ULTRASOUND_FREQ.hz() as f32
-                / nearest.0.hz())
-            .clamp(1.0, u16::MAX as f32)
-            .round() as u16),
+            SamplingConfig::FreqNearest(nearest) => {
+                let f = (ULTRASOUND_FREQ.hz() as f32 / nearest.0.hz()).clamp(1.0, u16::MAX as f32);
+                #[cfg(feature = "std")]
+                let f = f.round();
+                #[cfg(feature = "libm")]
+                let f = libm::roundf(f);
+                Ok(f as u16)
+            }
             SamplingConfig::PeriodNearest(nearest) => {
                 use crate::common::ULTRASOUND_PERIOD;
 

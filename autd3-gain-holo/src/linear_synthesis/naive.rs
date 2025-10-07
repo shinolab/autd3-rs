@@ -11,7 +11,6 @@ use autd3_core::{
     derive::*,
     geometry::Point3,
 };
-use nalgebra::Normed;
 
 /// The option of [`Naive`].
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -87,7 +86,7 @@ impl<D: Directivity> Gain<'_> for Naive<D> {
         let mut q = VectorXc::zeros(n);
         q.gemv(Complex::new(1., 0.), &b, &p, Complex::new(0., 0.));
 
-        let max_coefficient = q.map(|v| v.norm_squared()).max().sqrt();
+        let max_coefficient = q.map(|v| v.norm_sqr()).max().sqrt();
         generate_result(geometry, q, max_coefficient, self.option.constraint, filter)
     }
 }

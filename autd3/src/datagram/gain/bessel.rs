@@ -100,7 +100,7 @@ impl Gain<'_> for Bessel {
                 let theta_v = v.norm().asin();
                 v.try_normalize(1.0e-6)
                     .map_or_else(UnitQuaternion::identity, |v| {
-                        UnitQuaternion::from_scaled_axis(v * -theta_v)
+                        UnitQuaternion::new(v * -theta_v)
                     })
             },
             theta: self.theta.radian(),
@@ -139,7 +139,7 @@ mod tests {
                     let rot = v
                         .try_normalize(1.0e-6)
                         .map_or_else(UnitQuaternion::identity, |v| {
-                            UnitQuaternion::from_scaled_axis(v * -theta_v)
+                            UnitQuaternion::new(v * -theta_v)
                         });
                     let r = tr.position() - pos;
                     let r = rot * r;

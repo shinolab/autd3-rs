@@ -2,22 +2,30 @@ pub(crate) mod device;
 mod rotation;
 mod transducer;
 
-/// a complex number
-pub type Complex = nalgebra::Complex<f32>;
-/// 3-dimensional column vector.
-pub type Vector3 = nalgebra::Vector3<f32>;
-/// 3-dimensional unit vector.
-pub type UnitVector3 = nalgebra::UnitVector3<f32>;
-/// 3-dimensional point.
-pub type Point3 = nalgebra::Point3<f32>;
-/// A quaternion.
-pub type Quaternion = nalgebra::Quaternion<f32>;
-/// A unit quaternion.
-pub type UnitQuaternion = nalgebra::UnitQuaternion<f32>;
-/// A 3-dimensional translation.
-pub type Translation = nalgebra::Translation3<f32>;
-/// A 3-dimensional isometry.
-pub type Isometry = nalgebra::Isometry3<f32>;
+#[cfg(feature = "use_nalgebra")]
+mod math {
+    /// a complex number
+    pub type Complex = nalgebra::Complex<f32>;
+    /// 3-dimensional column vector.
+    pub type Vector3 = nalgebra::Vector3<f32>;
+    /// 3-dimensional unit vector.
+    pub type UnitVector3 = nalgebra::UnitVector3<f32>;
+    /// 3-dimensional point.
+    pub type Point3 = nalgebra::Point3<f32>;
+    /// A quaternion.
+    pub type Quaternion = nalgebra::Quaternion<f32>;
+    /// A unit quaternion.
+    pub type UnitQuaternion = nalgebra::UnitQuaternion<f32>;
+    /// A 3-dimensional translation.
+    pub type Translation3 = nalgebra::Translation3<f32>;
+    /// A 3-dimensional isometry.
+    pub type Isometry3 = nalgebra::Isometry3<f32>;
+}
+
+#[cfg(not(feature = "use_nalgebra"))]
+mod math;
+
+pub use math::*;
 
 use alloc::vec::Vec;
 
@@ -151,9 +159,9 @@ pub(crate) mod tests {
 
         pub fn new_autd3_with_rot(pos: Point3, rot: impl Into<UnitQuaternion>) -> Self {
             let rotation = rot.into();
-            let isometry = Isometry {
+            let isometry = Isometry3 {
                 rotation,
-                translation: Translation::from(pos),
+                translation: Translation3::from(pos),
             };
             Self {
                 rotation,
@@ -161,8 +169,7 @@ pub(crate) mod tests {
                     .flat_map(|y| {
                         (0..18).map(move |x| {
                             Transducer::new(
-                                (isometry * (10.16 * mm * Point3::new(x as f32, y as f32, 0.)))
-                                    .xyz(),
+                                isometry * (10.16 * mm * Point3::new(x as f32, y as f32, 0.)),
                             )
                         })
                     })

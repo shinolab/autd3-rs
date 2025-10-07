@@ -14,10 +14,11 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-std = ["time?/std"]
+std = ["time?/std", "nalgebra?/std"]
+libm = ["dep:libm", "nalgebra?/libm"]
 default = []
-firmware = ["common", "ethercat", "utils", "num-traits"]
-acoustics = ["common", "geometry", "num-traits"]
+firmware = ["common", "ethercat", "utils"]
+acoustics = ["common"]
 async = []
 datagram = ["common", "firmware", "geometry", "ethercat", "environment"]
 common = []
@@ -25,19 +26,20 @@ derive = ["autd3-derive"]
 time = ["dep:time"]
 ethercat = []
 gain = ["common", "datagram", "geometry", "environment", "firmware"]
-geometry = ["nalgebra", "common"]
+geometry = ["common"]
 left_handed = []
 link = ["ethercat", "datagram", "geometry"]
 modulation = ["firmware", "utils", "common", "datagram"]
 use_meter = []
-utils = ["num-traits"]
+utils = []
 sleep = []
-environment = ["num-traits"]
+environment = []
+use_nalgebra = ["dep:nalgebra"]
 
 [dependencies]
 autd3-derive = { workspace = true, optional = true }
-nalgebra = { workspace = true, optional = true, features = ["libm"] }
-num-traits = { version = "0.2.19", default-features = false, features = ["libm"], optional = true }
+libm = { version = "0.2.15", optional = true }
+nalgebra = { workspace = true, optional = true }
 time = { version = "0.3.41", default-features = false, optional = true, features = ["macros"] }
 
 [dev-dependencies]

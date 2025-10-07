@@ -5,8 +5,6 @@ use crate::{
     geometry::Complex,
 };
 
-use nalgebra::ComplexField;
-
 /// The phase of the ultrasound.
 #[derive(Clone, Copy, PartialEq, Eq, Default)]
 #[repr(C)]
@@ -33,13 +31,22 @@ impl Phase {
 
 impl From<Angle> for Phase {
     fn from(v: Angle) -> Self {
-        Self((((v.radian() / (2.0 * PI) * 256.0).round() as i32) & 0xFF) as _)
+        let p = v.radian() / (2.0 * PI) * 256.0;
+        #[cfg(feature = "std")]
+        let p = p.round();
+        #[cfg(feature = "libm")]
+        let p = libm::roundf(p);
+        Self(((p as i32) & 0xFF) as _)
     }
 }
 
 impl From<Complex> for Phase {
     fn from(v: Complex) -> Self {
-        Self::from(v.argument() * rad)
+        #[cfg(feature = "std")]
+        let p = Self::from(v.arg() * rad);
+        #[cfg(feature = "libm")]
+        let p = Self::from(libm::atan2f(v.im, v.re) * rad);
+        p
     }
 }
 
@@ -117,6 +124,15 @@ mod tests {
     #[case(2.0 * PI / 256.0 * 255.0, 255)]
     fn radian(#[case] expect: f32, #[case] value: u8) {
         approx::assert_abs_diff_eq!(expect, Phase(value).radian());
+    }
+
+    #[rstest::rstest]
+    #[case(Phase(0x00), Complex::new(1.0, 0.0))]
+    #[case(Phase(0x40), Complex::new(0.0, 1.0))]
+    #[case(Phase(0x80), Complex::new(-1.0, 0.0))]
+    #[case(Phase(0xC0), Complex::new(0.0, -1.0))]
+    fn from_complex(#[case] expect: Phase, #[case] value: Complex) {
+        assert_eq!(expect, Phase::from(value));
     }
 
     #[test]

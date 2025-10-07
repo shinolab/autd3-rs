@@ -1,13 +1,10 @@
 use std::{collections::HashMap, num::NonZeroU8};
 
-use crate::{Amplitude, Complex, constraint::EmissionConstraint};
+use crate::{Amplitude, Complex, constraint::EmissionConstraint, helper::propagate};
 
 use autd3_core::{
-    acoustics::{
-        directivity::{Directivity, Sphere},
-        propagate,
-    },
-    common::PI,
+    acoustics::directivity::{Directivity, Sphere},
+    common::{PI, rad},
     derive::*,
     geometry::{Point3, UnitVector3},
 };
@@ -193,7 +190,7 @@ impl<D: Directivity> Gain<'_> for Greedy<D> {
                 *c += a * phase;
             });
             g.get_mut(&dev_idx).unwrap()[idx] = Drive {
-                phase: Phase::from(phase),
+                phase: Phase::from(phase.arg() * rad),
                 intensity: self.option.constraint.convert(1.0, 1.0),
             };
         });

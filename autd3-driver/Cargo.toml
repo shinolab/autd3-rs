@@ -15,7 +15,8 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 async = ["autd3-core/async"]
-default = []
+default = ["use_nalgebra"]
+use_nalgebra = ["autd3-core/use_nalgebra"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulation", "sleep", "std"] }

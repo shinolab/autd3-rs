@@ -1,4 +1,4 @@
-use crate::geometry::{Isometry, Point3};
+use crate::geometry::{Isometry3, Point3};
 
 use autd3_core::firmware::{Intensity, Phase};
 
@@ -21,9 +21,9 @@ impl ControlPoint {
         }
     }
 
-    pub(crate) fn transform(&self, iso: &Isometry) -> Self {
+    pub(crate) fn transform(&self, iso: &Isometry3) -> Self {
         Self {
-            point: iso.transform_point(&self.point),
+            point: iso * self.point,
             phase_offset: self.phase_offset,
         }
     }
@@ -80,7 +80,7 @@ impl<const N: usize> ControlPoints<N> {
         Self { points, intensity }
     }
 
-    pub(crate) fn transform(&self, iso: &Isometry) -> Self {
+    pub(crate) fn transform(&self, iso: &Isometry3) -> Self {
         Self {
             points: self.points.map(|p| p.transform(iso)),
             intensity: self.intensity,

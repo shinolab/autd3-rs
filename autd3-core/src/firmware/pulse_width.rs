@@ -1,6 +1,3 @@
-#[cfg(not(feature = "std"))]
-use num_traits::float::Float;
-
 use crate::firmware::ULTRASOUND_PERIOD_COUNT_BITS;
 
 #[repr(C)]
@@ -75,7 +72,14 @@ impl PulseWidth {
     {
         const PERIOD: u32 = 1 << ULTRASOUND_PERIOD_COUNT_BITS;
         let pulse_width = match self.inner {
-            PulseWidthInner::Duty(duty) => (duty * PERIOD as f32).round() as u32,
+            PulseWidthInner::Duty(duty) => {
+                let pulse_width = duty * PERIOD as f32;
+                #[cfg(feature = "std")]
+                let pulse_width = pulse_width.round();
+                #[cfg(feature = "libm")]
+                let pulse_width = libm::roundf(pulse_width);
+                pulse_width as u32
+            }
             PulseWidthInner::Raw(raw) => raw,
         };
         if pulse_width >= PERIOD {

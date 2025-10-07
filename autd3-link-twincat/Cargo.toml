@@ -21,7 +21,7 @@ async = ["autd3-core/async"]
 all = ["local", "remote"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["link"] }
+autd3-core = { workspace = true, features = ["std", "link"] }
 libloading = { version = "0.8.6", optional = true }
 
 [build-dependencies]
