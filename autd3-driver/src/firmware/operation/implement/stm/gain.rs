@@ -24,15 +24,27 @@ use autd3_core::{
 #[repr(C)]
 pub struct GainSTMControlFlags(u8);
 
-bitflags::bitflags! {
-    impl GainSTMControlFlags : u8 {
-        const NONE       = 0;
-        const BEGIN      = 1 << 0;
-        const END        = 1 << 1;
-        const TRANSITION = 1 << 2;
-        const SEGMENT    = 1 << 3;
-        const SEND_BIT0  = 1 << 6;
-        const SEND_BIT1  = 1 << 7;
+impl GainSTMControlFlags {
+    const NONE: GainSTMControlFlags = GainSTMControlFlags(0);
+    const BEGIN: GainSTMControlFlags = GainSTMControlFlags(1 << 0);
+    const END: GainSTMControlFlags = GainSTMControlFlags(1 << 1);
+    const TRANSITION: GainSTMControlFlags = GainSTMControlFlags(1 << 2);
+    const SEGMENT: GainSTMControlFlags = GainSTMControlFlags(1 << 3);
+    const SEND_BIT0: GainSTMControlFlags = GainSTMControlFlags(1 << 6);
+    const SEND_BIT1: GainSTMControlFlags = GainSTMControlFlags(1 << 7);
+
+    fn set(&mut self, bit: GainSTMControlFlags, value: bool) {
+        if value {
+            self.0 |= bit.0;
+        }
+    }
+}
+
+impl std::ops::BitOr for GainSTMControlFlags {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        GainSTMControlFlags(self.0 | rhs.0)
     }
 }
 
@@ -409,7 +421,7 @@ mod tests {
             assert_eq!(op.sent, 1);
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
-            assert_eq!(GainSTMControlFlags::BEGIN.bits(), tx[1] & 0x3F);
+            assert_eq!(GainSTMControlFlags::BEGIN.0, tx[1] & 0x3F);
             assert_eq!(0, tx[1] >> 6);
             assert_eq!(GainSTMMode::PhaseIntensityFull as u8, tx[2]);
             assert_eq!(transition_mode.params().mode, tx[3]);
@@ -450,7 +462,7 @@ mod tests {
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
             assert_eq!(
-                GainSTMControlFlags::NONE.bits(),
+                GainSTMControlFlags::NONE.0,
                 tx[offset_of!(GainSTMHead, flag)] & 0x3F
             );
             assert_eq!(0, tx[offset_of!(GainSTMHead, flag)] >> 6);
@@ -480,7 +492,7 @@ mod tests {
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
             assert_eq!(
-                (GainSTMControlFlags::END | GainSTMControlFlags::TRANSITION).bits(),
+                (GainSTMControlFlags::END | GainSTMControlFlags::TRANSITION).0,
                 tx[offset_of!(GainSTMHead, flag)] & 0x3F
             );
             assert_eq!(0, tx[offset_of!(GainSTMHead, flag)] >> 6);
@@ -549,7 +561,7 @@ mod tests {
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
             assert_eq!(
-                (GainSTMControlFlags::BEGIN | GainSTMControlFlags::SEGMENT).bits(),
+                (GainSTMControlFlags::BEGIN | GainSTMControlFlags::SEGMENT).0,
                 tx[offset_of!(GainSTMHead, flag)] & 0x3F
             );
             assert_eq!(1, tx[offset_of!(GainSTMHead, flag)] >> 6);
@@ -584,7 +596,7 @@ mod tests {
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
             assert_eq!(
-                GainSTMControlFlags::SEGMENT.bits(),
+                GainSTMControlFlags::SEGMENT.0,
                 tx[offset_of!(GainSTMHead, flag)] & 0x3F
             );
             assert_eq!(1, tx[offset_of!(GainSTMHead, flag)] >> 6);
@@ -614,7 +626,7 @@ mod tests {
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
             assert_eq!(
-                (GainSTMControlFlags::END | GainSTMControlFlags::SEGMENT).bits(),
+                (GainSTMControlFlags::END | GainSTMControlFlags::SEGMENT).0,
                 tx[offset_of!(GainSTMHead, flag)] & 0x3F
             );
             assert_eq!(0, tx[offset_of!(GainSTMHead, flag)] >> 6);
@@ -682,7 +694,7 @@ mod tests {
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
             assert_eq!(
-                GainSTMControlFlags::BEGIN.bits(),
+                GainSTMControlFlags::BEGIN.0,
                 tx[offset_of!(GainSTMHead, flag)] & 0x3F
             );
             assert_eq!(3, tx[offset_of!(GainSTMHead, flag)] >> 6);
@@ -721,7 +733,7 @@ mod tests {
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
             assert_eq!(
-                GainSTMControlFlags::NONE.bits(),
+                GainSTMControlFlags::NONE.0,
                 tx[offset_of!(GainSTMHead, flag)] & 0x3F
             );
             assert_eq!(3, tx[offset_of!(GainSTMHead, flag)] >> 6);
@@ -755,7 +767,7 @@ mod tests {
 
             assert_eq!(TypeTag::GainSTM as u8, tx[0]);
             assert_eq!(
-                (GainSTMControlFlags::END | GainSTMControlFlags::TRANSITION).bits(),
+                (GainSTMControlFlags::END | GainSTMControlFlags::TRANSITION).0,
                 tx[offset_of!(GainSTMHead, flag)] & 0x3F
             );
             assert_eq!(0, tx[offset_of!(GainSTMHead, flag)] >> 6);

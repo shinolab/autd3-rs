@@ -23,12 +23,18 @@ use autd3_core::{
 #[repr(C)]
 pub struct FociSTMControlFlags(u8);
 
-bitflags::bitflags! {
-    impl FociSTMControlFlags : u8 {
-        const NONE       = 0;
-        const BEGIN      = 1 << 0;
-        const END        = 1 << 1;
-        const TRANSITION = 1 << 2;
+impl FociSTMControlFlags {
+    const NONE: FociSTMControlFlags = FociSTMControlFlags(0);
+    const BEGIN: FociSTMControlFlags = FociSTMControlFlags(1 << 0);
+    const END: FociSTMControlFlags = FociSTMControlFlags(1 << 1);
+    const TRANSITION: FociSTMControlFlags = FociSTMControlFlags(1 << 2);
+}
+
+impl std::ops::BitOr for FociSTMControlFlags {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        FociSTMControlFlags(self.0 | rhs.0)
     }
 }
 
@@ -305,7 +311,7 @@ mod tests {
             (FociSTMControlFlags::BEGIN
                 | FociSTMControlFlags::END
                 | FociSTMControlFlags::TRANSITION)
-                .bits(),
+                .0,
             tx[1]
         );
         assert_eq!(
@@ -404,7 +410,7 @@ mod tests {
             (FociSTMControlFlags::BEGIN
                 | FociSTMControlFlags::END
                 | FociSTMControlFlags::TRANSITION)
-                .bits(),
+                .0,
             tx[1]
         );
         assert_eq!(FOCI_STM_SIZE as u8, tx[2]);
@@ -509,7 +515,7 @@ mod tests {
             assert_eq!(op.sent, 1);
 
             assert_eq!(TypeTag::FociSTM as u8, tx[0]);
-            assert_eq!(FociSTMControlFlags::BEGIN.bits(), tx[1]);
+            assert_eq!(FociSTMControlFlags::BEGIN.0, tx[1]);
             assert_eq!(
                 ((FRAME_SIZE - size_of::<FociSTMHead>()) / size_of::<STMFocus>()) as u8,
                 tx[2]
@@ -599,7 +605,7 @@ mod tests {
 
             assert_eq!(TypeTag::FociSTM as u8, tx[0]);
             assert_eq!(
-                FociSTMControlFlags::END.bits(),
+                FociSTMControlFlags::END.0,
                 tx[offset_of!(FociSTMHead, flag)]
             );
             assert_eq!(

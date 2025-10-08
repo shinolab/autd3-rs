@@ -87,7 +87,7 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[case(SilencerControlFlags::STRICT_MODE.bits(), true)]
+    #[case(SilencerControlFlags::STRICT_MODE.0, true)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict: bool) {
         let device = crate::autd3_device::tests::create_device();

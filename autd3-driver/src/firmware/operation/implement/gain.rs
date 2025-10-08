@@ -14,11 +14,9 @@ use autd3_core::{
 #[repr(C)]
 pub struct GainControlFlags(u8);
 
-bitflags::bitflags! {
-    impl GainControlFlags : u8 {
-        const NONE   = 0;
-        const UPDATE = 1 << 0;
-    }
+impl GainControlFlags {
+    const NONE: GainControlFlags = GainControlFlags(0);
+    const UPDATE: GainControlFlags = GainControlFlags(1 << 0);
 }
 
 #[repr(C, align(2))]

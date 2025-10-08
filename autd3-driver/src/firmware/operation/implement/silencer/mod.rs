@@ -4,13 +4,10 @@ mod update_rate;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 #[repr(C)]
-pub struct SilencerControlFlags(u8);
+pub struct SilencerControlFlags(pub(crate) u8);
 
-bitflags::bitflags! {
-    impl SilencerControlFlags : u8 {
-        const NONE              = 0;
-        const FIXED_UPDATE_RATE = 1 << 0;
-        const PULSE_WIDTH       = 1 << 1;
-        const STRICT_MODE       = 1 << 2;
-    }
+impl SilencerControlFlags {
+    const NONE: SilencerControlFlags = SilencerControlFlags(0);
+    const FIXED_UPDATE_RATE: SilencerControlFlags = SilencerControlFlags(1 << 0);
+    const STRICT_MODE: SilencerControlFlags = SilencerControlFlags(1 << 2);
 }
