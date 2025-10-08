@@ -30,27 +30,19 @@ impl Generics {
 pub fn parse_derive_input(input: TokenStream) -> DeriveInput {
     let input_str = input.to_string();
 
-    // Remove doc comments and attributes to avoid parsing issues
     let cleaned = remove_doc_comments(&input_str);
 
     let mut ident = String::new();
     let mut generics = Generics::default();
 
-    // Find struct/enum declaration - look for the keyword followed by identifier
     let struct_re = regex_lite_find(&cleaned, &["struct ", "enum "]);
     if let Some((keyword_pos, keyword)) = struct_re {
         let after_keyword = &cleaned[keyword_pos + keyword.len()..];
-
-        // Skip whitespace
         let trimmed = after_keyword.trim_start();
-
-        // Extract identifier (alphanumeric and underscore)
         ident = trimmed
             .chars()
             .take_while(|c| c.is_alphanumeric() || *c == '_')
             .collect();
-
-        // Now look for generics immediately after the identifier
         if !ident.is_empty() {
             let after_ident = trimmed[ident.len()..].trim_start();
             if after_ident.starts_with('<')
@@ -62,9 +54,9 @@ pub fn parse_derive_input(input: TokenStream) -> DeriveInput {
         }
     }
 
-    // Parse where clause
-    if let Some(where_pos) = cleaned.find(" where ") {
-        let after_where = &cleaned[where_pos + 7..]; // " where ".len()
+    const WHERE_CLAUSE: &str = " where ";
+    if let Some(where_pos) = cleaned.find(WHERE_CLAUSE) {
+        let after_where = &cleaned[where_pos + WHERE_CLAUSE.len()..];
         if let Some(body_pos) = after_where.find('{') {
             let where_content = after_where[..body_pos].trim();
             if !where_content.is_empty() {
@@ -83,8 +75,7 @@ fn remove_doc_comments(s: &str) -> String {
     while let Some(ch) = chars.next() {
         if ch == '/' {
             if chars.peek() == Some(&'/') {
-                // Skip until end of line
-                chars.next(); // consume second /
+                chars.next();
                 for c in chars.by_ref() {
                     if c == '\n' {
                         result.push('\n');
@@ -92,8 +83,7 @@ fn remove_doc_comments(s: &str) -> String {
                     }
                 }
             } else if chars.peek() == Some(&'*') {
-                // Skip until */
-                chars.next(); // consume *
+                chars.next();
                 let mut prev = ' ';
                 for c in chars.by_ref() {
                     if prev == '*' && c == '/' {
@@ -106,9 +96,7 @@ fn remove_doc_comments(s: &str) -> String {
                 result.push(ch);
             }
         } else if ch == '#' {
-            // Could be an attribute
             if chars.peek() == Some(&'[') {
-                // Skip attribute
                 let mut depth = 0;
                 result.push(ch);
                 for c in chars.by_ref() {
@@ -194,22 +182,17 @@ fn process_param(param: &str, generics: &mut Generics) {
     }
 
     if param.starts_with('\'') {
-        // It's a lifetime
         let lifetime = param
             .split(':')
             .next()
             .unwrap_or("")
             .trim()
             .trim_start_matches('\'');
-        // Don't filter 'geo - we need it in the output
         if !lifetime.is_empty() {
             generics.lifetimes.push(lifetime.to_string());
         }
     } else if !param.is_empty() {
-        // It's a type parameter
-        // Store full param with bounds
         generics.type_params_with_bounds.push(param.to_string());
-        // Also store just the name
         let param_name = param.split(':').next().unwrap_or("").trim();
         generics.type_params.push(param_name.to_string());
     }
