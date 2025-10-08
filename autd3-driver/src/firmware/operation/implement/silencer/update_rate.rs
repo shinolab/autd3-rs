@@ -99,7 +99,7 @@ mod tests {
         assert!(op.is_done());
 
         assert_eq!(tx[0], TypeTag::Silencer as u8);
-        assert_eq!(tx[1], SilencerControlFlags::FIXED_UPDATE_RATE.bits());
+        assert_eq!(tx[1], SilencerControlFlags::FIXED_UPDATE_RATE.0);
         assert_eq!(tx[2], 0x34);
         assert_eq!(tx[3], 0x12);
         assert_eq!(tx[4], 0x78);

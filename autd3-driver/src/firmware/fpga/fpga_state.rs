@@ -1,26 +1,20 @@
 use autd3_core::{firmware::Segment, link::RxMessage};
 
-use bitflags::bitflags;
-
 /// FPGA state.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FPGAState(u8);
 
-bitflags! {
-    impl FPGAState: u8 {
-        #[doc(hidden)]
-        const THERMAL_ASSERT_BIT = 1 << 0;
-        #[doc(hidden)]
-        const CURRENT_MOD_SEGMENT_BIT = 1 << 1;
-        #[doc(hidden)]
-        const CURRENT_STM_SEGMENT_BIT = 1 << 2;
-        #[doc(hidden)]
-        const CURRENT_GAIN_SEGMENT_BIT = 1 << 2;
-        #[doc(hidden)]
-        const IS_GAIN_MODE_BIT = 1 << 3;
-        #[doc(hidden)]
-        const READS_FPGA_STATE_ENABLED = 1 << 7;
+impl FPGAState {
+    const THERMAL_ASSERT_BIT: u8 = 1 << 0;
+    const CURRENT_MOD_SEGMENT_BIT: u8 = 1 << 1;
+    const CURRENT_STM_SEGMENT_BIT: u8 = 1 << 2;
+    const CURRENT_GAIN_SEGMENT_BIT: u8 = 1 << 2;
+    const IS_GAIN_MODE_BIT: u8 = 1 << 3;
+    const READS_FPGA_STATE_ENABLED: u8 = 1 << 7;
+
+    const fn contains(&self, bit: u8) -> bool {
+        (self.0 & bit) != 0
     }
 }
 

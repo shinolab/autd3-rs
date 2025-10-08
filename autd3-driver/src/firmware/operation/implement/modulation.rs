@@ -18,13 +18,25 @@ use autd3_core::{
 #[repr(C)]
 pub struct ModulationControlFlags(u8);
 
-bitflags::bitflags! {
-    impl ModulationControlFlags : u8 {
-        const NONE           = 0;
-        const BEGIN          = 1 << 0;
-        const END            = 1 << 1;
-        const TRANSITION     = 1 << 2;
-        const SEGMENT        = 1 << 3;
+impl ModulationControlFlags {
+    const NONE: ModulationControlFlags = ModulationControlFlags(0);
+    const BEGIN: ModulationControlFlags = ModulationControlFlags(1 << 0);
+    const END: ModulationControlFlags = ModulationControlFlags(1 << 1);
+    const TRANSITION: ModulationControlFlags = ModulationControlFlags(1 << 2);
+    const SEGMENT: ModulationControlFlags = ModulationControlFlags(1 << 3);
+
+    fn set(&mut self, bit: ModulationControlFlags, value: bool) {
+        if value {
+            self.0 |= bit.0;
+        }
+    }
+}
+
+impl std::ops::BitOr for ModulationControlFlags {
+    type Output = ModulationControlFlags;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        ModulationControlFlags(self.0 | rhs.0)
     }
 }
 
@@ -235,7 +247,7 @@ mod tests {
             (ModulationControlFlags::BEGIN
                 | ModulationControlFlags::END
                 | ModulationControlFlags::TRANSITION)
-                .bits(),
+                .0,
             tx[1]
         );
         assert_eq!(MOD_SIZE as u8, tx[2]);
@@ -293,7 +305,7 @@ mod tests {
             let mod_size = FRAME_SIZE - size_of::<ModulationHead>();
 
             assert_eq!(TypeTag::Modulation as u8, tx[0]);
-            assert_eq!(ModulationControlFlags::BEGIN.bits(), tx[1]);
+            assert_eq!(ModulationControlFlags::BEGIN.0, tx[1]);
             assert_eq!(mod_size as u8, tx[2]);
 
             tx.iter()
@@ -319,7 +331,7 @@ mod tests {
             let mod_size = FRAME_SIZE - size_of::<ModulationSubseq>();
 
             assert_eq!(TypeTag::Modulation as u8, tx[0]);
-            assert_eq!(ModulationControlFlags::NONE.bits(), tx[1]);
+            assert_eq!(ModulationControlFlags::NONE.0, tx[1]);
             assert_eq!(mod_size as u8, tx[2]);
 
             tx.iter()
@@ -345,7 +357,7 @@ mod tests {
 
             assert_eq!(TypeTag::Modulation as u8, tx[0]);
             assert_eq!(
-                (ModulationControlFlags::TRANSITION | ModulationControlFlags::END).bits(),
+                (ModulationControlFlags::TRANSITION | ModulationControlFlags::END).0,
                 tx[1]
             );
             assert_eq!(mod_size as u8, tx[2]);

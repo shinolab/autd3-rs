@@ -10,13 +10,17 @@ use autd3_core::{firmware::GPIOIn, geometry::Device};
 #[repr(C)]
 pub struct GPIOInFlags(u8);
 
-bitflags::bitflags! {
-    impl GPIOInFlags : u8 {
-        const NONE      = 0;
-        const GPIO_IN_0 = 1 << 0;
-        const GPIO_IN_1 = 1 << 1;
-        const GPIO_IN_2 = 1 << 2;
-        const GPIO_IN_3 = 1 << 3;
+impl GPIOInFlags {
+    const NONE: GPIOInFlags = GPIOInFlags(0);
+    const GPIO_IN_0: u8 = 1 << 0;
+    const GPIO_IN_1: u8 = 1 << 1;
+    const GPIO_IN_2: u8 = 1 << 2;
+    const GPIO_IN_3: u8 = 1 << 3;
+
+    fn set(&mut self, bit: u8, value: bool) {
+        if value {
+            self.0 |= bit;
+        }
     }
 }
 
