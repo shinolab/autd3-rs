@@ -30,7 +30,7 @@ where
     if is_zero(gcd) {
         return T::from(0u8);
     }
-    a * b / gcd
+    a * (b / gcd)
 }
 
 #[cfg(test)]
