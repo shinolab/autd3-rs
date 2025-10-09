@@ -19,6 +19,11 @@ impl FPGAState {
 }
 
 impl FPGAState {
+    #[doc(hidden)]
+    pub const fn bits(&self) -> u8 {
+        self.0
+    }
+
     /// `true` if the thermal sensor is asserted.
     #[must_use]
     pub const fn is_thermal_assert(&self) -> bool {
@@ -93,6 +98,12 @@ mod tests {
     #[test]
     fn size() {
         assert_eq!(1, size_of::<FPGAState>());
+    }
+
+    #[test]
+    fn bits() {
+        let state = FPGAState(0b1010_1101);
+        assert_eq!(0b1010_1101, state.bits());
     }
 
     #[rstest::rstest]
