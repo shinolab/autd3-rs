@@ -198,7 +198,7 @@ pub(crate) mod tests {
     #[rstest::rstest]
     #[case(1, alloc::vec![create_device(249)])]
     #[case(2, alloc::vec![create_device(249), create_device(249)])]
-    fn test_num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
+    fn num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
         assert_eq!(expected, geometry.num_devices());
@@ -208,7 +208,7 @@ pub(crate) mod tests {
     #[rstest::rstest]
     #[case(249, alloc::vec![create_device(249)])]
     #[case(498, alloc::vec![create_device(249), create_device(249)])]
-    fn test_num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
+    fn num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
         assert_eq!(expected, geometry.num_transducers());
@@ -216,7 +216,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn test_center() {
+    fn center() {
         let geometry = Geometry::new(alloc::vec![
             TestDevice::new_autd3(Point3::origin()).into(),
             TestDevice::new_autd3(Point3::new(10., 20., 30.)).into(),
@@ -234,6 +234,10 @@ pub(crate) mod tests {
     #[test]
     fn into_iter() {
         let mut geometry = create_geometry(1, 1);
+        assert_eq!(0, geometry.version());
+        (&geometry).into_iter().for_each(|dev| {
+            _ = dev;
+        });
         assert_eq!(0, geometry.version());
         (&mut geometry).into_iter().for_each(|dev| {
             _ = dev;
