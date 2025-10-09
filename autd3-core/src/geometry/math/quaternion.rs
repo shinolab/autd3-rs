@@ -58,6 +58,16 @@ impl UnitQuaternion {
     }
 
     #[must_use]
+    pub const fn quaternion(&self) -> Quaternion {
+        Quaternion {
+            w: self.w,
+            i: self.i,
+            j: self.j,
+            k: self.k,
+        }
+    }
+
+    #[must_use]
     pub fn from_quaternion(quat: Quaternion) -> Self {
         Self::new_normalize(quat)
     }
