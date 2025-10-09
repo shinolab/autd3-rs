@@ -24,6 +24,12 @@ use crate::{
     inner::{EtherCrabOptionFull, status::Status},
 };
 
+#[cfg(target_os = "windows")]
+unsafe extern "system" {
+    fn timeBeginPeriod(u: u32) -> u32;
+    fn timeEndPeriod(u: u32) -> u32;
+}
+
 pub const MAX_SUBDEVICES: usize = 32;
 pub const MAX_PDU_DATA: usize =
     PduStorage::element_size((EC_OUTPUT_FRAME_SIZE + EC_INPUT_FRAME_SIZE) * MAX_SUBDEVICES);
@@ -397,7 +403,7 @@ async fn wait_for_align(
     // Without this, it takes a long time on Windows.
     #[cfg(target_os = "windows")]
     unsafe {
-        windows::Win32::Media::timeBeginPeriod(1);
+        timeBeginPeriod(1);
     }
 
     let mut averages = vec![super::smoothing::Smoothing::new(0.2); group.len()];
@@ -458,7 +464,7 @@ async fn wait_for_align(
 
     #[cfg(target_os = "windows")]
     unsafe {
-        windows::Win32::Media::timeEndPeriod(1);
+        timeEndPeriod(1);
     }
 
     tracing::info!(target: "autd3-link-ethercrab", "Alignment done");
@@ -488,7 +494,7 @@ async fn send_loop(
     // Without this, the behavior becomes unstable on Windows.
     #[cfg(target_os = "windows")]
     unsafe {
-        windows::Win32::Media::timeBeginPeriod(1);
+        timeBeginPeriod(1);
     }
 
     let mut inputs_buf = vec![0u8; group.len() * EC_INPUT_FRAME_SIZE];
@@ -558,7 +564,7 @@ async fn send_loop(
     }
     #[cfg(target_os = "windows")]
     unsafe {
-        windows::Win32::Media::timeEndPeriod(1);
+        timeEndPeriod(1);
     }
 }
 
