@@ -12,6 +12,7 @@ impl Vector2 {
 }
 
 /// 3-dimensional column vector.
+#[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Vector3 {
     pub x: f32,

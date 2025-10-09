@@ -1,6 +1,7 @@
 use super::{UnitQuaternion, Vector3};
 
 /// 3-dimensional point.
+#[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Point3 {
     pub coords: Vector3,
