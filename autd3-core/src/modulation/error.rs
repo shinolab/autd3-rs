@@ -1,7 +1,5 @@
 use core::convert::Infallible;
 
-use alloc::string::{String, ToString};
-
 use crate::firmware::SamplingConfigError;
 
 #[derive(Debug, PartialEq, Clone)]

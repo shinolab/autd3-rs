@@ -1,5 +1,3 @@
-use alloc::string::{String, ToString};
-
 #[derive(Debug, PartialEq, Clone)]
 /// An error produced by the link.
 pub struct LinkError {

@@ -23,8 +23,8 @@ naive = []
 use_rand = ["rand"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["acoustics", "derive", "gain", "std"] }
-nalgebra = { workspace = true, optional = true, features = ["std", "alloc"] }
+autd3-core = { workspace = true, features = ["acoustics", "derive", "gain"] }
+nalgebra = { workspace = true, optional = true, features = ["std"] }
 rand = { workspace = true, optional = true, features = ["thread_rng"] }
 
 [dev-dependencies]

@@ -6,8 +6,6 @@ pub use buffer_pool::*;
 pub use datagram::*;
 pub use error::LinkError;
 
-use alloc::{boxed::Box, vec::Vec};
-
 use crate::geometry::Geometry;
 
 /// A trait that provides the interface with the device.

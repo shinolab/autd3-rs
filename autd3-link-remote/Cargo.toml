@@ -14,4 +14,4 @@ features = []
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["std", "link"] }
+autd3-core = { workspace = true, features = ["link"] }

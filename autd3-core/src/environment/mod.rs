@@ -27,10 +27,7 @@ impl Environment {
     /// Sets the sound speed of envs from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
     pub fn set_sound_speed_from_temp_with(&mut self, t: f32, k: f32, r: f32, m: f32) {
         let c2 = k * r * (273.15 + t) / m;
-        #[cfg(feature = "std")]
         let c = c2.sqrt();
-        #[cfg(feature = "libm")]
-        let c = libm::sqrtf(c2);
         self.sound_speed = c * METER;
     }
 

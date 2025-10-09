@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-
 use super::{
     Isometry3, Point3, Quaternion, Transducer, Translation3, UnitQuaternion, UnitVector3, Vector3,
 };
@@ -121,7 +119,7 @@ impl core::ops::Deref for Device {
 
 impl core::iter::IntoIterator for Device {
     type Item = Transducer;
-    type IntoIter = alloc::vec::IntoIter<Transducer>;
+    type IntoIter = std::vec::IntoIter<Transducer>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.transducers.into_iter()

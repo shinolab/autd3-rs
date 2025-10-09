@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(alloc::format!("{:?}", 100 * Hz), "100 Hz");
-        assert_eq!(alloc::format!("{:?}", 100 * kHz), "100000 Hz");
+        assert_eq!(format!("{:?}", 100 * Hz), "100 Hz");
+        assert_eq!(format!("{:?}", 100 * kHz), "100000 Hz");
     }
 }

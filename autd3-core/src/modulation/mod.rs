@@ -1,8 +1,8 @@
 mod error;
 
 use crate::firmware::{SamplingConfig, Segment, transition_mode::TransitionModeParams};
-use alloc::{sync::Arc, vec::Vec};
 pub use error::ModulationError;
+use std::sync::Arc;
 
 /// Trait for applying amplitude modulation.
 ///

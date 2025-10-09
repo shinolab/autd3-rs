@@ -96,8 +96,8 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(alloc::format!("{:?}", Intensity(0x00)), "0x00");
-        assert_eq!(alloc::format!("{:?}", Intensity(0x01)), "0x01");
-        assert_eq!(alloc::format!("{:?}", Intensity(0xFF)), "0xFF");
+        assert_eq!(format!("{:?}", Intensity(0x00)), "0x00");
+        assert_eq!(format!("{:?}", Intensity(0x01)), "0x01");
+        assert_eq!(format!("{:?}", Intensity(0xFF)), "0xFF");
     }
 }

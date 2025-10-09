@@ -65,6 +65,6 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(alloc::format!("{:?}", 1.0 * rad), "1 rad");
+        assert_eq!(format!("{:?}", 1.0 * rad), "1 rad");
     }
 }

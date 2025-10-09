@@ -383,7 +383,7 @@ mod tests {
 
     #[test]
     fn vector3_sum() {
-        let vectors = alloc::vec![
+        let vectors = vec![
             Vector3::new(1.0, 2.0, 3.0),
             Vector3::new(4.0, 5.0, 6.0),
             Vector3::new(7.0, 8.0, 9.0),

@@ -13,7 +13,7 @@ members = [
     "autd3-link-twincat",
     "examples",
 ]
-exclude = ["benches", "tests/ensure_no_std"]
+exclude = ["benches"]
 resolver = "3"
 
 [workspace.package]

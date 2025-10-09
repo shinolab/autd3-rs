@@ -20,7 +20,7 @@ remote = ["cc"]
 all = ["local", "remote"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["std", "link"] }
+autd3-core = { workspace = true, features = ["link"] }
 
 [build-dependencies]
 cc = { version = "1.2.24", optional = true }

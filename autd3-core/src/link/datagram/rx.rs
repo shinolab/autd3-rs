@@ -82,7 +82,7 @@ mod tests {
     #[test]
     fn ack_debug() {
         let ack = Ack::new(0x05, 0x03);
-        let debug = alloc::format!("{:?}", ack);
+        let debug = format!("{:?}", ack);
         assert_eq!("Ack { msg_id: 5, err: 3 }", debug);
     }
 

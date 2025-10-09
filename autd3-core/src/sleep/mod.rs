@@ -1,9 +1,7 @@
 use core::time::Duration;
 
-use alloc::boxed::Box;
-
-#[cfg(all(target_os = "windows", feature = "std"))]
-unsafe extern "C" {
+#[cfg(target_os = "windows")]
+unsafe extern "system" {
     fn timeBeginPeriod(u: u32) -> u32;
     fn timeEndPeriod(u: u32) -> u32;
 }
@@ -22,12 +20,10 @@ impl Sleeper for Box<dyn Sleeper> {
 }
 // GRCOV_EXCL_STOP
 
-#[cfg(feature = "std")]
 /// A sleeper that uses [`std::thread::sleep`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct StdSleeper;
 
-#[cfg(feature = "std")]
 impl Sleeper for StdSleeper {
     fn sleep(&self, duration: Duration) {
         #[cfg(target_os = "windows")]
@@ -42,12 +38,10 @@ impl Sleeper for StdSleeper {
     }
 }
 
-#[cfg(feature = "std")]
 /// A sleeper that uses a spin loop to wait until the deadline is reached.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SpinWaitSleeper;
 
-#[cfg(feature = "std")]
 impl Sleeper for SpinWaitSleeper {
     // GRCOV_EXCL_START
     fn sleep(&self, duration: Duration) {

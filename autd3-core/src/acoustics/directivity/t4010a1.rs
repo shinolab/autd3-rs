@@ -60,10 +60,7 @@ impl Directivity for T4010A1 {
     fn directivity(theta: Angle) -> f32 {
         let theta_deg = theta.degree().abs() % 180.0;
         let theta_deg = 90.0 - (theta_deg - 90.0).abs();
-        #[cfg(feature = "std")]
         let i = (theta_deg / 10.0).ceil() as usize;
-        #[cfg(feature = "libm")]
-        let i = libm::ceilf(theta_deg / 10.0) as usize;
         if i == 0 {
             1.0
         } else {
