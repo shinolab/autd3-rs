@@ -10,9 +10,10 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [features]
-default = []
+default = ["parallel"]
 thread-safe = []
 time = ["autd3-core/time"]
+parallel = ["autd3-driver/parallel"]
 
 [dependencies]
 autd3-core = { workspace = true }

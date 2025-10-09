@@ -14,12 +14,13 @@ features = []
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["use_nalgebra"]
+default = ["use_nalgebra", "parallel"]
 use_nalgebra = ["autd3-core/use_nalgebra"]
+parallel = ["rayon"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulation", "sleep", "std"] }
-rayon = { workspace = true }
+rayon = { workspace = true, optional = true }
 
 [dev-dependencies]
 approx = { workspace = true }
