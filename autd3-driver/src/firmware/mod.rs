@@ -3,11 +3,6 @@ pub(crate) mod tag;
 /// Firmware version
 pub mod version;
 
-/// Asynchronous module.
-#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-#[cfg(feature = "async")]
-pub mod r#async;
-
 /// A module for working with CPU firmware.
 pub mod cpu;
 /// A module for working with FPGA firmware.

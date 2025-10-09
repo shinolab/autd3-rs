@@ -9,7 +9,7 @@ use std::net::SocketAddr;
 
 use autd3_core::{
     geometry::Geometry,
-    link::{AsyncLink, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
+    link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
 };
 use autd3_protobuf::*;
 
@@ -70,11 +70,10 @@ impl RemoteInner {
     }
 }
 
-/// An [`AsyncLink`] for a remote server.
+/// An [`Link`] for a remote server.
 pub struct Remote {
     addr: SocketAddr,
     inner: Option<RemoteInner>,
-    #[cfg(feature = "blocking")]
     runtime: Option<tokio::runtime::Runtime>,
 }
 
@@ -84,65 +83,21 @@ impl Remote {
         Remote {
             addr,
             inner: None,
-            #[cfg(feature = "blocking")]
             runtime: None,
         }
     }
 }
 
-impl AsyncLink for Remote {
-    async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
-        self.inner = Some(RemoteInner::open(&self.addr, geometry).await?);
-        Ok(())
-    }
-
-    async fn close(&mut self) -> Result<(), LinkError> {
-        if let Some(mut inner) = self.inner.take() {
-            inner.close().await?;
-        }
-        Ok(())
-    }
-
-    async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
-        if let Some(inner) = self.inner.as_mut() {
-            inner.alloc_tx_buffer().await
-        } else {
-            Err(LinkError::closed())
-        }
-    }
-
-    async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
-        if let Some(inner) = self.inner.as_mut() {
-            inner.send(tx).await
-        } else {
-            Err(LinkError::closed())
-        }
-    }
-
-    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
-        if let Some(inner) = self.inner.as_mut() {
-            inner.receive(rx).await
-        } else {
-            Err(LinkError::closed())
-        }
-    }
-
-    fn is_open(&self) -> bool {
-        self.inner.is_some()
-    }
-}
-
-#[cfg(feature = "blocking")]
-use autd3_core::link::Link;
-
-#[cfg(feature = "blocking")]
 impl Link for Remote {
     fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
             .expect("Failed to create runtime");
-        runtime.block_on(<Self as AsyncLink>::open(self, geometry))?;
+        runtime.block_on(async {
+            self.inner = Some(RemoteInner::open(&self.addr, geometry).await?);
+            Result::<(), LinkError>::Ok(())
+        })?;
         self.runtime = Some(runtime);
         Ok(())
     }

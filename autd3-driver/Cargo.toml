@@ -10,11 +10,10 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = ["async"]
+features = []
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-async = ["autd3-core/async"]
 default = ["use_nalgebra"]
 use_nalgebra = ["autd3-core/use_nalgebra"]
 

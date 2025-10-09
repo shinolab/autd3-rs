@@ -23,11 +23,6 @@ pub mod link;
 /// Prelude module.
 pub mod prelude;
 
-/// Asynchronous module.
-#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
-#[cfg(feature = "async")]
-pub mod r#async;
-
 pub use autd3_core as core;
 pub use autd3_driver as driver;
 #[cfg(feature = "gain")]
