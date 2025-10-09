@@ -92,17 +92,6 @@ impl TransducerMask {
         }
     }
 
-    /// Returns the number of enabled devices.
-    pub fn num_enabled_devices(&self, geometry: &Geometry) -> usize {
-        match self {
-            Self::AllEnabled => geometry.num_devices(),
-            Self::Masked(filter) => geometry
-                .iter()
-                .filter(|dev| filter[dev.idx()].has_enabled())
-                .count(),
-        }
-    }
-
     /// Returns the number of enabled transducers for the given [`Device`].
     pub fn num_enabled_transducers(&self, dev: &Device) -> usize {
         match self {
