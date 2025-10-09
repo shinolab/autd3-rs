@@ -3,8 +3,8 @@ use std::io::{self, Write};
 use autd3::{core::link::Link, prelude::*};
 
 use super::{
-    audio_file::*, bessel::*, custom::*, fir::*, flag::*, focus::*, group::*, holo::*, plane::*,
-    stm::*, user_defined_gain_modulation::*,
+    bessel::*, custom::*, fir::*, flag::*, focus::*, group::*, holo::*, plane::*, stm::*,
+    user_defined_gain_modulation::*,
 };
 
 pub fn run<L: Link>(mut autd: Controller<L>) -> Result<(), Box<dyn std::error::Error>> {
@@ -23,7 +23,6 @@ pub fn run<L: Link>(mut autd: Controller<L>) -> Result<(), Box<dyn std::error::E
         ("Single focus test", |autd| focus(autd)),
         ("Bessel beam test", |autd| bessel(autd)),
         ("Plane wave test", |autd| plane(autd)),
-        ("Wav modulation test", |autd| audio_file(autd)),
         ("FociSTM test", |autd| foci_stm(autd)),
         ("GainSTM test", |autd| gain_stm(autd)),
         ("Multiple foci test", |autd| holo(autd)),

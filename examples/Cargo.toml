@@ -23,7 +23,6 @@ autd3-link-ethercrab = { workspace = true, optional = true }
 autd3-link-remote = { workspace = true, optional = true }
 autd3-link-simulator = { workspace = true, optional = true }
 autd3-link-twincat = { workspace = true, optional = true }
-autd3-modulation-audio-file = { workspace = true, features = ["wav"] }
 tracing = { version = "0.1.41", optional = true }
 tracing-subscriber = { version = "0.3.20", features = ["fmt", "env-filter"], optional = true }
 
