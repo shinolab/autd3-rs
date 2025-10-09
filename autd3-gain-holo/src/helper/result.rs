@@ -6,9 +6,13 @@ use autd3_core::{
     gain::{GainCalculator, GainCalculatorGenerator, GainError, TransducerMask},
     geometry::{Device, Geometry, Transducer},
 };
-use rayon::iter::Either;
 
 use crate::{EmissionConstraint, VectorXc};
+
+enum Either<L, R> {
+    Left(L),
+    Right(R),
+}
 
 #[allow(clippy::type_complexity)]
 pub struct HoloCalculator {
