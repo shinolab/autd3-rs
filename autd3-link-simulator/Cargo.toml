@@ -13,9 +13,5 @@ repository = { workspace = true }
 features = []
 rustdoc-args = ["--cfg", "docsrs"]
 
-
 [dependencies]
-autd3-core = { workspace = true, features = ["link"] }
-autd3-protobuf = { workspace = true }
-tokio = { workspace = true, features = ["rt-multi-thread"] }
-tonic = { workspace = true }
+autd3-core = { workspace = true, features = ["std", "link"] }

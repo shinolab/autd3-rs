@@ -89,7 +89,6 @@ jobs:
       - run: cargo +nightly docs-rs -pautd3-link-simulator
       - run: cargo +nightly docs-rs -pautd3-link-ethercrab
       - run: cargo +nightly docs-rs -pautd3-link-twincat
-      - run: cargo +nightly docs-rs -pautd3-protobuf
 
   coverage:
     runs-on: ubuntu-latest
