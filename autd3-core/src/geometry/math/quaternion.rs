@@ -1,6 +1,7 @@
 use super::{Point3, UnitVector3, Vector3};
 
 /// A quaternion.
+#[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Quaternion {
     pub w: f32,
@@ -27,6 +28,7 @@ impl Quaternion {
 }
 
 /// A unit quaternion.
+#[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UnitQuaternion {
     pub w: f32,
