@@ -10,7 +10,6 @@ use autd3_core::{
 };
 
 use nalgebra::ComplexField;
-use rand::prelude::*;
 
 /// The objective function for [`Greedy`] that minimizes the absolute value of the difference
 pub fn abs_objective_func(c: Complex, a: Amplitude) -> f32 {
@@ -103,7 +102,40 @@ impl<D: Directivity> Greedy<D> {
                 })
                 .collect()
         };
-        indices.shuffle(&mut rand::rng());
+
+        #[cfg(feature = "use_rand")]
+        {
+            use rand::prelude::*;
+            indices.shuffle(&mut rand::rng());
+        }
+        #[cfg(not(feature = "use_rand"))]
+        {
+            use std::hash::{Hash, Hasher};
+
+            fn xorshift(seed: usize) -> usize {
+                let seed = seed ^ (seed << 13);
+                let seed = seed ^ (seed >> 7);
+                seed ^ (seed << 17)
+            }
+
+            fn shuffle(indices: &mut [(usize, usize)], seed: usize) {
+                let len = indices.len();
+                let mut s = seed;
+                for i in 0..len {
+                    s = xorshift(s);
+                    let j = s % len;
+                    indices.swap(i, j);
+                }
+            }
+
+            let seed = {
+                let mut hasher = std::hash::DefaultHasher::new();
+                std::time::SystemTime::now().hash(&mut hasher);
+                hasher.finish() as usize
+            };
+            shuffle(&mut indices, seed);
+        }
+
         indices
     }
 
