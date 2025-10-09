@@ -1,4 +1,3 @@
-mod audio_file;
 mod bessel;
 mod custom;
 mod fir;

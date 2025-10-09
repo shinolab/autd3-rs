@@ -91,8 +91,6 @@ args = [
     "--keep-only",
     "autd3-gain-holo/src/**/*.rs",
     "--keep-only",
-    "autd3-modulation-audio-file/src/**/*.rs",
-    "--keep-only",
     "autd3-protobuf/src/**/*.rs",
     "--ignore",
     "autd3-protobuf/src/pb/*.rs",
