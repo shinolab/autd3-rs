@@ -27,8 +27,6 @@ mod math;
 
 pub use math::*;
 
-use alloc::vec::Vec;
-
 pub use device::*;
 pub use rotation::*;
 pub use transducer::*;
@@ -132,7 +130,7 @@ impl core::ops::DerefMut for Geometry {
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use alloc::vec::Vec;
+
     use rand::Rng;
 
     use crate::common::mm;
@@ -196,8 +194,8 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[case(1, alloc::vec![create_device(249)])]
-    #[case(2, alloc::vec![create_device(249), create_device(249)])]
+    #[case(1, vec![create_device(249)])]
+    #[case(2, vec![create_device(249), create_device(249)])]
     fn num_devices(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
@@ -206,8 +204,8 @@ pub(crate) mod tests {
     }
 
     #[rstest::rstest]
-    #[case(249, alloc::vec![create_device(249)])]
-    #[case(498, alloc::vec![create_device(249), create_device(249)])]
+    #[case(249, vec![create_device(249)])]
+    #[case(498, vec![create_device(249), create_device(249)])]
     fn num_transducers(#[case] expected: usize, #[case] devices: Vec<Device>) {
         let geometry = Geometry::new(devices);
         assert_eq!(0, geometry.version());
@@ -217,7 +215,7 @@ pub(crate) mod tests {
 
     #[test]
     fn center() {
-        let geometry = Geometry::new(alloc::vec![
+        let geometry = Geometry::new(vec![
             TestDevice::new_autd3(Point3::origin()).into(),
             TestDevice::new_autd3(Point3::new(10., 20., 30.)).into(),
         ]);
@@ -247,7 +245,7 @@ pub(crate) mod tests {
 
     #[test]
     fn idx() {
-        let geometry = Geometry::new(alloc::vec![
+        let geometry = Geometry::new(vec![
             TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
             TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
         ]);
@@ -262,7 +260,7 @@ pub(crate) mod tests {
 
     #[test]
     fn reconfigure() {
-        let mut geometry = Geometry::new(alloc::vec![
+        let mut geometry = Geometry::new(vec![
             TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
             TestDevice::new_autd3_with_rot(Point3::origin(), UnitQuaternion::identity()).into(),
         ]);

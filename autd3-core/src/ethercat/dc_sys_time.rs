@@ -9,7 +9,7 @@ impl core::fmt::Display for InvalidDateTime {
     }
 }
 
-#[cfg(all(feature = "time", feature = "std"))]
+#[cfg(feature = "time")]
 impl std::error::Error for InvalidDateTime {}
 
 #[cfg(feature = "time")]
@@ -59,7 +59,7 @@ impl DcSysTime {
 
     /// Returns the system time of now
     #[must_use]
-    #[cfg(all(feature = "time", feature = "std"))]
+    #[cfg(feature = "time")]
     pub fn now() -> Self {
         Self::from_utc(time::OffsetDateTime::now_utc()).unwrap()
     }

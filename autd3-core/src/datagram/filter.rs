@@ -5,7 +5,7 @@ pub enum DeviceMask {
     /// All devices are enabled.
     AllEnabled,
     /// A filtered mask where each value represents whether the corresponding device is enabled.
-    Masked(alloc::vec::Vec<bool>),
+    Masked(Vec<bool>),
 }
 
 impl DeviceMask {

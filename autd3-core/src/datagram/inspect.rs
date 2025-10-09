@@ -4,8 +4,6 @@ use crate::{
     geometry::{Device, Geometry},
 };
 
-use alloc::vec::Vec;
-
 /// Inspection result of a [`Datagram`].
 #[derive(Clone)]
 pub struct InspectionResult<T> {

@@ -32,21 +32,14 @@ impl Phase {
 impl From<Angle> for Phase {
     fn from(v: Angle) -> Self {
         let p = v.radian() / (2.0 * PI) * 256.0;
-        #[cfg(feature = "std")]
         let p = p.round();
-        #[cfg(feature = "libm")]
-        let p = libm::roundf(p);
         Self(((p as i32) & 0xFF) as _)
     }
 }
 
 impl From<Complex> for Phase {
     fn from(v: Complex) -> Self {
-        #[cfg(feature = "std")]
-        let p = Self::from(v.arg() * rad);
-        #[cfg(feature = "libm")]
-        let p = Self::from(libm::atan2f(v.im, v.re) * rad);
-        p
+        Self::from(v.arg() * rad)
     }
 }
 
@@ -137,8 +130,8 @@ mod tests {
 
     #[test]
     fn dbg() {
-        assert_eq!(alloc::format!("{:?}", Phase::ZERO), "0x00");
-        assert_eq!(alloc::format!("{:?}", Phase(0x01)), "0x01");
-        assert_eq!(alloc::format!("{:?}", Phase(0xFF)), "0xFF");
+        assert_eq!(format!("{:?}", Phase::ZERO), "0x00");
+        assert_eq!(format!("{:?}", Phase(0x01)), "0x01");
+        assert_eq!(format!("{:?}", Phase(0xFF)), "0xFF");
     }
 }
