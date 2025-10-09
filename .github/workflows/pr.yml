@@ -132,6 +132,7 @@ jobs:
   auto-merge:
     needs:
       - all-tests-passed
+      - test-for-capi
       - build-docs
       - coverage
     permissions:
