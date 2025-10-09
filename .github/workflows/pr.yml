@@ -57,6 +57,23 @@ jobs:
           tool: cargo-nextest
       - run: cargo make check --features "${{ matrix.features }}"
 
+  test-for-capi:
+    needs: changed-files
+    if: ${{ needs.changed-files.outputs.src == 'true' }}
+    name: test-for-capi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/actions/setup-build
+        with:
+          components: "rustfmt, clippy"
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - run: cargo make check --no-default-features --exclude autd3-examples --features "gain, modulation, link-audit, link-nop, greedy, gs, gspat, naive, local"
+
   all-tests-passed:
     if: ${{ always() }}
     name: all-tests-passed

@@ -1,14 +1,11 @@
-use std::mem::{ManuallyDrop, MaybeUninit};
-
-use crate::{Complex, MatrixXc, helper::propagate};
+use crate::{MatrixXc, helper::propagate};
 
 use autd3_core::{
     acoustics::directivity::Directivity,
     environment::Environment,
     gain::TransducerMask,
-    geometry::{Geometry, Point3},
+    geometry::{Complex, Geometry, Point3},
 };
-use nalgebra::{Dyn, U1, VecStorage};
 
 struct Ptr(*mut Complex);
 impl Ptr {
@@ -28,7 +25,11 @@ impl Ptr {
 unsafe impl Send for Ptr {}
 unsafe impl Sync for Ptr {}
 
+#[cfg(feature = "use_nalgebra")]
 fn uninit_mat(row: usize, col: usize) -> MatrixXc {
+    use nalgebra::{Dyn, VecStorage};
+    use std::mem::{ManuallyDrop, MaybeUninit};
+
     MatrixXc::from_data(unsafe {
         let mut data = Vec::<MaybeUninit<Complex>>::new();
         let length = row * col;
@@ -42,15 +43,17 @@ fn uninit_mat(row: usize, col: usize) -> MatrixXc {
     })
 }
 
+#[cfg(not(feature = "use_nalgebra"))]
+fn uninit_mat(row: usize, col: usize) -> MatrixXc {
+    MatrixXc::zeros(row, col)
+}
+
 pub fn generate_propagation_matrix<D: Directivity>(
     geometry: &Geometry,
     env: &Environment,
     foci: &[Point3],
     filter: &TransducerMask,
 ) -> MatrixXc {
-    #[cfg(feature = "parallel")]
-    use rayon::prelude::*;
-
     let num_transducers = [0]
         .into_iter()
         .chain(geometry.iter().scan(0, |state, dev| {
@@ -60,148 +63,45 @@ pub fn generate_propagation_matrix<D: Directivity>(
         .collect::<Vec<_>>();
     let n = num_transducers.last().copied().unwrap();
 
-    let num_devices = filter.num_enabled_devices(geometry);
-    let m = foci.len();
-    let do_parallel_in_col = num_devices < m;
-
     if filter.is_all_enabled() {
-        if do_parallel_in_col {
-            #[cfg(feature = "parallel")]
-            let columns = foci.par_iter().map(|f| {
-                nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
-                    n,
-                    geometry.iter().flat_map(|dev| {
-                        dev.iter().map(move |tr| {
-                            propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), *f)
-                        })
-                    }),
-                )
-            }).collect::<Vec<_>>();
-            #[cfg(not(feature = "parallel"))]
-             let columns = foci.iter().map(|f| {
-                nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
-                    n,
-                    geometry.iter().flat_map(|dev| {
-                        dev.iter().map(move |tr| {
-                            propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), *f)
-                        })
-                    }),
-                )
-            }).collect::<Vec<_>>();
-            MatrixXc::from_rows(&columns)
-        } else {
-            let mut r = uninit_mat(foci.len(), n);
-            let ptr = Ptr(r.as_mut_ptr());
-            #[cfg(feature = "parallel")]
-            geometry.iter().par_bridge().for_each(move |dev| {
-                let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
-                dev.iter().for_each(move |tr| {
-                    foci.iter().for_each(|f| {
-                        ptr.write(propagate::<D>(
-                            tr,
-                            env.wavenumber(),
-                            dev.axial_direction(),
-                            *f,
-                        ));
-                    });
+        let mut r = uninit_mat(foci.len(), n);
+        let ptr = Ptr(r.as_mut_ptr());
+        geometry.iter().for_each(move |dev| {
+            let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
+            dev.iter().for_each(move |tr| {
+                foci.iter().for_each(|f| {
+                    ptr.write(propagate::<D>(
+                        tr,
+                        env.wavenumber(),
+                        dev.axial_direction(),
+                        *f,
+                    ));
                 });
             });
-            #[cfg(not(feature = "parallel"))]
-            geometry.iter().for_each(move |dev| {
-                let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
-                dev.iter().for_each(move |tr| {
-                    foci.iter().for_each(|f| {
-                        ptr.write(propagate::<D>(
-                            tr,
-                            env.wavenumber(),
-                            dev.axial_direction(),
-                            *f,
-                        ));
-                    });
-                });
-            });
-            r
-        }
+        });
+        r
     } else {
-        #[allow(clippy::collapsible_else_if)]
-        if do_parallel_in_col {
-            #[cfg(feature = "parallel")]
-            let columns = foci.par_iter().map(|f| {
-                nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
-                    n,
-                    geometry
-                        .iter()
-                        .filter(|dev| filter.has_enabled(dev))
-                        .flat_map(|dev| {
-                            dev.iter()
-                                .filter(|tr| filter.is_enabled(tr))
-                                .map(move |tr| {
-                                    propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), *f)
-                                })
-                        }),
-                )
-            }).collect::<Vec<_>>();
-            #[cfg(not(feature = "parallel"))]
-            let columns = foci.iter().map(|f| {
-                nalgebra::Matrix::<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>::from_iterator(
-                    n,
-                    geometry
-                        .iter()
-                        .filter(|dev| filter.has_enabled(dev))
-                        .flat_map(|dev| {
-                            dev.iter()
-                                .filter(|tr| filter.is_enabled(tr))
-                                .map(move |tr| {
-                                    propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), *f)
-                                })
-                        }),
-                )
-            }).collect::<Vec<_>>();
-            MatrixXc::from_rows(&columns)
-        } else {
-            let mut r = uninit_mat(foci.len(), n);
-            let ptr = Ptr(r.as_mut_ptr());
-            #[cfg(feature = "parallel")]
-            geometry
-                .iter()
-                .filter(|dev| filter.has_enabled(dev))
-                .par_bridge()
-                .for_each(move |dev| {
-                    let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
-                    dev.iter().for_each(move |tr| {
-                        if filter.is_enabled(tr) {
-                            foci.iter().for_each(|f| {
-                                ptr.write(propagate::<D>(
-                                    tr,
-                                    env.wavenumber(),
-                                    dev.axial_direction(),
-                                    *f,
-                                ));
-                            });
-                        }
-                    });
+        let mut r = uninit_mat(foci.len(), n);
+        let ptr = Ptr(r.as_mut_ptr());
+        geometry
+            .iter()
+            .filter(|dev| filter.has_enabled(dev))
+            .for_each(move |dev| {
+                let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
+                dev.iter().for_each(move |tr| {
+                    if filter.is_enabled(tr) {
+                        foci.iter().for_each(|f| {
+                            ptr.write(propagate::<D>(
+                                tr,
+                                env.wavenumber(),
+                                dev.axial_direction(),
+                                *f,
+                            ));
+                        });
+                    }
                 });
-            #[cfg(not(feature = "parallel"))]
-            geometry
-                .iter()
-                .filter(|dev| filter.has_enabled(dev))
-                .for_each(move |dev| {
-                    let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
-                    dev.iter().for_each(move |tr| {
-                        if filter.is_enabled(tr) {
-                            foci.iter().for_each(|f| {
-                                ptr.write(propagate::<D>(
-                                    tr,
-                                    env.wavenumber(),
-                                    dev.axial_direction(),
-                                    *f,
-                                ));
-                            });
-                        }
-                    });
-                });
-            r
-        }
+            });
+        r
     }
 }
 
@@ -278,7 +178,7 @@ mod tests {
     }
 
     #[test]
-    fn generate_propagation_matrix_all_enabled_parallel_in_col() {
+    fn generate_propagation_matrix_all_enabled() {
         let geometry = create_geometry(2);
         let env = Environment::new();
         let foci = vec![
@@ -292,17 +192,7 @@ mod tests {
     }
 
     #[test]
-    fn generate_propagation_matrix_all_enabled_parallel_in_row() {
-        let geometry = create_geometry(3);
-        let env = Environment::new();
-        let foci = vec![Point3::new(0.0, 0.0, 120.0)];
-        let filter = TransducerMask::AllEnabled;
-        let m = generate_propagation_matrix::<Sphere>(&geometry, &env, &foci, &filter);
-        check_matrix(&geometry, &env, &foci, &filter, &m);
-    }
-
-    #[test]
-    fn generate_propagation_matrix_masked_parallel_in_col() {
+    fn generate_propagation_matrix_masked() {
         let geometry = create_geometry(2);
         let env = Environment::new();
         let foci = vec![
@@ -314,22 +204,6 @@ mod tests {
             DeviceTransducerMask::AllEnabled,
             DeviceTransducerMask::AllDisabled,
         ]);
-        let m = generate_propagation_matrix::<Sphere>(&geometry, &env, &foci, &filter);
-        check_matrix(&geometry, &env, &foci, &filter, &m);
-    }
-
-    #[test]
-    fn generate_propagation_matrix_masked_parallel_in_row() {
-        let geometry = create_geometry(2);
-        let env = Environment::new();
-        let foci = vec![Point3::new(0.0, 0.0, 200.0)];
-        let filter = TransducerMask::from_fn(&geometry, |dev| {
-            if dev.idx() == 0 {
-                DeviceTransducerMask::from_fn(dev, |_| true)
-            } else {
-                DeviceTransducerMask::from_fn(dev, |_| false)
-            }
-        });
         let m = generate_propagation_matrix::<Sphere>(&geometry, &env, &foci, &filter);
         check_matrix(&geometry, &env, &foci, &filter, &m);
     }

@@ -1,19 +1,17 @@
 use std::{collections::HashMap, num::NonZeroU8};
 
-use crate::{Amplitude, Complex, constraint::EmissionConstraint, helper::propagate};
+use crate::{Amplitude, constraint::EmissionConstraint, helper::propagate};
 
 use autd3_core::{
     acoustics::directivity::{Directivity, Sphere},
     common::{PI, rad},
     derive::*,
-    geometry::{Point3, UnitVector3},
+    geometry::{Complex, Point3, UnitVector3},
 };
-
-use nalgebra::ComplexField;
 
 /// The objective function for [`Greedy`] that minimizes the absolute value of the difference
 pub fn abs_objective_func(c: Complex, a: Amplitude) -> f32 {
-    (a.value - c.abs()).abs()
+    (a.value - c.norm()).abs()
 }
 
 /// The option of [`Greedy`].

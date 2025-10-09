@@ -240,3 +240,182 @@ impl core::ops::Deref for UnitVector3 {
         &self.vec
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn vector2_norm() {
+        let v = Vector2 { x: 3.0, y: 4.0 };
+        assert_eq!(v.norm(), 5.0);
+    }
+
+    #[test]
+    fn vector3_new() {
+        let v = Vector3::new(1.0, 2.0, 3.0);
+        assert_eq!(v.x, 1.0);
+        assert_eq!(v.y, 2.0);
+        assert_eq!(v.z, 3.0);
+    }
+
+    #[test]
+    fn vector3_zeros() {
+        let v = Vector3::zeros();
+        assert_eq!(v.x, 0.0);
+        assert_eq!(v.y, 0.0);
+        assert_eq!(v.z, 0.0);
+    }
+
+    #[test]
+    fn vector3_axes() {
+        let x = Vector3::x();
+        assert_eq!(x.x, 1.0);
+        assert_eq!(x.y, 0.0);
+        assert_eq!(x.z, 0.0);
+
+        let y = Vector3::y();
+        assert_eq!(y.x, 0.0);
+        assert_eq!(y.y, 1.0);
+        assert_eq!(y.z, 0.0);
+
+        let z = Vector3::z();
+        assert_eq!(z.x, 0.0);
+        assert_eq!(z.y, 0.0);
+        assert_eq!(z.z, 1.0);
+    }
+
+    #[test]
+    fn vector3_xy() {
+        let v = Vector3::new(1.0, 2.0, 3.0);
+        let xy = v.xy();
+        assert_eq!(xy.x, 1.0);
+        assert_eq!(xy.y, 2.0);
+    }
+
+    #[test]
+    fn vector3_dot() {
+        let v1 = Vector3::new(1.0, 2.0, 3.0);
+        let v2 = Vector3::new(4.0, 5.0, 6.0);
+        let result = v1.dot(&v2);
+        assert_eq!(result, 32.0);
+    }
+
+    #[test]
+    fn vector3_cross() {
+        let v1 = Vector3::new(1.0, 0.0, 0.0);
+        let v2 = Vector3::new(0.0, 1.0, 0.0);
+        let result = v1.cross(&v2);
+        assert_eq!(result.x, 0.0);
+        assert_eq!(result.y, 0.0);
+        assert_eq!(result.z, 1.0);
+    }
+
+    #[test]
+    fn vector3_norm() {
+        let v = Vector3::new(3.0, 4.0, 0.0);
+        assert_eq!(v.norm(), 5.0);
+    }
+
+    #[test]
+    fn vector3_normalize() {
+        let v = Vector3::new(3.0, 4.0, 0.0);
+        let normalized = v.normalize();
+        assert_eq!(normalized.x, 0.6);
+        assert_eq!(normalized.y, 0.8);
+        assert_eq!(normalized.z, 0.0);
+        assert!((normalized.norm() - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn vector3_normalize_zero() {
+        let v = Vector3::zeros();
+        let normalized = v.normalize();
+        assert_eq!(normalized, Vector3::zeros());
+    }
+
+    #[test]
+    fn vector3_try_normalize() {
+        let v = Vector3::new(3.0, 4.0, 0.0);
+        let normalized = v.try_normalize(1e-6).unwrap();
+        assert!((normalized.norm() - 1.0).abs() < 1e-6);
+
+        let small = Vector3::new(1e-7, 0.0, 0.0);
+        assert!(small.try_normalize(1e-6).is_none());
+    }
+
+    #[test]
+    fn vector3_neg() {
+        let v = Vector3::new(1.0, 2.0, 3.0);
+        let neg = -v;
+        assert_eq!(neg.x, -1.0);
+        assert_eq!(neg.y, -2.0);
+        assert_eq!(neg.z, -3.0);
+    }
+
+    #[test]
+    fn vector3_add() {
+        let v1 = Vector3::new(1.0, 2.0, 3.0);
+        let v2 = Vector3::new(4.0, 5.0, 6.0);
+        let result = v1 + v2;
+        assert_eq!(result.x, 5.0);
+        assert_eq!(result.y, 7.0);
+        assert_eq!(result.z, 9.0);
+    }
+
+    #[test]
+    fn vector3_mul_scalar() {
+        let v = Vector3::new(1.0, 2.0, 3.0);
+        let result = v * 2.0;
+        assert_eq!(result.x, 2.0);
+        assert_eq!(result.y, 4.0);
+        assert_eq!(result.z, 6.0);
+    }
+
+    #[test]
+    fn vector3_div_scalar() {
+        let v = Vector3::new(2.0, 4.0, 6.0);
+        let result = v / 2.0;
+        assert_eq!(result.x, 1.0);
+        assert_eq!(result.y, 2.0);
+        assert_eq!(result.z, 3.0);
+    }
+
+    #[test]
+    fn vector3_sum() {
+        let vectors = alloc::vec![
+            Vector3::new(1.0, 2.0, 3.0),
+            Vector3::new(4.0, 5.0, 6.0),
+            Vector3::new(7.0, 8.0, 9.0),
+        ];
+        let sum: Vector3 = vectors.into_iter().sum();
+        assert_eq!(sum.x, 12.0);
+        assert_eq!(sum.y, 15.0);
+        assert_eq!(sum.z, 18.0);
+    }
+
+    #[test]
+    fn unit_vector3_new_normalize() {
+        let v = Vector3::new(3.0, 4.0, 0.0);
+        let unit = UnitVector3::new_normalize(v);
+        assert!((unit.norm() - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn unit_vector3_axes() {
+        let x = Vector3::x_axis();
+        assert_eq!(x.x, 1.0);
+        assert_eq!(x.y, 0.0);
+        assert_eq!(x.z, 0.0);
+
+        let y = Vector3::y_axis();
+        assert_eq!(y.x, 0.0);
+        assert_eq!(y.y, 1.0);
+        assert_eq!(y.z, 0.0);
+
+        let z = Vector3::z_axis();
+        assert_eq!(z.x, 0.0);
+        assert_eq!(z.y, 0.0);
+        assert_eq!(z.z, 1.0);
+    }
+}

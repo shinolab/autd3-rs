@@ -3,10 +3,8 @@ use core::f32::consts::PI;
 use autd3_core::{
     acoustics::directivity::Directivity,
     common::{T4010A1_AMPLITUDE, rad},
-    geometry::{Point3, Transducer, UnitVector3, Vector3},
+    geometry::{Complex, Point3, Transducer, UnitVector3, Vector3},
 };
-
-use crate::Complex;
 
 #[must_use]
 fn directivity_from_dir<D: Directivity>(axial_direction: UnitVector3, target: Vector3) -> f32 {

@@ -1,7 +1,7 @@
 use std::num::NonZeroUsize;
 
 use crate::{
-    Amplitude, Complex, MatrixXc, VectorXc,
+    Amplitude, MatrixXc, VectorXc,
     constraint::EmissionConstraint,
     helper::{
         HoloCalculatorGenerator, gen_back_prop, generate_propagation_matrix, generate_result,
@@ -11,7 +11,7 @@ use crate::{
 use autd3_core::{
     acoustics::directivity::{Directivity, Sphere},
     derive::*,
-    geometry::Point3,
+    geometry::{Complex, Point3},
 };
 
 /// The option of [`GSPAT`].
