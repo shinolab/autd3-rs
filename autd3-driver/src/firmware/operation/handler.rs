@@ -6,8 +6,6 @@ use crate::{
 
 use autd3_core::link::{MsgId, TxMessage};
 
-use rayon::prelude::*;
-
 #[doc(hidden)]
 pub struct OperationHandler {}
 
@@ -24,6 +22,7 @@ impl OperationHandler {
         })
     }
 
+    #[allow(unused_variables)]
     pub fn pack<'a, O1, O2>(
         msg_id: MsgId,
         operations: &mut [Option<(O1, O2)>],
@@ -36,20 +35,38 @@ impl OperationHandler {
         O2: Operation<'a>,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
     {
-        if parallel {
-            geometry
-                .iter()
-                .zip(tx.iter_mut())
-                .zip(operations.iter_mut())
-                .par_bridge()
-                .try_for_each(|((dev, tx), op)| {
-                    if let Some((op1, op2)) = op {
-                        Self::pack_op2(msg_id, op1, op2, dev, tx)
-                    } else {
-                        Ok(())
-                    }
-                })
-        } else {
+        #[cfg(feature = "parallel")]
+        {
+            use rayon::prelude::*;
+            if parallel {
+                geometry
+                    .iter()
+                    .zip(tx.iter_mut())
+                    .zip(operations.iter_mut())
+                    .par_bridge()
+                    .try_for_each(|((dev, tx), op)| {
+                        if let Some((op1, op2)) = op {
+                            Self::pack_op2(msg_id, op1, op2, dev, tx)
+                        } else {
+                            Ok(())
+                        }
+                    })
+            } else {
+                geometry
+                    .iter()
+                    .zip(tx.iter_mut())
+                    .zip(operations.iter_mut())
+                    .try_for_each(|((dev, tx), op)| {
+                        if let Some((op1, op2)) = op {
+                            Self::pack_op2(msg_id, op1, op2, dev, tx)
+                        } else {
+                            Ok(())
+                        }
+                    })
+            }
+        }
+        #[cfg(not(feature = "parallel"))]
+        {
             geometry
                 .iter()
                 .zip(tx.iter_mut())

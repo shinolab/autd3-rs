@@ -15,7 +15,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 use_nalgebra = ["autd3-core/use_nalgebra"]
-default = ["use_nalgebra", "gain", "modulation", "stm"]
+default = ["use_nalgebra", "parallel", "gain", "modulation", "stm"]
 left_handed = ["autd3-core/left_handed"]
 use_meter = ["autd3-core/use_meter"]
 gain = ["autd3-core/gain", "autd3-core/derive"]
@@ -23,6 +23,7 @@ modulation = ["autd3-core/modulation", "autd3-core/derive", "autd3-core/utils"]
 stm = []
 link-audit = ["autd3-core/link", "autd3-firmware-emulator"]
 link-nop = ["autd3-core/link", "autd3-firmware-emulator"]
+parallel = ["autd3-driver/parallel"]
 
 [dependencies]
 autd3-core = { workspace = true }
