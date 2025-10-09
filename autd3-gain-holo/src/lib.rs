@@ -7,15 +7,21 @@
 //!
 //! [`Gain`]: autd3_core::gain::Gain
 
-#[allow(unused_imports)]
-use nalgebra::{Dyn, U1, VecStorage};
+#[cfg(feature = "use_nalgebra")]
+#[cfg(any(feature = "naive", feature = "gs", feature = "gspat"))]
+pub(crate) mod math {
+    use autd3_core::geometry::Complex;
+    use nalgebra::{Dyn, U1, VecStorage};
 
-#[allow(dead_code)]
-pub(crate) type Complex = nalgebra::Complex<f32>;
-#[allow(dead_code)]
-pub(crate) type MatrixXc = nalgebra::Matrix<Complex, Dyn, Dyn, VecStorage<Complex, Dyn, Dyn>>;
-#[allow(dead_code)]
-pub(crate) type VectorXc = nalgebra::Matrix<Complex, Dyn, U1, VecStorage<Complex, Dyn, U1>>;
+    pub(crate) type MatrixXc = nalgebra::Matrix<Complex, Dyn, Dyn, VecStorage<Complex, Dyn, Dyn>>;
+    pub(crate) type VectorXc = nalgebra::Matrix<Complex, Dyn, U1, VecStorage<Complex, Dyn, U1>>;
+}
+
+#[cfg(not(feature = "use_nalgebra"))]
+pub mod math;
+
+#[cfg(any(feature = "naive", feature = "gs", feature = "gspat"))]
+pub(crate) use math::*;
 
 mod amp;
 #[cfg(feature = "greedy")]

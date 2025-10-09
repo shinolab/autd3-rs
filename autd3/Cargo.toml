@@ -23,7 +23,7 @@ modulation = ["autd3-core/modulation", "autd3-core/derive", "autd3-core/utils"]
 stm = []
 link-audit = ["autd3-core/link", "autd3-firmware-emulator"]
 link-nop = ["autd3-core/link", "autd3-firmware-emulator"]
-parallel = ["autd3-driver/parallel"]
+parallel = ["autd3-driver/parallel", "autd3-firmware-emulator?/parallel"]
 
 [dependencies]
 autd3-core = { workspace = true }

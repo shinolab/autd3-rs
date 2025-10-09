@@ -171,3 +171,175 @@ impl core::ops::Mul<Point3> for Isometry3 {
         &self * &rhs
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::geometry::UnitVector3;
+
+    #[test]
+    fn point3_new() {
+        let p = Point3::new(1.0, 2.0, 3.0);
+        assert_eq!(p.x, 1.0);
+        assert_eq!(p.y, 2.0);
+        assert_eq!(p.z, 3.0);
+    }
+
+    #[test]
+    fn point3_origin() {
+        let p = Point3::origin();
+        assert_eq!(p.x, 0.0);
+        assert_eq!(p.y, 0.0);
+        assert_eq!(p.z, 0.0);
+    }
+
+    #[test]
+    fn point3_from_vector() {
+        let v = Vector3::new(1.0, 2.0, 3.0);
+        let p = Point3::from(v);
+        assert_eq!(p.x, 1.0);
+        assert_eq!(p.y, 2.0);
+        assert_eq!(p.z, 3.0);
+    }
+
+    #[test]
+    fn point3_add_vector() {
+        let p = Point3::new(1.0, 2.0, 3.0);
+        let v = Vector3::new(4.0, 5.0, 6.0);
+        let result = p + v;
+        assert_eq!(result.x, 1.0 + 4.0);
+        assert_eq!(result.y, 2.0 + 5.0);
+        assert_eq!(result.z, 3.0 + 6.0);
+    }
+
+    #[test]
+    fn point3_sub_point() {
+        let p1 = Point3::new(5.0, 7.0, 9.0);
+        let p2 = Point3::new(1.0, 2.0, 3.0);
+        let result = p1 - p2;
+        assert_eq!(result.x, 5.0 - 1.0);
+        assert_eq!(result.y, 7.0 - 2.0);
+        assert_eq!(result.z, 9.0 - 3.0);
+    }
+
+    #[test]
+    fn point3_sub_vector() {
+        let p = Point3::new(5.0, 7.0, 9.0);
+        let v = Vector3::new(1.0, 2.0, 3.0);
+        let result = p - v;
+        assert_eq!(result.x, 5.0 - 1.0);
+        assert_eq!(result.y, 7.0 - 2.0);
+        assert_eq!(result.z, 9.0 - 3.0);
+    }
+
+    #[test]
+    fn point3_mul_scalar() {
+        let p = Point3::new(1.0, 2.0, 3.0);
+        let result = p * 2.0;
+        assert_eq!(result.x, 1.0 * 2.0);
+        assert_eq!(result.y, 2.0 * 2.0);
+        assert_eq!(result.z, 3.0 * 2.0);
+    }
+
+    #[test]
+    fn point3_scalar_mul() {
+        let p = Point3::new(1.0, 2.0, 3.0);
+        let result = 2.0 * p;
+        assert_eq!(result.x, 1.0 * 2.0);
+        assert_eq!(result.y, 2.0 * 2.0);
+        assert_eq!(result.z, 3.0 * 2.0);
+    }
+
+    #[test]
+    fn translation3_from_point() {
+        let p = Point3::new(1.0, 2.0, 3.0);
+        let t = Translation3::from(p);
+        assert_eq!(t.vector.x, 1.0);
+        assert_eq!(t.vector.y, 2.0);
+        assert_eq!(t.vector.z, 3.0);
+    }
+
+    #[test]
+    fn translation3_mul_quaternion() {
+        let t = Translation3 {
+            vector: Vector3::new(1.0, 2.0, 3.0),
+        };
+        let q = UnitQuaternion::identity();
+        let iso = t * q;
+
+        assert_eq!(iso.translation.vector, t.vector);
+        assert_eq!(iso.rotation, q);
+    }
+
+    #[test]
+    fn isometry3_identity() {
+        let iso = Isometry3::identity();
+        assert_eq!(iso.translation.vector, Vector3::zeros());
+        assert_eq!(iso.rotation, UnitQuaternion::identity());
+    }
+
+    #[test]
+    fn isometry3_inverse() {
+        let axis = UnitVector3::new_normalize(Vector3::new(0.0, 0.0, 1.0));
+        let angle = core::f32::consts::PI / 2.0;
+        let rotation = UnitQuaternion::from_axis_angle(&axis, angle);
+        let translation = Translation3 {
+            vector: Vector3::new(1.0, 0.0, 0.0),
+        };
+
+        let iso = Isometry3 {
+            translation,
+            rotation,
+        };
+
+        let inv = iso.inverse();
+        let p = Point3::new(2.0, 3.0, 4.0);
+        let transformed = &iso * &p;
+        let back = &inv * &transformed;
+
+        assert!((back.x - p.x).abs() < 1e-5);
+        assert!((back.y - p.y).abs() < 1e-5);
+        assert!((back.z - p.z).abs() < 1e-5);
+    }
+
+    #[test]
+    fn isometry3_transform_point() {
+        let translation = Translation3 {
+            vector: Vector3::new(1.0, 2.0, 3.0),
+        };
+        let rotation = UnitQuaternion::identity();
+        let iso = Isometry3 {
+            translation,
+            rotation,
+        };
+
+        let p = Point3::new(1.0, 1.0, 1.0);
+        let result = &iso * &p;
+
+        assert_eq!(result.x, 2.0);
+        assert_eq!(result.y, 3.0);
+        assert_eq!(result.z, 4.0);
+    }
+
+    #[test]
+    fn isometry3_transform_with_rotation() {
+        let axis = UnitVector3::new_normalize(Vector3::new(0.0, 0.0, 1.0));
+        let angle = core::f32::consts::PI / 2.0;
+        let rotation = UnitQuaternion::from_axis_angle(&axis, angle);
+        let translation = Translation3 {
+            vector: Vector3::new(0.0, 0.0, 0.0),
+        };
+
+        let iso = Isometry3 {
+            translation,
+            rotation,
+        };
+
+        let p = Point3::new(1.0, 0.0, 0.0);
+        let result = iso * p;
+
+        assert!(result.x.abs() < 1e-6);
+        assert!((result.y - 1.0).abs() < 1e-6);
+        assert!(result.z.abs() < 1e-6);
+    }
+}
