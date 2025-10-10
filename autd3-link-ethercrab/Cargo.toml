@@ -14,17 +14,12 @@ features = []
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-async-channel = { version = "2.5.0", default-features = false }
 autd3-core = { workspace = true, features = ["link"] }
 core_affinity = { version = "0.8.3", default-features = false }
 ethercrab = { version = "0.6.0", default-features = false, features = ["std"] }
 futures = { version = "0.3.31", default-features = false, features = ["alloc"] }
-pnet_datalink = { version = "0.35.0", default-features = false, features = ["std"] }
 thread-priority = { version = "3.0.0", default-features = false }
-tokio = { version = "1.47.1", default-features = false, features = ["rt-multi-thread", "sync", "time"] }
 tracing = { version = "0.1.41", default-features = false }
-
-[target.'cfg(windows)'.dependencies]
 pcap = { version = "2.3.0", default-features = false }
 
 [target.'cfg(windows)'.build-dependencies]
