@@ -81,12 +81,12 @@ impl PartialEq for EtherCrabOptionFull {
 impl Eq for EtherCrabOptionFull {}
 
 impl EtherCrabOptionFull {
-    pub(crate) async fn ifname(&self) -> Result<String, EtherCrabError> {
+    pub(crate) fn ifname(&self) -> Result<String, EtherCrabError> {
         match self.ifname.as_ref() {
             Some(ifname) => Ok(ifname.clone()),
             None => {
                 tracing::info!(target: "autd3-link-ethercrab", "No interface name is specified. Looking for AUTD device...");
-                let ifname = crate::inner::utils::lookup_autd().await?;
+                let ifname = crate::inner::utils::lookup_autd()?;
                 tracing::info!(target: "autd3-link-ethercrab", "Found EtherCAT device on {:?}", ifname);
                 Ok(ifname)
             }

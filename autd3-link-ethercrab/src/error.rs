@@ -11,7 +11,6 @@ pub enum EtherCrabError {
     EtherCrab(ethercrab::error::Error),
     DeviceNumberMismatch(usize, usize),
     SyncTimeout(Duration),
-    #[cfg(target_os = "windows")]
     Pcap(pcap::Error),
 }
 
@@ -35,7 +34,6 @@ impl std::fmt::Display for EtherCrabError {
                     max_deviation
                 )
             }
-            #[cfg(target_os = "windows")]
             EtherCrabError::Pcap(e) => write!(f, "{}", e),
         }
     }
@@ -46,7 +44,6 @@ impl std::error::Error for EtherCrabError {
         match self {
             EtherCrabError::IoError(e) => Some(e),
             EtherCrabError::EtherCrab(e) => Some(e),
-            #[cfg(target_os = "windows")]
             EtherCrabError::Pcap(e) => Some(e),
             _ => None,
         }
@@ -65,7 +62,6 @@ impl From<ethercrab::error::Error> for EtherCrabError {
     }
 }
 
-#[cfg(target_os = "windows")]
 impl From<pcap::Error> for EtherCrabError {
     fn from(e: pcap::Error) -> Self {
         EtherCrabError::Pcap(e)

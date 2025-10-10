@@ -1,6 +1,10 @@
 use std::{
-    sync::{Arc, atomic::AtomicBool},
-    time::Duration,
+    sync::{
+        Arc, RwLock,
+        atomic::AtomicBool,
+        mpsc::{Receiver, RecvError, SyncSender, sync_channel},
+    },
+    time::{Duration, Instant},
 };
 
 use autd3_core::{
@@ -8,27 +12,17 @@ use autd3_core::{
     link::{LinkError, RxMessage, TxMessage},
 };
 
-use async_channel::{Receiver, Sender, bounded};
 use ethercrab::{
     DcSync, MainDevice, PduStorage, RegisterAddress, SubDeviceGroup,
     std::ethercat_now,
     subdevice_group::{HasDc, NoDc, Op, PreOp, PreOpPdi, SafeOp},
 };
-use futures::stream::{FuturesUnordered, StreamExt};
-use tokio::sync::watch::{Receiver as WatchReceiver, Sender as WatchSender};
-
-use tokio::{task::JoinHandle, time::Instant};
+use futures::stream::{FuturesOrdered, FuturesUnordered, StreamExt};
 
 use crate::{
     error::EtherCrabError,
-    inner::{EtherCrabOptionFull, status::Status},
+    inner::{EtherCrabOptionFull, executor, status::Status, timer::Timer},
 };
-
-#[cfg(target_os = "windows")]
-unsafe extern "system" {
-    fn timeBeginPeriod(u: u32) -> u32;
-    fn timeEndPeriod(u: u32) -> u32;
-}
 
 pub const MAX_SUBDEVICES: usize = 32;
 pub const MAX_PDU_DATA: usize =
@@ -42,11 +36,10 @@ pub struct EtherCrabHandler {
     is_open: Arc<AtomicBool>,
     tx_rx_th: Option<std::thread::JoinHandle<Result<(), EtherCrabError>>>,
     main_th: Option<std::thread::JoinHandle<()>>,
-    state_check_task: Option<JoinHandle<()>>,
-    sender: Sender<Vec<TxMessage>>,
+    state_check_task: Option<std::thread::JoinHandle<()>>,
+    sender: SyncSender<Vec<TxMessage>>,
     buffer_queue_receiver: Receiver<Vec<TxMessage>>,
-    interval: Duration,
-    inputs_rx: WatchReceiver<Vec<u8>>,
+    inputs: Arc<RwLock<Vec<u8>>>,
 }
 
 const SUB_GROUP_PDI_LEN: usize = (EC_OUTPUT_FRAME_SIZE + EC_INPUT_FRAME_SIZE) * 2;
@@ -68,29 +61,35 @@ impl<S, DC> Groups<S, DC> {
         self.groups.iter().map(|g| g.len()).sum()
     }
 
-    async fn transform<S2, DC2, E>(
+    fn transform<S2, DC2, E>(
         self,
         f: impl AsyncFn(
             SubDeviceGroup<2, SUB_GROUP_PDI_LEN, S, DC>,
         ) -> Result<SubDeviceGroup<2, SUB_GROUP_PDI_LEN, S2, DC2>, E>,
     ) -> Result<Groups<S2, DC2>, E> {
-        let mut g = Vec::with_capacity(self.groups.len());
-        for group in self.groups {
-            g.push(f(group).await?);
+        #[allow(clippy::redundant_closure)]
+        let mut tasks = self
+            .groups
+            .into_iter()
+            .map(|group| f(group))
+            .collect::<FuturesOrdered<_>>();
+        let mut groups = Vec::with_capacity(tasks.len());
+        while let Some(r) = executor::block_on(tasks.next()) {
+            groups.push(r?);
         }
-        Ok(Groups { groups: g })
+        Ok(Groups { groups })
     }
 }
 
 impl EtherCrabHandler {
-    pub async fn open<F: Fn(usize, Status) + Send + Sync + 'static>(
+    pub fn open<F: Fn(usize, Status) + Send + Sync + 'static>(
         err_handler: F,
         geometry: &autd3_core::geometry::Geometry,
         option: EtherCrabOptionFull,
     ) -> Result<EtherCrabHandler, EtherCrabError> {
         tracing::debug!(target: "autd3-link-ethercrab", "Opening EtherCrab link with option: {:?}", option);
 
-        let interface = option.ifname().await?;
+        let interface = option.ifname()?;
         let EtherCrabOptionFull {
             ifname: _,
             buf_size,
@@ -133,10 +132,7 @@ impl EtherCrabHandler {
                     let e = {
                         match ethercrab::std::tx_rx_task(&interface, tx, rx) {
                             Ok(fut) =>
-                                tokio::runtime::Builder::new_current_thread()
-                                    .build()
-                                    .expect("Create runtime")
-                                    .block_on(fut)
+                                executor::block_on(fut)
                                     .map_err(EtherCrabError::from),
                             Err(e) => {
                                 tracing::trace!(target: "autd3-link-ethercrab", "Failed to start TX/RX task: {}", e);
@@ -157,17 +153,18 @@ impl EtherCrabHandler {
             }
             let mut idx = 0;
             Groups {
-                groups: main_device
-                    .init::<MAX_SUBDEVICES, _>(ethercat_now, |group: &GroupsArray, _sub_device| {
+                groups: executor::block_on(main_device.init::<MAX_SUBDEVICES, _>(
+                    ethercat_now,
+                    |group: &GroupsArray, _sub_device| {
                         let g = &group.groups[idx / 2];
                         idx += 1;
                         Ok(g)
-                    })
-                    .await?
-                    .groups
-                    .into_iter()
-                    .filter(|g| !g.is_empty())
-                    .collect(),
+                    },
+                ))?
+                .groups
+                .into_iter()
+                .filter(|g| !g.is_empty())
+                .collect(),
             }
         };
 
@@ -180,7 +177,7 @@ impl EtherCrabHandler {
         groups
             .groups
             .iter()
-            .flat_map(|g|g.iter(&main_device))
+            .flat_map(|g| g.iter(&main_device))
             .enumerate()
             .try_for_each(|(i, sub_device)| {
                 if sub_device.name() == "AUTD" {
@@ -206,51 +203,49 @@ impl EtherCrabHandler {
             });
 
         tracing::info!(target: "autd3-link-ethercrab", "Moving into PRE-OP with PDI");
-        let groups: Groups<PreOpPdi, NoDc> = groups
-            .transform(|group: SubDeviceGroup<_, _>| group.into_pre_op_pdi(&main_device))
-            .await?;
+        let groups: Groups<PreOpPdi, NoDc> =
+            groups.transform(|group: SubDeviceGroup<_, _>| group.into_pre_op_pdi(&main_device))?;
         tracing::info!(target: "autd3-link-ethercrab", "Done. PDI available.");
 
-        wait_for_align(&groups, &main_device, sync_tolerance, sync_timeout).await?;
+        executor::block_on(wait_for_align(
+            &groups,
+            &main_device,
+            sync_tolerance,
+            sync_timeout,
+        ))?;
 
         tracing::info!(target: "autd3-link-ethercrab",
             "Configuring Sync0 with cycle time {:?}.",
             dc_configuration.sync0_period
         );
-        let groups: Groups<PreOpPdi, HasDc> = groups
-            .transform(|group: SubDeviceGroup<_, _, _, _>| {
+        let groups: Groups<PreOpPdi, HasDc> =
+            groups.transform(|group: SubDeviceGroup<_, _, _, _>| {
                 group.configure_dc_sync(&main_device, dc_configuration)
-            })
-            .await?;
+            })?;
 
         tracing::info!(target: "autd3-link-ethercrab", "Checking if all devices are in SAFE-OP");
-        let groups: Groups<SafeOp, HasDc> = groups
-            .transform(|group: SubDeviceGroup<_, _, PreOpPdi, HasDc>| {
+        let groups: Groups<SafeOp, HasDc> =
+            groups.transform(|group: SubDeviceGroup<_, _, PreOpPdi, HasDc>| {
                 group.into_safe_op(&main_device)
-            })
-            .await?;
+            })?;
         tracing::info!(target: "autd3-link-ethercrab", "All devices are in SAFE-OP");
 
         tracing::info!(target: "autd3-link-ethercrab", "Setting all devices to OP");
-        let groups: Arc<Groups<Op, HasDc>> = Arc::new(
-            groups
-                .transform(|group: SubDeviceGroup<_, _, SafeOp, HasDc>| {
-                    group.request_into_op(&main_device)
-                })
-                .await?,
-        );
+        let groups: Arc<Groups<Op, HasDc>> = Arc::new(groups.transform(
+            |group: SubDeviceGroup<_, _, SafeOp, HasDc>| group.request_into_op(&main_device),
+        )?);
         let op_request = Instant::now();
 
         let all_op = Arc::new(AtomicBool::new(false));
-        let (sender, receiver) = bounded(buf_size);
-        let (buffer_queue_sender, buffer_queue_receiver) = bounded(buf_size);
+        let (sender, receiver) = sync_channel(buf_size);
+        let (buffer_queue_sender, buffer_queue_receiver) = sync_channel(buf_size);
         for _ in 0..buf_size {
-            let _ = buffer_queue_sender
-                .send(vec![TxMessage::new(); groups.len()])
-                .await;
+            let _ = buffer_queue_sender.send(vec![TxMessage::new(); groups.len()]);
         }
-        let (inputs_tx, inputs_rx) =
-            tokio::sync::watch::channel(vec![0x00u8; groups.len() * EC_INPUT_FRAME_SIZE]);
+        let inputs = Arc::new(RwLock::new(vec![
+            0x00u8;
+            groups.len() * EC_INPUT_FRAME_SIZE
+        ]));
         let main_th = main_thread_builder.spawn({
                 if let Some(affinity) = main_thread_affinity {
                     if core_affinity::set_for_current(affinity) {
@@ -263,32 +258,26 @@ impl EtherCrabHandler {
                 let all_op = all_op.clone();
                 let groups = groups.clone();
                 let main_device = main_device.clone();
+                let inputs = inputs.clone();
                 move |_| {
-                    tokio::runtime::Builder::new_current_thread()
-                        .enable_all()
-                        .build()
-                        .expect("Create runtime")
-                        .block_on(async move {
-                            tracing::info!(target: "autd3-link-ethercrab", "Starting main task");
+                      tracing::info!(target: "autd3-link-ethercrab", "Starting main task");
                             send_loop(
                                 is_open,
                                 all_op,
                                 main_device,
                                 groups,
                                 buffer_queue_sender,
-                                inputs_tx,
+                                inputs,
                                 receiver,
-                            )
-                            .await;
-                        });
-                }
+                            );
+                        }
             })?;
 
         let run = Arc::new(AtomicBool::new(false));
-        let state_check_task = tokio::task::spawn({
+        let state_check_task = std::thread::spawn({
             let is_open = is_open.clone();
             let run = run.clone();
-            async move {
+            move || {
                 tracing::info!(target: "autd3-link-ethercrab", "Starting state check task");
                 error_handler(
                     is_open,
@@ -297,8 +286,7 @@ impl EtherCrabHandler {
                     groups,
                     err_handler,
                     state_check_period,
-                )
-                .await;
+                );
             }
         });
 
@@ -307,9 +295,9 @@ impl EtherCrabHandler {
             if start.elapsed() > timeouts.state_transition {
                 return Err(EtherCrabError::NotResponding);
             }
-            tokio::time::sleep(Duration::from_millis(10)).await;
+            std::thread::sleep(Duration::from_millis(10));
         }
-        tokio::time::sleep(Duration::from_millis(100)).await;
+        std::thread::sleep(Duration::from_millis(100));
         tracing::info!(target: "autd3-link-ethercrab", "All devices entered OP in {:?}", op_request.elapsed());
         run.store(true, std::sync::atomic::Ordering::Relaxed);
 
@@ -320,24 +308,16 @@ impl EtherCrabHandler {
             state_check_task: Some(state_check_task),
             sender,
             buffer_queue_receiver,
-            interval: dc_configuration.sync0_period,
-            inputs_rx,
+            inputs,
         })
     }
 
-    pub async fn close(&mut self) -> Result<(), LinkError> {
+    pub fn close(&mut self) -> Result<(), LinkError> {
         if !self.is_open() {
             return Ok(());
         }
 
-        let start = Instant::now();
-        while !self.sender.is_empty() {
-            if start.elapsed() > Duration::from_secs(5) {
-                tracing::warn!(target: "autd3-link-ethercrab", "Timeout while waiting for send buffer to be empty");
-                break;
-            }
-            tokio::time::sleep(self.interval).await;
-        }
+        // TODO: flush sender
 
         self.is_open
             .store(false, std::sync::atomic::Ordering::Relaxed);
@@ -359,28 +339,25 @@ impl EtherCrabHandler {
         }
 
         if let Some(state_check_task) = self.state_check_task.take() {
-            let _ = state_check_task.await;
+            let _ = state_check_task;
         }
 
         Ok(())
     }
 
-    pub async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, async_channel::RecvError> {
-        self.buffer_queue_receiver.recv().await
+    pub fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, RecvError> {
+        self.buffer_queue_receiver.recv()
     }
 
-    pub async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
-        self.sender
-            .send(tx)
-            .await
-            .map_err(|_| LinkError::closed())?;
+    pub fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
+        self.sender.send(tx).map_err(|_| LinkError::closed())?;
         Ok(())
     }
 
-    pub async fn receive(&mut self, rx: &mut [RxMessage]) {
+    pub fn receive(&mut self, rx: &mut [RxMessage]) {
         unsafe {
             std::ptr::copy_nonoverlapping(
-                self.inputs_rx.borrow().as_ptr() as *const RxMessage,
+                self.inputs.read().unwrap().as_ptr() as *const RxMessage,
                 rx.as_mut_ptr(),
                 rx.len(),
             );
@@ -399,12 +376,6 @@ async fn wait_for_align(
     sync_timeout: Duration,
 ) -> Result<(), EtherCrabError> {
     tracing::info!(target: "autd3-link-ethercrab", "Waiting for devices to align");
-
-    // Without this, it takes a long time on Windows.
-    #[cfg(target_os = "windows")]
-    unsafe {
-        timeBeginPeriod(1);
-    }
 
     let mut averages = vec![super::smoothing::Smoothing::new(0.2); group.len()];
     let mut now = Instant::now();
@@ -459,12 +430,7 @@ async fn wait_for_align(
                 return Err(EtherCrabError::SyncTimeout(max_deviation));
             }
         }
-        tokio::time::sleep(Duration::from_millis(1)).await;
-    }
-
-    #[cfg(target_os = "windows")]
-    unsafe {
-        timeEndPeriod(1);
+        Timer::after(Duration::from_millis(1)).await;
     }
 
     tracing::info!(target: "autd3-link-ethercrab", "Alignment done");
@@ -478,25 +444,19 @@ async fn send_task(
 ) -> Result<bool, ethercrab::error::Error> {
     let start = Instant::now();
     let resp = group.tx_rx_dc(main_device).await?;
-    tokio::time::sleep_until(start + resp.extra.next_cycle_wait).await;
+    Timer::until(start + resp.extra.next_cycle_wait).await;
     Ok(resp.all_op())
 }
 
-async fn send_loop(
+fn send_loop(
     running: Arc<AtomicBool>,
     all_op: Arc<AtomicBool>,
     main_device: Arc<MainDevice<'_>>,
     group: Arc<Groups<Op, HasDc>>,
-    buffer_queue_sender: Sender<Vec<TxMessage>>,
-    inputs_tx: WatchSender<Vec<u8>>,
+    buffer_queue_sender: SyncSender<Vec<TxMessage>>,
+    inputs: Arc<RwLock<Vec<u8>>>,
     receiver: Receiver<Vec<TxMessage>>,
 ) {
-    // Without this, the behavior becomes unstable on Windows.
-    #[cfg(target_os = "windows")]
-    unsafe {
-        timeBeginPeriod(1);
-    }
-
     let mut inputs_buf = vec![0u8; group.len() * EC_INPUT_FRAME_SIZE];
     while running.load(std::sync::atomic::Ordering::Relaxed) {
         if let Ok(tx) = receiver.try_recv() {
@@ -515,7 +475,7 @@ async fn send_loop(
                         );
                     }
                 });
-            let _ = buffer_queue_sender.send(tx).await;
+            let _ = buffer_queue_sender.send(tx);
         }
 
         {
@@ -529,9 +489,7 @@ async fn send_loop(
                     inputs_buf[offset..offset + EC_INPUT_FRAME_SIZE]
                         .copy_from_slice(&sub_device.inputs_raw());
                 });
-            inputs_tx.send_modify(|v| {
-                v.copy_from_slice(&inputs_buf);
-            });
+            inputs.write().unwrap().copy_from_slice(&inputs_buf);
         }
 
         let mut tasks = group
@@ -540,7 +498,7 @@ async fn send_loop(
             .map(|g| send_task(&main_device, g))
             .collect::<FuturesUnordered<_>>();
         let mut res = Vec::with_capacity(group.groups.len());
-        while let Some(r) = tasks.next().await {
+        while let Some(r) = executor::block_on(tasks.next()) {
             res.push(r);
         }
         match res.into_iter().collect::<Result<Vec<_>, _>>() {
@@ -562,13 +520,9 @@ async fn send_loop(
             }
         };
     }
-    #[cfg(target_os = "windows")]
-    unsafe {
-        timeEndPeriod(1);
-    }
 }
 
-async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
+fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
     is_open: Arc<AtomicBool>,
     run: Arc<AtomicBool>,
     main_device: Arc<MainDevice<'_>>,
@@ -587,15 +541,13 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
             .flat_map(|g| g.iter(&main_device))
             .enumerate()
         {
-            match sub_device.read_state().await {
+            match sub_device.read_state() {
                 Ok(state) => {
                     if state != State::OPERATIONAL {
                         all_op = false;
                         do_check_state = true;
                         if state.is_safe_op() && state.is_error() {
-                            match sub_device
-                                .write_state(&main_device, State::SAFE_OP + State::ACK)
-                                .await
+                            match sub_device.write_state(&main_device, State::SAFE_OP + State::ACK)
                             {
                                 Ok(_) => {
                                     if run.load(std::sync::atomic::Ordering::Relaxed) {
@@ -617,10 +569,7 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                                 }
                             }
                         } else if state.is_safe_op() {
-                            match sub_device
-                                .write_state(&main_device, State::OPERATIONAL)
-                                .await
-                            {
+                            match sub_device.write_state(&main_device, State::OPERATIONAL) {
                                 Ok(_) => {
                                     if run.load(std::sync::atomic::Ordering::Relaxed) {
                                         err_handler(idx + 1, Status::StateChanged);
@@ -673,6 +622,6 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                 err_handler(0, Status::Resumed);
             }
         }
-        tokio::time::sleep(interval).await;
+        std::thread::sleep(interval);
     }
 }
