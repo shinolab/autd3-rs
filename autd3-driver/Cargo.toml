@@ -20,7 +20,7 @@ parallel = ["rayon"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulation", "sleep"] }
-rayon = { workspace = true, optional = true }
+rayon = { version = "1.10.0", default-features = false, optional = true }
 
 [dev-dependencies]
 approx = { workspace = true }

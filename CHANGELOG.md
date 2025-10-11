@@ -1,6 +1,42 @@
 # Changelog
 
 
+# 37.0.0-alpha.0 (2025-10-11)
+
+## 🚀 Features
+
+- Impl `IntoIter` for `&Device`
+- Make `time` deps optinal
+- Add `DcSysTime::new`
+- Make `nalgebra` optional
+- Make `rayon` optional
+- Make `rand` optional
+- [**breaking**] Simplify ethercrab link option
+- Make `core_affinity` and `tracing` optional
+
+## 🗑️ Removals
+
+- `bitfield-struct` dependency
+- `smallvec` dependency
+- `bit-vec` dependency
+- `thiserror` dependency
+- [**breaking**] Old firmware supports
+- `pastey` dependency
+- `itertools` dependency
+- `zerocopy` dependency
+- `spin_sleep` dependency
+- `num` dependency
+- `proc-macro2`, `quote` and `syn` dependencies
+- `bitflags` dependency
+- [**breaking**] `async` feature
+- `libloading` dependency
+- [**breaking**] `Csv` and `Wav` modulation
+- [**breaking**] `autd3-protobuf` crate
+- [**breaking**] `no_std` support
+- `windows` dependency
+- [**breaking**] `RemoteTwinCAT` link
+
+
 # 36.0.2 (2025-10-01)
 
 ## 🚀 Features

@@ -10,6 +10,7 @@ commit_preprocessors = [
   { pattern = "feat: supports `Group` in lightweight", replace = "" },
   { pattern = "fix!: remove default implementation of `max_abs_v` in `LinAlgBackend`", replace = "" },
   { pattern = "fix: convergence condition is wrong in `LM`", replace = "" },
+  { pattern = "refactor: `autd3-link-ethercrab`", replace = "" },
 ]
 commit_parsers = [
   { message = "^feat", group = "<!-- 0 -->🚀 Features" },
