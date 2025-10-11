@@ -10,11 +10,10 @@ repository = { workspace = true }
 default = []
 nop = ["autd3/link-nop"]
 simulator = ["autd3-link-simulator"]
-twincat = ["autd3-link-twincat/local"]
+twincat = ["autd3-link-twincat"]
 ethercrab = ["autd3-link-ethercrab", "tracing", "tracing-subscriber"]
 remote = ["autd3-link-remote", "tracing", "tracing-subscriber"]
-remote_twincat = ["autd3-link-twincat/remote"]
-all = ["twincat", "ethercrab", "remote", "remote_twincat", "simulator"]
+all = ["twincat", "ethercrab", "remote", "simulator"]
 
 [dependencies]
 autd3 = { workspace = true, features = ["default"] }
@@ -45,11 +44,6 @@ required-features = ["remote"]
 name = "twincat"
 path = "src/twincat.rs"
 required-features = ["twincat"]
-
-[[bin]]
-name = "remote_twincat"
-path = "src/remote_twincat.rs"
-required-features = ["remote_twincat"]
 
 [[bin]]
 name = "simulator"
