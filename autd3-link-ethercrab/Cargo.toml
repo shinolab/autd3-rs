@@ -17,7 +17,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 autd3-core = { workspace = true, features = ["link"] }
 core_affinity = { version = "0.8.3", default-features = false }
 ethercrab = { version = "0.6.0", default-features = false, features = ["std"] }
-futures = { version = "0.3.31", default-features = false, features = ["alloc"] }
+futures-util = { version = "0.3.31", default-features = false, features = ["std"] }
 thread-priority = { version = "3.0.0", default-features = false }
 tracing = { version = "0.1.41", default-features = false }
 pcap = { version = "2.3.0", default-features = false }

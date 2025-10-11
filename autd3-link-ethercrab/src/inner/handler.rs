@@ -17,7 +17,7 @@ use ethercrab::{
     std::ethercat_now,
     subdevice_group::{HasDc, NoDc, Op, PreOp, PreOpPdi, SafeOp},
 };
-use futures::stream::{FuturesOrdered, FuturesUnordered, StreamExt};
+use futures_util::stream::{FuturesOrdered, FuturesUnordered, StreamExt};
 
 use crate::{
     error::EtherCrabError,
@@ -237,6 +237,7 @@ impl EtherCrabHandler {
         let op_request = Instant::now();
 
         let all_op = Arc::new(AtomicBool::new(false));
+        let buf_size = buf_size.get();
         let (sender, receiver) = sync_channel(buf_size);
         let (buffer_queue_sender, buffer_queue_receiver) = sync_channel(buf_size);
         for _ in 0..buf_size {

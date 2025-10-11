@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{num::NonZeroUsize, time::Duration};
 
 use core_affinity::CoreId;
 use ethercrab::{MainDeviceConfig, Timeouts, subdevice_group::DcConfiguration};
@@ -15,7 +15,7 @@ pub struct EtherCrabOptionFull {
     /// The network interface name. If `None`, the network interface will be automatically selected to which the AUTD3 device is connected.
     pub ifname: Option<String>,
     /// The size of the send queue buffer.
-    pub buf_size: usize,
+    pub buf_size: NonZeroUsize,
     /// See [`Timeouts`].
     pub timeouts: Timeouts,
     /// See [`MainDeviceConfig`].
