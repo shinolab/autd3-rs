@@ -17,9 +17,9 @@ remote_twincat = ["autd3-link-twincat/remote"]
 all = ["twincat", "ethercrab", "remote", "remote_twincat", "simulator"]
 
 [dependencies]
-autd3 = { workspace = true, features = ["gain", "modulation", "stm", "use_nalgebra", "parallel"] }
-autd3-gain-holo = { workspace = true, features = ["greedy", "gs", "gspat", "naive", "use_nalgebra"] }
-autd3-link-ethercrab = { workspace = true, optional = true }
+autd3 = { workspace = true, features = ["default"] }
+autd3-gain-holo = { workspace = true, features = ["default"] }
+autd3-link-ethercrab = { workspace = true, optional = true, features = ["default"] }
 autd3-link-remote = { workspace = true, optional = true }
 autd3-link-simulator = { workspace = true, optional = true }
 autd3-link-twincat = { workspace = true, optional = true }
