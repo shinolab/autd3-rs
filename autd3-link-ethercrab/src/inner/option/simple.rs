@@ -89,7 +89,9 @@ impl From<EtherCrabOption> for EtherCrabOptionFull {
                 .policy(thread_priority::ThreadSchedulePolicy::Realtime(
                     thread_priority::RealtimeThreadSchedulePolicy::Fifo,
                 )),
+            #[cfg(feature = "core_affinity")]
             main_thread_affinity: None,
+            #[cfg(feature = "core_affinity")]
             tx_rx_thread_affinity: None,
         }
     }

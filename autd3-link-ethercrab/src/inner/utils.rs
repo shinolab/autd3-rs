@@ -12,8 +12,10 @@ use crate::{
 
 pub fn lookup_autd() -> Result<String, EtherCrabError> {
     let devices = pcap::Device::list()?;
-    tracing::debug!(target: "autd3-link-ethercrab", "Found {} network interfaces.", devices.len());
+    #[cfg(feature = "tracing")]
+    tracing::debug!("Found {} network interfaces.", devices.len());
     for interface in devices.into_iter() {
+        #[cfg(feature = "tracing")]
         tracing::debug!(target: "autd3-link-ethercrab",
             "Searching AUTD device on {} ({}).",
             interface.name,
@@ -24,8 +26,9 @@ pub fn lookup_autd() -> Result<String, EtherCrabError> {
         let pdu_storage = Box::leak(pdu_storage);
         let (tx, rx, pdu_loop) = match pdu_storage.try_split() {
             Ok((tx, rx, pdu_loop)) => (tx, rx, pdu_loop),
-            Err(e) => {
-                tracing::error!(target: "autd3-link-ethercrab", "Failed to split PDU storage: {:?}", e);
+            Err(_e) => {
+                #[cfg(feature = "tracing")]
+                tracing::error!("Failed to split PDU storage: {:?}", _e);
                 continue;
             }
         };
@@ -48,7 +51,8 @@ pub fn lookup_autd() -> Result<String, EtherCrabError> {
                 .map(|_| ())
                 .map_err(EtherCrabError::from),
             Err(e) => {
-                tracing::trace!(target: "autd3-link-ethercrab", "Failed to start TX/RX task: {}", e);
+                #[cfg(feature = "tracing")]
+                tracing::trace!("Failed to start TX/RX task: {}", e);
                 Err(EtherCrabError::from(e))
             }
         });
@@ -57,14 +61,20 @@ pub fn lookup_autd() -> Result<String, EtherCrabError> {
             main_device.init_single_group::<MAX_SUBDEVICES, PDI_LEN>(ethercat_now),
         ) {
             Ok(group) => {
-                tracing::trace!(target: "autd3-link-ethercrab", "Find EtherCAT device on {}", interface.name);
+                #[cfg(feature = "tracing")]
+                tracing::trace!("Find EtherCAT device on {}", interface.name);
                 !group.is_empty()
                     && group
                         .iter(&main_device)
                         .all(|sub_device| sub_device.name() == "AUTD")
             }
-            Err(e) => {
-                tracing::trace!(target: "autd3-link-ethercrab", "Failed to initialize EtherCAT on {}: {}", interface.name, e);
+            Err(_e) => {
+                #[cfg(feature = "tracing")]
+                tracing::trace!(
+                    "Failed to initialize EtherCAT on {}: {}",
+                    interface.name,
+                    _e
+                );
                 false
             }
         };

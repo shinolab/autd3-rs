@@ -1,6 +1,5 @@
 use std::{num::NonZeroUsize, time::Duration};
 
-use core_affinity::CoreId;
 use ethercrab::{MainDeviceConfig, Timeouts, subdevice_group::DcConfiguration};
 use thread_priority::ThreadBuilder;
 
@@ -30,12 +29,14 @@ pub struct EtherCrabOptionFull {
     pub sync_timeout: Duration,
     /// The [`ThreadBuilder`] for the TX/RX thread.
     pub tx_rx_thread_builder: ThreadBuilder,
+    #[cfg(feature = "core_affinity")]
     /// The CPU affinity for the TX/RX thread.
-    pub tx_rx_thread_affinity: Option<CoreId>,
+    pub tx_rx_thread_affinity: Option<core_affinity::CoreId>,
     /// The [`ThreadBuilder`] for the main thread.
     pub main_thread_builder: ThreadBuilder,
+    #[cfg(feature = "core_affinity")]
     /// The CPU affinity for the main thread.
-    pub main_thread_affinity: Option<CoreId>,
+    pub main_thread_affinity: Option<core_affinity::CoreId>,
 }
 
 impl Default for EtherCrabOptionFull {
@@ -59,7 +60,7 @@ impl PartialEq for EtherCrabOptionFull {
             sync0_period,
             sync0_shift,
         } = self.dc_configuration;
-        self.ifname == other.ifname
+        let r = self.ifname == other.ifname
             && self.buf_size == other.buf_size
             && state_transition == other.timeouts.state_transition
             && pdu == other.timeouts.pdu
@@ -73,9 +74,12 @@ impl PartialEq for EtherCrabOptionFull {
             && sync0_shift == other.dc_configuration.sync0_shift
             && self.state_check_period == other.state_check_period
             && self.sync_tolerance == other.sync_tolerance
-            && self.sync_timeout == other.sync_timeout
+            && self.sync_timeout == other.sync_timeout;
+        #[cfg(feature = "core_affinity")]
+        let r = r
             && self.tx_rx_thread_affinity == other.tx_rx_thread_affinity
-            && self.main_thread_affinity == other.main_thread_affinity
+            && self.main_thread_affinity == other.main_thread_affinity;
+        r
     }
 }
 impl Eq for EtherCrabOptionFull {}
@@ -85,9 +89,11 @@ impl EtherCrabOptionFull {
         match self.ifname.as_ref() {
             Some(ifname) => Ok(ifname.clone()),
             None => {
-                tracing::info!(target: "autd3-link-ethercrab", "No interface name is specified. Looking for AUTD device...");
+                #[cfg(feature = "tracing")]
+                tracing::info!("No interface name is specified. Looking for AUTD device...");
                 let ifname = crate::inner::utils::lookup_autd()?;
-                tracing::info!(target: "autd3-link-ethercrab", "Found EtherCAT device on {:?}", ifname);
+                #[cfg(feature = "tracing")]
+                tracing::info!("Found EtherCAT device on {:?}", ifname);
                 Ok(ifname)
             }
         }
