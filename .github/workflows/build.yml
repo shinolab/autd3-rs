@@ -23,15 +23,13 @@ jobs:
           - os: windows-latest
           - os: macos-latest
           - os: ubuntu-latest
-            features: "remote nop ethercrab twincat remote_twincat simulator"
+            features: "remote nop ethercrab twincat simulator"
           - os: ubuntu-latest
             features: "thread-safe"
           - os: ubuntu-latest
             features: "use_meter left_handed"
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
       - uses: ./.github/actions/setup-build
         with:
           os: ${{ matrix.os }}
@@ -46,8 +44,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
       - uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
@@ -55,15 +51,13 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
-      - run: cargo make check --no-default-features --exclude autd3-examples --features "gain, modulation, link-audit, link-nop, greedy, gs, gspat, naive, local"
+      - run: cargo make check --no-default-features --exclude autd3-examples --features "gain, modulation, link-audit, link-nop, greedy, gs, gspat, naive"
 
   build-docs:
     name: build-docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
       - uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
@@ -84,8 +78,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
       - uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
