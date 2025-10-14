@@ -174,6 +174,8 @@ impl core::ops::Mul<Point3> for Isometry3 {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::op_ref)]
+
     use super::*;
     use crate::geometry::UnitVector3;
 

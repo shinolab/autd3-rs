@@ -89,19 +89,36 @@ impl VectorX<Complex> {
 
     #[allow(clippy::needless_range_loop)]
     pub fn gemv(&mut self, alpha: Complex, a: &MatrixXc, x: &VectorX<Complex>, beta: Complex) {
-        let mut res = vec![Complex::new(0., 0.); self.rows];
-        for i in 0..a.nrows() {
-            for j in 0..a.ncols() {
-                res[i] += a[(i, j)] * x.data[j];
+        let alpha_is_zero = alpha.re == 0.0 && alpha.im == 0.0;
+        let beta_is_zero = beta.re == 0.0 && beta.im == 0.0;
+        let beta_is_one = beta.re == 1.0 && beta.im == 0.0;
+
+        if alpha_is_zero {
+            if beta_is_zero {
+                self.data.iter_mut().for_each(|y| *y = Complex::new(0., 0.));
+            } else if !beta_is_one {
+                self.data.iter_mut().for_each(|y| *y *= beta);
             }
+            return;
         }
-        for i in 0..self.rows {
-            self.data[i] = alpha * res[i] + beta * self.data[i];
+
+        if beta_is_zero {
+            self.data.fill(Complex::new(0., 0.));
+        } else if !beta_is_one {
+            self.data.iter_mut().for_each(|y| *y *= beta);
+        }
+
+        for j in 0..a.ncols() {
+            let ax = alpha * x.data[j];
+            for i in 0..a.nrows() {
+                self.data[i] += a[(i, j)] * ax;
+            }
         }
     }
 }
 
 pub type VectorXc = VectorX<autd3_core::geometry::Complex>;
+pub type RowVectorXc = VectorXc;
 
 #[cfg(test)]
 mod tests {

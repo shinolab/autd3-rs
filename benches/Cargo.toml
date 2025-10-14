@@ -3,12 +3,17 @@ name = "benches"
 version = "0.0.1"
 edition = "2024"
 
+[features]
+use_nalgebra = ["autd3-gain-holo/use_nalgebra", "autd3-core/use_nalgebra", "autd3-driver/use_nalgebra", "autd3/use_nalgebra"]
+parallel = ["autd3-driver/parallel", "autd3-gain-holo/parallel"]
+
 [dependencies]
 autd3 = { path = "../autd3", default-features = false, features = ["gain"] }
 autd3-core = { path = "../autd3-core", default-features = false, features = ["derive", "environment"] }
 autd3-driver = { path = "../autd3-driver", default-features = false }
-autd3-gain-holo = { path = "../autd3-gain-holo", default-features = false, features = ["greedy"] }
-criterion = { version = "0.7.0", default-features = false }
+autd3-gain-holo = { path = "../autd3-gain-holo", default-features = false, features = ["greedy", "gs", "gspat", "naive"] }
+criterion = { version = "0.7.0" }
+itertools = { version = "0.14.0" }
 
 [lib]
 bench = false

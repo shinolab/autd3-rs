@@ -12,7 +12,7 @@ use autd3_driver::{
     geometry::{Geometry, Point3},
 };
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(

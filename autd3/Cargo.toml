@@ -31,6 +31,6 @@ autd3-driver = { workspace = true }
 autd3-firmware-emulator = { workspace = true, optional = true }
 
 [dev-dependencies]
-autd3 = { path = ".", features = ["link-audit", "link-nop"] }
+autd3 = { path = ".", default-features = false, features = ["gain", "modulation", "link-audit", "link-nop"] }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }

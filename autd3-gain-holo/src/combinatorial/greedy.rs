@@ -193,6 +193,7 @@ impl<D: Directivity> Gain<'_> for Greedy<D> {
 
         let indices = Self::generate_indices(geometry, filter);
 
+        let intensity = self.option.constraint.convert(1.0, 1.0);
         let mut g = Self::alloc_result(geometry, filter);
         let mut cache = vec![Complex::new(0., 0.); foci.len()];
         let mut tmp = vec![Complex::new(0., 0.); foci.len()];
@@ -220,9 +221,9 @@ impl<D: Directivity> Gain<'_> for Greedy<D> {
                 *c += a * phase;
             });
             g.get_mut(&dev_idx).unwrap()[idx] = Drive {
+                intensity,
                 phase: Phase::from(phase.arg() * rad),
-                intensity: self.option.constraint.convert(1.0, 1.0),
-            };
+            }
         });
 
         Ok(Generator { g })
