@@ -143,6 +143,12 @@ impl core::ops::Div<f32> for Complex {
     }
 }
 
+impl core::iter::Sum for Complex {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Complex::ZERO, |a, b| a + b)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(clippy::op_ref)]
@@ -263,5 +269,24 @@ mod tests {
         let result = c / 2.0;
         assert_eq!(result.re, 4.0 / 2.0);
         assert_eq!(result.im, 6.0 / 2.0);
+    }
+
+    #[test]
+    fn mul_assign() {
+        let mut c1 = Complex::new(1.0, 2.0);
+        let c2 = Complex::new(3.0, 4.0);
+        c1 *= c2;
+        assert_eq!(c1.re, 1.0 * 3.0 - 2.0 * 4.0);
+        assert_eq!(c1.im, 1.0 * 4.0 + 2.0 * 3.0);
+    }
+
+    #[test]
+    fn sum() {
+        let c1 = Complex::new(1.0, 2.0);
+        let c2 = Complex::new(3.0, 4.0);
+        let c3 = Complex::new(5.0, 6.0);
+        let sum: Complex = [c1, c2, c3].iter().copied().sum();
+        assert_eq!(sum.re, 1.0 + 3.0 + 5.0);
+        assert_eq!(sum.im, 2.0 + 4.0 + 6.0);
     }
 }
