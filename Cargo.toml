@@ -17,7 +17,7 @@ exclude = ["benches"]
 resolver = "3"
 
 [workspace.package]
-version = "37.0.0-alpha.0"
+version = "37.0.0-alpha.1"
 authors = ["shun suzuki <suzuki@hapis.k.u-tokyo.ac.jp>"]
 edition = "2024"
 license = "MIT"
@@ -26,16 +26,16 @@ keywords = ["autd"]
 
 [workspace.dependencies]
 approx = { version = "0.5.1", default-features = false }
-autd3 = { path = "./autd3", version = "37.0.0-alpha.0", default-features = false }
-autd3-core = { path = "./autd3-core", version = "37.0.0-alpha.0", default-features = false }
-autd3-derive = { path = "./autd3-derive", version = "37.0.0-alpha.0", default-features = false }
-autd3-driver = { path = "./autd3-driver", version = "37.0.0-alpha.0", default-features = false }
-autd3-firmware-emulator = { path = "./autd3-firmware-emulator", version = "37.0.0-alpha.0", default-features = false }
-autd3-gain-holo = { path = "./autd3-gain-holo", version = "37.0.0-alpha.0", default-features = false }
-autd3-link-ethercrab = { path = "./autd3-link-ethercrab", version = "37.0.0-alpha.0", default-features = false }
-autd3-link-remote = { path = "./autd3-link-remote", version = "37.0.0-alpha.0", default-features = false }
-autd3-link-simulator = { path = "./autd3-link-simulator", version = "37.0.0-alpha.0", default-features = false }
-autd3-link-twincat = { path = "./autd3-link-twincat", version = "37.0.0-alpha.0", default-features = false }
+autd3 = { path = "./autd3", version = "37.0.0-alpha.1", default-features = false }
+autd3-core = { path = "./autd3-core", version = "37.0.0-alpha.1", default-features = false }
+autd3-derive = { path = "./autd3-derive", version = "37.0.0-alpha.1", default-features = false }
+autd3-driver = { path = "./autd3-driver", version = "37.0.0-alpha.1", default-features = false }
+autd3-firmware-emulator = { path = "./autd3-firmware-emulator", version = "37.0.0-alpha.1", default-features = false }
+autd3-gain-holo = { path = "./autd3-gain-holo", version = "37.0.0-alpha.1", default-features = false }
+autd3-link-ethercrab = { path = "./autd3-link-ethercrab", version = "37.0.0-alpha.1", default-features = false }
+autd3-link-remote = { path = "./autd3-link-remote", version = "37.0.0-alpha.1", default-features = false }
+autd3-link-simulator = { path = "./autd3-link-simulator", version = "37.0.0-alpha.1", default-features = false }
+autd3-link-twincat = { path = "./autd3-link-twincat", version = "37.0.0-alpha.1", default-features = false }
 nalgebra = { version = "0.34.1", default-features = false }
 rand = { version = "0.9.2", default-features = false }
 rstest = { version = "0.26.1", default-features = false }
