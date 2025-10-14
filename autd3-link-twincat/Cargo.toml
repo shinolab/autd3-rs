@@ -10,8 +10,14 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = []
+features = ["local", "remote"]
 rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["local", "remote"]
+local = []
+remote = ["ads"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["link"] }
+ads = { version = "0.4.4", default-features = false, optional = true }
