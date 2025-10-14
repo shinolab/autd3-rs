@@ -15,6 +15,7 @@ pub(crate) mod math {
 
     pub(crate) type MatrixXc = nalgebra::Matrix<Complex, Dyn, Dyn, VecStorage<Complex, Dyn, Dyn>>;
     pub(crate) type VectorXc = nalgebra::Matrix<Complex, Dyn, U1, VecStorage<Complex, Dyn, U1>>;
+    pub(crate) type RowVectorXc = nalgebra::Matrix<Complex, U1, Dyn, VecStorage<Complex, U1, Dyn>>;
 }
 
 #[cfg(not(feature = "use_nalgebra"))]
@@ -27,7 +28,12 @@ mod amp;
 #[cfg(feature = "greedy")]
 mod combinatorial;
 mod constraint;
-#[cfg(any(feature = "naive", feature = "gs", feature = "gspat"))]
+#[cfg(any(
+    feature = "naive",
+    feature = "gs",
+    feature = "gspat",
+    feature = "greedy"
+))]
 mod helper;
 #[cfg(any(feature = "naive", feature = "gs", feature = "gspat"))]
 mod linear_synthesis;

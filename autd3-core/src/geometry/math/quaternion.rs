@@ -11,11 +11,13 @@ pub struct Quaternion {
 }
 
 impl Quaternion {
+    #[inline]
     #[must_use]
     pub const fn new(w: f32, i: f32, j: f32, k: f32) -> Self {
         Self { w, i, j, k }
     }
 
+    #[inline]
     #[must_use]
     pub const fn from_imag(v: Vector3) -> Self {
         Self {
@@ -38,6 +40,7 @@ pub struct UnitQuaternion {
 }
 
 impl UnitQuaternion {
+    #[inline]
     #[must_use]
     pub fn new(asisangle: Vector3) -> Self {
         let angle = asisangle.norm();
@@ -49,6 +52,7 @@ impl UnitQuaternion {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn identity() -> Self {
         Self {
@@ -59,6 +63,7 @@ impl UnitQuaternion {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn quaternion(&self) -> Quaternion {
         Quaternion {
@@ -69,11 +74,13 @@ impl UnitQuaternion {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn from_quaternion(quat: Quaternion) -> Self {
         Self::new_normalize(quat)
     }
 
+    #[inline]
     #[must_use]
     pub fn from_axis_angle(axis: &UnitVector3, angle: f32) -> Self {
         let (s, c) = (angle / 2.0).sin_cos();
@@ -86,6 +93,7 @@ impl UnitQuaternion {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn new_normalize(quat: Quaternion) -> Self {
         let norm = (quat.w * quat.w + quat.i * quat.i + quat.j * quat.j + quat.k * quat.k).sqrt();
@@ -97,6 +105,7 @@ impl UnitQuaternion {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn conjugate(self) -> Self {
         Self {
@@ -107,6 +116,7 @@ impl UnitQuaternion {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn imag(self) -> Vector3 {
         Vector3 {
@@ -116,6 +126,7 @@ impl UnitQuaternion {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn transform_point(&self, p: &Point3) -> Point3 {
         Point3 {
@@ -123,6 +134,7 @@ impl UnitQuaternion {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn transform_vector(&self, v: &Vector3) -> Vector3 {
         self * v

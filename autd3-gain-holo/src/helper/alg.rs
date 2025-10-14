@@ -1,4 +1,4 @@
-use crate::{MatrixXc, helper::propagate};
+use crate::{MatrixXc, RowVectorXc, helper::propagate};
 
 use autd3_core::{
     acoustics::directivity::Directivity,
@@ -6,6 +6,31 @@ use autd3_core::{
     gain::TransducerMask,
     geometry::{Complex, Geometry, Point3},
 };
+
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
+
+macro_rules! par_map {
+    ($dst:expr, $iter:expr, $f:expr) => {
+        #[cfg(feature = "parallel")]
+        {
+            $dst = $iter.par_iter().map($f).collect::<Vec<_>>();
+        }
+        #[cfg(not(feature = "parallel"))]
+        {
+            $dst = $iter.iter().map($f).collect::<Vec<_>>();
+        }
+    };
+}
+
+macro_rules! par_for_each {
+    ($iter:expr, $f:expr) => {
+        #[cfg(feature = "parallel")]
+        $iter.par_bridge().for_each($f);
+        #[cfg(not(feature = "parallel"))]
+        $iter.for_each($f);
+    };
+}
 
 struct Ptr(*mut Complex);
 impl Ptr {
@@ -62,46 +87,83 @@ pub fn generate_propagation_matrix<D: Directivity>(
         }))
         .collect::<Vec<_>>();
     let n = num_transducers.last().copied().unwrap();
+    let do_parallel_in_col = filter.num_enabled_devices(geometry) < foci.len();
 
     if filter.is_all_enabled() {
-        let mut r = uninit_mat(foci.len(), n);
-        let ptr = Ptr(r.as_mut_ptr());
-        geometry.iter().for_each(move |dev| {
-            let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
-            dev.iter().for_each(move |tr| {
-                foci.iter().for_each(|f| {
-                    ptr.write(propagate::<D>(
-                        tr,
-                        env.wavenumber(),
-                        dev.axial_direction(),
-                        *f,
-                    ));
-                });
+        if do_parallel_in_col {
+            let rows;
+            par_map!(rows, foci, |f| {
+                RowVectorXc::from_iterator(
+                    n,
+                    geometry.iter().flat_map(|dev| {
+                        dev.iter().map(move |tr| {
+                            propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), *f)
+                        })
+                    }),
+                )
             });
-        });
-        r
-    } else {
-        let mut r = uninit_mat(foci.len(), n);
-        let ptr = Ptr(r.as_mut_ptr());
-        geometry
-            .iter()
-            .filter(|dev| filter.has_enabled(dev))
-            .for_each(move |dev| {
+            MatrixXc::from_rows(&rows)
+        } else {
+            let mut r = uninit_mat(foci.len(), n);
+            let ptr = Ptr(r.as_mut_ptr());
+            par_for_each!(geometry.iter(), move |dev| {
                 let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
                 dev.iter().for_each(move |tr| {
-                    if filter.is_enabled(tr) {
-                        foci.iter().for_each(|f| {
-                            ptr.write(propagate::<D>(
-                                tr,
-                                env.wavenumber(),
-                                dev.axial_direction(),
-                                *f,
-                            ));
-                        });
-                    }
+                    foci.iter().for_each(|f| {
+                        ptr.write(propagate::<D>(
+                            tr,
+                            env.wavenumber(),
+                            dev.axial_direction(),
+                            *f,
+                        ));
+                    });
                 });
             });
-        r
+            r
+        }
+    } else {
+        #[allow(clippy::collapsible_else_if)]
+        if do_parallel_in_col {
+            let rows;
+            par_map!(rows, foci, |f| {
+                RowVectorXc::from_iterator(
+                    n,
+                    geometry
+                        .iter()
+                        .filter(|dev| filter.has_enabled(dev))
+                        .flat_map(|dev| {
+                            dev.iter()
+                                .filter(|tr| filter.is_enabled(tr))
+                                .map(move |tr| {
+                                    propagate::<D>(tr, env.wavenumber(), dev.axial_direction(), *f)
+                                })
+                        }),
+                )
+            });
+            MatrixXc::from_rows(&rows)
+        } else {
+            let mut r = uninit_mat(foci.len(), n);
+            let ptr = Ptr(r.as_mut_ptr());
+            par_for_each!(
+                geometry.iter().filter(|dev| filter.has_enabled(dev)),
+                move |dev| {
+                    let mut ptr = ptr.add(foci.len() * num_transducers[dev.idx()]);
+                    dev.iter().for_each(move |tr| {
+                        if filter.is_enabled(tr) {
+                            foci.iter().for_each(|f| {
+                                ptr.write(propagate::<D>(
+                                    tr,
+                                    env.wavenumber(),
+                                    dev.axial_direction(),
+                                    *f,
+                                ));
+                            });
+                        }
+                    });
+                }
+            );
+            r
+        }
     }
 }
 

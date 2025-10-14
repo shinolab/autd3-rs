@@ -5,6 +5,7 @@ pub struct Vector2 {
 }
 
 impl Vector2 {
+    #[inline]
     #[must_use]
     pub fn norm(&self) -> f32 {
         (self.x * self.x + self.y * self.y).sqrt()
@@ -21,11 +22,13 @@ pub struct Vector3 {
 }
 
 impl Vector3 {
+    #[inline]
     #[must_use]
     pub const fn new(x: f32, y: f32, z: f32) -> Self {
         Self { x, y, z }
     }
 
+    #[inline]
     #[must_use]
     pub const fn zeros() -> Self {
         Self {
@@ -35,6 +38,7 @@ impl Vector3 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn x() -> Self {
         Self {
@@ -44,6 +48,7 @@ impl Vector3 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn y() -> Self {
         Self {
@@ -53,6 +58,7 @@ impl Vector3 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn z() -> Self {
         Self {
@@ -62,6 +68,7 @@ impl Vector3 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn xy(&self) -> Vector2 {
         Vector2 {
@@ -70,28 +77,33 @@ impl Vector3 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn x_axis() -> UnitVector3 {
         UnitVector3 { vec: Self::x() }
     }
 
+    #[inline]
     #[must_use]
     pub const fn y_axis() -> UnitVector3 {
         UnitVector3 { vec: Self::y() }
     }
 
+    #[inline]
     #[must_use]
     pub const fn z_axis() -> UnitVector3 {
         UnitVector3 { vec: Self::z() }
     }
 
+    #[inline]
     #[must_use]
-    pub fn dot(&self, rhs: &Self) -> f32 {
+    pub const fn dot(&self, rhs: &Self) -> f32 {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 
+    #[inline]
     #[must_use]
-    pub fn cross(&self, rhs: &Self) -> Self {
+    pub const fn cross(&self, rhs: &Self) -> Self {
         Self {
             x: self.y * rhs.z - self.z * rhs.y,
             y: self.z * rhs.x - self.x * rhs.z,
@@ -99,11 +111,13 @@ impl Vector3 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn norm(&self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
+    #[inline]
     #[must_use]
     pub fn normalize(&self) -> Self {
         let n = self.norm();
@@ -118,6 +132,7 @@ impl Vector3 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn try_normalize(&self, eps: f32) -> Option<Self> {
         let n = self.norm();

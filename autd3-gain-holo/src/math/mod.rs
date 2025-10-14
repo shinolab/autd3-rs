@@ -4,4 +4,4 @@ mod matrix;
 mod vector;
 
 pub use matrix::MatrixXc;
-pub use vector::{VectorX, VectorXc};
+pub use vector::{RowVectorXc, VectorX, VectorXc};

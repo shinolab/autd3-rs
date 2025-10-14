@@ -1,11 +1,11 @@
 use autd3_core::geometry::Complex;
 
+use super::RowVectorXc;
+
 #[derive(Debug)]
 pub struct MatrixXc {
     pub nrows: usize,
-
     pub ncols: usize,
-
     pub data: Vec<Complex>,
 }
 
@@ -74,6 +74,19 @@ impl MatrixXc {
     }
 
     #[must_use]
+    pub fn from_rows(rows: &[RowVectorXc]) -> Self {
+        let nrows = rows.len();
+        let ncols = rows[0].rows;
+        let mut data = vec![Complex::ZERO; nrows * ncols];
+        for (i, row) in rows.iter().enumerate() {
+            for j in 0..ncols {
+                data[j * nrows + i] = row.data[j];
+            }
+        }
+        Self { nrows, ncols, data }
+    }
+
+    #[must_use]
     pub fn ncols(&self) -> usize {
         self.ncols
     }
@@ -100,18 +113,31 @@ impl MatrixXc {
     }
 
     pub fn gemm(&mut self, alpha: Complex, a: &MatrixXc, b: &MatrixXc, beta: Complex) {
-        let mut res = vec![Complex::new(0., 0.); self.nrows * self.ncols];
-        for i in 0..a.nrows() {
-            for j in 0..b.ncols() {
-                for k in 0..a.ncols() {
-                    res[j * self.nrows + i] += a[(i, k)] * b[(k, j)];
-                }
+        let alpha_is_zero = alpha.re == 0.0 && alpha.im == 0.0;
+        let beta_is_zero = beta.re == 0.0 && beta.im == 0.0;
+        let beta_is_one = beta.re == 1.0 && beta.im == 0.0;
+
+        if alpha_is_zero {
+            if beta_is_zero {
+                self.data.fill(Complex::new(0., 0.));
+            } else if !beta_is_one {
+                self.data.iter_mut().for_each(|c| *c *= beta);
             }
+            return;
         }
-        for i in 0..self.nrows {
-            for j in 0..self.ncols {
-                self.data[j * self.nrows + i] =
-                    alpha * res[j * self.nrows + i] + beta * self.data[j * self.nrows + i];
+
+        if beta_is_zero {
+            self.data.fill(Complex::new(0., 0.));
+        } else if !beta_is_one {
+            self.data.iter_mut().for_each(|c| *c *= beta);
+        }
+
+        for j in 0..b.ncols() {
+            for k in 0..a.ncols() {
+                let alpha_b = alpha * b[(k, j)];
+                for i in 0..a.nrows() {
+                    self.data[j * self.nrows + i] += a[(i, k)] * alpha_b;
+                }
             }
         }
     }
@@ -161,6 +187,36 @@ mod tests {
         assert_eq!(m.nrows(), 2);
         assert_eq!(m.ncols(), 2);
         assert_eq!(m.data.len(), 4);
+    }
+
+    #[test]
+    fn from_raws() {
+        let row1 = RowVectorXc::from_iterator(
+            3,
+            vec![
+                Complex::new(1.0, 0.0),
+                Complex::new(2.0, 0.0),
+                Complex::new(3.0, 0.0),
+            ],
+        );
+        let row2 = RowVectorXc::from_iterator(
+            3,
+            vec![
+                Complex::new(4.0, 0.0),
+                Complex::new(5.0, 0.0),
+                Complex::new(6.0, 0.0),
+            ],
+        );
+        let m = MatrixXc::from_rows(&[row1, row2]);
+        assert_eq!(m.nrows(), 2);
+        assert_eq!(m.ncols(), 3);
+        assert_eq!(m.data.len(), 6);
+        assert_eq!(m[(0, 0)].re, 1.0);
+        assert_eq!(m[(0, 1)].re, 2.0);
+        assert_eq!(m[(0, 2)].re, 3.0);
+        assert_eq!(m[(1, 0)].re, 4.0);
+        assert_eq!(m[(1, 1)].re, 5.0);
+        assert_eq!(m[(1, 2)].re, 6.0);
     }
 
     #[test]

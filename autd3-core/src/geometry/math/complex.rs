@@ -9,11 +9,13 @@ pub struct Complex {
 impl Complex {
     pub const ZERO: Self = Self { re: 0.0, im: 0.0 };
 
+    #[inline]
     #[must_use]
     pub const fn new(re: f32, im: f32) -> Self {
         Self { re, im }
     }
 
+    #[inline]
     #[must_use]
     pub const fn conj(&self) -> Self {
         Self {
@@ -22,6 +24,7 @@ impl Complex {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn exp(&self) -> Self {
         let exp_re = self.re.exp();
@@ -31,19 +34,22 @@ impl Complex {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn arg(&self) -> f32 {
         self.im.atan2(self.re)
     }
 
+    #[inline]
     #[must_use]
-    pub fn norm_sqr(&self) -> f32 {
+    pub const fn norm_sqr(&self) -> f32 {
         self.re * self.re + self.im * self.im
     }
 
+    #[inline]
     #[must_use]
     pub fn norm(&self) -> f32 {
-        self.norm_sqr().sqrt()
+        self.re.hypot(self.im)
     }
 }
 
@@ -120,6 +126,12 @@ impl core::ops::Mul for Complex {
     }
 }
 
+impl core::ops::MulAssign for Complex {
+    fn mul_assign(&mut self, rhs: Complex) {
+        *self = *self * rhs;
+    }
+}
+
 impl core::ops::Div<f32> for Complex {
     type Output = Complex;
 
@@ -133,6 +145,8 @@ impl core::ops::Div<f32> for Complex {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::op_ref)]
+
     use super::*;
 
     #[test]

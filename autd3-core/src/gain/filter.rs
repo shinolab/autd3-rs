@@ -90,6 +90,17 @@ impl TransducerMask {
         }
     }
 
+    /// Returns the number of enabled devices.
+    pub fn num_enabled_devices(&self, geometry: &Geometry) -> usize {
+        match self {
+            Self::AllEnabled => geometry.num_devices(),
+            Self::Masked(filter) => geometry
+                .iter()
+                .filter(|dev| filter[dev.idx()].has_enabled())
+                .count(),
+        }
+    }
+
     /// Returns the number of enabled transducers for the given [`Device`].
     pub fn num_enabled_transducers(&self, dev: &Device) -> usize {
         match self {
@@ -178,5 +189,27 @@ mod tests {
 
         let mask_some = DeviceTransducerMask::from_fn(&dev, |tr| tr.idx() < 2);
         assert_eq!(2, mask_some.num_enabled_transducers(&dev));
+    }
+
+    #[test]
+    fn num_enabled_devices_variants() {
+        let geometry = Geometry::new(vec![create_device(1), create_device(1), create_device(1)]);
+
+        let mask_all = TransducerMask::AllEnabled;
+        assert_eq!(3, mask_all.num_enabled_devices(&geometry));
+
+        let mask_none = TransducerMask::Masked(vec![
+            DeviceTransducerMask::AllDisabled,
+            DeviceTransducerMask::AllDisabled,
+            DeviceTransducerMask::AllDisabled,
+        ]);
+        assert_eq!(0, mask_none.num_enabled_devices(&geometry));
+
+        let mask_some = TransducerMask::Masked(vec![
+            DeviceTransducerMask::AllEnabled,
+            DeviceTransducerMask::AllDisabled,
+            DeviceTransducerMask::AllEnabled,
+        ]);
+        assert_eq!(2, mask_some.num_enabled_devices(&geometry));
     }
 }
