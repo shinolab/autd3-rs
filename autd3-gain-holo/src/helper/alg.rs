@@ -240,7 +240,7 @@ mod tests {
     }
 
     #[test]
-    fn generate_propagation_matrix_all_enabled() {
+    fn generate_propagation_matrix_all_enabled_parallel_in_col() {
         let geometry = create_geometry(2);
         let env = Environment::new();
         let foci = vec![
@@ -254,7 +254,17 @@ mod tests {
     }
 
     #[test]
-    fn generate_propagation_matrix_masked() {
+    fn generate_propagation_matrix_all_enabled_parallel_in_row() {
+        let geometry = create_geometry(3);
+        let env = Environment::new();
+        let foci = vec![Point3::new(0.0, 0.0, 120.0)];
+        let filter = TransducerMask::AllEnabled;
+        let m = generate_propagation_matrix::<Sphere>(&geometry, &env, &foci, &filter);
+        check_matrix(&geometry, &env, &foci, &filter, &m);
+    }
+
+    #[test]
+    fn generate_propagation_matrix_masked_parallel_in_col() {
         let geometry = create_geometry(2);
         let env = Environment::new();
         let foci = vec![
@@ -266,6 +276,22 @@ mod tests {
             DeviceTransducerMask::AllEnabled,
             DeviceTransducerMask::AllDisabled,
         ]);
+        let m = generate_propagation_matrix::<Sphere>(&geometry, &env, &foci, &filter);
+        check_matrix(&geometry, &env, &foci, &filter, &m);
+    }
+
+    #[test]
+    fn generate_propagation_matrix_masked_parallel_in_row() {
+        let geometry = create_geometry(2);
+        let env = Environment::new();
+        let foci = vec![Point3::new(0.0, 0.0, 200.0)];
+        let filter = TransducerMask::from_fn(&geometry, |dev| {
+            if dev.idx() == 0 {
+                DeviceTransducerMask::from_fn(dev, |_| true)
+            } else {
+                DeviceTransducerMask::from_fn(dev, |_| false)
+            }
+        });
         let m = generate_propagation_matrix::<Sphere>(&geometry, &env, &foci, &filter);
         check_matrix(&geometry, &env, &foci, &filter, &m);
     }
