@@ -34,7 +34,6 @@
 - [**breaking**] `autd3-protobuf` crate
 - [**breaking**] `no_std` support
 - `windows` dependency
-- [**breaking**] `RemoteTwinCAT` link
 
 
 # 36.0.2 (2025-10-01)
