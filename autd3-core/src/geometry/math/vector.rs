@@ -40,6 +40,21 @@ impl Vector3 {
 
     #[inline]
     #[must_use]
+    pub fn from_iterator(mut iter: impl Iterator<Item = f32>) -> Self {
+        Self {
+            x: iter.next().unwrap_or(0.0),
+            y: iter.next().unwrap_or(0.0),
+            z: iter.next().unwrap_or(0.0),
+        }
+    }
+
+    #[inline]
+    pub fn iter(&self) -> impl Iterator<Item = f32> + '_ {
+        [self.x, self.y, self.z].into_iter()
+    }
+
+    #[inline]
+    #[must_use]
     pub const fn x() -> Self {
         Self {
             x: 1.0,

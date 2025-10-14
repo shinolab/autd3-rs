@@ -21,6 +21,30 @@ impl Point3 {
             coords: Vector3::zeros(),
         }
     }
+
+    #[inline]
+    #[must_use]
+    pub const fn inf(&self, other: &Point3) -> Self {
+        Self {
+            coords: Vector3 {
+                x: self.coords.x.min(other.coords.x),
+                y: self.coords.y.min(other.coords.y),
+                z: self.coords.z.min(other.coords.z),
+            },
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn sup(&self, other: &Point3) -> Self {
+        Self {
+            coords: Vector3 {
+                x: self.coords.x.max(other.coords.x),
+                y: self.coords.y.max(other.coords.y),
+                z: self.coords.z.max(other.coords.z),
+            },
+        }
+    }
 }
 
 impl From<Vector3> for Point3 {
