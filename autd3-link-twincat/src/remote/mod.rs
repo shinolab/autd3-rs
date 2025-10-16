@@ -1,6 +1,5 @@
 use std::net::IpAddr;
 
-use ads::{AmsAddr, AmsNetId};
 use autd3_core::{
     geometry::Geometry,
     link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
@@ -8,6 +7,7 @@ use autd3_core::{
 
 use crate::error::AdsError;
 
+pub use ads::{AmsAddr, AmsNetId};
 pub use ads::{Source, Timeouts};
 
 const INDEX_GROUP: u32 = 0x0304_0030;
@@ -31,8 +31,10 @@ pub struct RemoteTwinCAT {
 /// The option of [`RemoteTwinCAT`].
 #[derive(Debug)]
 pub struct RemoteTwinCATOption {
-    timeouts: Timeouts,
-    source: Source,
+    /// The timeouts for ADS communication.
+    pub timeouts: Timeouts,
+    /// The source AMS address.
+    pub source: Source,
 }
 
 impl Default for RemoteTwinCATOption {

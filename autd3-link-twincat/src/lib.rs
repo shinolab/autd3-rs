@@ -20,4 +20,4 @@ pub use local::TwinCAT;
 
 #[cfg_attr(docsrs, doc(cfg(feature = "remote")))]
 #[cfg(feature = "remote")]
-pub use remote::{RemoteTwinCAT, RemoteTwinCATOption, Source, Timeouts};
+pub use remote::{AmsAddr, AmsNetId, RemoteTwinCAT, RemoteTwinCATOption, Source, Timeouts};
