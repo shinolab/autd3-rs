@@ -9,7 +9,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             pos: Point3::origin(),
             rot: UnitQuaternion::identity(),
         }; 3],
-        RemoteTwinCAT::new([0, 0, 0, 0], [1, 1, 1, 1, 1, 1], Default::default()),
+        RemoteTwinCAT::new(
+            "0.0.0.0".parse()?,
+            "1.1.1.1.1.1".parse()?,
+            Default::default(),
+        ),
     )?;
 
     tests::run(autd)

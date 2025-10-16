@@ -54,14 +54,10 @@ impl RemoteTwinCAT {
     /// - `ams_net_id`: The AMS Net ID of the server running TwinCAT3.
     /// - `option`: The option of [`RemoteTwinCAT`].
     #[must_use]
-    pub fn new(
-        addr: impl Into<IpAddr>,
-        ams_net_id: impl Into<AmsNetId>,
-        option: RemoteTwinCATOption,
-    ) -> RemoteTwinCAT {
+    pub fn new(addr: IpAddr, ams_net_id: AmsNetId, option: RemoteTwinCATOption) -> RemoteTwinCAT {
         RemoteTwinCAT {
-            addr: addr.into(),
-            ams_addr: AmsAddr::new(ams_net_id.into(), PORT),
+            addr,
+            ams_addr: AmsAddr::new(ams_net_id, PORT),
             option,
             client: None,
             buffer_pool: TxBufferPoolSync::default(),
