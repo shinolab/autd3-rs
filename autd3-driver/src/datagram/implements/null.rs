@@ -40,7 +40,7 @@ mod tests {
 
     #[test]
     fn test_null() {
-        let geometry = crate::autd3_device::tests::create_geometry(1);
+        let geometry = crate::tests::create_geometry(1);
 
         let g = Null::new();
         let mut b = g;

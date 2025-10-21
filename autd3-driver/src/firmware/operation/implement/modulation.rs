@@ -209,7 +209,7 @@ mod tests {
     fn test() {
         const MOD_SIZE: usize = 100;
 
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = vec![0x00u8; size_of::<ModulationHead>() + MOD_SIZE];
 
@@ -278,7 +278,7 @@ mod tests {
         const MOD_SIZE: usize = FRAME_SIZE - size_of::<ModulationHead>()
             + (FRAME_SIZE - size_of::<ModulationSubseq>()) * 2;
 
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -391,7 +391,7 @@ mod tests {
         let send = |n: usize| {
             use autd3_core::derive::transition_mode::Later;
 
-            let device = crate::autd3_device::tests::create_device();
+            let device = crate::tests::create_device();
             let frame_size = size_of::<ModulationHead>() + device.num_transducers() * 2;
             let mut tx = vec![0x00u8; frame_size];
             let buf = Arc::new(vec![0x00; n]);
@@ -418,7 +418,7 @@ mod tests {
     #[case(253)]
     #[case(255)]
     fn odd_size(#[case] size: usize) -> Result<(), Box<dyn std::error::Error>> {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = vec![0x00u8; device.num_transducers() * 2];
 

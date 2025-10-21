@@ -30,7 +30,7 @@ pub mod tests {
 
     #[test]
     fn inspect() -> Result<(), Box<dyn std::error::Error>> {
-        let geometry = crate::autd3_device::tests::create_geometry(2);
+        let geometry = crate::tests::create_geometry(2);
 
         TestModulation {
             sampling_config: SamplingConfig::FREQ_4K,
@@ -52,7 +52,7 @@ pub mod tests {
 
     #[test]
     fn inspect_with_segment() -> Result<(), Box<dyn std::error::Error>> {
-        let geometry = crate::autd3_device::tests::create_geometry(2);
+        let geometry = crate::tests::create_geometry(2);
 
         crate::datagram::WithSegment {
             inner: TestModulation {
@@ -82,7 +82,7 @@ pub mod tests {
 
     #[test]
     fn inspect_with_loop_behavior() -> Result<(), Box<dyn std::error::Error>> {
-        let geometry = crate::autd3_device::tests::create_geometry(2);
+        let geometry = crate::tests::create_geometry(2);
 
         crate::datagram::WithFiniteLoop {
             inner: TestModulation {

@@ -362,7 +362,7 @@ mod tests {
 
     #[test]
     fn test_phase_intensity_full() {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         const GAIN_STM_SIZE: usize = 3;
         let frame_size = size_of::<GainSTMHead>() + device.num_transducers() * 2;
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn test_phase_full() {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         const GAIN_STM_SIZE: usize = 5;
         let frame_size = size_of::<GainSTMHead>() + device.num_transducers() * 2;
@@ -643,7 +643,7 @@ mod tests {
     fn test_phase_half() {
         const GAIN_STM_SIZE: usize = 9;
 
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = vec![TxMessage::new(); 1];
         let tx = tx[0].payload_mut();
@@ -791,7 +791,7 @@ mod tests {
     )]
     fn out_of_range(#[case] expected: Result<(), AUTDDriverError>, #[case] size: usize) {
         let send = |n: usize| {
-            let device = crate::autd3_device::tests::create_device();
+            let device = crate::tests::create_device();
 
             let frame_size = size_of::<GainSTMHead>() + device.num_transducers() * 2;
 

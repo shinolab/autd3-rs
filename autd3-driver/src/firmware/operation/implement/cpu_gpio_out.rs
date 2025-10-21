@@ -75,7 +75,7 @@ mod tests {
     fn cpu_gpio_out_op(#[case] expect: u8, #[case] pa5: bool, #[case] pa7: bool) {
         const FRAME_SIZE: usize = size_of::<CpuGPIOOutMsg>();
 
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
         let mut op = CpuGPIOOutputsOp::new(pa5, pa7);

@@ -108,7 +108,7 @@ mod tests {
     #[case(SilencerControlFlags::STRICT_MODE.0, true)]
     #[case(0x00, false)]
     fn test(#[case] value: u8, #[case] strict: bool) {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionTime>()];
 
@@ -169,7 +169,7 @@ mod tests {
         #[case] time_intensity: Duration,
         #[case] time_phase: Duration,
     ) {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = [0x00u8; size_of::<SilencerFixedCompletionTime>()];
 

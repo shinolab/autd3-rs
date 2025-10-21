@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn unknown_key() -> Result<(), Box<dyn std::error::Error>> {
-        let geometry = crate::autd3_device::tests::create_geometry(2);
+        let geometry = crate::tests::create_geometry(2);
 
         assert_eq!(
             Some(AUTDDriverError::UnknownKey("1".to_owned())),
@@ -217,7 +217,7 @@ mod tests {
 
     #[test]
     fn unused_key() -> Result<(), Box<dyn std::error::Error>> {
-        let geometry = crate::autd3_device::tests::create_geometry(2);
+        let geometry = crate::tests::create_geometry(2);
 
         assert_eq!(
             Some(AUTDDriverError::UnusedKey("[\"2\"]".to_owned())),

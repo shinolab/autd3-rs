@@ -100,7 +100,7 @@ mod tests {
     #[case(0b1001, [true, false, false, true])]
     #[case(0b0110, [false, true, true, false])]
     fn test(#[case] expected: u8, #[case] value: [bool; 4]) {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = [0x00u8; size_of::<EmulateGPIOInMsg>()];
 

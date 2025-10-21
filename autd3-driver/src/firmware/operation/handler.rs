@@ -164,7 +164,7 @@ pub(crate) mod tests {
     #[case::serial(false)]
     #[case::parallel(true)]
     fn operation_handler(#[case] parallel: bool) {
-        let geometry = Geometry::new(vec![crate::autd3_device::tests::create_device()]);
+        let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
             OperationMock {
@@ -216,7 +216,7 @@ pub(crate) mod tests {
     #[case::serial(false)]
     #[case::parallel(true)]
     fn operation_handler_none(#[case] parallel: bool) {
-        let geometry = Geometry::new(vec![crate::autd3_device::tests::create_device()]);
+        let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op: Vec<Option<(OperationMock, OperationMock)>> = vec![None, None];
 
@@ -231,7 +231,7 @@ pub(crate) mod tests {
 
     #[test]
     fn test_first() {
-        let geometry = Geometry::new(vec![crate::autd3_device::tests::create_device()]);
+        let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
             OperationMock {
@@ -263,7 +263,7 @@ pub(crate) mod tests {
 
     #[test]
     fn test_second() {
-        let geometry = Geometry::new(vec![crate::autd3_device::tests::create_device()]);
+        let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
             OperationMock {
@@ -295,7 +295,7 @@ pub(crate) mod tests {
 
     #[test]
     fn test_broken_pack() {
-        let geometry = Geometry::new(vec![crate::autd3_device::tests::create_device()]);
+        let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
             OperationMock {
@@ -349,7 +349,7 @@ pub(crate) mod tests {
 
     #[test]
     fn test_finished() {
-        let geometry = Geometry::new(vec![crate::autd3_device::tests::create_device()]);
+        let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
             OperationMock {

@@ -34,11 +34,8 @@ pub use controller::Controller;
 
 #[cfg(test)]
 mod tests {
-    use autd3_core::geometry::UnitQuaternion;
-    use autd3_driver::{
-        autd3_device::AUTD3,
-        geometry::{Geometry, Point3, Vector3},
-    };
+    use autd3_core::{devices::AUTD3, geometry::UnitQuaternion};
+    use autd3_driver::geometry::{Geometry, Point3, Vector3};
 
     #[macro_export]
     #[doc(hidden)]

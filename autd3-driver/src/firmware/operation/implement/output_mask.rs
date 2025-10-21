@@ -92,7 +92,7 @@ mod tests {
     #[case(0x00, false)]
     #[test]
     fn test(#[case] expected: u8, #[case] f: bool) {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = [0x00u8; 2 * (size_of::<OutputMaskT>() + 32)];
 

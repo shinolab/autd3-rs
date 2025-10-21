@@ -226,7 +226,7 @@ mod tests {
         assert_eq!(4, FociSTMGenerator::len(&circle));
         assert_eq!(4, GainSTMGenerator::len(&circle));
 
-        let device = autd3_driver::autd3_device::AUTD3::default().into();
+        let device = autd3_core::devices::AUTD3::default().into();
         {
             let mut g = FociSTMGenerator::init(circle.clone())?;
             let mut iterator = FociSTMIteratorGenerator::generate(&mut g, &device);

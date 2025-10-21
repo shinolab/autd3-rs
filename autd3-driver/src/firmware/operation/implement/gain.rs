@@ -122,7 +122,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx =
             vec![0x00u8; size_of::<Gain>() + device.num_transducers() * size_of::<Drive>()];

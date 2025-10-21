@@ -2,17 +2,17 @@ use std::hint::black_box;
 
 use autd3_core::{
     derive::*,
+    devices::AUTD3,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{
-    autd3_device::AUTD3,
     common::rad,
     datagram::BoxedGain,
     firmware::operation::{OperationGenerator, OperationHandler},
     geometry::{Device, Geometry, Point3, Transducer},
 };
 
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(

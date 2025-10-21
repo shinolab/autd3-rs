@@ -17,6 +17,10 @@ pub mod common;
 #[cfg(feature = "datagram")]
 /// Core traits for Datagram.
 pub mod datagram;
+#[cfg_attr(docsrs, doc(cfg(feature = "devices")))]
+#[cfg(feature = "devices")]
+/// Definitions for devices.
+pub mod devices;
 #[cfg_attr(docsrs, doc(cfg(feature = "environment")))]
 #[cfg(feature = "environment")]
 #[doc(hidden)]

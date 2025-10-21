@@ -269,13 +269,13 @@ pub(crate) mod tests {
 
     use crate::{
         core::{
+            devices::AUTD3,
             firmware::{Intensity, Phase, Segment},
             gain::{Gain, GainCalculator, GainCalculatorGenerator, TransducerMask},
             link::LinkError,
             modulation::{Modulation, ModulationInspectionResult},
         },
         driver::{
-            autd3_device::AUTD3,
             common::Hz,
             datagram::{GainSTM, ReadsFPGAState},
         },

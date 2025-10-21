@@ -49,8 +49,10 @@ pub use autd3_core::acoustics::directivity::{Sphere, T4010A1};
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use autd3_core::geometry::{Geometry, Point3};
-    use autd3_driver::autd3_device::AUTD3;
+    use autd3_core::{
+        devices::AUTD3,
+        geometry::{Geometry, Point3},
+    };
 
     pub fn create_geometry(row: usize, col: usize) -> Geometry {
         Geometry::new(

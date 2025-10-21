@@ -175,7 +175,7 @@ mod tests {
             Point3::new(0., length / 2., 0.),
         ];
 
-        let device = autd3_driver::autd3_device::AUTD3::default().into();
+        let device = autd3_core::devices::AUTD3::default().into();
         {
             let mut g = FociSTMGenerator::init(line.clone())?;
             let mut iterator = FociSTMIteratorGenerator::generate(&mut g, &device);
