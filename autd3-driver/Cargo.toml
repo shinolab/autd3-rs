@@ -19,7 +19,7 @@ use_nalgebra = ["autd3-core/use_nalgebra"]
 parallel = ["rayon"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulation", "sleep"] }
+autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulation", "sleep", "devices"] }
 rayon = { workspace = true, optional = true }
 
 [dev-dependencies]

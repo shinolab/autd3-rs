@@ -259,7 +259,7 @@ mod tests {
         const FOCI_STM_SIZE: usize = 100;
         const FRAME_SIZE: usize = size_of::<FociSTMHead>() + size_of::<STMFocus>() * FOCI_STM_SIZE;
 
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -356,7 +356,7 @@ mod tests {
         const FRAME_SIZE: usize =
             size_of::<FociSTMHead>() + size_of::<STMFocus>() * FOCI_STM_SIZE * N;
 
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -464,7 +464,7 @@ mod tests {
         const FRAME_SIZE: usize = 32;
         const FOCI_STM_SIZE: usize = 7;
 
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -639,7 +639,7 @@ mod tests {
         const FOCI_STM_SIZE: usize = 100;
         const FRAME_SIZE: usize = 16 + 8 * FOCI_STM_SIZE;
 
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut tx = vec![0x00u8; FRAME_SIZE];
 
@@ -672,7 +672,7 @@ mod tests {
     #[case(Ok(()), FOCI_STM_BUF_SIZE_MAX)]
     #[case(Err(AUTDDriverError::FociSTMTotalSizeOutOfRange(FOCI_STM_BUF_SIZE_MAX + 1)), FOCI_STM_BUF_SIZE_MAX + 1)]
     fn test_buffer_out_of_range(#[case] expected: Result<(), AUTDDriverError>, #[case] n: usize) {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         let mut op = FociSTMOp::new(
             TestIterator {
@@ -695,7 +695,7 @@ mod tests {
 
     #[test]
     fn test_foci_out_of_range() {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
 
         {
             let mut op = FociSTMOp::new(

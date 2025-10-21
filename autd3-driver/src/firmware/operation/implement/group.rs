@@ -128,7 +128,7 @@ mod tests {
             }
         }
 
-        let geometry = crate::autd3_device::tests::create_geometry(3);
+        let geometry = crate::tests::create_geometry(3);
 
         let test = Arc::new(Mutex::new(vec![false; 3]));
         Group::new(
@@ -185,7 +185,7 @@ mod tests {
             }
         }
 
-        let geometry = crate::autd3_device::tests::create_geometry(4);
+        let geometry = crate::tests::create_geometry(4);
         let r = Group::new(
             |dev| match dev.idx() {
                 1 => None,

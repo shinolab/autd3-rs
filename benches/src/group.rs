@@ -3,16 +3,16 @@ use std::hint::black_box;
 use autd3::gain::Null;
 use autd3_core::{
     derive::*,
+    devices::AUTD3,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{
-    autd3_device::AUTD3,
     datagram::Group,
     firmware::operation::{BoxedDatagram, OperationGenerator, OperationHandler},
     geometry::{Geometry, Point3},
 };
 
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(

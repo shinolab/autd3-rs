@@ -17,6 +17,7 @@ pub use crate::link::Nop;
 pub use crate::controller::{Controller, ParallelMode, SenderOption};
 
 pub use autd3_core::{
+    devices::AUTD3,
     firmware::{
         Drive, GPIOIn, GPIOOut, Intensity, Phase, PulseWidth, SamplingConfig, Segment,
         transition_mode,
@@ -26,7 +27,6 @@ pub use autd3_core::{
 };
 
 pub use autd3_driver::{
-    autd3_device::AUTD3,
     common::{Hz, PI, ULTRASOUND_FREQ, deg, kHz, mm, rad},
     datagram::{
         BoxedGain, Clear, ControlPoint, ControlPoints, FixedCompletionTime, FixedUpdateRate,

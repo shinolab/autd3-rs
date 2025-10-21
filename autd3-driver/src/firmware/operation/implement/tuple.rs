@@ -40,7 +40,7 @@ mod tests {
     #[case(false, false)]
     #[test]
     fn combined_operation_generator(#[case] expect: bool, #[case] has: bool) {
-        let device = crate::autd3_device::tests::create_device();
+        let device = crate::tests::create_device();
         let mut generator = CombinedOperationGenerator {
             o1: TestOpGen { has },
             o2: TestOpGen { has },

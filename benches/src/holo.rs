@@ -2,18 +2,18 @@ use std::hint::black_box;
 
 use autd3_core::{
     derive::*,
+    devices::AUTD3,
     geometry::Vector3,
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{
-    autd3_device::AUTD3,
     firmware::operation::{OperationGenerator, OperationHandler},
     geometry::{Geometry, Point3},
 };
 
 use autd3_gain_holo::*;
 
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, Criterion};
 
 pub fn generate_geometry(size: usize) -> Geometry {
     Geometry::new(

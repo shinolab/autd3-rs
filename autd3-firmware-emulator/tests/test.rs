@@ -1,11 +1,11 @@
 use autd3_core::{
     datagram::{Datagram, DeviceMask},
+    devices::AUTD3,
     environment::Environment,
     geometry::{Geometry, Point3},
     link::{MsgId, TxMessage},
 };
 use autd3_driver::{
-    autd3_device::AUTD3,
     datagram::*,
     error::AUTDDriverError,
     firmware::{
