@@ -1,7 +1,7 @@
 # Changelog
 
 
-# 37.0.0-alpha.3 (2025-10-16)
+# 37.0.0 (2025-10-22)
 
 ## 🚀 Features
 
@@ -13,6 +13,7 @@
 - Make `rand` optional
 - [**breaking**] Simplify ethercrab link option
 - Make `core_affinity` and `tracing` optional
+- Add `RemoteServer`
 
 ## 🗑️ Removals
 
@@ -34,6 +35,12 @@
 - [**breaking**] `autd3-protobuf` crate
 - [**breaking**] `no_std` support
 - `windows` dependency
+- `autd3-link-simulator` and merge it into `autd3-link-remote`
+- `thread-safe` feature
+
+## 🚜 Refactor
+
+- Move `AUTD3` device definition to `autd3-core`
 
 
 # 36.0.2 (2025-10-01)
