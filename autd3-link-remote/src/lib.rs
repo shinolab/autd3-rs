@@ -7,9 +7,19 @@
 //!
 //! [`AUTD3 Simulator`]: https://github.com/shinolab/autd3-server
 
+#[cfg_attr(docsrs, doc(cfg(feature = "link")))]
+#[cfg(feature = "link")]
 mod link;
 
+#[cfg(feature = "link")]
 pub use link::{Remote, RemoteOption};
+
+#[cfg_attr(docsrs, doc(cfg(feature = "server")))]
+#[cfg(feature = "server")]
+mod server;
+
+#[cfg(feature = "server")]
+pub use server::RemoteServer;
 
 // # Protocol Specification
 //
