@@ -54,6 +54,17 @@ impl UnitQuaternion {
 
     #[inline]
     #[must_use]
+    pub fn new_unchecked(quat: Quaternion) -> Self {
+        Self {
+            w: quat.w,
+            i: quat.i,
+            j: quat.j,
+            k: quat.k,
+        }
+    }
+
+    #[inline]
+    #[must_use]
     pub const fn identity() -> Self {
         Self {
             w: 1.0,

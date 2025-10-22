@@ -40,7 +40,7 @@ jobs:
           - os: windows-latest
           - os: macos-latest
           - os: ubuntu-latest
-            features: "remote nop ethercrab twincat remote_twincat simulator"
+            features: "all"
           - os: ubuntu-latest
             features: "thread-safe"
           - os: ubuntu-latest
@@ -100,7 +100,7 @@ jobs:
       - run: cargo +nightly docs-rs -pautd3-driver
       - run: cargo +nightly docs-rs -pautd3-firmware-emulator
       - run: cargo +nightly docs-rs -pautd3-gain-holo
-      - run: cargo +nightly docs-rs -pautd3-link-simulator
+      - run: cargo +nightly docs-rs -pautd3-link-remote
       - run: cargo +nightly docs-rs -pautd3-link-ethercrab
       - run: cargo +nightly docs-rs -pautd3-link-twincat
 

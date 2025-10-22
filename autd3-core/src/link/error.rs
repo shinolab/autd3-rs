@@ -27,6 +27,14 @@ impl LinkError {
     }
 }
 
+// GRCOV_EXCL_START
+impl From<std::io::Error> for LinkError {
+    fn from(err: std::io::Error) -> Self {
+        LinkError::new(err.to_string())
+    }
+}
+// GRCOV_EXCL_STOP
+
 #[cfg(test)]
 mod tests {
     use super::*;
