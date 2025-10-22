@@ -13,5 +13,11 @@ repository = { workspace = true }
 features = []
 rustdoc-args = ["--cfg", "docsrs"]
 
+[features]
+default = ["link"]
+link = []
+server = ["autd3-core/devices", "tokio"]
+
 [dependencies]
 autd3-core = { workspace = true, features = ["link"] }
+tokio = { version = "1.48.0", features = ["io-util", "net", "macros"], optional = true }

@@ -6,10 +6,10 @@
 cargo run --release --features twincat --bin twincat
 ```
 
-## Simulator
+## EtherCrab
 
 ```
-cargo run --release --features simulator --bin simulator
+cargo run --release --features ethercrab --bin ethercrab
 ```
 
 # Author
