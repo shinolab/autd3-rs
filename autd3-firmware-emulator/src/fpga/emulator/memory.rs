@@ -6,7 +6,6 @@ use autd3_core::firmware::Segment;
 
 use super::super::params::*;
 
-#[cfg(not(feature = "thread-safe"))]
 mod mem {
     pub struct Bram<T: Copy> {
         pub(crate) mem: std::cell::LazyCell<std::cell::RefCell<Vec<T>>>,
@@ -30,35 +29,6 @@ mod mem {
         pub fn new(f: fn() -> Vec<T>) -> Self {
             Brom {
                 mem: std::cell::LazyCell::new(f),
-            }
-        }
-    }
-}
-
-#[cfg(feature = "thread-safe")]
-mod mem {
-    pub struct Bram<T: Copy> {
-        pub(crate) mem: std::sync::LazyLock<std::sync::RwLock<Vec<T>>>,
-    }
-
-    impl<T: Copy> Bram<T> {
-        pub fn mem(&self) -> std::sync::RwLockReadGuard<'_, Vec<T>> {
-            self.mem.read().unwrap()
-        }
-
-        pub fn mem_mut(&self) -> std::sync::RwLockWriteGuard<'_, Vec<T>> {
-            self.mem.write().unwrap()
-        }
-    }
-
-    pub struct Brom<T> {
-        pub(crate) mem: std::sync::LazyLock<Vec<T>>,
-    }
-
-    impl<T> Brom<T> {
-        pub fn new(f: fn() -> Vec<T>) -> Self {
-            Brom {
-                mem: std::sync::LazyLock::new(f),
             }
         }
     }
@@ -96,17 +66,6 @@ impl<T> std::ops::Index<usize> for Brom<T> {
 
 use mem::*;
 
-macro_rules! create_bram {
-    ($f:block) => {
-        Bram {
-            #[cfg(not(feature = "thread-safe"))]
-            mem: std::cell::LazyCell::new(|| std::cell::RefCell::new($f)),
-            #[cfg(feature = "thread-safe")]
-            mem: std::sync::LazyLock::new(|| std::sync::RwLock::new($f)),
-        }
-    };
-}
-
 pub struct Memory {
     pub(crate) num_transducers: usize,
     pub(crate) controller_bram: Bram<u16>,
@@ -125,35 +84,77 @@ impl Memory {
     pub fn new(num_transducers: usize) -> Self {
         Self {
             num_transducers,
-            controller_bram: create_bram!({
-                let mut v = vec![0x0000; 256];
-                v[ADDR_VERSION_NUM_MAJOR] =
-                    ((ENABLED_FEATURES_BITS as u16) << 8) | VERSION_NUM_MAJOR as u16;
-                v[ADDR_VERSION_NUM_MINOR] = VERSION_NUM_MINOR as u16;
-                v
-            }),
-            phase_corr_bram: create_bram!({ vec![0x0000; 256 / std::mem::size_of::<u16>()] }),
-            output_mask_bram: create_bram!({ vec![0xFFFF; 32] }),
+            controller_bram: Bram {
+                mem: std::cell::LazyCell::new(|| {
+                    std::cell::RefCell::new({
+                        let mut v = vec![0x0000; 256];
+                        v[ADDR_VERSION_NUM_MAJOR] =
+                            ((ENABLED_FEATURES_BITS as u16) << 8) | VERSION_NUM_MAJOR as u16;
+                        v[ADDR_VERSION_NUM_MINOR] = VERSION_NUM_MINOR as u16;
+                        v
+                    })
+                }),
+            },
+            phase_corr_bram: Bram {
+                mem: std::cell::LazyCell::new(|| {
+                    std::cell::RefCell::new(vec![0x0000; 256 / std::mem::size_of::<u16>()])
+                }),
+            },
+            output_mask_bram: Bram {
+                mem: std::cell::LazyCell::new(|| std::cell::RefCell::new(vec![0xFFFF; 32])),
+            },
             modulation_bram: HashMap::from([
                 (
                     Segment::S0,
-                    create_bram!({ vec![0x0000; 65536 / std::mem::size_of::<u16>()] }),
+                    Bram {
+                        mem: std::cell::LazyCell::new(|| {
+                            std::cell::RefCell::new(vec![
+                                0x0000;
+                                65536 / std::mem::size_of::<u16>()
+                            ])
+                        }),
+                    },
                 ),
                 (
                     Segment::S1,
-                    create_bram!({ vec![0x0000; 65536 / std::mem::size_of::<u16>()] }),
+                    Bram {
+                        mem: std::cell::LazyCell::new(|| {
+                            std::cell::RefCell::new(vec![
+                                0x0000;
+                                65536 / std::mem::size_of::<u16>()
+                            ])
+                        }),
+                    },
                 ),
             ]),
-            duty_table_bram: create_bram!({
-                let pwe_init_data: &[u8; 512] = include_bytes!("asin.dat");
-                Vec::from_iter((0..256).map(|i| {
-                    u16::from_le_bytes([pwe_init_data[(i << 1) + 1], pwe_init_data[i << 1]])
-                }))
-            }),
+            duty_table_bram: Bram {
+                mem: std::cell::LazyCell::new(|| {
+                    std::cell::RefCell::new({
+                        let pwe_init_data: &[u8; 512] = include_bytes!("asin.dat");
+                        Vec::from_iter((0..256).map(|i| {
+                            u16::from_le_bytes([pwe_init_data[(i << 1) + 1], pwe_init_data[i << 1]])
+                        }))
+                    })
+                }),
+            },
             stm_bram: {
                 HashMap::from([
-                    (Segment::S0, create_bram!({ vec![0x0000; 1024 * 256] })),
-                    (Segment::S1, create_bram!({ vec![0x0000; 1024 * 256] })),
+                    (
+                        Segment::S0,
+                        Bram {
+                            mem: std::cell::LazyCell::new(|| {
+                                std::cell::RefCell::new(vec![0x0000; 1024 * 256])
+                            }),
+                        },
+                    ),
+                    (
+                        Segment::S1,
+                        Bram {
+                            mem: std::cell::LazyCell::new(|| {
+                                std::cell::RefCell::new(vec![0x0000; 1024 * 256])
+                            }),
+                        },
+                    ),
                 ])
             },
             tr_pos: Brom::new(|| {
