@@ -26,6 +26,10 @@ pub struct StdSleeper;
 
 impl Sleeper for StdSleeper {
     fn sleep(&self, duration: Duration) {
+        if duration.is_zero() {
+            return; // GRCOV_EXCL_LINE
+        }
+
         #[cfg(target_os = "windows")]
         unsafe {
             timeBeginPeriod(1);
