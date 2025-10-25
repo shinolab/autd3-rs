@@ -16,7 +16,7 @@ pub fn lookup_autd() -> Result<String, EtherCrabError> {
     tracing::debug!("Found {} network interfaces.", devices.len());
     for interface in devices.into_iter() {
         #[cfg(feature = "tracing")]
-        tracing::debug!(target: "autd3-link-ethercrab",
+        tracing::debug!(
             "Searching AUTD device on {} ({}).",
             interface.name,
             interface.desc.as_deref().unwrap_or("No description")

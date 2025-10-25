@@ -201,7 +201,7 @@ impl EtherCrabHandler {
                 }
             })?;
         #[cfg(feature = "tracing")]
-        tracing::info!(target: "autd3-link-ethercrab",
+        tracing::info!(
             "Found {} AUTD3 device{} on {}",
             groups.len(),
             if groups.len() > 1 { "s" } else { "" },
@@ -231,7 +231,7 @@ impl EtherCrabHandler {
         ))?;
 
         #[cfg(feature = "tracing")]
-        tracing::info!(target: "autd3-link-ethercrab",
+        tracing::info!(
             "Configuring Sync0 with cycle time {:?}.",
             dc_configuration.sync0_period
         );
@@ -595,7 +595,7 @@ fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                                     received: _received,
                                 }) => {
                                     #[cfg(feature = "tracing")]
-                                    tracing::trace!(target: "autd3-link-ethercrab",
+                                    tracing::trace!(
                                         "Write state failed: WorkingCounter {{ expected: {}, received: {} }}",
                                         _expected,
                                         _received
@@ -618,7 +618,7 @@ fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                                     received: _received,
                                 }) => {
                                     #[cfg(feature = "tracing")]
-                                    tracing::trace!(target: "autd3-link-ethercrab",
+                                    tracing::trace!(
                                         "Write state failed: WorkingCounter {{ expected: {}, received: {} }}",
                                         _expected,
                                         _received
@@ -643,7 +643,7 @@ fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                     all_op = false;
                     do_check_state = true;
                     #[cfg(feature = "tracing")]
-                    tracing::trace!(target: "autd3-link-ethercrab",
+                    tracing::trace!(
                         "Read state failed: WorkingCounter {{ expected: {}, received: {} }}",
                         _expected,
                         _received
