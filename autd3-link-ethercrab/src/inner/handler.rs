@@ -532,11 +532,15 @@ fn send_loop(
             .map(|g| send_task(&main_device, g))
             .collect::<FuturesUnordered<_>>();
         let mut res = Vec::with_capacity(group.groups.len());
+        #[cfg(feature = "tracing")]
+        tracing::trace!("tx_rx_dc started");
         while let Some(r) = executor::block_on(tasks.next()) {
             res.push(r);
         }
         match res.into_iter().collect::<Result<Vec<_>, _>>() {
             Ok(v) => {
+                #[cfg(feature = "tracing")]
+                tracing::trace!("tx_rx_dc done successfully: {:?}", &v);
                 all_op.store(
                     v.into_iter().all(|r| r),
                     std::sync::atomic::Ordering::Relaxed,
