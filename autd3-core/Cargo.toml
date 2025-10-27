@@ -31,7 +31,7 @@ use_meter = []
 utils = []
 sleep = []
 environment = []
-devices = []
+devices = ["common", "geometry"]
 use_nalgebra = ["dep:nalgebra"]
 
 [dependencies]
