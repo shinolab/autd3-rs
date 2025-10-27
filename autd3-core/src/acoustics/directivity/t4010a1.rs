@@ -64,9 +64,9 @@ impl Directivity for T4010A1 {
         if i == 0 {
             1.0
         } else {
-            let x = theta_deg - (i as f32 - 1.0) * 10.0;
-            ((DIR_COEF_D[i - 1] * x + DIR_COEF_C[i - 1]) * x + DIR_COEF_B[i - 1]) * x
-                + DIR_COEF_A[i - 1]
+            let idx = i - 1;
+            let x = theta_deg - idx as f32 * 10.0;
+            ((DIR_COEF_D[idx] * x + DIR_COEF_C[idx]) * x + DIR_COEF_B[idx]) * x + DIR_COEF_A[idx]
         }
     }
 }
