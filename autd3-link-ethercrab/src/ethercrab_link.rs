@@ -58,7 +58,7 @@ impl<F: Fn(usize, Status) + Send + Sync + 'static> Link for EtherCrab<F> {
             #[cfg(feature = "tokio")]
             let inner =
                 self.runtime
-                    .block_on(EtherCrabHandler::open(err_handler, &geometry, option))?;
+                    .block_on(EtherCrabHandler::open(err_handler, geometry, option))?;
             #[cfg(not(feature = "tokio"))]
             let inner = crate::inner::executor::block_on(EtherCrabHandler::open(
                 err_handler,

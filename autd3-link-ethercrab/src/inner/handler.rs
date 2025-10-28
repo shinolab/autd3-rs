@@ -164,7 +164,14 @@ impl EtherCrabHandler {
                 #[cfg(not(target_os = "windows"))]
                 let e = {
                     match ethercrab::std::tx_rx_task(&interface, tx, rx) {
-                        Ok(fut) => executor::block_on(fut).map_err(EtherCrabError::from),
+                        #[cfg(feature = "tokio")]
+                        Ok(fut) => tokio::runtime::Builder::new_current_thread()
+                            .build()
+                            .expect("Failed to build runtime")
+                            .block_on(fut)
+                            .map_err(EtherCrabError::from),
+                        #[cfg(not(feature = "tokio"))]
+                        Ok(fut) => super::executor::block_on(fut).map_err(EtherCrabError::from),
                         Err(e) => {
                             #[cfg(feature = "tracing")]
                             tracing::trace!("Failed to start TX/RX task: {}", e);
@@ -437,7 +444,10 @@ impl EtherCrabHandler {
         }
 
         if let Some(state_check_task) = self.state_check_task.take() {
-            let _ = state_check_task;
+            #[cfg(feature = "tokio")]
+            let _ = state_check_task.await;
+            #[cfg(not(feature = "tokio"))]
+            let _ = state_check_task.join();
         }
 
         Ok(())

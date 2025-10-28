@@ -44,7 +44,7 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
 
         #[cfg(all(not(target_os = "windows"), not(feature = "tokio")))]
         let th = std::thread::spawn(move || match ethercrab::std::tx_rx_task(&device, tx, rx) {
-            Ok(fut) => executor::block_on(fut)
+            Ok(fut) => super::executor::block_on(fut)
                 .map(|_| ())
                 .map_err(EtherCrabError::from),
             Err(e) => {
@@ -92,11 +92,14 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
 
         running.store(false, std::sync::atomic::Ordering::Relaxed);
 
-        th.thread().unpark();
         #[cfg(target_os = "windows")]
-        let _ = th.join();
+        {
+            th.thread().unpark();
+            let _ = th.join();
+        }
         #[cfg(all(not(target_os = "windows"), not(feature = "tokio")))]
         {
+            th.thread().unpark();
             unsafe { main_device.release_all() };
             let _ = th.join();
         }
