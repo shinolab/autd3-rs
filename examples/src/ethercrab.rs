@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         [AUTD3 {
             pos: Point3::origin(),
             rot: UnitQuaternion::identity(),
-        }; 3],
+        }; 1],
         EtherCrab::new(
             |idx, status| {
                 eprintln!("Device[{idx}]: {status}");

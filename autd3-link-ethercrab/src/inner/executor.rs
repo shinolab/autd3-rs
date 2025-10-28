@@ -1,34 +1,26 @@
 use std::future::Future;
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::Arc;
 use std::task::{Context, Poll, Wake};
 
-struct Waker {
-    condvar: Condvar,
-    mutex: Mutex<bool>,
+pub struct Waker {
+    thread: std::thread::Thread,
 }
 
 impl Waker {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
-            condvar: Condvar::new(),
-            mutex: Mutex::new(false),
+            thread: std::thread::current(),
         }
     }
 
-    fn wait(&self) {
-        let mut notified = self.mutex.lock().unwrap();
-        while !*notified {
-            notified = self.condvar.wait(notified).unwrap();
-        }
-        *notified = false;
+    pub fn wait(&self) {
+        std::thread::park();
     }
 }
 
 impl Wake for Waker {
     fn wake_by_ref(self: &Arc<Self>) {
-        let mut notified = self.mutex.lock().unwrap();
-        *notified = true;
-        self.condvar.notify_one();
+        self.thread.unpark();
     }
 
     fn wake(self: Arc<Self>) {
@@ -40,7 +32,7 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     let mut future = Box::pin(future);
 
     let waker_impl = Arc::new(Waker::new());
-    let waker = std::task::Waker::from(waker_impl.clone());
+    let waker = std::task::Waker::from(Arc::clone(&waker_impl));
     let mut context = Context::from_waker(&waker);
 
     loop {
