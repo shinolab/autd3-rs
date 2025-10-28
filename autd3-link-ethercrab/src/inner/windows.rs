@@ -1,32 +1,10 @@
 use ethercrab::ReceiveAction;
 use ethercrab::{PduRx, PduTx};
 use std::io;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::{sync::Arc, task::Waker};
 
 use crate::error::EtherCrabError;
-
-struct ParkSignal {
-    current_thread: std::thread::Thread,
-}
-
-impl ParkSignal {
-    fn new() -> Self {
-        Self {
-            current_thread: std::thread::current(),
-        }
-    }
-
-    fn wait(&self) {
-        std::thread::park();
-    }
-}
-
-impl std::task::Wake for ParkSignal {
-    fn wake(self: Arc<Self>) {
-        self.current_thread.unpark();
-    }
-}
 
 pub fn tx_rx_task_blocking<'sto>(
     device: &str,
@@ -34,8 +12,8 @@ pub fn tx_rx_task_blocking<'sto>(
     mut pdu_rx: PduRx<'sto>,
     running: Arc<AtomicBool>,
 ) -> Result<(PduTx<'sto>, PduRx<'sto>), EtherCrabError> {
-    let signal = Arc::new(ParkSignal::new());
-    let waker = Waker::from(Arc::clone(&signal));
+    let waker_impl = Arc::new(super::waker::Waker::new());
+    let waker = std::task::Waker::from(Arc::clone(&waker_impl));
 
     let mut cap = pcap::Capture::from_device(device)?
         .immediate_mode(true)
@@ -81,10 +59,7 @@ pub fn tx_rx_task_blocking<'sto>(
                             in_flight -= 1;
                         }
                     }
-                    Err(pcap::Error::NoMorePackets) => {
-                        break;
-                    }
-                    Err(pcap::Error::TimeoutExpired) => {
+                    Err(pcap::Error::NoMorePackets) | Err(pcap::Error::TimeoutExpired) => {
                         break;
                     }
                     Err(e) => {
@@ -93,7 +68,7 @@ pub fn tx_rx_task_blocking<'sto>(
                 }
             }
         } else {
-            signal.wait();
+            waker_impl.wait();
             if pdu_tx.should_exit() {
                 break;
             }

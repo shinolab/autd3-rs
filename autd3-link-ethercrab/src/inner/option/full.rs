@@ -4,7 +4,6 @@ use ethercrab::{MainDeviceConfig, Timeouts, subdevice_group::DcConfiguration};
 use thread_priority::ThreadBuilder;
 
 use super::EtherCrabOption;
-use crate::error::EtherCrabError;
 
 /// A full option for [`EtherCrab`]. See also [`EtherCrabOption`] for default settings.
 ///
@@ -32,9 +31,10 @@ pub struct EtherCrabOptionFull {
     #[cfg(feature = "core_affinity")]
     /// The CPU affinity for the TX/RX thread.
     pub tx_rx_thread_affinity: Option<core_affinity::CoreId>,
+    #[cfg(not(feature = "tokio"))]
     /// The [`ThreadBuilder`] for the main thread.
     pub main_thread_builder: ThreadBuilder,
-    #[cfg(feature = "core_affinity")]
+    #[cfg(all(not(feature = "tokio"), feature = "core_affinity"))]
     /// The CPU affinity for the main thread.
     pub main_thread_affinity: Option<core_affinity::CoreId>,
 }
@@ -76,26 +76,11 @@ impl PartialEq for EtherCrabOptionFull {
             && self.sync_tolerance == other.sync_tolerance
             && self.sync_timeout == other.sync_timeout;
         #[cfg(feature = "core_affinity")]
-        let r = r
-            && self.tx_rx_thread_affinity == other.tx_rx_thread_affinity
-            && self.main_thread_affinity == other.main_thread_affinity;
+        let r = r && self.tx_rx_thread_affinity == other.tx_rx_thread_affinity;
+        #[cfg(all(not(feature = "tokio"), feature = "core_affinity"))]
+        let r = r && self.main_thread_affinity == other.main_thread_affinity;
         r
     }
 }
-impl Eq for EtherCrabOptionFull {}
 
-impl EtherCrabOptionFull {
-    pub(crate) fn ifname(&self) -> Result<String, EtherCrabError> {
-        match self.ifname.as_ref() {
-            Some(ifname) => Ok(ifname.clone()),
-            None => {
-                #[cfg(feature = "tracing")]
-                tracing::info!("No interface name is specified. Looking for AUTD device...");
-                let ifname = crate::inner::utils::lookup_autd()?;
-                #[cfg(feature = "tracing")]
-                tracing::info!("Found EtherCAT device on {:?}", ifname);
-                Ok(ifname)
-            }
-        }
-    }
-}
+impl Eq for EtherCrabOptionFull {}
