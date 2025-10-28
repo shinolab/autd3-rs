@@ -12,7 +12,7 @@ pub fn tx_rx_task_blocking<'sto>(
     mut pdu_rx: PduRx<'sto>,
     running: Arc<AtomicBool>,
 ) -> Result<(PduTx<'sto>, PduRx<'sto>), EtherCrabError> {
-    let waker_impl = Arc::new(super::executor::Waker::new());
+    let waker_impl = Arc::new(super::waker::Waker::new());
     let waker = std::task::Waker::from(Arc::clone(&waker_impl));
 
     let mut cap = pcap::Capture::from_device(device)?
@@ -59,10 +59,7 @@ pub fn tx_rx_task_blocking<'sto>(
                             in_flight -= 1;
                         }
                     }
-                    Err(pcap::Error::NoMorePackets) => {
-                        break;
-                    }
-                    Err(pcap::Error::TimeoutExpired) => {
+                    Err(pcap::Error::NoMorePackets) | Err(pcap::Error::TimeoutExpired) => {
                         break;
                     }
                     Err(e) => {

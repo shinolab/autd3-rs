@@ -4,7 +4,12 @@ use std::{
         atomic::AtomicBool,
         mpsc::{Receiver, RecvError, SyncSender, sync_channel},
     },
-    time::{Duration, Instant},
+    time::Duration,
+};
+
+use crate::{
+    error::EtherCrabError,
+    inner::{EtherCrabOptionFull, status::Status},
 };
 
 use autd3_core::{
@@ -19,10 +24,15 @@ use ethercrab::{
 };
 use futures_util::stream::{FuturesOrdered, FuturesUnordered, StreamExt};
 
-use crate::{
-    error::EtherCrabError,
-    inner::{EtherCrabOptionFull, executor, status::Status, timer::Timer},
-};
+#[cfg(not(feature = "tokio"))]
+use std::time::Instant;
+#[cfg(feature = "tokio")]
+use tokio::time::Instant;
+
+#[cfg(not(feature = "tokio"))]
+use std::thread::JoinHandle;
+#[cfg(feature = "tokio")]
+use tokio::task::JoinHandle;
 
 pub const MAX_SUBDEVICES: usize = 32;
 pub const MAX_PDU_DATA: usize =
@@ -35,8 +45,8 @@ static PDU_STORAGE: PduStorage<MAX_FRAMES, MAX_PDU_DATA> = PduStorage::new();
 pub struct EtherCrabHandler {
     is_open: Arc<AtomicBool>,
     tx_rx_th: Option<std::thread::JoinHandle<Result<(), EtherCrabError>>>,
-    main_th: Option<std::thread::JoinHandle<()>>,
-    state_check_task: Option<std::thread::JoinHandle<()>>,
+    main_th: Option<JoinHandle<()>>,
+    state_check_task: Option<JoinHandle<()>>,
     sender: SyncSender<Vec<TxMessage>>,
     buffer_queue_receiver: Receiver<Vec<TxMessage>>,
     inputs: Arc<RwLock<Vec<u8>>>,
@@ -61,7 +71,7 @@ impl<S, DC> Groups<S, DC> {
         self.groups.iter().map(|g| g.len()).sum()
     }
 
-    fn transform<S2, DC2, E>(
+    async fn transform<S2, DC2, E>(
         self,
         f: impl AsyncFn(
             SubDeviceGroup<2, SUB_GROUP_PDI_LEN, S, DC>,
@@ -74,7 +84,7 @@ impl<S, DC> Groups<S, DC> {
             .map(|group| f(group))
             .collect::<FuturesOrdered<_>>();
         let mut groups = Vec::with_capacity(tasks.len());
-        while let Some(r) = executor::block_on(tasks.next()) {
+        while let Some(r) = tasks.next().await {
             groups.push(r?);
         }
         Ok(Groups { groups })
@@ -82,7 +92,7 @@ impl<S, DC> Groups<S, DC> {
 }
 
 impl EtherCrabHandler {
-    pub fn open<F: Fn(usize, Status) + Send + Sync + 'static>(
+    pub async fn open<F: Fn(usize, Status) + Send + Sync + 'static>(
         err_handler: F,
         geometry: &autd3_core::geometry::Geometry,
         option: EtherCrabOptionFull,
@@ -90,7 +100,18 @@ impl EtherCrabHandler {
         #[cfg(feature = "tracing")]
         tracing::debug!("Opening EtherCrab link with option: {:?}", option);
 
-        let interface = option.ifname()?;
+        let interface = match option.ifname.as_ref() {
+            Some(ifname) => ifname.clone(),
+            None => {
+                #[cfg(feature = "tracing")]
+                tracing::info!("No interface name is specified. Looking for AUTD device...");
+                let ifname = crate::inner::utils::lookup_autd().await?;
+                #[cfg(feature = "tracing")]
+                tracing::info!("Found EtherCAT device on {:?}", ifname);
+                ifname
+            }
+        };
+
         let EtherCrabOptionFull {
             ifname: _,
             buf_size,
@@ -102,8 +123,9 @@ impl EtherCrabHandler {
             tx_rx_thread_builder,
             #[cfg(feature = "core_affinity")]
             tx_rx_thread_affinity,
+            #[cfg(not(feature = "tokio"))]
             main_thread_builder,
-            #[cfg(feature = "core_affinity")]
+            #[cfg(all(not(feature = "tokio"), feature = "core_affinity"))]
             main_thread_affinity,
             state_check_period,
         } = option;
@@ -165,18 +187,17 @@ impl EtherCrabHandler {
             }
             let mut idx = 0;
             Groups {
-                groups: executor::block_on(main_device.init::<MAX_SUBDEVICES, _>(
-                    ethercat_now,
-                    |group: &GroupsArray, _sub_device| {
+                groups: main_device
+                    .init::<MAX_SUBDEVICES, _>(ethercat_now, |group: &GroupsArray, _sub_device| {
                         let g = &group.groups[idx / 2];
                         idx += 1;
                         Ok(g)
-                    },
-                ))?
-                .groups
-                .into_iter()
-                .filter(|g| !g.is_empty())
-                .collect(),
+                    })
+                    .await?
+                    .groups
+                    .into_iter()
+                    .filter(|g| !g.is_empty())
+                    .collect(),
             }
         };
 
@@ -218,42 +239,44 @@ impl EtherCrabHandler {
 
         #[cfg(feature = "tracing")]
         tracing::info!("Moving into PRE-OP with PDI");
-        let groups: Groups<PreOpPdi, NoDc> =
-            groups.transform(|group: SubDeviceGroup<_, _>| group.into_pre_op_pdi(&main_device))?;
+        let groups: Groups<PreOpPdi, NoDc> = groups
+            .transform(|group: SubDeviceGroup<_, _>| group.into_pre_op_pdi(&main_device))
+            .await?;
         #[cfg(feature = "tracing")]
         tracing::info!("Done. PDI available.");
 
-        executor::block_on(wait_for_align(
-            &groups,
-            &main_device,
-            sync_tolerance,
-            sync_timeout,
-        ))?;
+        wait_for_align(&groups, &main_device, sync_tolerance, sync_timeout).await?;
 
         #[cfg(feature = "tracing")]
         tracing::info!(
             "Configuring Sync0 with cycle time {:?}.",
             dc_configuration.sync0_period
         );
-        let groups: Groups<PreOpPdi, HasDc> =
-            groups.transform(|group: SubDeviceGroup<_, _, _, _>| {
+        let groups: Groups<PreOpPdi, HasDc> = groups
+            .transform(|group: SubDeviceGroup<_, _, _, _>| {
                 group.configure_dc_sync(&main_device, dc_configuration)
-            })?;
+            })
+            .await?;
 
         #[cfg(feature = "tracing")]
         tracing::info!("Checking if all devices are in SAFE-OP");
-        let groups: Groups<SafeOp, HasDc> =
-            groups.transform(|group: SubDeviceGroup<_, _, PreOpPdi, HasDc>| {
+        let groups: Groups<SafeOp, HasDc> = groups
+            .transform(|group: SubDeviceGroup<_, _, PreOpPdi, HasDc>| {
                 group.into_safe_op(&main_device)
-            })?;
+            })
+            .await?;
         #[cfg(feature = "tracing")]
         tracing::info!("All devices are in SAFE-OP");
 
         #[cfg(feature = "tracing")]
         tracing::info!("Setting all devices to OP");
-        let groups: Arc<Groups<Op, HasDc>> = Arc::new(groups.transform(
-            |group: SubDeviceGroup<_, _, SafeOp, HasDc>| group.request_into_op(&main_device),
-        )?);
+        let groups: Arc<Groups<Op, HasDc>> = Arc::new(
+            groups
+                .transform(|group: SubDeviceGroup<_, _, SafeOp, HasDc>| {
+                    group.request_into_op(&main_device)
+                })
+                .await?,
+        );
         let _op_request = Instant::now();
 
         let all_op = Arc::new(AtomicBool::new(false));
@@ -267,6 +290,29 @@ impl EtherCrabHandler {
             0x00u8;
             groups.len() * EC_INPUT_FRAME_SIZE
         ]));
+        #[cfg(feature = "tokio")]
+        let main_th = tokio::task::spawn({
+            let is_open = is_open.clone();
+            let all_op = all_op.clone();
+            let groups = groups.clone();
+            let main_device = main_device.clone();
+            let inputs = inputs.clone();
+            async move {
+                #[cfg(feature = "tracing")]
+                tracing::info!("Starting main task");
+                send_loop(
+                    is_open,
+                    all_op,
+                    main_device,
+                    groups,
+                    buffer_queue_sender,
+                    inputs,
+                    receiver,
+                )
+                .await;
+            }
+        });
+        #[cfg(not(feature = "tokio"))]
         let main_th = main_thread_builder.spawn({
             #[cfg(feature = "core_affinity")]
             if let Some(affinity) = main_thread_affinity {
@@ -289,7 +335,7 @@ impl EtherCrabHandler {
             move |_| {
                 #[cfg(feature = "tracing")]
                 tracing::info!("Starting main task");
-                send_loop(
+                super::executor::block_on(send_loop(
                     is_open,
                     all_op,
                     main_device,
@@ -297,15 +343,16 @@ impl EtherCrabHandler {
                     buffer_queue_sender,
                     inputs,
                     receiver,
-                );
+                ));
             }
         })?;
 
         let run = Arc::new(AtomicBool::new(false));
-        let state_check_task = std::thread::spawn({
+        #[cfg(feature = "tokio")]
+        let state_check_task = tokio::task::spawn({
             let is_open = is_open.clone();
             let run = run.clone();
-            move || {
+            async move {
                 #[cfg(feature = "tracing")]
                 tracing::info!("Starting state check task");
                 error_handler(
@@ -315,7 +362,25 @@ impl EtherCrabHandler {
                     groups,
                     err_handler,
                     state_check_period,
-                );
+                )
+                .await;
+            }
+        });
+        #[cfg(not(feature = "tokio"))]
+        let state_check_task = std::thread::spawn({
+            let is_open = is_open.clone();
+            let run = run.clone();
+            move || {
+                #[cfg(feature = "tracing")]
+                tracing::info!("Starting state check task");
+                super::executor::block_on(error_handler(
+                    is_open,
+                    run,
+                    main_device,
+                    groups,
+                    err_handler,
+                    state_check_period,
+                ));
             }
         });
 
@@ -342,7 +407,7 @@ impl EtherCrabHandler {
         })
     }
 
-    pub fn close(&mut self) -> Result<(), LinkError> {
+    pub async fn close(&mut self) -> Result<(), LinkError> {
         if !self.is_open() {
             return Ok(());
         }
@@ -365,6 +430,9 @@ impl EtherCrabHandler {
         }
 
         if let Some(task) = self.main_th.take() {
+            #[cfg(feature = "tokio")]
+            let _ = task.await;
+            #[cfg(not(feature = "tokio"))]
             let _ = task.join();
         }
 
@@ -463,7 +531,10 @@ async fn wait_for_align(
                 return Err(EtherCrabError::SyncTimeout(max_deviation));
             }
         }
-        Timer::after(Duration::from_millis(1)).await;
+        #[cfg(feature = "tokio")]
+        tokio::time::sleep(Duration::from_millis(1)).await;
+        #[cfg(not(feature = "tokio"))]
+        super::timer::Timer::after(Duration::from_millis(1)).await;
     }
 
     #[cfg(feature = "tracing")]
@@ -478,11 +549,14 @@ async fn send_task(
 ) -> Result<bool, ethercrab::error::Error> {
     let start = Instant::now();
     let resp = group.tx_rx_dc(main_device).await?;
-    Timer::until(start + resp.extra.next_cycle_wait).await;
+    #[cfg(feature = "tokio")]
+    tokio::time::sleep_until(start + resp.extra.next_cycle_wait).await;
+    #[cfg(not(feature = "tokio"))]
+    super::timer::Timer::until(start + resp.extra.next_cycle_wait).await;
     Ok(resp.all_op())
 }
 
-fn send_loop(
+async fn send_loop(
     running: Arc<AtomicBool>,
     all_op: Arc<AtomicBool>,
     main_device: Arc<MainDevice<'_>>,
@@ -532,7 +606,7 @@ fn send_loop(
             .map(|g| send_task(&main_device, g))
             .collect::<FuturesUnordered<_>>();
         let mut res = Vec::with_capacity(group.groups.len());
-        while let Some(r) = executor::block_on(tasks.next()) {
+        while let Some(r) = tasks.next().await {
             res.push(r);
         }
         match res.into_iter().collect::<Result<Vec<_>, _>>() {
@@ -558,7 +632,7 @@ fn send_loop(
     }
 }
 
-fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
+async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
     is_open: Arc<AtomicBool>,
     run: Arc<AtomicBool>,
     main_device: Arc<MainDevice<'_>>,
@@ -577,13 +651,15 @@ fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
             .flat_map(|g| g.iter(&main_device))
             .enumerate()
         {
-            match sub_device.read_state() {
+            match sub_device.read_state().await {
                 Ok(state) => {
                     if state != State::OPERATIONAL {
                         all_op = false;
                         do_check_state = true;
                         if state.is_safe_op() && state.is_error() {
-                            match sub_device.write_state(&main_device, State::SAFE_OP + State::ACK)
+                            match sub_device
+                                .write_state(&main_device, State::SAFE_OP + State::ACK)
+                                .await
                             {
                                 Ok(_) => {
                                     if run.load(std::sync::atomic::Ordering::Relaxed) {
@@ -607,7 +683,10 @@ fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                                 }
                             }
                         } else if state.is_safe_op() {
-                            match sub_device.write_state(&main_device, State::OPERATIONAL) {
+                            match sub_device
+                                .write_state(&main_device, State::OPERATIONAL)
+                                .await
+                            {
                                 Ok(_) => {
                                     if run.load(std::sync::atomic::Ordering::Relaxed) {
                                         err_handler(idx + 1, Status::StateChanged);

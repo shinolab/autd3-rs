@@ -10,13 +10,14 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = []
+features = ["core_affinity", "tracing", "tokio"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = ["core_affinity", "tracing"]
 core_affinity = ["dep:core_affinity"]
 tracing = ["dep:tracing"]
+tokio = ["dep:tokio"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["link"] }
@@ -26,6 +27,7 @@ futures-util = { version = "0.3.31", default-features = false, features = ["std"
 thread-priority = { version = "3.0.0", default-features = false }
 tracing = { version = "0.1.41", default-features = false, optional = true }
 pcap = { version = "2.3.0", default-features = false }
+tokio = { version = "1.48.0", default-features = false, features = ["rt", "rt-multi-thread", "time"], optional = true }
 
 [target.'cfg(windows)'.build-dependencies]
 cc = { version = "1.2.39", default-features = false }

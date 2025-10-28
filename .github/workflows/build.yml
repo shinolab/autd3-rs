@@ -49,7 +49,7 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
-      - run: cargo make check --no-default-features --exclude autd3-examples --features "gain, modulation, link-audit, link-nop, greedy, gs, gspat, naive, local, remote, link"
+      - run: cargo make check --no-default-features --exclude autd3-examples --features "gain, modulation, link-audit, link-nop, greedy, gs, gspat, naive, local, remote, link, tokio"
 
   build-docs:
     name: build-docs
