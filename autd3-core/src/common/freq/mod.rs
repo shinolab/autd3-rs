@@ -88,7 +88,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn arithmetic() {
+    fn ops() {
         assert_eq!(200 * Hz, 100 * Hz + 100 * Hz);
         assert_eq!(0 * Hz, 100 * Hz - 100 * Hz);
         assert_eq!(200 * Hz, 100 * Hz * 2);
