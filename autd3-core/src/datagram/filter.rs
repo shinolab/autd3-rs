@@ -1,15 +1,15 @@
 use crate::geometry::{Device, Geometry};
 
-/// A filter that represents which devices are enabled.
+/// [`DeviceMask`] represents which devices are enabled.
 pub enum DeviceMask {
     /// All devices are enabled.
     AllEnabled,
-    /// A filtered mask where each value represents whether the corresponding device is enabled.
+    /// If the device at the index is enabled or not.
     Masked(Vec<bool>),
 }
 
 impl DeviceMask {
-    /// Creates a [`DeviceMask`] where the value at each index is `f(&Device)`
+    /// Creates a [`DeviceMask::Masked`] where the value at each index is `f(&Device)`
     pub fn from_fn(geo: &Geometry, f: impl Fn(&Device) -> bool) -> Self {
         Self::Masked(geo.iter().map(f).collect())
     }

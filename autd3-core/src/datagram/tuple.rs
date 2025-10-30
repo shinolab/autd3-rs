@@ -16,7 +16,6 @@ pub enum CombinedError<E1, E2> {
     E2(E2),
 }
 
-// GRCOV_EXCL_START
 impl<E1, E2> core::error::Error for CombinedError<E1, E2>
 where
     E1: core::error::Error + core::fmt::Display + 'static,
@@ -37,12 +36,11 @@ where
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::E1(e) => write!(f, "E1: {}", e),
-            Self::E2(e) => write!(f, "E2: {}", e),
+            Self::E1(e) => write!(f, "{}", e),
+            Self::E2(e) => write!(f, "{}", e),
         }
     }
 }
-// GRCOV_EXCL_STOP
 
 impl<'a, G1, G2, D1, D2, E1, E2> Datagram<'a> for (D1, D2)
 where
@@ -78,6 +76,31 @@ mod tests {
     use super::*;
 
     use core::time::Duration;
+
+    #[test]
+    fn error() {
+        #[derive(Debug)]
+        struct Error(&'static str);
+        impl core::error::Error for Error {}
+        impl core::fmt::Display for Error {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+
+        let e1: CombinedError<Error, Error> = CombinedError::E1(Error("error1"));
+        let e2: CombinedError<Error, Error> = CombinedError::E2(Error("error2"));
+        assert_eq!(
+            std::error::Error::source(&e1).map(|e| e.to_string()),
+            Some("error1".to_string())
+        );
+        assert_eq!(
+            std::error::Error::source(&e2).map(|e| e.to_string()),
+            Some("error2".to_string())
+        );
+        assert_eq!(format!("{}", e1), "error1");
+        assert_eq!(format!("{}", e2), "error2");
+    }
 
     #[derive(Debug)]
     pub struct TestDatagram {

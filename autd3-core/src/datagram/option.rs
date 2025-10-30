@@ -2,7 +2,9 @@ use core::time::Duration;
 
 use crate::common::DEFAULT_TIMEOUT;
 
-/// The option of the datagram.
+/// The option of the [`Datagram`].
+///
+/// [`Datagram`]: super::Datagram
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DatagramOption {
     /// The default timeout of the datagram.
