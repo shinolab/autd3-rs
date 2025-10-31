@@ -6,6 +6,11 @@ use crate::common::{METER, ULTRASOUND_FREQ};
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Environment {
+    #[cfg_attr(feature = "use_meter", doc = "Sound speed in the environment [m/s]")]
+    #[cfg_attr(
+        not(feature = "use_meter"),
+        doc = "Sound speed in the environment [mm/s]"
+    )]
     pub sound_speed: f32,
 }
 
@@ -19,12 +24,12 @@ impl Environment {
 
     /// Sets the sound speed of envs from the temperature.
     ///
-    /// This is equivalent to `Self::set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3)`.
+    /// This is equivalent to [`Self::set_sound_speed_from_temp_with`](t, 1.4, 8.314_463, 28.9647e-3).
     pub fn set_sound_speed_from_temp(&mut self, t: f32) {
         self.set_sound_speed_from_temp_with(t, 1.4, 8.314_463, 28.9647e-3);
     }
 
-    /// Sets the sound speed of envs from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` [kg/mol].
+    /// Sets the sound speed of envs from the temperature `t`, heat capacity ratio `k`, gas constant `r`, and molar mass `m` \[kg/mol\].
     pub fn set_sound_speed_from_temp_with(&mut self, t: f32, k: f32, r: f32, m: f32) {
         let c2 = k * r * (273.15 + t) / m;
         let c = c2.sqrt();
