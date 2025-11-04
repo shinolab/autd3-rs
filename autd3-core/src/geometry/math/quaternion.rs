@@ -155,6 +155,7 @@ impl UnitQuaternion {
 impl core::ops::Mul for UnitQuaternion {
     type Output = Self;
 
+    #[inline]
     #[allow(clippy::op_ref)]
     fn mul(self, rhs: Self) -> Self::Output {
         &self * rhs
@@ -164,6 +165,7 @@ impl core::ops::Mul for UnitQuaternion {
 impl core::ops::Mul<UnitQuaternion> for &UnitQuaternion {
     type Output = UnitQuaternion;
 
+    #[inline]
     fn mul(self, rhs: UnitQuaternion) -> Self::Output {
         let w = self.w * rhs.w - self.i * rhs.i - self.j * rhs.j - self.k * rhs.k;
         let i = self.w * rhs.i + self.i * rhs.w + self.j * rhs.k - self.k * rhs.j;
@@ -176,6 +178,7 @@ impl core::ops::Mul<UnitQuaternion> for &UnitQuaternion {
 impl core::ops::Mul<&Vector3> for &UnitQuaternion {
     type Output = Vector3;
 
+    #[inline]
     fn mul(self, rhs: &Vector3) -> Self::Output {
         let t = self.imag().cross(rhs) * 2.0;
         let cross = self.imag().cross(&t);
@@ -186,6 +189,7 @@ impl core::ops::Mul<&Vector3> for &UnitQuaternion {
 impl core::ops::Mul<Vector3> for UnitQuaternion {
     type Output = Vector3;
 
+    #[inline]
     fn mul(self, rhs: Vector3) -> Self::Output {
         &self * &rhs
     }

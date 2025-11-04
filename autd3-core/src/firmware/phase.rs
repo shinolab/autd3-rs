@@ -51,6 +51,12 @@ impl core::ops::Add<Phase> for Phase {
     }
 }
 
+impl core::ops::AddAssign for Phase {
+    fn add_assign(&mut self, rhs: Phase) {
+        self.0 = self.0.wrapping_add(rhs.0);
+    }
+}
+
 impl core::ops::Sub<Phase> for Phase {
     type Output = Phase;
 
@@ -59,11 +65,25 @@ impl core::ops::Sub<Phase> for Phase {
     }
 }
 
+impl core::ops::SubAssign for Phase {
+    fn sub_assign(&mut self, rhs: Phase) {
+        self.0 = self.0.wrapping_sub(rhs.0);
+    }
+}
+
 impl core::ops::Mul<u8> for Phase {
     type Output = Phase;
 
     fn mul(self, rhs: u8) -> Self::Output {
         Phase(self.0.wrapping_mul(rhs))
+    }
+}
+
+impl core::ops::Mul<Phase> for u8 {
+    type Output = Phase;
+
+    fn mul(self, rhs: Phase) -> Self::Output {
+        Phase(self.wrapping_mul(rhs.0))
     }
 }
 
@@ -88,6 +108,15 @@ mod tests {
     }
 
     #[rstest::rstest]
+    #[case(Phase(0x02), Phase(0x01), Phase(0x01))]
+    #[case(Phase(0xFE), Phase(0x7F), Phase(0x7F))]
+    #[case(Phase(0x7E), Phase(0x7F), Phase(0xFF))]
+    fn add_assign(#[case] expected: Phase, #[case] mut lhs: Phase, #[case] rhs: Phase) {
+        lhs += rhs;
+        assert_eq!(expected, lhs);
+    }
+
+    #[rstest::rstest]
     #[case(Phase::ZERO, Phase(0x01), Phase(0x01))]
     #[case(Phase(0x01), Phase(0x02), Phase(0x01))]
     #[case(Phase(0x80), Phase(0x7F), Phase(0xFF))]
@@ -96,11 +125,21 @@ mod tests {
     }
 
     #[rstest::rstest]
+    #[case(Phase::ZERO, Phase(0x01), Phase(0x01))]
+    #[case(Phase(0x01), Phase(0x02), Phase(0x01))]
+    #[case(Phase(0x80), Phase(0x7F), Phase(0xFF))]
+    fn sub_assign(#[case] expected: Phase, #[case] mut lhs: Phase, #[case] rhs: Phase) {
+        lhs -= rhs;
+        assert_eq!(expected, lhs);
+    }
+
+    #[rstest::rstest]
     #[case(Phase(0x02), Phase(0x01), 2)]
     #[case(Phase(0xFE), Phase(0x7F), 2)]
     #[case(Phase::ZERO, Phase(0x80), 2)]
     fn mul(#[case] expected: Phase, #[case] lhs: Phase, #[case] rhs: u8) {
         assert_eq!(expected, lhs * rhs);
+        assert_eq!(expected, rhs * lhs);
     }
 
     #[rstest::rstest]

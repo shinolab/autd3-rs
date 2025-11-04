@@ -27,21 +27,26 @@ impl LinkError {
     }
 }
 
-// GRCOV_EXCL_START
 impl From<std::io::Error> for LinkError {
     fn from(err: std::io::Error) -> Self {
         LinkError::new(err.to_string())
     }
 }
-// GRCOV_EXCL_STOP
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn link_error_closed() {
+    fn closed() {
         let err = LinkError::closed();
         assert_eq!("Link is closed", err.to_string());
+    }
+
+    #[test]
+    fn from_io_error() {
+        let io_err = std::io::Error::other("io error");
+        let link_err: LinkError = io_err.into();
+        assert_eq!("io error", link_err.to_string());
     }
 }

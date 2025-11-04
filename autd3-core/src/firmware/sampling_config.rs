@@ -1,4 +1,4 @@
-use core::{convert::Infallible, fmt::Debug, num::NonZeroU16, time::Duration};
+use core::{fmt::Debug, num::NonZeroU16, time::Duration};
 
 use crate::{
     common::{Freq, Hz, ULTRASOUND_FREQ},
@@ -24,7 +24,6 @@ pub enum SamplingConfigError {
     PeriodOutOfRange(Duration, Duration, Duration),
 }
 
-// GRCOV_EXCL_START
 impl core::fmt::Display for SamplingConfigError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
@@ -76,13 +75,6 @@ impl core::fmt::Display for SamplingConfigError {
 }
 
 impl core::error::Error for SamplingConfigError {}
-
-impl From<Infallible> for SamplingConfigError {
-    fn from(_: Infallible) -> Self {
-        unreachable!()
-    }
-}
-// GRCOV_EXCL_STOP
 
 /// Nearest type.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -362,5 +354,35 @@ mod tests {
     #[test]
     fn debug(#[case] expect: &str, #[case] config: SamplingConfig) {
         assert_eq!(expect, format!("{config:?}"));
+    }
+
+    #[rstest::rstest]
+    #[case("Sampling divide must not be zero", SamplingConfigError::DivideInvalid)]
+    #[case(
+        "Sampling frequency (39999 Hz) must divide the ultrasound frequency",
+        SamplingConfigError::FreqInvalid(39999 * Hz),
+    )]
+    #[case(
+        "Sampling frequency (39999 Hz) must divide the ultrasound frequency",
+        SamplingConfigError::FreqInvalidF(39999. * Hz),
+    )]
+    #[case(
+        "Sampling period (25.000025ms) must be a multiple of the ultrasound period",
+        SamplingConfigError::PeriodInvalid(Duration::from_micros(25000) + Duration::from_nanos(25)),
+    )]
+    #[case(
+        "Sampling frequency (0 Hz) is out of range ([1 Hz, 2 Hz])",
+        SamplingConfigError::FreqOutOfRange(0 * Hz, 1 * Hz, 2 * Hz),
+    )]
+    #[case(
+        "Sampling frequency (0 Hz) is out of range ([1 Hz, 2 Hz])",
+        SamplingConfigError::FreqOutOfRangeF(0. * Hz, 1. * Hz, 2. * Hz),
+    )]
+    #[case(
+        "Sampling period (12.5ms) is out of range ([25µs, 1.638375s])",
+        SamplingConfigError::PeriodOutOfRange(Duration::from_micros(12500), ULTRASOUND_PERIOD, Duration::from_micros(u16::MAX as u64 * ULTRASOUND_PERIOD.as_micros() as u64)),
+    )]
+    fn err_display(#[case] expect: &str, #[case] err: SamplingConfigError) {
+        assert_eq!(expect, format!("{}", err));
     }
 }

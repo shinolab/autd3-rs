@@ -166,6 +166,7 @@ impl Vector3 {
 impl core::ops::Neg for Vector3 {
     type Output = Self;
 
+    #[inline]
     fn neg(self) -> Self::Output {
         Self {
             x: -self.x,
@@ -178,6 +179,7 @@ impl core::ops::Neg for Vector3 {
 impl core::ops::Add<&Vector3> for Vector3 {
     type Output = Self;
 
+    #[inline]
     fn add(self, rhs: &Vector3) -> Self::Output {
         Self {
             x: self.x + rhs.x,
@@ -190,6 +192,7 @@ impl core::ops::Add<&Vector3> for Vector3 {
 impl core::ops::Add for Vector3 {
     type Output = Self;
 
+    #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         Self {
             x: self.x + rhs.x,
@@ -202,6 +205,7 @@ impl core::ops::Add for Vector3 {
 impl core::ops::Mul<f32> for Vector3 {
     type Output = Self;
 
+    #[inline]
     fn mul(self, rhs: f32) -> Self::Output {
         Self {
             x: self.x * rhs,
@@ -214,6 +218,7 @@ impl core::ops::Mul<f32> for Vector3 {
 impl core::ops::Div<f32> for Vector3 {
     type Output = Self;
 
+    #[inline]
     fn div(self, rhs: f32) -> Self::Output {
         Self {
             x: self.x / rhs,
@@ -224,6 +229,7 @@ impl core::ops::Div<f32> for Vector3 {
 }
 
 impl core::iter::Sum for Vector3 {
+    #[inline]
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(
             Self {
@@ -247,16 +253,19 @@ pub struct UnitVector3 {
 }
 
 impl UnitVector3 {
+    #[inline]
     #[must_use]
     pub const fn new_unchecked(v: Vector3) -> Self {
         Self { vec: v }
     }
 
+    #[inline]
     #[must_use]
     pub const fn into_inner(self) -> Vector3 {
         self.vec
     }
 
+    #[inline]
     #[must_use]
     pub fn new_normalize(v: Vector3) -> Self {
         Self { vec: v.normalize() }
@@ -266,6 +275,7 @@ impl UnitVector3 {
 impl core::ops::Deref for UnitVector3 {
     type Target = Vector3;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.vec
     }

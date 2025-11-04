@@ -13,6 +13,14 @@ pub struct AUTD3<R: Into<UnitQuaternion> + Debug> {
     pub rot: R,
 }
 
+impl<R: Into<UnitQuaternion> + Debug> AUTD3<R> {
+    /// Create a new [`AUTD3`].
+    #[must_use]
+    pub fn new(pos: Point3, rot: R) -> Self {
+        Self { pos, rot }
+    }
+}
+
 impl Default for AUTD3<UnitQuaternion> {
     fn default() -> Self {
         Self {
@@ -36,14 +44,6 @@ impl AUTD3<UnitQuaternion> {
     /// The height of the device (including the substrate).
     pub const DEVICE_HEIGHT: f32 = 151.4 * mm;
 
-    #[must_use]
-    const fn is_missing_transducer(x: usize, y: usize) -> bool {
-        if Self::NUM_TRANS_X <= x || Self::NUM_TRANS_Y <= y {
-            return true;
-        }
-        y == 1 && (x == 1 || x == 2 || x == 16)
-    }
-
     /// Gets the index in x- and y-axis from the transducer index.
     #[must_use]
     pub const fn grid_id(idx: usize) -> (usize, usize) {
@@ -57,23 +57,22 @@ impl AUTD3<UnitQuaternion> {
     }
 }
 
-impl<R: Into<UnitQuaternion> + Debug> AUTD3<R> {
-    /// Create a new AUTD3 device.
+impl AUTD3<UnitQuaternion> {
     #[must_use]
-    pub fn new(pos: Point3, rot: R) -> Self {
-        Self { pos, rot }
+    const fn is_missing_transducer(x: usize, y: usize) -> bool {
+        y == 1 && (x == 1 || x == 2 || x == 16)
     }
 }
 
 impl<R: Into<UnitQuaternion> + Debug> From<AUTD3<R>> for Device {
     fn from(autd3: AUTD3<R>) -> Self {
-        let rot = autd3.rot.into();
+        let rotation = autd3.rot.into();
         let isometry = Isometry3 {
-            rotation: rot,
+            rotation,
             translation: Translation3::from(autd3.pos),
         };
         Self::new(
-            rot,
+            rotation,
             (0..AUTD3::NUM_TRANS_Y)
                 .flat_map(|y| {
                     (0..AUTD3::NUM_TRANS_X)
@@ -95,9 +94,9 @@ impl<R: Into<UnitQuaternion> + Debug> From<AUTD3<R>> for Device {
 
 #[cfg(test)]
 mod tests {
-    use crate::geometry::Vector3;
-
     use super::*;
+
+    use crate::geometry::Vector3;
 
     #[test]
     fn num_devices() {
@@ -194,275 +193,21 @@ mod tests {
         approx::assert_relative_eq!(expected.z, dev[idx].position().z, epsilon = 1e-6);
     }
 
-    #[rstest::rstest]
-    #[case(0, 0, false)]
-    #[case(1, 0, false)]
-    #[case(2, 0, false)]
-    #[case(3, 0, false)]
-    #[case(4, 0, false)]
-    #[case(5, 0, false)]
-    #[case(6, 0, false)]
-    #[case(7, 0, false)]
-    #[case(8, 0, false)]
-    #[case(9, 0, false)]
-    #[case(10, 0, false)]
-    #[case(11, 0, false)]
-    #[case(12, 0, false)]
-    #[case(13, 0, false)]
-    #[case(14, 0, false)]
-    #[case(15, 0, false)]
-    #[case(16, 0, false)]
-    #[case(17, 0, false)]
-    #[case(0, 1, false)]
-    #[case(1, 1, true)]
-    #[case(2, 1, true)]
-    #[case(3, 1, false)]
-    #[case(4, 1, false)]
-    #[case(5, 1, false)]
-    #[case(6, 1, false)]
-    #[case(7, 1, false)]
-    #[case(8, 1, false)]
-    #[case(9, 1, false)]
-    #[case(10, 1, false)]
-    #[case(11, 1, false)]
-    #[case(12, 1, false)]
-    #[case(13, 1, false)]
-    #[case(14, 1, false)]
-    #[case(15, 1, false)]
-    #[case(16, 1, true)]
-    #[case(17, 1, false)]
-    #[case(0, 2, false)]
-    #[case(1, 2, false)]
-    #[case(2, 2, false)]
-    #[case(3, 2, false)]
-    #[case(4, 2, false)]
-    #[case(5, 2, false)]
-    #[case(6, 2, false)]
-    #[case(7, 2, false)]
-    #[case(8, 2, false)]
-    #[case(9, 2, false)]
-    #[case(10, 2, false)]
-    #[case(11, 2, false)]
-    #[case(12, 2, false)]
-    #[case(13, 2, false)]
-    #[case(14, 2, false)]
-    #[case(15, 2, false)]
-    #[case(16, 2, false)]
-    #[case(17, 2, false)]
-    #[case(0, 3, false)]
-    #[case(1, 3, false)]
-    #[case(2, 3, false)]
-    #[case(3, 3, false)]
-    #[case(4, 3, false)]
-    #[case(5, 3, false)]
-    #[case(6, 3, false)]
-    #[case(7, 3, false)]
-    #[case(8, 3, false)]
-    #[case(9, 3, false)]
-    #[case(10, 3, false)]
-    #[case(11, 3, false)]
-    #[case(12, 3, false)]
-    #[case(13, 3, false)]
-    #[case(14, 3, false)]
-    #[case(15, 3, false)]
-    #[case(16, 3, false)]
-    #[case(17, 3, false)]
-    #[case(0, 4, false)]
-    #[case(1, 4, false)]
-    #[case(2, 4, false)]
-    #[case(3, 4, false)]
-    #[case(4, 4, false)]
-    #[case(5, 4, false)]
-    #[case(6, 4, false)]
-    #[case(7, 4, false)]
-    #[case(8, 4, false)]
-    #[case(9, 4, false)]
-    #[case(10, 4, false)]
-    #[case(11, 4, false)]
-    #[case(12, 4, false)]
-    #[case(13, 4, false)]
-    #[case(14, 4, false)]
-    #[case(15, 4, false)]
-    #[case(16, 4, false)]
-    #[case(17, 4, false)]
-    #[case(0, 5, false)]
-    #[case(1, 5, false)]
-    #[case(2, 5, false)]
-    #[case(3, 5, false)]
-    #[case(4, 5, false)]
-    #[case(5, 5, false)]
-    #[case(6, 5, false)]
-    #[case(7, 5, false)]
-    #[case(8, 5, false)]
-    #[case(9, 5, false)]
-    #[case(10, 5, false)]
-    #[case(11, 5, false)]
-    #[case(12, 5, false)]
-    #[case(13, 5, false)]
-    #[case(14, 5, false)]
-    #[case(15, 5, false)]
-    #[case(16, 5, false)]
-    #[case(17, 5, false)]
-    #[case(0, 6, false)]
-    #[case(1, 6, false)]
-    #[case(2, 6, false)]
-    #[case(3, 6, false)]
-    #[case(4, 6, false)]
-    #[case(5, 6, false)]
-    #[case(6, 6, false)]
-    #[case(7, 6, false)]
-    #[case(8, 6, false)]
-    #[case(9, 6, false)]
-    #[case(10, 6, false)]
-    #[case(11, 6, false)]
-    #[case(12, 6, false)]
-    #[case(13, 6, false)]
-    #[case(14, 6, false)]
-    #[case(15, 6, false)]
-    #[case(16, 6, false)]
-    #[case(17, 6, false)]
-    #[case(0, 7, false)]
-    #[case(1, 7, false)]
-    #[case(2, 7, false)]
-    #[case(3, 7, false)]
-    #[case(4, 7, false)]
-    #[case(5, 7, false)]
-    #[case(6, 7, false)]
-    #[case(7, 7, false)]
-    #[case(8, 7, false)]
-    #[case(9, 7, false)]
-    #[case(10, 7, false)]
-    #[case(11, 7, false)]
-    #[case(12, 7, false)]
-    #[case(13, 7, false)]
-    #[case(14, 7, false)]
-    #[case(15, 7, false)]
-    #[case(16, 7, false)]
-    #[case(17, 7, false)]
-    #[case(0, 8, false)]
-    #[case(1, 8, false)]
-    #[case(2, 8, false)]
-    #[case(3, 8, false)]
-    #[case(4, 8, false)]
-    #[case(5, 8, false)]
-    #[case(6, 8, false)]
-    #[case(7, 8, false)]
-    #[case(8, 8, false)]
-    #[case(9, 8, false)]
-    #[case(10, 8, false)]
-    #[case(11, 8, false)]
-    #[case(12, 8, false)]
-    #[case(13, 8, false)]
-    #[case(14, 8, false)]
-    #[case(15, 8, false)]
-    #[case(16, 8, false)]
-    #[case(17, 8, false)]
-    #[case(0, 9, false)]
-    #[case(1, 9, false)]
-    #[case(2, 9, false)]
-    #[case(3, 9, false)]
-    #[case(4, 9, false)]
-    #[case(5, 9, false)]
-    #[case(6, 9, false)]
-    #[case(7, 9, false)]
-    #[case(8, 9, false)]
-    #[case(9, 9, false)]
-    #[case(10, 9, false)]
-    #[case(11, 9, false)]
-    #[case(12, 9, false)]
-    #[case(13, 9, false)]
-    #[case(14, 9, false)]
-    #[case(15, 9, false)]
-    #[case(16, 9, false)]
-    #[case(17, 9, false)]
-    #[case(0, 10, false)]
-    #[case(1, 10, false)]
-    #[case(2, 10, false)]
-    #[case(3, 10, false)]
-    #[case(4, 10, false)]
-    #[case(5, 10, false)]
-    #[case(6, 10, false)]
-    #[case(7, 10, false)]
-    #[case(8, 10, false)]
-    #[case(9, 10, false)]
-    #[case(10, 10, false)]
-    #[case(11, 10, false)]
-    #[case(12, 10, false)]
-    #[case(13, 10, false)]
-    #[case(14, 10, false)]
-    #[case(15, 10, false)]
-    #[case(16, 10, false)]
-    #[case(17, 10, false)]
-    #[case(0, 11, false)]
-    #[case(1, 11, false)]
-    #[case(2, 11, false)]
-    #[case(3, 11, false)]
-    #[case(4, 11, false)]
-    #[case(5, 11, false)]
-    #[case(6, 11, false)]
-    #[case(7, 11, false)]
-    #[case(8, 11, false)]
-    #[case(9, 11, false)]
-    #[case(10, 11, false)]
-    #[case(11, 11, false)]
-    #[case(12, 11, false)]
-    #[case(13, 11, false)]
-    #[case(14, 11, false)]
-    #[case(15, 11, false)]
-    #[case(16, 11, false)]
-    #[case(17, 11, false)]
-    #[case(0, 12, false)]
-    #[case(1, 12, false)]
-    #[case(2, 12, false)]
-    #[case(3, 12, false)]
-    #[case(4, 12, false)]
-    #[case(5, 12, false)]
-    #[case(6, 12, false)]
-    #[case(7, 12, false)]
-    #[case(8, 12, false)]
-    #[case(9, 12, false)]
-    #[case(10, 12, false)]
-    #[case(11, 12, false)]
-    #[case(12, 12, false)]
-    #[case(13, 12, false)]
-    #[case(14, 12, false)]
-    #[case(15, 12, false)]
-    #[case(16, 12, false)]
-    #[case(17, 12, false)]
-    #[case(0, 13, false)]
-    #[case(1, 13, false)]
-    #[case(2, 13, false)]
-    #[case(3, 13, false)]
-    #[case(4, 13, false)]
-    #[case(5, 13, false)]
-    #[case(6, 13, false)]
-    #[case(7, 13, false)]
-    #[case(8, 13, false)]
-    #[case(9, 13, false)]
-    #[case(10, 13, false)]
-    #[case(11, 13, false)]
-    #[case(12, 13, false)]
-    #[case(13, 13, false)]
-    #[case(14, 13, false)]
-    #[case(15, 13, false)]
-    #[case(16, 13, false)]
-    #[case(17, 13, false)]
-    fn test_is_missing_transducer(#[case] x: usize, #[case] y: usize, #[case] expected: bool) {
-        assert_eq!(expected, AUTD3::is_missing_transducer(x, y));
-    }
-
     #[test]
-    fn test_is_missing_transducer_out_of_range() {
-        (18..=256).for_each(|x| {
-            (0..=256).for_each(|y| {
-                assert!(AUTD3::is_missing_transducer(x, y));
-            });
-        });
-        (0..=256).for_each(|x| {
-            (14..=256).for_each(|y| {
-                assert!(AUTD3::is_missing_transducer(x, y));
-            });
-        });
+    fn is_missing_transducer() {
+        assert!((0..AUTD3::NUM_TRANS_X).all(|x| !AUTD3::is_missing_transducer(x, 0)));
+
+        assert!(!AUTD3::is_missing_transducer(0, 1));
+        assert!(AUTD3::is_missing_transducer(1, 1));
+        assert!(AUTD3::is_missing_transducer(2, 1));
+        assert!((3..16).all(|x| !AUTD3::is_missing_transducer(x, 1)));
+        assert!(AUTD3::is_missing_transducer(16, 1));
+        assert!(!AUTD3::is_missing_transducer(17, 1));
+
+        assert!(
+            (2..AUTD3::NUM_TRANS_Y)
+                .all(|y| { (0..AUTD3::NUM_TRANS_X).all(|x| !AUTD3::is_missing_transducer(x, y)) })
+        );
     }
 
     #[rstest::rstest]
@@ -715,7 +460,7 @@ mod tests {
     #[case(246, (15, 13))]
     #[case(247, (16, 13))]
     #[case(248, (17, 13))]
-    fn test_grid_id(#[case] idx: usize, #[case] expected: (usize, usize)) {
+    fn grid_id(#[case] idx: usize, #[case] expected: (usize, usize)) {
         assert_eq!(expected, AUTD3::grid_id(idx));
     }
 }

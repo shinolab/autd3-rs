@@ -8,6 +8,7 @@ pub struct Point3 {
 }
 
 impl Point3 {
+    #[inline]
     #[must_use]
     pub const fn new(x: f32, y: f32, z: f32) -> Self {
         Self {
@@ -15,6 +16,7 @@ impl Point3 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub const fn origin() -> Self {
         Self {
@@ -48,6 +50,7 @@ impl Point3 {
 }
 
 impl From<Vector3> for Point3 {
+    #[inline]
     fn from(coords: Vector3) -> Self {
         Self { coords }
     }
@@ -56,6 +59,7 @@ impl From<Vector3> for Point3 {
 impl core::ops::Deref for Point3 {
     type Target = Vector3;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.coords
     }
@@ -64,6 +68,7 @@ impl core::ops::Deref for Point3 {
 impl core::ops::Add<Vector3> for Point3 {
     type Output = Self;
 
+    #[inline]
     fn add(self, rhs: Vector3) -> Self::Output {
         Self {
             coords: Vector3 {
@@ -78,6 +83,7 @@ impl core::ops::Add<Vector3> for Point3 {
 impl core::ops::Sub for Point3 {
     type Output = Vector3;
 
+    #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
         Vector3 {
             x: self.coords.x - rhs.coords.x,
@@ -90,6 +96,7 @@ impl core::ops::Sub for Point3 {
 impl core::ops::Sub<Vector3> for Point3 {
     type Output = Self;
 
+    #[inline]
     fn sub(self, rhs: Vector3) -> Self::Output {
         Self {
             coords: Vector3 {
@@ -104,6 +111,7 @@ impl core::ops::Sub<Vector3> for Point3 {
 impl core::ops::Mul<f32> for Point3 {
     type Output = Self;
 
+    #[inline]
     fn mul(self, rhs: f32) -> Self::Output {
         Self {
             coords: self.coords * rhs,
@@ -114,6 +122,7 @@ impl core::ops::Mul<f32> for Point3 {
 impl core::ops::Mul<Point3> for f32 {
     type Output = Point3;
 
+    #[inline]
     fn mul(self, rhs: Point3) -> Self::Output {
         rhs * self
     }
@@ -125,6 +134,7 @@ pub struct Translation3 {
 }
 
 impl From<Point3> for Translation3 {
+    #[inline]
     fn from(p: Point3) -> Self {
         Self { vector: p.coords }
     }
@@ -133,6 +143,7 @@ impl From<Point3> for Translation3 {
 impl core::ops::Mul<UnitQuaternion> for Translation3 {
     type Output = Isometry3;
 
+    #[inline]
     fn mul(self, rhs: UnitQuaternion) -> Self::Output {
         Isometry3 {
             translation: self,
@@ -148,6 +159,7 @@ pub struct Isometry3 {
 }
 
 impl Isometry3 {
+    #[inline]
     #[must_use]
     pub const fn identity() -> Self {
         Self {
@@ -158,6 +170,7 @@ impl Isometry3 {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn inverse(&self) -> Self {
         let inv_rot = self.rotation.conjugate();
@@ -173,6 +186,7 @@ impl Isometry3 {
 impl core::ops::Mul<&Point3> for &Isometry3 {
     type Output = Point3;
 
+    #[inline]
     #[allow(clippy::suspicious_arithmetic_impl)]
     fn mul(self, rhs: &Point3) -> Self::Output {
         self.rotation.transform_point(rhs) + self.translation.vector
@@ -182,6 +196,7 @@ impl core::ops::Mul<&Point3> for &Isometry3 {
 impl core::ops::Mul<Point3> for &Isometry3 {
     type Output = Point3;
 
+    #[inline]
     #[allow(clippy::suspicious_arithmetic_impl)]
     fn mul(self, rhs: Point3) -> Self::Output {
         self.rotation.transform_point(&rhs) + self.translation.vector
@@ -191,6 +206,7 @@ impl core::ops::Mul<Point3> for &Isometry3 {
 impl core::ops::Mul<Point3> for Isometry3 {
     type Output = Point3;
 
+    #[inline]
     fn mul(self, rhs: Point3) -> Self::Output {
         &self * &rhs
     }

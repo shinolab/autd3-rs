@@ -56,6 +56,7 @@ impl Complex {
 impl core::ops::Add<&Complex> for Complex {
     type Output = Complex;
 
+    #[inline]
     fn add(self, rhs: &Complex) -> Self::Output {
         Complex {
             re: self.re + rhs.re,
@@ -67,6 +68,7 @@ impl core::ops::Add<&Complex> for Complex {
 impl core::ops::Add for Complex {
     type Output = Complex;
 
+    #[inline]
     fn add(self, rhs: Complex) -> Self::Output {
         Complex {
             re: self.re + rhs.re,
@@ -76,6 +78,7 @@ impl core::ops::Add for Complex {
 }
 
 impl core::ops::AddAssign for Complex {
+    #[inline]
     fn add_assign(&mut self, rhs: Complex) {
         self.re += rhs.re;
         self.im += rhs.im;
@@ -85,6 +88,7 @@ impl core::ops::AddAssign for Complex {
 impl core::ops::Mul<f32> for Complex {
     type Output = Complex;
 
+    #[inline]
     fn mul(self, rhs: f32) -> Self::Output {
         Complex {
             re: self.re * rhs,
@@ -96,6 +100,7 @@ impl core::ops::Mul<f32> for Complex {
 impl core::ops::Mul<&Complex> for &Complex {
     type Output = Complex;
 
+    #[inline]
     fn mul(self, rhs: &Complex) -> Self::Output {
         Complex {
             re: self.re * rhs.re - self.im * rhs.im,
@@ -107,6 +112,7 @@ impl core::ops::Mul<&Complex> for &Complex {
 impl core::ops::Mul<Complex> for &Complex {
     type Output = Complex;
 
+    #[inline]
     fn mul(self, rhs: Complex) -> Self::Output {
         Complex {
             re: self.re * rhs.re - self.im * rhs.im,
@@ -118,6 +124,7 @@ impl core::ops::Mul<Complex> for &Complex {
 impl core::ops::Mul for Complex {
     type Output = Complex;
 
+    #[inline]
     fn mul(self, rhs: Complex) -> Self::Output {
         Complex {
             re: self.re * rhs.re - self.im * rhs.im,
@@ -127,6 +134,7 @@ impl core::ops::Mul for Complex {
 }
 
 impl core::ops::MulAssign for Complex {
+    #[inline]
     fn mul_assign(&mut self, rhs: Complex) {
         *self = *self * rhs;
     }
@@ -135,6 +143,7 @@ impl core::ops::MulAssign for Complex {
 impl core::ops::Div<f32> for Complex {
     type Output = Complex;
 
+    #[inline]
     fn div(self, rhs: f32) -> Self::Output {
         Complex {
             re: self.re / rhs,
@@ -144,6 +153,7 @@ impl core::ops::Div<f32> for Complex {
 }
 
 impl core::iter::Sum for Complex {
+    #[inline]
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Complex::ZERO, |a, b| a + b)
     }

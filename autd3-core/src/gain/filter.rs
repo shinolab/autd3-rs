@@ -4,13 +4,13 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-/// A mask that represents which Transducers are enabled in a Device.
+/// A mask that represents which [`Transducer`]s are enabled in a [`Device`].
 pub enum DeviceTransducerMask {
     /// All transducers are enabled.
     AllEnabled,
     /// All transducers are disabled.
     AllDisabled,
-    /// A filtered mask where each bit represents whether the corresponding transducer is enabled.
+    /// The transducers are enabled/disabled according to the mask.
     Masked(Vec<bool>),
 }
 
@@ -20,7 +20,6 @@ impl DeviceTransducerMask {
         Self::Masked(Vec::from_iter(dev.iter().map(f)))
     }
 
-    /// Returns `true` if the transducers is enabled.
     fn is_enabled(&self, tr: &Transducer) -> bool {
         match self {
             Self::AllEnabled => true,
@@ -47,16 +46,16 @@ impl DeviceTransducerMask {
 }
 
 #[derive(Debug)]
-/// A filter that represents which transducers are enabled.
+/// A filter that represents which [`Transducer`]s are enabled.
 pub enum TransducerMask {
     /// All transducers are enabled.
     AllEnabled,
-    /// A filtered mask where each value represents the enabled transducers for the corresponding device.
+    /// The transducers are enabled/disabled according to the [`DeviceTransducerMask`] for each device.
     Masked(Vec<DeviceTransducerMask>),
 }
 
 impl TransducerMask {
-    /// Creates a [`TransducerMask`].
+    /// Creates a new [`TransducerMask`] from an iterator of [`DeviceTransducerMask`]s.
     pub fn new<T>(v: T) -> Self
     where
         T: IntoIterator<Item = DeviceTransducerMask>,
@@ -85,7 +84,7 @@ impl TransducerMask {
     /// Returns `true` if the [`Transducer`] is enabled.
     pub fn is_enabled(&self, tr: &Transducer) -> bool {
         match self {
-            Self::AllEnabled => true, // GRCOV_EXCL_LINE
+            Self::AllEnabled => true,
             Self::Masked(filter) => filter[tr.dev_idx()].is_enabled(tr),
         }
     }
