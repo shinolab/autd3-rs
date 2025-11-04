@@ -173,11 +173,11 @@ mod tests {
         -0.1*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.")),
+        Err(ModulationError::new("Frequency must not be zero. If intentional, use `Static` instead.")),
         0*Hz
     )]
     #[case(
-        Err(ModulationError::new("Frequency must not be zero. If intentional, Use `Static` instead.")),
+        Err(ModulationError::new("Frequency must not be zero. If intentional, use `Static` instead.")),
         0.*Hz
     )]
     fn new(
