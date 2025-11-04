@@ -15,24 +15,6 @@ pub struct Device {
 }
 
 impl Device {
-    fn init(&mut self) {
-        self.center = Point3::from(
-            self.transducers
-                .iter()
-                .map(|tr| tr.position().coords)
-                .sum::<Vector3>()
-                / self.transducers.len() as f32,
-        );
-        self.x_direction = Self::get_direction(Vector3::x(), &self.rotation);
-        self.y_direction = Self::get_direction(Vector3::y(), &self.rotation);
-        self.axial_direction = if cfg!(feature = "left_handed") {
-            Self::get_direction(-Vector3::z(), &self.rotation) // GRCOV_EXCL_LINE
-        } else {
-            Self::get_direction(Vector3::z(), &self.rotation)
-        };
-        self.inv = (Translation3::from(self.transducers[0].position()) * self.rotation).inverse();
-    }
-
     #[doc(hidden)]
     #[must_use]
     pub fn new(rot: UnitQuaternion, transducers: Vec<Transducer>) -> Self {
@@ -52,6 +34,27 @@ impl Device {
         };
         dev.init();
         dev
+    }
+
+    fn init(&mut self) {
+        self.center = Point3::from(
+            self.transducers
+                .iter()
+                .map(|tr| tr.position().coords)
+                .sum::<Vector3>()
+                / self.transducers.len() as f32,
+        );
+        self.x_direction = Self::get_direction(Vector3::x(), &self.rotation);
+        self.y_direction = Self::get_direction(Vector3::y(), &self.rotation);
+        #[cfg(feature = "left_handed")]
+        {
+            self.axial_direction = Self::get_direction(-Vector3::z(), &self.rotation);
+        }
+        #[cfg(not(feature = "left_handed"))]
+        {
+            self.axial_direction = Self::get_direction(Vector3::z(), &self.rotation);
+        }
+        self.inv = (Translation3::from(self.transducers[0].position()) * self.rotation).inverse();
     }
 
     /// Gets the index of the device.
@@ -136,7 +139,7 @@ impl<'a> IntoIterator for &'a Device {
 }
 
 #[cfg(test)]
-pub(crate) mod tests {
+mod tests {
     use super::*;
     use crate::{
         common::PI,
@@ -194,9 +197,12 @@ pub(crate) mod tests {
         let device: Device = TestDevice::new_autd3(Point3::origin()).into();
         assert_approx_eq_vec3!(Vector3::x(), device.x_direction().into_inner());
         assert_approx_eq_vec3!(Vector3::y(), device.y_direction().into_inner());
-        if cfg!(feature = "left_handed") {
-            assert_approx_eq_vec3!(-Vector3::z(), device.axial_direction().into_inner()); // GRCOV_EXCL_LINE
-        } else {
+        #[cfg(feature = "left_handed")]
+        {
+            assert_approx_eq_vec3!(-Vector3::z(), device.axial_direction().into_inner());
+        }
+        #[cfg(not(feature = "left_handed"))]
+        {
             assert_approx_eq_vec3!(Vector3::z(), device.axial_direction().into_inner());
         }
     }

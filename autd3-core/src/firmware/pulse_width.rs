@@ -23,7 +23,8 @@ pub enum PulseWidthError {
     DutyRatioOutOfRange(f32),
 }
 
-// GRCOV_EXCL_START
+impl core::error::Error for PulseWidthError {}
+
 impl core::fmt::Display for PulseWidthError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
@@ -40,9 +41,6 @@ impl core::fmt::Display for PulseWidthError {
         }
     }
 }
-
-impl core::error::Error for PulseWidthError {}
-// GRCOV_EXCL_STOP
 
 impl PulseWidth {
     /// Creates a new [`PulseWidth`].
@@ -93,10 +91,7 @@ mod tests {
     #[case(Ok(511), 511)]
     #[case(Err(PulseWidthError::PulseWidthOutOfRange(512, 512)), 512)]
     #[test]
-    fn test_pulse_width_new(
-        #[case] expected: Result<u16, PulseWidthError>,
-        #[case] pulse_width: u32,
-    ) {
+    fn pulse_width_new(#[case] expected: Result<u16, PulseWidthError>, #[case] pulse_width: u32) {
         assert_eq!(expected, PulseWidth::new(pulse_width).pulse_width());
     }
 
@@ -108,13 +103,23 @@ mod tests {
     #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.0)), 1.0)]
     #[case(Err(PulseWidthError::DutyRatioOutOfRange(1.5)), 1.5)]
     #[test]
-    fn test_pulse_width_from_duty(
-        #[case] expected: Result<u16, PulseWidthError>,
-        #[case] duty: f32,
-    ) {
+    fn pulse_width_from_duty(#[case] expected: Result<u16, PulseWidthError>, #[case] duty: f32) {
         assert_eq!(
             expected,
             PulseWidth::from_duty(duty).and_then(|p| p.pulse_width())
         );
+    }
+
+    #[rstest::rstest]
+    #[case(
+        "Pulse width (512) is out of range [0, 512)",
+        PulseWidthError::PulseWidthOutOfRange(512, 512)
+    )]
+    #[case(
+        "Duty ratio (1.5) is out of range [0, 1)",
+        PulseWidthError::DutyRatioOutOfRange(1.5)
+    )]
+    fn display(#[case] expected: &str, #[case] error: PulseWidthError) {
+        assert_eq!(expected, format!("{}", error));
     }
 }

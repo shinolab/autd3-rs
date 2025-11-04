@@ -4,7 +4,7 @@ use crate::firmware::{SamplingConfig, Segment, transition_mode::TransitionModePa
 pub use error::ModulationError;
 use std::sync::Arc;
 
-/// Trait for applying amplitude modulation.
+/// A trait for applying amplitude modulation.
 ///
 /// See also [`Modulation`] derive macro.
 ///

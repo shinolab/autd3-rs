@@ -15,7 +15,9 @@ pub mod acoustics;
 pub mod common;
 #[cfg_attr(docsrs, doc(cfg(feature = "datagram")))]
 #[cfg(feature = "datagram")]
-/// Core traits for Datagram.
+/// Core traits for [`Datagram`].
+///
+/// [`Datagram`]: crate::datagram::Datagram
 pub mod datagram;
 #[cfg_attr(docsrs, doc(cfg(feature = "devices")))]
 #[cfg(feature = "devices")]
@@ -35,7 +37,9 @@ pub mod ethercat;
 pub mod firmware;
 #[cfg_attr(docsrs, doc(cfg(feature = "gain")))]
 #[cfg(feature = "gain")]
-/// Core traits for Gain.
+/// Core traits for [`Gain`].
+///
+/// [`Gain`]: crate::gain::Gain
 pub mod gain;
 #[cfg_attr(docsrs, doc(cfg(feature = "geometry")))]
 #[cfg(feature = "geometry")]
@@ -47,7 +51,9 @@ pub mod geometry;
 pub mod link;
 #[cfg_attr(docsrs, doc(cfg(feature = "modulation")))]
 #[cfg(feature = "modulation")]
-/// Core traits for Modulation.
+/// Core traits for [`Modulation`].
+///
+/// [`Modulation`]: crate::modulation::Modulation
 pub mod modulation;
 #[cfg_attr(docsrs, doc(cfg(feature = "sleep")))]
 #[cfg(feature = "sleep")]
@@ -58,7 +64,7 @@ pub mod sleep;
 #[doc(hidden)]
 pub mod utils;
 
-/// Utilities for user-common [`Gain`] and [`Modulation`].
+/// Utilities for user-defined [`Gain`] and [`Modulation`].
 ///
 /// # Example
 ///
@@ -132,8 +138,9 @@ pub mod utils;
 ///
 /// impl Modulation for Burst {
 ///     fn calc(self) -> Result<Vec<u8>, ModulationError>  {
-///         Ok((0..4000)
-///             .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
+///         Ok(core::iter::repeat(u8::MIN)
+///             .take(3999)
+///             .chain(core::iter::once(u8::MAX))
 ///             .collect())
 ///     }
 ///

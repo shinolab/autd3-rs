@@ -72,4 +72,8 @@ impl Link for Box<dyn Link> {
     fn is_open(&self) -> bool {
         self.as_ref().is_open()
     }
+
+    fn ensure_is_open(&self) -> Result<(), LinkError> {
+        self.as_ref().ensure_is_open()
+    }
 }

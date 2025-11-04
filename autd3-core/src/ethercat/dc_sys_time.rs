@@ -61,7 +61,7 @@ impl DcSysTime {
     #[must_use]
     #[cfg(feature = "time")]
     pub fn now() -> Self {
-        Self::from_utc(time::OffsetDateTime::now_utc()).unwrap()
+        Self::from_utc(time::OffsetDateTime::now_utc()).expect("system time is invalid")
     }
 }
 
@@ -75,6 +75,12 @@ impl core::ops::Add<core::time::Duration> for DcSysTime {
     }
 }
 
+impl core::ops::AddAssign<core::time::Duration> for DcSysTime {
+    fn add_assign(&mut self, rhs: core::time::Duration) {
+        self.dc_sys_time += rhs.as_nanos() as u64;
+    }
+}
+
 impl core::ops::Sub<core::time::Duration> for DcSysTime {
     type Output = Self;
 
@@ -82,6 +88,20 @@ impl core::ops::Sub<core::time::Duration> for DcSysTime {
         Self {
             dc_sys_time: self.dc_sys_time - rhs.as_nanos() as u64,
         }
+    }
+}
+
+impl core::ops::SubAssign<core::time::Duration> for DcSysTime {
+    fn sub_assign(&mut self, rhs: core::time::Duration) {
+        self.dc_sys_time -= rhs.as_nanos() as u64;
+    }
+}
+
+impl core::ops::Sub for DcSysTime {
+    type Output = core::time::Duration;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        core::time::Duration::from_nanos(self.dc_sys_time - rhs.dc_sys_time)
     }
 }
 
@@ -93,6 +113,13 @@ mod tests {
     fn new() {
         let t = DcSysTime::new(123456789);
         assert_eq!(123456789, t.sys_time());
+    }
+
+    #[cfg(feature = "time")]
+    #[test]
+    fn err_display() {
+        let err = InvalidDateTime;
+        assert_eq!("Invalid date time", format!("{}", err));
     }
 
     #[cfg(feature = "time")]
@@ -127,13 +154,22 @@ mod tests {
     #[cfg(feature = "time")]
     #[test]
     fn add_sub() {
-        let utc = time::macros::datetime!(2000-01-01 0:0:0 UTC);
-        let t = DcSysTime::from_utc(utc);
-        assert!(t.is_ok());
-        let t = t.unwrap() + core::time::Duration::from_secs(1);
-        assert_eq!(1000000000, t.sys_time());
+        let t = DcSysTime::ZERO;
 
-        let t = t - core::time::Duration::from_secs(1);
+        let mut t = t + core::time::Duration::from_secs(1);
+        assert_eq!(1000000000, t.sys_time());
+        t += core::time::Duration::from_secs(2);
+        assert_eq!(3000000000, t.sys_time());
+
+        let mut t = t - core::time::Duration::from_secs(1);
+        assert_eq!(2000000000, t.sys_time());
+        t -= core::time::Duration::from_secs(2);
         assert_eq!(0, t.sys_time());
+
+        assert_eq!(
+            core::time::Duration::from_secs(2),
+            (DcSysTime::ZERO + core::time::Duration::from_secs(3))
+                - (DcSysTime::ZERO + core::time::Duration::from_secs(1))
+        );
     }
 }

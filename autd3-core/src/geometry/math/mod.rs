@@ -1,5 +1,7 @@
 #![allow(missing_docs)]
 
+// Provides only the minimum implementation necessary to compile.
+
 mod complex;
 mod geometry;
 mod quaternion;

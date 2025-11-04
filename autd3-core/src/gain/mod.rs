@@ -12,11 +12,11 @@ use crate::{
     geometry::{Device, Geometry, Transducer},
 };
 
-/// A trait to calculate the phase and intensity for [`Gain`].
+/// A trait to calculate the phase and intensity for each [`Transducer`].
 ///
 /// [`Gain`]: crate::gain::Gain
 pub trait GainCalculator<'a>: Send + Sync {
-    /// Calculates the phase and intensity for the transducer.
+    /// Calculates the phase and intensity for the given [`Transducer`].
     #[must_use]
     fn calc(&self, tr: &'a Transducer) -> Drive;
 }
@@ -27,29 +27,28 @@ impl<'a> GainCalculator<'a> for Box<dyn GainCalculator<'a>> {
     }
 }
 
-/// A trait for generating a calculator for the gain operation.
+/// A trait for generating a [`GainCalculator`].
 pub trait GainCalculatorGenerator<'a> {
-    /// The type of the calculator that actually performs the calculation.
+    /// The type of [`GainCalculator`].
     type Calculator: GainCalculator<'a>;
 
-    /// Generate a calculator for the given device.
+    /// Generate a [`GainCalculator`] for the given [`Device`].
     #[must_use]
     fn generate(&mut self, device: &'a Device) -> Self::Calculator;
 }
 
-/// Trait for calculating the phase/amplitude of each transducer.
+/// A trait for intensity/phase calculation.
 ///
 /// See also [`Gain`] derive macro.
 ///
 /// [`Gain`]: autd3_derive::Gain
 pub trait Gain<'a>: Sized {
-    /// The type of the calculator generator.
+    /// The type of [`GainCalculatorGenerator`].
     type G: GainCalculatorGenerator<'a>;
 
-    /// Initialize the gain and generate the calculator generator.
+    /// Initialize the gain and generate [`GainCalculatorGenerator`].
     ///
-    /// `filter` is a hash map that holds a bit vector representing the indices of the enabled transducers for each device index.
-    /// If `filter` is `None`, all transducers are enabled.
+    /// `filter` represents the enabled/disabled state of each transducer.
     fn init(
         self,
         geometry: &'a Geometry,
