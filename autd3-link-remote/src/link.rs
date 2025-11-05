@@ -56,7 +56,7 @@ impl RemoteInner {
         buffer.extend_from_slice(&num_devices.to_le_bytes());
 
         geometry.iter().for_each(|dev| {
-            let pos = dev.center();
+            let pos = dev[0].position();
             buffer.extend_from_slice(&pos.x.to_le_bytes());
             buffer.extend_from_slice(&pos.y.to_le_bytes());
             buffer.extend_from_slice(&pos.z.to_le_bytes());
