@@ -12,6 +12,7 @@ commit_preprocessors = [
   { pattern = "fix: convergence condition is wrong in `LM`", replace = "" },
   { pattern = "refactor: `autd3-link-ethercrab`", replace = "" },
   { pattern = "remove!: `RemoteTwinCAT` link", replace = "" },
+  { pattern = "fix error messages", replace = "" },
 ]
 commit_parsers = [
   { message = "^feat", group = "<!-- 0 -->🚀 Features" },

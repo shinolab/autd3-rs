@@ -1,6 +1,20 @@
 # Changelog
 
 
+# 37.0.1 (2025-11-05)
+
+## 🚀 Features
+
+- Add `tokio` feature to `autd3-link-ethercrab`
+
+## 🐛 Bug Fixes
+
+- Prevent unnecessary sleep call for zero duration in `StdSleeper`
+- Update tracing target
+- Add `time` feature to `autd3` and make it default
+- The device position sent via `Remote` is incorrect (#396)
+
+
 # 37.0.0 (2025-10-22)
 
 ## 🚀 Features
