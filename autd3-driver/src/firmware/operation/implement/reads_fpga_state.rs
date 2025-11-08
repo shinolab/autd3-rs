@@ -1,8 +1,12 @@
-use std::convert::Infallible;
+use std::{convert::Infallible, mem::size_of};
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-use crate::{datagram::ReadsFPGAState, firmware::tag::TypeTag};
+use crate::{
+    datagram::ReadsFPGAState,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
 use autd3_core::geometry::Device;
 
@@ -39,11 +43,11 @@ impl Operation<'_> for ReadsFPGAStateOp {
         );
 
         self.is_done = true;
-        Ok(std::mem::size_of::<ReadsFPGAStateMsg>())
+        Ok(size_of::<ReadsFPGAStateMsg>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<ReadsFPGAStateMsg>()
+        size_of::<ReadsFPGAStateMsg>()
     }
 
     fn is_done(&self) -> bool {
@@ -62,8 +66,6 @@ impl<F: Fn(&Device) -> bool> OperationGenerator<'_> for ReadsFPGAState<F> {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use super::*;
 
     #[rstest::rstest]
@@ -77,13 +79,9 @@ mod tests {
         let mut op = ReadsFPGAStateOp::new(value);
 
         assert_eq!(op.required_size(&device), size_of::<ReadsFPGAStateMsg>());
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::ReadsFPGAState as u8);
         assert_eq!(tx[1], expected);
     }

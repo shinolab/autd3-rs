@@ -16,7 +16,7 @@ where
 impl<const N: usize, C, I> FociSTMIterator<N> for VecFociSTMIterator<N, C, I>
 where
     I: Borrow<[C]> + Send + Sync,
-    C: Clone + Send + Sync,
+    C: Clone + Send,
     ControlPoints<N>: From<C>,
 {
     fn next(&mut self) -> ControlPoints<N> {
@@ -31,7 +31,7 @@ where
 impl<const N: usize, C, I> FociSTMIteratorGenerator<N> for VecFociSTMIterator<N, C, I>
 where
     I: Borrow<[C]> + Send + Sync,
-    C: Clone + Send + Sync,
+    C: Clone + Send,
     ControlPoints<N>: From<C>,
 {
     type Iterator = VecFociSTMIterator<N, C, I>;

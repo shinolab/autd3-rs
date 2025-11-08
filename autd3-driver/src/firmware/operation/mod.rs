@@ -7,7 +7,7 @@ pub use handler::OperationHandler;
 pub use implement::{BoxedDatagram, BoxedOperation, DOperationGenerator, DynOperationGenerator};
 
 #[doc(hidden)]
-pub trait Operation<'a>: Send + Sync {
+pub trait Operation<'a>: Send {
     type Error: std::error::Error;
 
     #[must_use]

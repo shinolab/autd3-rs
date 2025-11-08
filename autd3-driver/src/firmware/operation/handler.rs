@@ -93,19 +93,26 @@ impl OperationHandler {
         O2: Operation<'a>,
         AUTDDriverError: From<O1::Error> + From<O2::Error>,
     {
-        match (op1.is_done(), op2.is_done()) {
-            (true, true) => Result::<_, AUTDDriverError>::Ok(()),
-            (true, false) => Self::pack_op(msg_id, op2, dev, tx).map(|_| Ok(()))?,
-            (false, true) => Self::pack_op(msg_id, op1, dev, tx).map(|_| Ok(()))?,
+        let res = match (op1.is_done(), op2.is_done()) {
+            (true, true) => 0,
+            (true, false) => Self::pack_op(msg_id, op2, dev, tx)?,
+            (false, true) => Self::pack_op(msg_id, op1, dev, tx)?,
             (false, false) => {
                 let op1_size = Self::pack_op(msg_id, op1, dev, tx)?;
-                if tx.payload().len() - op1_size >= op2.required_size(dev) {
-                    op2.pack(dev, &mut tx.payload_mut()[op1_size..])?;
+                debug_assert!(op1_size % 2 == 0);
+                let req_size = op2.required_size(dev);
+                debug_assert!(req_size % 2 == 0);
+                if tx.payload().len() - op1_size >= req_size {
+                    let op2_size = op2.pack(dev, &mut tx.payload_mut()[op1_size..])?;
                     tx.header.slot_2_offset = op1_size as u16;
+                    op1_size + op2_size
+                } else {
+                    op1_size
                 }
-                Ok(())
             }
-        }
+        };
+        debug_assert!(res % 2 == 0 && res <= autd3_core::ethercat::EC_OUTPUT_FRAME_SIZE);
+        Ok(())
     }
 
     fn pack_op<'a, O>(
@@ -118,7 +125,6 @@ impl OperationHandler {
         O: Operation<'a>,
         AUTDDriverError: From<O::Error>,
     {
-        debug_assert!(tx.payload().len() >= op.required_size(dev));
         tx.header.msg_id = msg_id;
         tx.header.slot_2_offset = 0;
         Ok(op.pack(dev, tx.payload_mut())?)
@@ -133,14 +139,14 @@ pub(crate) mod tests {
 
     use super::*;
 
-    struct OperationMock {
+    struct TestOperation {
         pub pack_size: usize,
         pub required_size: usize,
         pub num_frames: usize,
         pub broken: bool,
     }
 
-    impl Operation<'_> for OperationMock {
+    impl Operation<'_> for TestOperation {
         type Error = AUTDDriverError;
 
         fn required_size(&self, _: &Device) -> usize {
@@ -167,15 +173,15 @@ pub(crate) mod tests {
         let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
-            OperationMock {
-                pack_size: 1,
-                required_size: 2,
+            TestOperation {
+                pack_size: 2,
+                required_size: 4,
                 num_frames: 3,
                 broken: false,
             },
-            OperationMock {
-                pack_size: 1,
-                required_size: 2,
+            TestOperation {
+                pack_size: 2,
+                required_size: 4,
                 num_frames: 3,
                 broken: false,
             },
@@ -200,7 +206,7 @@ pub(crate) mod tests {
 
         op[0].as_mut().unwrap().0.pack_size =
             EC_OUTPUT_FRAME_SIZE - size_of::<Header>() - op[0].as_ref().unwrap().1.required_size
-                + 1;
+                + 2;
         assert!(OperationHandler::pack(msg_id, &mut op, &geometry, &mut tx, parallel).is_ok());
         assert_eq!(op[0].as_ref().unwrap().0.num_frames, 0);
         assert_eq!(op[0].as_ref().unwrap().1.num_frames, 1);
@@ -218,7 +224,7 @@ pub(crate) mod tests {
     fn operation_handler_none(#[case] parallel: bool) {
         let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
-        let mut op: Vec<Option<(OperationMock, OperationMock)>> = vec![None, None];
+        let mut op: Vec<Option<(TestOperation, TestOperation)>> = vec![None, None];
 
         assert!(OperationHandler::is_done(&op));
 
@@ -230,17 +236,17 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn test_first() {
+    fn first() {
         let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
-            OperationMock {
+            TestOperation {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 1,
                 broken: false,
             },
-            OperationMock {
+            TestOperation {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 0,
@@ -262,17 +268,17 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn test_second() {
+    fn second() {
         let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
-            OperationMock {
+            TestOperation {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 0,
                 broken: false,
             },
-            OperationMock {
+            TestOperation {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 1,
@@ -294,17 +300,17 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn test_broken_pack() {
+    fn broken_pack() {
         let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
-            OperationMock {
+            TestOperation {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 1,
                 broken: true,
             },
-            OperationMock {
+            TestOperation {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 1,
@@ -348,17 +354,17 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn test_finished() {
+    fn finished() {
         let geometry = Geometry::new(vec![crate::tests::create_device()]);
 
         let mut op = vec![Some((
-            OperationMock {
+            TestOperation {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 0,
                 broken: false,
             },
-            OperationMock {
+            TestOperation {
                 pack_size: 0,
                 required_size: 0,
                 num_frames: 0,

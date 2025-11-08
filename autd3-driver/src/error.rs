@@ -96,7 +96,6 @@ pub enum AUTDDriverError {
     InvalidSilencerSettings,
 }
 
-// GRCOV_EXCL_START
 impl From<SamplingConfigError> for AUTDDriverError {
     fn from(e: SamplingConfigError) -> Self {
         AUTDDriverError::SamplingConfig(e)
@@ -228,7 +227,32 @@ impl std::error::Error for AUTDDriverError {
             AUTDDriverError::Modulation(e) => Some(e),
             AUTDDriverError::Gain(e) => Some(e),
             AUTDDriverError::Link(e) => Some(e),
-            _ => None,
+            AUTDDriverError::InvalidSilencerCompletionTime(_)
+            | AUTDDriverError::SilencerCompletionTimeOutOfRange(_)
+            | AUTDDriverError::STMPeriodInvalid(_, _)
+            | AUTDDriverError::ModulationSizeOutOfRange(_)
+            | AUTDDriverError::FociSTMTotalSizeOutOfRange(_)
+            | AUTDDriverError::FociSTMNumFociOutOfRange(_)
+            | AUTDDriverError::FociSTMPointOutOfRange(_, _, _)
+            | AUTDDriverError::GainSTMSizeOutOfRange(_)
+            | AUTDDriverError::UnsupportedGPIOOutputType(_)
+            | AUTDDriverError::UnknownKey(_)
+            | AUTDDriverError::UnusedKey(_)
+            | AUTDDriverError::ConfirmResponseFailed
+            | AUTDDriverError::ReadFirmwareVersionFailed(_)
+            | AUTDDriverError::InvalidDateTime
+            | AUTDDriverError::FirmwareVersionMismatch
+            | AUTDDriverError::UnsupportedOperation
+            | AUTDDriverError::UnsupportedFirmware
+            | AUTDDriverError::NotSupportedTag
+            | AUTDDriverError::InvalidMessageID
+            | AUTDDriverError::InvalidInfoType
+            | AUTDDriverError::InvalidGainSTMMode
+            | AUTDDriverError::UnknownFirmwareError(_)
+            | AUTDDriverError::InvalidSegmentTransition
+            | AUTDDriverError::InvalidTransitionMode
+            | AUTDDriverError::MissTransitionTime
+            | AUTDDriverError::InvalidSilencerSettings => None,
         }
     }
 }
@@ -252,4 +276,179 @@ where
         }
     }
 }
-// GRCOV_EXCL_STOP
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use super::*;
+
+    #[rstest::rstest]
+    #[case(SamplingConfigError::FreqInvalid(1 * autd3_core::common::Hz), AUTDDriverError::SamplingConfig(SamplingConfigError::FreqInvalid(1 * autd3_core::common::Hz)))]
+    #[case(
+        PulseWidthError::PulseWidthOutOfRange(1, 1),
+        AUTDDriverError::PulseWidth(PulseWidthError::PulseWidthOutOfRange(1, 1))
+    )]
+    #[case(
+        ModulationError::new("test"),
+        AUTDDriverError::Modulation(ModulationError::new("test"))
+    )]
+    #[case(GainError::new("test"), AUTDDriverError::Gain(GainError::new("test")))]
+    #[case(LinkError::new("test"), AUTDDriverError::Link(LinkError::new("test")))]
+    fn from<E>(#[case] source: E, #[case] expected: AUTDDriverError)
+    where
+        E: std::error::Error + Clone,
+        AUTDDriverError: From<E>,
+    {
+        let err: AUTDDriverError = source.clone().into();
+        assert_eq!(expected, err);
+    }
+
+    #[rstest::rstest]
+    #[case(
+        "Silencer completion time (1ms) must be a multiple of the ultrasound period",
+        AUTDDriverError::InvalidSilencerCompletionTime(Duration::from_millis(1))
+    )]
+    #[case(
+        "Silencer completion time (1ms) is out of range",
+        AUTDDriverError::SilencerCompletionTimeOutOfRange(Duration::from_millis(1))
+    )]
+    #[case(
+        "Sampling frequency (1 Hz) must divide the ultrasound frequency",
+        AUTDDriverError::SamplingConfig(SamplingConfigError::FreqInvalid(1 * autd3_core::common::Hz))
+    )]
+    #[case(
+        "STM sampling period (1ms/10) must be integer",
+        AUTDDriverError::STMPeriodInvalid(10, Duration::from_millis(1))
+    )]
+    #[case(
+        "Modulation buffer size (0) is out of range ([2, 65536])",
+        AUTDDriverError::ModulationSizeOutOfRange(0)
+    )]
+    #[case(
+        "The number of total foci (0) is out of range ([2, 65536])",
+        AUTDDriverError::FociSTMTotalSizeOutOfRange(0)
+    )]
+    #[case(
+        "Number of foci (0) is out of range ([1, 8])",
+        AUTDDriverError::FociSTMNumFociOutOfRange(0)
+    )]
+    #[case(
+        "Point coordinate (1, 2, 3) is out of range ([-3104.1, 3276.7751], [-3144.725, 3276.7751], [-3276.8, 3276.7751])",
+        AUTDDriverError::FociSTMPointOutOfRange(1.0, 2.0, 3.0)
+    )]
+    #[case(
+        "GainSTM size (0) is out of range ([2, 1024])",
+        AUTDDriverError::GainSTMSizeOutOfRange(0)
+    )]
+    #[case(
+        "GPIO output type (test) is not supported",
+        AUTDDriverError::UnsupportedGPIOOutputType("test".to_string())
+    )]
+    #[case(
+        "Pulse width (1) is out of range [0, 1)",
+        AUTDDriverError::PulseWidth(PulseWidthError::PulseWidthOutOfRange(1, 1))
+    )]
+    #[case("test", AUTDDriverError::Modulation(ModulationError::new("test")))]
+    #[case("test", AUTDDriverError::Gain(GainError::new("test")))]
+    #[case("test", AUTDDriverError::Link(LinkError::new("test")))]
+    #[case(
+        "Unknown group key(test_key)",
+        AUTDDriverError::UnknownKey("test_key".to_string())
+    )]
+    #[case(
+        "Unused group key(test_key)",
+        AUTDDriverError::UnusedKey("test_key".to_string())
+    )]
+    #[case(
+        "Failed to confirm the response from the device",
+        AUTDDriverError::ConfirmResponseFailed
+    )]
+    #[case(
+        "Read firmware info failed: 0, 2",
+        AUTDDriverError::ReadFirmwareVersionFailed(vec![false, true, false])
+    )]
+    #[case("The input data is invalid.", AUTDDriverError::InvalidDateTime)]
+    #[case("Firmware version mismatch", AUTDDriverError::FirmwareVersionMismatch)]
+    #[case("Unsupported operation", AUTDDriverError::UnsupportedOperation)]
+    #[case("Unsupported firmware", AUTDDriverError::UnsupportedFirmware)]
+    #[case("Not supported tag", AUTDDriverError::NotSupportedTag)]
+    #[case("Invalid message ID", AUTDDriverError::InvalidMessageID)]
+    #[case("Invalid info type", AUTDDriverError::InvalidInfoType)]
+    #[case("Invalid GainSTM mode", AUTDDriverError::InvalidGainSTMMode)]
+    #[case(
+        "Unknown firmware error: 42",
+        AUTDDriverError::UnknownFirmwareError(42)
+    )]
+    #[case(
+        "Invalid segment transition",
+        AUTDDriverError::InvalidSegmentTransition
+    )]
+    #[case("Invalid transition mode", AUTDDriverError::InvalidTransitionMode)]
+    #[case("Miss transition time", AUTDDriverError::MissTransitionTime)]
+    #[case(
+        "Silencer cannot complete phase/intensity interpolation in the specified sampling period. Please lower the sampling frequency or make the completion time of Silencer longer than the sampling period of the AM/STM.",
+        AUTDDriverError::InvalidSilencerSettings
+    )]
+    fn display(#[case] msg: &str, #[case] err: AUTDDriverError) {
+        assert_eq!(msg, format!("{}", err))
+    }
+
+    #[rstest::rstest]
+    #[case(
+        false,
+        AUTDDriverError::InvalidSilencerCompletionTime(Duration::from_millis(1))
+    )]
+    #[case(
+        false,
+        AUTDDriverError::SilencerCompletionTimeOutOfRange(Duration::from_millis(1))
+    )]
+    #[case(true, AUTDDriverError::SamplingConfig(SamplingConfigError::FreqInvalid(1 * autd3_core::common::Hz)))]
+    #[case(false, AUTDDriverError::STMPeriodInvalid(10, Duration::from_millis(1)))]
+    #[case(false, AUTDDriverError::ModulationSizeOutOfRange(0))]
+    #[case(false, AUTDDriverError::FociSTMTotalSizeOutOfRange(0))]
+    #[case(false, AUTDDriverError::FociSTMNumFociOutOfRange(0))]
+    #[case(false, AUTDDriverError::FociSTMPointOutOfRange(1.0, 2.0, 3.0))]
+    #[case(false, AUTDDriverError::GainSTMSizeOutOfRange(0))]
+    #[case(false, AUTDDriverError::UnsupportedGPIOOutputType("test".to_string()))]
+    #[case(
+        true,
+        AUTDDriverError::PulseWidth(PulseWidthError::PulseWidthOutOfRange(1, 1))
+    )]
+    #[case(true, AUTDDriverError::Modulation(ModulationError::new("test")))]
+    #[case(true, AUTDDriverError::Gain(GainError::new("test")))]
+    #[case(true, AUTDDriverError::Link(LinkError::new("test")))]
+    #[case(false, AUTDDriverError::UnknownKey("test_key".to_string()))]
+    #[case(false, AUTDDriverError::UnusedKey("test_key".to_string()))]
+    #[case(false, AUTDDriverError::ConfirmResponseFailed)]
+    #[case(false, AUTDDriverError::ReadFirmwareVersionFailed(vec![false, true, false]))]
+    #[case(false, AUTDDriverError::InvalidDateTime)]
+    #[case(false, AUTDDriverError::FirmwareVersionMismatch)]
+    #[case(false, AUTDDriverError::UnsupportedOperation)]
+    #[case(false, AUTDDriverError::UnsupportedFirmware)]
+    #[case(false, AUTDDriverError::NotSupportedTag)]
+    #[case(false, AUTDDriverError::InvalidMessageID)]
+    #[case(false, AUTDDriverError::InvalidInfoType)]
+    #[case(false, AUTDDriverError::InvalidGainSTMMode)]
+    #[case(false, AUTDDriverError::UnknownFirmwareError(42))]
+    #[case(false, AUTDDriverError::InvalidSegmentTransition)]
+    #[case(false, AUTDDriverError::InvalidTransitionMode)]
+    #[case(false, AUTDDriverError::MissTransitionTime)]
+    #[case(false, AUTDDriverError::InvalidSilencerSettings)]
+    fn source(#[case] has_source: bool, #[case] err: AUTDDriverError) {
+        assert_eq!(has_source, err.source().is_some());
+    }
+
+    #[test]
+    fn from_combined_error() {
+        let mod_err = ModulationError::new("modulation error");
+        let gain_err = GainError::new("gain error");
+        let combined_mod: CombinedError<ModulationError, GainError> =
+            CombinedError::E1(mod_err.clone());
+        let combined_gain: CombinedError<ModulationError, GainError> =
+            CombinedError::E2(gain_err.clone());
+
+        assert_eq!(AUTDDriverError::Modulation(mod_err), combined_mod.into());
+        assert_eq!(AUTDDriverError::Gain(gain_err), combined_gain.into());
+    }
+}

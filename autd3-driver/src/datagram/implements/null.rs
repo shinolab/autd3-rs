@@ -39,7 +39,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_null() {
+    fn null() {
         let geometry = crate::tests::create_geometry(1);
 
         let g = Null::new();

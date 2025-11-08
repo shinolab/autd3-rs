@@ -1,8 +1,12 @@
-use std::convert::Infallible;
+use std::{convert::Infallible, mem::size_of};
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-use crate::{datagram::EmulateGPIOIn, firmware::tag::TypeTag};
+use crate::{
+    datagram::EmulateGPIOIn,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
 use autd3_core::{firmware::GPIOIn, geometry::Device};
 
@@ -48,26 +52,27 @@ impl Operation<'_> for EmulateGPIOInOp {
     type Error = Infallible;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
-        let mut flag = GPIOInFlags::NONE;
-        flag.set(GPIOInFlags::GPIO_IN_0, self.value[0]);
-        flag.set(GPIOInFlags::GPIO_IN_1, self.value[1]);
-        flag.set(GPIOInFlags::GPIO_IN_2, self.value[2]);
-        flag.set(GPIOInFlags::GPIO_IN_3, self.value[3]);
-
         crate::firmware::operation::write_to_tx(
             tx,
             EmulateGPIOInMsg {
                 tag: TypeTag::EmulateGPIOIn,
-                flag,
+                flag: {
+                    let mut flag = GPIOInFlags::NONE;
+                    flag.set(GPIOInFlags::GPIO_IN_0, self.value[0]);
+                    flag.set(GPIOInFlags::GPIO_IN_1, self.value[1]);
+                    flag.set(GPIOInFlags::GPIO_IN_2, self.value[2]);
+                    flag.set(GPIOInFlags::GPIO_IN_3, self.value[3]);
+                    flag
+                },
             },
         );
 
         self.is_done = true;
-        Ok(std::mem::size_of::<EmulateGPIOInMsg>())
+        Ok(size_of::<EmulateGPIOInMsg>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<EmulateGPIOInMsg>()
+        size_of::<EmulateGPIOInMsg>()
     }
 
     fn is_done(&self) -> bool {
@@ -75,16 +80,13 @@ impl Operation<'_> for EmulateGPIOInOp {
     }
 }
 
-impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerator<'_>
-    for EmulateGPIOIn<F>
-{
+impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> OperationGenerator<'_> for EmulateGPIOIn<F> {
     type O1 = EmulateGPIOInOp;
     type O2 = NullOp;
 
     fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
-        let h = (self.f)(device);
         Some((
-            Self::O1::new([h(GPIOIn::I0), h(GPIOIn::I1), h(GPIOIn::I2), h(GPIOIn::I3)]),
+            Self::O1::new([GPIOIn::I0, GPIOIn::I1, GPIOIn::I2, GPIOIn::I3].map((self.f)(device))),
             Self::O2 {},
         ))
     }
@@ -92,14 +94,14 @@ impl<H: Fn(GPIOIn) -> bool + Send + Sync, F: Fn(&Device) -> H> OperationGenerato
 
 #[cfg(test)]
 mod tests {
-    use std::mem::{offset_of, size_of};
+    use std::mem::offset_of;
 
     use super::*;
 
     #[rstest::rstest]
     #[case(0b1001, [true, false, false, true])]
     #[case(0b0110, [false, true, true, false])]
-    fn test(#[case] expected: u8, #[case] value: [bool; 4]) {
+    fn op(#[case] expected: u8, #[case] value: [bool; 4]) {
         let device = crate::tests::create_device();
 
         let mut tx = [0x00u8; size_of::<EmulateGPIOInMsg>()];
@@ -107,13 +109,9 @@ mod tests {
         let mut op = EmulateGPIOInOp::new(value);
 
         assert_eq!(op.required_size(&device), size_of::<EmulateGPIOInMsg>());
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::EmulateGPIOIn as u8);
         assert_eq!(tx[offset_of!(EmulateGPIOInMsg, flag)], expected);
     }

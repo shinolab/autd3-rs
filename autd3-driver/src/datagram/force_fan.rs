@@ -6,7 +6,7 @@ use autd3_core::{
     geometry::{Device, Geometry},
 };
 
-/// [`Datagram`] to force the fan to run.
+/// [`Datagram`] to force fan on.
 #[derive(Debug)]
 pub struct ForceFan<F> {
     #[doc(hidden)]

@@ -1,8 +1,12 @@
 use std::{convert::Infallible, mem::size_of};
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-use crate::{datagram::PhaseCorrection, firmware::tag::TypeTag};
+use crate::{
+    datagram::PhaseCorrection,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
 use autd3_core::{
     firmware::Phase,
@@ -26,7 +30,7 @@ impl<'a, F: Fn(&'a Transducer) -> Phase> PhaseCorrectionOp<F> {
     }
 }
 
-impl<'a, F: Fn(&'a Transducer) -> Phase + Send + Sync> Operation<'a> for PhaseCorrectionOp<F> {
+impl<'a, F: Fn(&'a Transducer) -> Phase + Send> Operation<'a> for PhaseCorrectionOp<F> {
     type Error = Infallible;
 
     fn pack(&mut self, dev: &'a Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -47,11 +51,11 @@ impl<'a, F: Fn(&'a Transducer) -> Phase + Send + Sync> Operation<'a> for PhaseCo
 
         self.is_done = true;
 
-        Ok(size_of::<PhaseCorr>() + ((dev.num_transducers() + 1) & !0x1))
+        Ok(size_of::<PhaseCorr>() + dev.num_transducers().div_ceil(2) * 2)
     }
 
     fn required_size(&self, dev: &Device) -> usize {
-        size_of::<PhaseCorr>() + ((dev.num_transducers() + 1) & !0x1)
+        size_of::<PhaseCorr>() + dev.num_transducers().div_ceil(2) * 2
     }
 
     fn is_done(&self) -> bool {
@@ -59,8 +63,8 @@ impl<'a, F: Fn(&'a Transducer) -> Phase + Send + Sync> Operation<'a> for PhaseCo
     }
 }
 
-impl<'a, FT: Fn(&'a Transducer) -> Phase + Send + Sync, F: Fn(&'a Device) -> FT>
-    OperationGenerator<'a> for PhaseCorrection<F, FT>
+impl<'a, FT: Fn(&'a Transducer) -> Phase + Send, F: Fn(&'a Device) -> FT> OperationGenerator<'a>
+    for PhaseCorrection<F, FT>
 {
     type O1 = PhaseCorrectionOp<FT>;
     type O2 = NullOp;
@@ -85,13 +89,9 @@ mod tests {
         let mut op = PhaseCorrectionOp::new(|tr| Phase(tr.idx() as _));
 
         assert_eq!(size_of::<PhaseCorr>() + 250, op.required_size(&device));
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::PhaseCorrection as u8);
         assert!((0..249).all(|i| i as u8 == tx[size_of::<PhaseCorr>() + i]));
     }

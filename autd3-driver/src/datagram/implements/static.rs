@@ -39,7 +39,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_static_default() {
+    fn default() {
         let m = Static::default();
         assert_eq!(u8::MAX, m.intensity);
         assert_eq!(SamplingConfig::Divide(NonZeroU16::MAX), m.sampling_config());
@@ -47,7 +47,7 @@ mod tests {
     }
 
     #[test]
-    fn test_static() {
+    fn r#static() {
         let m = Static::new(u8::MIN);
         assert_eq!(u8::MIN, m.intensity);
         assert_eq!(SamplingConfig::Divide(NonZeroU16::MAX), m.sampling_config());

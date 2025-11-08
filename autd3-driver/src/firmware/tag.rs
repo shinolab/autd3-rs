@@ -20,7 +20,7 @@ pub(crate) enum TypeTag {
     ConfigPulseWidthEncoder = 0x72,
     PhaseCorrection = 0x80,
     OutputMask = 0x90,
-    Debug = 0xF0,
+    FpgaGPIOOut = 0xF0,
     EmulateGPIOIn = 0xF1,
     CpuGPIOOut = 0xF2,
 }

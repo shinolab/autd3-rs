@@ -1,8 +1,12 @@
 use std::mem::size_of;
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-use crate::{error::AUTDDriverError, firmware::tag::TypeTag};
+use crate::{
+    error::AUTDDriverError,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
 use autd3_core::{
     firmware::{Drive, Segment, transition_mode::TransitionMode},
@@ -121,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    fn test() {
+    fn op() {
         let device = crate::tests::create_device();
 
         let mut tx =
@@ -144,13 +148,9 @@ mod tests {
             op.required_size(&device),
             size_of::<Gain>() + device.num_transducers() * size_of::<Drive>()
         );
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::Gain as u8);
         tx.iter()
             .skip(size_of::<Gain>())

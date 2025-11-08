@@ -1,8 +1,12 @@
 use std::{convert::Infallible, mem::size_of};
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-use crate::{datagram::CpuGPIOOutputs, firmware::tag::TypeTag};
+use crate::{
+    datagram::CpuGPIOOutputs,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
 use autd3_core::{firmware::CpuGPIOPort, geometry::Device};
 
@@ -53,7 +57,7 @@ impl Operation<'_> for CpuGPIOOutputsOp {
     }
 }
 
-impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> OperationGenerator<'_> for CpuGPIOOutputs<F> {
+impl<F: Fn(&Device) -> CpuGPIOPort> OperationGenerator<'_> for CpuGPIOOutputs<F> {
     type O1 = CpuGPIOOutputsOp;
     type O2 = NullOp;
 
@@ -72,11 +76,10 @@ mod tests {
     #[case(0b00100000, true, false)]
     #[case(0b10000000, false, true)]
     #[case(0b00000000, false, false)]
-    fn cpu_gpio_out_op(#[case] expect: u8, #[case] pa5: bool, #[case] pa7: bool) {
-        const FRAME_SIZE: usize = size_of::<CpuGPIOOutMsg>();
-
+    fn op(#[case] expect: u8, #[case] pa5: bool, #[case] pa7: bool) {
         let device = crate::tests::create_device();
-        let mut tx = vec![0x00u8; FRAME_SIZE];
+
+        let mut tx = vec![0x00u8; size_of::<CpuGPIOOutMsg>()];
 
         let mut op = CpuGPIOOutputsOp::new(pa5, pa7);
 

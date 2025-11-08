@@ -65,16 +65,12 @@ struct GPIOOutputMsg {
 }
 
 pub struct GPIOOutputsOp {
-    is_done: bool,
-    value: [Result<GPIOOutValue, AUTDDriverError>; 4],
+    value: Option<[GPIOOutValue; 4]>,
 }
 
 impl GPIOOutputsOp {
-    pub(crate) const fn new(value: [Result<GPIOOutValue, AUTDDriverError>; 4]) -> Self {
-        Self {
-            is_done: false,
-            value,
-        }
+    pub(crate) const fn new(value: [GPIOOutValue; 4]) -> Self {
+        Self { value: Some(value) }
     }
 }
 
@@ -85,18 +81,15 @@ impl Operation<'_> for GPIOOutputsOp {
         crate::firmware::operation::write_to_tx(
             tx,
             GPIOOutputMsg {
-                tag: TypeTag::Debug,
+                tag: TypeTag::FpgaGPIOOut,
                 __: [0; 7],
-                value: [
-                    self.value[0].clone()?,
-                    self.value[1].clone()?,
-                    self.value[2].clone()?,
-                    self.value[3].clone()?,
-                ],
+                value: self
+                    .value
+                    .take()
+                    .expect("GPIOOutputsOp::pack called more than once"),
             },
         );
 
-        self.is_done = true;
         Ok(size_of::<GPIOOutputMsg>())
     }
 
@@ -105,13 +98,11 @@ impl Operation<'_> for GPIOOutputsOp {
     }
 
     fn is_done(&self) -> bool {
-        self.is_done
+        self.value.is_none()
     }
 }
 
-impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationGenerator<'_>
-    for GPIOOutputs<F>
-{
+impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType>> OperationGenerator<'_> for GPIOOutputs<F> {
     type O1 = GPIOOutputsOp;
     type O2 = NullOp;
 
@@ -119,9 +110,71 @@ impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> OperationG
         Some((
             Self::O1::new(
                 [GPIOOut::O0, GPIOOut::O1, GPIOOut::O2, GPIOOut::O3]
-                    .map(|gpio| Ok(convert((self.f)(device, gpio)))),
+                    .map(|gpio| (self.f)(device, gpio))
+                    .map(convert),
             ),
             Self::O2 {},
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::mem::offset_of;
+
+    use super::*;
+
+    #[test]
+    fn op() {
+        let device = crate::tests::create_device();
+
+        let mut tx = [0x00u8; size_of::<GPIOOutputMsg>()];
+
+        let value = [
+            GPIOOutValue::new(0x123456789ABCDEF0, 0xF0),
+            GPIOOutValue::new(0x0FEDCBA987654321, 0xE0),
+            GPIOOutValue::new(0x1111111111111111, 0x02),
+            GPIOOutValue::new(0x2222222222222222, 0x01),
+        ];
+
+        let mut op = GPIOOutputsOp::new(value);
+
+        assert_eq!(op.required_size(&device), size_of::<GPIOOutputMsg>());
+        assert!(!op.is_done());
+        assert!(op.pack(&device, &mut tx).is_ok());
+        assert!(op.is_done());
+        assert_eq!(tx[0], TypeTag::FpgaGPIOOut as u8);
+        assert_eq!(
+            u64::from_le_bytes(
+                tx[offset_of!(GPIOOutputMsg, value)..offset_of!(GPIOOutputMsg, value) + 8]
+                    .try_into()
+                    .unwrap()
+            ),
+            0xF03456789ABCDEF0u64
+        );
+        assert_eq!(
+            u64::from_le_bytes(
+                tx[offset_of!(GPIOOutputMsg, value) + 8..offset_of!(GPIOOutputMsg, value) + 16]
+                    .try_into()
+                    .unwrap()
+            ),
+            0xE0EDCBA987654321u64
+        );
+        assert_eq!(
+            u64::from_le_bytes(
+                tx[offset_of!(GPIOOutputMsg, value) + 16..offset_of!(GPIOOutputMsg, value) + 24]
+                    .try_into()
+                    .unwrap()
+            ),
+            0x0211111111111111u64
+        );
+        assert_eq!(
+            u64::from_le_bytes(
+                tx[offset_of!(GPIOOutputMsg, value) + 24..offset_of!(GPIOOutputMsg, value) + 32]
+                    .try_into()
+                    .unwrap()
+            ),
+            0x0122222222222222u64
+        );
     }
 }

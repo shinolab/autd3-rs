@@ -11,7 +11,7 @@ use autd3_core::{
     geometry::{Device, Geometry},
 };
 
-/// [`Datagram`] to configure GPIO Out pins.
+/// [`Datagram`] to configure GPIO output pins.
 ///
 /// # Example
 ///
@@ -30,7 +30,7 @@ pub struct GPIOOutputs<F> {
     pub(crate) f: F,
 }
 
-impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> GPIOOutputs<F> {
+impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType>> GPIOOutputs<F> {
     /// Creates a new [`GPIOOutputs`].
     #[must_use]
     pub const fn new(f: F) -> Self {
@@ -38,9 +38,7 @@ impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> GPIOOutput
     }
 }
 
-impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType> + Send + Sync> Datagram<'_>
-    for GPIOOutputs<F>
-{
+impl<F: Fn(&Device, GPIOOut) -> Option<GPIOOutputType>> Datagram<'_> for GPIOOutputs<F> {
     type G = Self;
     type Error = Infallible;
 

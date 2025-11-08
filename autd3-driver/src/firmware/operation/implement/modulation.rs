@@ -1,13 +1,16 @@
 use std::sync::Arc;
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-use crate::{error::AUTDDriverError, firmware::tag::TypeTag};
+use crate::{
+    error::AUTDDriverError,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
-use autd3_core::firmware::{MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN};
 use autd3_core::{
     firmware::{
-        SamplingConfig, Segment,
+        MOD_BUF_SIZE_MAX, MOD_BUF_SIZE_MIN, SamplingConfig, Segment,
         transition_mode::{Later, TransitionMode, TransitionModeParams},
     },
     geometry::Device,
@@ -206,7 +209,7 @@ mod tests {
     use rand::prelude::*;
 
     #[test]
-    fn test() {
+    fn op() {
         const MOD_SIZE: usize = 100;
 
         let device = crate::tests::create_device();
@@ -273,7 +276,7 @@ mod tests {
     }
 
     #[test]
-    fn test_div() {
+    fn div() {
         const FRAME_SIZE: usize = 30;
         const MOD_SIZE: usize = FRAME_SIZE - size_of::<ModulationHead>()
             + (FRAME_SIZE - size_of::<ModulationSubseq>()) * 2;

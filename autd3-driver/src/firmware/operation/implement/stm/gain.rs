@@ -177,7 +177,9 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                                 crate::firmware::operation::write_to_tx(dst, g.calc(tr));
                             });
                         send += 1;
-                    } // GRCOV_EXCL_LINE
+                    } else {
+                        unreachable!("GainSTM requires at least one gain frame");
+                    }
                 }
                 GainSTMMode::PhaseFull => {
                     if let Some(g) = self.iter.next() {
@@ -188,7 +190,9 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                                 PhaseFull::mut_from_bytes(dst).phase_0 = g.calc(tr).phase.0;
                             });
                         send += 1;
-                    } // GRCOV_EXCL_LINE
+                    } else {
+                        unreachable!("GainSTM requires at least one gain frame");
+                    }
                     if let Some(g) = self.iter.next() {
                         tx[offset..]
                             .chunks_exact_mut(size_of::<PhaseFull>())
@@ -208,7 +212,9 @@ impl<'a, G: GainCalculator<'a>, Iterator: GainSTMIterator<'a, Calculator = G>> O
                                 PhaseHalf::mut_from_bytes(dst).set_phase_0(g.calc(tr).phase.0 >> 4);
                             });
                         send += 1;
-                    } // GRCOV_EXCL_LINE
+                    } else {
+                        unreachable!("GainSTM requires at least one gain frame");
+                    }
                     if let Some(g) = self.iter.next() {
                         tx[offset..]
                             .chunks_exact_mut(size_of::<PhaseHalf>())

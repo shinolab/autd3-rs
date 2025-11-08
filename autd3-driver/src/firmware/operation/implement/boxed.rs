@@ -12,7 +12,7 @@ use autd3_core::{
     geometry::{Device, Geometry},
 };
 
-pub trait DOperation: Send + Sync {
+pub trait DOperation: Send {
     #[must_use]
     fn required_size(&self, device: &Device) -> usize;
     fn pack(&mut self, device: &Device, tx: &mut [u8]) -> Result<usize, AUTDDriverError>;
@@ -217,7 +217,7 @@ pub mod tests {
     }
 
     #[test]
-    fn test_boxed_operation() {
+    fn op() {
         let mut rng = rand::rng();
 
         let mut op = TestOp {

@@ -26,7 +26,7 @@ use autd3_core::{
 /// A trait to iterate a [`GainCalculator`] for [`GainSTM`].
 ///
 /// [`GainSTM`]: crate::datagram::GainSTM
-pub trait GainSTMIterator<'a>: Send + Sync {
+pub trait GainSTMIterator<'a>: Send {
     /// The output [`GainCalculator`] type.
     type Calculator: GainCalculator<'a>;
 
@@ -147,7 +147,6 @@ pub struct GainSTMOperationGenerator<'a, G> {
     pub(crate) size: usize,
     pub(crate) mode: GainSTMMode,
     pub(crate) sampling_config: SamplingConfig,
-
     pub(crate) rep: u16,
     pub(crate) segment: Segment,
     pub(crate) transition_params: TransitionModeParams,

@@ -1,8 +1,12 @@
 use std::convert::Infallible;
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-use crate::{datagram::Nop, firmware::tag::TypeTag};
+use crate::{
+    datagram::Nop,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
 use autd3_core::geometry::Device;
 
@@ -69,13 +73,9 @@ mod tests {
         let mut op = NopOp::new();
 
         assert_eq!(op.required_size(&device), size_of::<NopMsg>());
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::Nop as u8);
     }
 }
