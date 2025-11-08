@@ -334,7 +334,7 @@ mod tests {
         AUTDDriverError::FociSTMNumFociOutOfRange(0)
     )]
     #[case(
-        "Point coordinate (1, 2, 3) is out of range ([-3104.1, 3276.7751], [-3144.725, 3276.7751], [-3276.8, 3276.7751])",
+        &format!("Point coordinate (1, 2, 3) is out of range ([{}, {}], [{}, {}], [{}, {}])", FOCI_STM_LOWER_X, FOCI_STM_UPPER_X, FOCI_STM_LOWER_Y, FOCI_STM_UPPER_Y, FOCI_STM_LOWER_Z, FOCI_STM_UPPER_Z),
         AUTDDriverError::FociSTMPointOutOfRange(1.0, 2.0, 3.0)
     )]
     #[case(
