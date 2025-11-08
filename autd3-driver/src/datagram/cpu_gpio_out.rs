@@ -13,7 +13,7 @@ pub struct CpuGPIOOutputs<F> {
     pub(crate) f: F,
 }
 
-impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> CpuGPIOOutputs<F> {
+impl<F: Fn(&Device) -> CpuGPIOPort> CpuGPIOOutputs<F> {
     /// Creates a new [`CpuGPIOOutputs`].
     #[must_use]
     pub const fn new(f: F) -> Self {
@@ -21,7 +21,7 @@ impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> CpuGPIOOutputs<F> {
     }
 }
 
-impl<F: Fn(&Device) -> CpuGPIOPort + Send + Sync> Datagram<'_> for CpuGPIOOutputs<F> {
+impl<F: Fn(&Device) -> CpuGPIOPort> Datagram<'_> for CpuGPIOOutputs<F> {
     type G = Self;
     type Error = Infallible;
 

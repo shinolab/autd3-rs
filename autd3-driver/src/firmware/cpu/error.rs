@@ -24,6 +24,27 @@ pub const fn check_firmware_err(ack: Ack) -> Result<(), AUTDDriverError> {
         MISS_TRANSITION_TIME => Err(AUTDDriverError::MissTransitionTime),
         INVALID_SILENCER_SETTINGS => Err(AUTDDriverError::InvalidSilencerSettings),
         INVALID_TRANSITION_MODE => Err(AUTDDriverError::InvalidTransitionMode),
-        _ => Err(AUTDDriverError::UnknownFirmwareError(ack.err())), // GRCOV_EXCL_LINE
+        _ => Err(AUTDDriverError::UnknownFirmwareError(ack.err())),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[rstest::rstest]
+    #[case(AUTDDriverError::NotSupportedTag, NOT_SUPPORTED_TAG)]
+    #[case(AUTDDriverError::InvalidMessageID, INVALID_MESSAGE_ID)]
+    #[case(AUTDDriverError::InvalidInfoType, INVALID_INFO_TYPE)]
+    #[case(AUTDDriverError::InvalidGainSTMMode, INVALID_GAIN_STM_MODE)]
+    #[case(AUTDDriverError::InvalidSegmentTransition, INVALID_SEGMENT_TRANSITION)]
+    #[case(AUTDDriverError::MissTransitionTime, MISS_TRANSITION_TIME)]
+    #[case(AUTDDriverError::InvalidSilencerSettings, INVALID_SILENCER_SETTINGS)]
+    #[case(AUTDDriverError::InvalidTransitionMode, INVALID_TRANSITION_MODE)]
+    #[case(AUTDDriverError::UnknownFirmwareError(0x0F), 0xFF)]
+    fn check_firmware_err(#[case] expected: AUTDDriverError, #[case] err_code: u8) {
+        let ack = Ack::new(0, err_code);
+        let result = super::check_firmware_err(ack);
+        assert_eq!(result.unwrap_err(), expected);
     }
 }

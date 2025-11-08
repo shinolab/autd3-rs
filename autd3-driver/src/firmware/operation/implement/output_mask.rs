@@ -35,7 +35,7 @@ impl<'a, F: Fn(&'a Transducer) -> bool> OutputMaskOp<F> {
     }
 }
 
-impl<'a, F: Fn(&'a Transducer) -> bool + Send + Sync> Operation<'a> for OutputMaskOp<F> {
+impl<'a, F: Fn(&'a Transducer) -> bool + Send> Operation<'a> for OutputMaskOp<F> {
     type Error = Infallible;
 
     fn pack(&mut self, dev: &'a Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -70,8 +70,8 @@ impl<'a, F: Fn(&'a Transducer) -> bool + Send + Sync> Operation<'a> for OutputMa
     }
 }
 
-impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync, F: Fn(&'a Device) -> FT>
-    OperationGenerator<'a> for OutputMaskOperationGenerator<F>
+impl<'a, FT: Fn(&'a Transducer) -> bool + Send, F: Fn(&'a Device) -> FT> OperationGenerator<'a>
+    for OutputMaskOperationGenerator<F>
 {
     type O1 = OutputMaskOp<FT>;
     type O2 = NullOp;
@@ -99,13 +99,9 @@ mod tests {
         let mut op = OutputMaskOp::new(|_| f, Segment::S0);
 
         assert_eq!(size_of::<OutputMaskT>() + 32, op.required_size(&device));
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::OutputMask as u8);
         assert_eq!(tx[1], Segment::S0 as u8);
         (0..31).for_each(|i| assert_eq!(expected, tx[size_of::<OutputMaskT>() + i]));

@@ -6,7 +6,7 @@ use crate::{ethercat::DcSysTime, geometry::Transducer};
 #[non_exhaustive]
 #[derive(Clone, Debug)]
 pub enum GPIOOutputType<'a> {
-    /// Base signal (50% duty cycle square wave with the same frequency as ultrasound).
+    /// Base signal (50% duty ratio square wave with the frequency of the ultrasound).
     BaseSignal,
     /// High if the temperature sensor is asserted.
     Thermo,
@@ -16,11 +16,11 @@ pub enum GPIOOutputType<'a> {
     Sync,
     /// Modulation segment (High if the segment is 1, Low if the segment is 0).
     ModSegment,
-    /// High when the Modulation index is the specified value.
+    /// High during the specified modulation index.
     ModIdx(u16),
     /// STM and Gain segment (High if the segment is 1, Low if the segment is 0).
     StmSegment,
-    /// High when the STM index is the specified value.
+    /// High during the specified STM index.
     StmIdx(u16),
     /// High if FociSTM/GainSTM is used.
     IsStmMode,

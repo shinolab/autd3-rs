@@ -33,7 +33,7 @@ pub struct PulseWidthEncoder<F> {
     pub(crate) f: F,
 }
 
-impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> PulseWidthEncoder<F> {
+impl<H: Fn(Intensity) -> PulseWidth, F: Fn(&Device) -> H> PulseWidthEncoder<F> {
     /// Creates a new [`PulseWidthEncoder`].
     #[must_use]
     pub const fn new(f: F) -> Self {
@@ -41,9 +41,7 @@ impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> PulseWid
     }
 }
 
-impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> Datagram<'_>
-    for PulseWidthEncoder<F>
-{
+impl<H: Fn(Intensity) -> PulseWidth, F: Fn(&Device) -> H> Datagram<'_> for PulseWidthEncoder<F> {
     type G = PulseWidthEncoderOperationGenerator<F>;
     type Error = Infallible;
 

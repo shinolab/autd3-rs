@@ -30,7 +30,7 @@ impl<F: Fn(Intensity) -> PulseWidth> PulseWidthEncoderOp<F> {
     }
 }
 
-impl<F: Fn(Intensity) -> PulseWidth + Send + Sync> Operation<'_> for PulseWidthEncoderOp<F> {
+impl<F: Fn(Intensity) -> PulseWidth + Send> Operation<'_> for PulseWidthEncoderOp<F> {
     type Error = PulseWidthError;
 
     fn pack(&mut self, _: &Device, tx: &mut [u8]) -> Result<usize, Self::Error> {
@@ -68,7 +68,7 @@ impl<F: Fn(Intensity) -> PulseWidth + Send + Sync> Operation<'_> for PulseWidthE
     }
 }
 
-impl<H: Fn(Intensity) -> PulseWidth + Send + Sync, F: Fn(&Device) -> H> OperationGenerator<'_>
+impl<H: Fn(Intensity) -> PulseWidth + Send, F: Fn(&Device) -> H> OperationGenerator<'_>
     for PulseWidthEncoderOperationGenerator<F>
 {
     type O1 = PulseWidthEncoderOp<H>;
@@ -95,13 +95,9 @@ mod tests {
             size_of::<PweMsg>() + PWE_BUF_SIZE * size_of::<u8>(),
             op.required_size(&device)
         );
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::ConfigPulseWidthEncoder as u8);
         assert!((0..PWE_BUF_SIZE).all(|i| i as u8 == tx[2 + 2 * i]));
     }

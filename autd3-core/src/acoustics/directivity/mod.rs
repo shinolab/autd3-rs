@@ -7,7 +7,7 @@ pub use sphere::Sphere;
 pub use t4010a1::T4010A1;
 
 /// A trait representing the directivity of ultrasound transducer.
-pub trait Directivity: Send + Sync {
+pub trait Directivity {
     /// Calculates the directivity based on the given angle.
     ///
     /// # Arguments

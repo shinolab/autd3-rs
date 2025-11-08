@@ -53,7 +53,7 @@ pub struct OutputMaskOperationGenerator<F> {
     pub(crate) segment: Segment,
 }
 
-impl<'a, FT: Fn(&'a Transducer) -> bool + Send + Sync, F: Fn(&'a Device) -> FT> Datagram<'a>
+impl<'a, FT: Fn(&'a Transducer) -> bool, F: Fn(&'a Device) -> FT> Datagram<'a>
     for OutputMask<F, FT>
 {
     type G = OutputMaskOperationGenerator<F>;

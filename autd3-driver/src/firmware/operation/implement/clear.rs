@@ -1,8 +1,12 @@
-use std::convert::Infallible;
+use std::{convert::Infallible, mem::size_of};
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-use crate::{datagram::Clear, firmware::tag::TypeTag};
+use crate::{
+    datagram::Clear,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
 use autd3_core::geometry::Device;
 
@@ -35,11 +39,11 @@ impl Operation<'_> for ClearOp {
         );
 
         self.is_done = true;
-        Ok(std::mem::size_of::<ClearMsg>())
+        Ok(size_of::<ClearMsg>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<ClearMsg>()
+        size_of::<ClearMsg>()
     }
 
     fn is_done(&self) -> bool {
@@ -58,12 +62,10 @@ impl OperationGenerator<'_> for Clear {
 
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use super::*;
 
     #[test]
-    fn test() {
+    fn op() {
         let device = crate::tests::create_device();
 
         let mut tx = [0x00u8; size_of::<ClearMsg>()];
@@ -71,13 +73,9 @@ mod tests {
         let mut op = ClearOp::new();
 
         assert_eq!(op.required_size(&device), size_of::<ClearMsg>());
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::Clear as u8);
     }
 }

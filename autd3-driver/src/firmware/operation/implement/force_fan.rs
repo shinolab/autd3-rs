@@ -1,8 +1,12 @@
 use std::convert::Infallible;
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-use crate::{datagram::ForceFan, firmware::tag::TypeTag};
+use crate::{
+    datagram::ForceFan,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
 use autd3_core::geometry::Device;
 
@@ -69,7 +73,7 @@ mod tests {
     #[rstest::rstest]
     #[case(0x01, true)]
     #[case(0x00, false)]
-    fn test(#[case] expect: u8, #[case] value: bool) {
+    fn op(#[case] expect: u8, #[case] value: bool) {
         let device = crate::tests::create_device();
 
         let mut tx = [0x00u8; size_of::<ForceFanMsg>()];
@@ -77,13 +81,9 @@ mod tests {
         let mut op = ForceFanOp::new(value);
 
         assert_eq!(op.required_size(&device), size_of::<ForceFanMsg>());
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::ForceFan as u8);
         assert_eq!(tx[offset_of!(ForceFanMsg, value)], expect);
     }

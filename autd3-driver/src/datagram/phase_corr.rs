@@ -40,7 +40,7 @@ impl<'a, FT: Fn(&'a Transducer) -> Phase, F: Fn(&'a Device) -> FT> PhaseCorrecti
     }
 }
 
-impl<'a, FT: Fn(&'a Transducer) -> Phase + Send + Sync, F: Fn(&'a Device) -> FT> Datagram<'a>
+impl<'a, FT: Fn(&'a Transducer) -> Phase, F: Fn(&'a Device) -> FT> Datagram<'a>
     for PhaseCorrection<F, FT>
 {
     type G = Self;

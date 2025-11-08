@@ -11,7 +11,7 @@ impl<T: Modulation> DModulation for MaybeUninit<T> {
     fn dyn_calc(&mut self) -> Result<Vec<u8>, ModulationError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
-        // SAFETY: This function is called only once from `Modulation::calc`.
+        // SAFETY: This function is called only once from `BoxedModulation::calc`.
         let g = unsafe { tmp.assume_init() };
         g.calc()
     }
@@ -54,7 +54,7 @@ pub mod tests {
     use crate::datagram::modulation::tests::TestModulation;
 
     #[test]
-    fn boxed_modulation_unsafe() {
+    fn new() {
         let m = TestModulation {
             sampling_config: SamplingConfig::FREQ_4K,
         };

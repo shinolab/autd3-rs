@@ -2,7 +2,9 @@ use std::time::Duration;
 
 use super::parallel_mode::ParallelMode;
 
-/// The option used in Sender.
+/// The option used in [`Sender`].
+///
+/// [`Sender`]: super::Sender
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SenderOption {
     /// The duration between sending operations.

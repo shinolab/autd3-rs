@@ -8,7 +8,6 @@ use autd3_core::{
 };
 
 pub trait SilencerConfig: Clone + Copy {}
-impl SilencerConfig for () {}
 
 /// To configure the silencer by the completion time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -92,7 +91,7 @@ impl SilencerConfig for FixedUpdateRate {}
 
 /// [`Datagram`] to configure the silencer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Silencer<T: SilencerConfig> {
+pub struct Silencer<T> {
     /// Configuration of the silencer.
     pub config: T,
 }
@@ -105,7 +104,7 @@ impl<T: SilencerConfig> Silencer<T> {
     }
 }
 
-impl Silencer<()> {
+impl Silencer<FixedCompletionSteps> {
     /// Creates a [`Silencer`] to disable the silencer.
     #[must_use]
     pub const fn disable() -> Silencer<FixedCompletionSteps> {

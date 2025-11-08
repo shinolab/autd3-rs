@@ -2,7 +2,6 @@ use crate::{firmware::operation::Operation, geometry::Device};
 
 pub struct NullOp;
 
-// GRCOV_EXCL_START
 impl Operation<'_> for NullOp {
     type Error = std::convert::Infallible;
 
@@ -24,4 +23,30 @@ impl Default for Box<dyn Operation<'_, Error = std::convert::Infallible>> {
         Box::new(NullOp)
     }
 }
-// GRCOV_EXCL_STOP
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn null_op() {
+        let device = crate::tests::create_device();
+        let op = NullOp;
+        assert_eq!(op.required_size(&device), 0);
+        assert!(op.is_done());
+    }
+
+    #[test]
+    #[should_panic]
+    fn pack() {
+        let device = crate::tests::create_device();
+        let mut op = NullOp;
+        let mut buf = [];
+        let _ = op.pack(&device, &mut buf);
+    }
+
+    #[test]
+    fn default() {
+        let _op: Box<dyn Operation<'_, Error = std::convert::Infallible>> = Default::default();
+    }
+}

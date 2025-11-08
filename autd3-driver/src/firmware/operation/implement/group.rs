@@ -1,7 +1,6 @@
 use std::{fmt::Debug, hash::Hash};
 
-use crate::datagram::GroupOpGenerator;
-use crate::firmware::operation::OperationGenerator;
+use crate::{datagram::GroupOpGenerator, firmware::operation::OperationGenerator};
 
 use autd3_core::geometry::Device;
 
@@ -40,46 +39,48 @@ mod tests {
         geometry::Geometry,
     };
 
-    pub struct NullOperationGenerator;
+    #[derive(Debug, Default)]
+    pub struct TestDatagram {
+        pub test: Arc<Mutex<Vec<bool>>>,
+        pub option: DatagramOption,
+    }
 
-    impl OperationGenerator<'_> for NullOperationGenerator {
-        type O1 = NullOp;
-        type O2 = NullOp;
+    impl Datagram<'_> for TestDatagram {
+        type G = NullOp;
+        type Error = Infallible;
 
-        // GRCOV_EXCL_START
-        fn generate(&mut self, _: &Device) -> Option<(Self::O1, Self::O2)> {
-            Some((NullOp, NullOp))
+        fn operation_generator(
+            self,
+            geometry: &Geometry,
+            _: &Environment,
+            filter: &DeviceMask,
+        ) -> Result<Self::G, Self::Error> {
+            geometry.iter().for_each(|dev| {
+                self.test.lock().unwrap()[dev.idx()] = filter.is_enabled(dev);
+            });
+            Ok(NullOp)
         }
-        // GRCOV_EXCL_STOP
+
+        fn option(&self) -> DatagramOption {
+            self.option
+        }
+    }
+
+    impl Inspectable<'_> for TestDatagram {
+        type Result = ();
+
+        fn inspect(
+            self,
+            geometry: &Geometry,
+            _: &Environment,
+            filter: &DeviceMask,
+        ) -> Result<InspectionResult<Self::Result>, Self::Error> {
+            Ok(InspectionResult::new(geometry, filter, |_| ()))
+        }
     }
 
     #[test]
-    fn test_group_option() -> Result<(), Box<dyn std::error::Error>> {
-        #[derive(Debug)]
-        pub struct TestDatagram {
-            pub option: DatagramOption,
-        }
-
-        impl Datagram<'_> for TestDatagram {
-            type G = NullOperationGenerator;
-            type Error = Infallible;
-
-            // GRCOV_EXCL_START
-            fn operation_generator(
-                self,
-                _: &Geometry,
-                _: &Environment,
-                _: &DeviceMask,
-            ) -> Result<Self::G, Self::Error> {
-                Ok(NullOperationGenerator)
-            }
-            // GRCOV_EXCL_STOP
-
-            fn option(&self) -> DatagramOption {
-                self.option
-            }
-        }
-
+    fn option() -> Result<(), Box<dyn std::error::Error>> {
         let option1 = DatagramOption {
             timeout: Duration::from_secs(1),
             parallel_threshold: 10,
@@ -92,10 +93,22 @@ mod tests {
         assert_eq!(
             option1.merge(option2),
             Group::new(
-                |dev| Some(dev.idx()), // GRCOV_EXCL_LINE
+                |_dev| unreachable!(),
                 HashMap::from([
-                    (0, TestDatagram { option: option1 }),
-                    (1, TestDatagram { option: option2 }),
+                    (
+                        0,
+                        TestDatagram {
+                            option: option1,
+                            ..Default::default()
+                        }
+                    ),
+                    (
+                        1,
+                        TestDatagram {
+                            option: option2,
+                            ..Default::default()
+                        }
+                    ),
                 ]),
             )
             .option()
@@ -105,29 +118,7 @@ mod tests {
     }
 
     #[test]
-    fn test_group() -> Result<(), Box<dyn std::error::Error>> {
-        #[derive(Debug)]
-        pub struct TestDatagram {
-            pub test: Arc<Mutex<Vec<bool>>>,
-        }
-
-        impl Datagram<'_> for TestDatagram {
-            type G = NullOperationGenerator;
-            type Error = Infallible;
-
-            fn operation_generator(
-                self,
-                geometry: &Geometry,
-                _: &Environment,
-                filter: &DeviceMask,
-            ) -> Result<Self::G, Self::Error> {
-                geometry.iter().for_each(|dev| {
-                    self.test.lock().unwrap()[dev.idx()] = filter.is_enabled(dev);
-                });
-                Ok(NullOperationGenerator)
-            }
-        }
-
+    fn op() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = crate::tests::create_geometry(3);
 
         let test = Arc::new(Mutex::new(vec![false; 3]));
@@ -136,7 +127,13 @@ mod tests {
                 0 | 2 => Some(()),
                 _ => None,
             },
-            HashMap::from([((), TestDatagram { test: test.clone() })]),
+            HashMap::from([(
+                (),
+                TestDatagram {
+                    test: test.clone(),
+                    option: DatagramOption::default(),
+                },
+            )]),
         )
         .operation_generator(
             &geometry,
@@ -153,45 +150,13 @@ mod tests {
 
     #[test]
     fn inspect() -> Result<(), Box<dyn std::error::Error>> {
-        #[derive(Debug)]
-        pub struct TestDatagram {}
-
-        impl Datagram<'_> for TestDatagram {
-            type G = NullOperationGenerator;
-            type Error = Infallible;
-
-            // GRCOV_EXCL_START
-            fn operation_generator(
-                self,
-                _: &Geometry,
-                _: &Environment,
-                _: &DeviceMask,
-            ) -> Result<Self::G, Self::Error> {
-                Ok(NullOperationGenerator)
-            }
-            // GRCOV_EXCL_STOP
-        }
-
-        impl Inspectable<'_> for TestDatagram {
-            type Result = ();
-
-            fn inspect(
-                self,
-                geometry: &Geometry,
-                _: &Environment,
-                filter: &DeviceMask,
-            ) -> Result<InspectionResult<Self::Result>, Self::Error> {
-                Ok(InspectionResult::new(geometry, filter, |_| ()))
-            }
-        }
-
         let geometry = crate::tests::create_geometry(4);
         let r = Group::new(
             |dev| match dev.idx() {
                 1 => None,
                 _ => Some(()),
             },
-            HashMap::from([((), TestDatagram {})]),
+            HashMap::from([((), TestDatagram::default())]),
         )
         .inspect(&geometry, &Environment::default(), &DeviceMask::AllEnabled)?;
 

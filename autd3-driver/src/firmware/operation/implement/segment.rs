@@ -1,12 +1,12 @@
 use std::mem::size_of;
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-
 use crate::{
     datagram::{SwapSegmentFociSTM, SwapSegmentGain, SwapSegmentGainSTM, SwapSegmentModulation},
     error::AUTDDriverError,
-    firmware::tag::TypeTag,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
 };
 
 use autd3_core::{

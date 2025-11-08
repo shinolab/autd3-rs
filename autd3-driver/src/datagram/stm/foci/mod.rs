@@ -28,7 +28,7 @@ use autd3_core::{
 /// A trait to generate a [`ControlPoints`] for  [`FociSTM`].
 ///
 /// [`FociSTM`]: crate::datagram::FociSTM
-pub trait FociSTMIterator<const N: usize>: Send + Sync {
+pub trait FociSTMIterator<const N: usize>: Send {
     /// Returns the next [`ControlPoints`].
     fn next(&mut self) -> ControlPoints<N>;
 }
@@ -110,7 +110,6 @@ pub struct FociSTMOperationGenerator<const N: usize, G: FociSTMIteratorGenerator
     pub(crate) size: usize,
     pub(crate) config: SamplingConfig,
     pub(crate) sound_speed: f32,
-
     pub(crate) rep: u16,
     pub(crate) segment: Segment,
     pub(crate) transition_params: TransitionModeParams,

@@ -1,9 +1,12 @@
-use std::convert::Infallible;
+use std::{convert::Infallible, mem::size_of};
 
-use crate::firmware::operation::implement::null::NullOp;
-use crate::firmware::operation::{Operation, OperationGenerator};
-
-use crate::{datagram::Synchronize, firmware::tag::TypeTag};
+use crate::{
+    datagram::Synchronize,
+    firmware::{
+        operation::{Operation, OperationGenerator, implement::null::NullOp},
+        tag::TypeTag,
+    },
+};
 
 use autd3_core::geometry::Device;
 
@@ -36,11 +39,11 @@ impl Operation<'_> for SynchronizeOp {
         );
 
         self.is_done = true;
-        Ok(std::mem::size_of::<SyncMsg>())
+        Ok(size_of::<SyncMsg>())
     }
 
     fn required_size(&self, _: &Device) -> usize {
-        std::mem::size_of::<SyncMsg>()
+        size_of::<SyncMsg>()
     }
 
     fn is_done(&self) -> bool {
@@ -58,8 +61,6 @@ impl OperationGenerator<'_> for Synchronize {
 }
 #[cfg(test)]
 mod tests {
-    use std::mem::size_of;
-
     use super::*;
 
     #[test]
@@ -71,13 +72,9 @@ mod tests {
         let mut op = SynchronizeOp::new();
 
         assert_eq!(op.required_size(&device), size_of::<SyncMsg>());
-
         assert!(!op.is_done());
-
         assert!(op.pack(&device, &mut tx).is_ok());
-
         assert!(op.is_done());
-
         assert_eq!(tx[0], TypeTag::Sync as u8);
     }
 }

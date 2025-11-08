@@ -55,7 +55,7 @@ impl<'a, G: DGainCalculatorGenerator<'a> + 'static, T: Gain<'a, G = G>> DGain<'a
     ) -> Result<Box<dyn DGainCalculatorGenerator<'a>>, GainError> {
         let mut tmp: MaybeUninit<T> = MaybeUninit::uninit();
         std::mem::swap(&mut tmp, self);
-        // SAFETY: This function is called only once from `Gain::init`.
+        // SAFETY: This function is called only once from `BoxedGain::init`.
         let g = unsafe { tmp.assume_init() };
         Ok(Box::new(g.init(geometry, env, filter)?) as _)
     }
@@ -133,7 +133,7 @@ pub mod tests {
             (4, vec![Drive { phase: Phase(0x05), intensity: Intensity(0x05) }; NUM_TRANSDUCERS]),
         ].into_iter().collect(),
         5)]
-    fn boxed_gain_unsafe(
+    fn new(
         #[case] expect: HashMap<usize, Vec<Drive>>,
         #[case] n: u16,
     ) -> Result<(), Box<dyn std::error::Error>> {

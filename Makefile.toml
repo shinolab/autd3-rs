@@ -79,7 +79,7 @@ args = [
     "-t",
     "${@}",
     "--excl-line",
-    "GRCOV_EXCL_LINE|#\\[derive|#\\[error|unreachable!|unimplemented!|^\\s*\\)\\)?\\?[\\),;]?$",
+    "GRCOV_EXCL_LINE|#\\[derive|unreachable!|unimplemented!|Infallible|^\\s*\\)+\\?\\)*[,;]?$",
     "--keep-only",
     "autd3/src/**/*.rs",
     "--keep-only",
