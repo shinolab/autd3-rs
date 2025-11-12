@@ -1,9 +1,9 @@
+mod foci;
+mod gain;
+
 use autd3_core::firmware::{Drive, Phase, Segment, transition_mode::TransitionModeParams};
 
 use super::{super::params::*, FPGAEmulator};
-
-mod foci;
-mod gain;
 
 impl FPGAEmulator {
     #[must_use]
@@ -63,26 +63,30 @@ impl FPGAEmulator {
 
     #[must_use]
     pub fn drives_at(&self, segment: Segment, idx: usize) -> Vec<Drive> {
-        let mut phase_corr_buf = vec![Phase::ZERO; self.mem.num_transducers];
-        let mut output_mask_buf = vec![false; self.mem.num_transducers];
-        let mut dst = vec![Drive::NULL; self.mem.num_transducers];
-        self.drives_at_inplace(
-            segment,
-            idx,
-            &mut phase_corr_buf,
-            &mut output_mask_buf,
-            &mut dst,
-        );
-        dst
+        let len = self.mem.num_transducers;
+        let mut phase_corr = Vec::<Phase>::with_capacity(len);
+        let mut output_mask = Vec::<bool>::with_capacity(len);
+        let mut buffer = Vec::with_capacity(len);
+        unsafe {
+            self.drives_at_inplace(
+                segment,
+                idx,
+                phase_corr.as_mut_ptr(),
+                output_mask.as_mut_ptr(),
+                buffer.as_mut_ptr(),
+            );
+            buffer.set_len(len);
+        }
+        buffer
     }
 
-    pub fn drives_at_inplace(
+    pub unsafe fn drives_at_inplace(
         &self,
         segment: Segment,
         idx: usize,
-        phase_corr_buf: &mut [Phase],
-        output_mask_buf: &mut [bool],
-        dst: &mut [Drive],
+        phase_corr_buf: *mut Phase,
+        output_mask_buf: *mut bool,
+        dst: *mut Drive,
     ) {
         if self.is_stm_gain_mode(segment) {
             self.gain_stm_drives_inplace(segment, idx, phase_corr_buf, output_mask_buf, dst)

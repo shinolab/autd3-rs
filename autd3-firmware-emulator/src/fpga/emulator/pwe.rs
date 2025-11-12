@@ -10,14 +10,17 @@ impl FPGAEmulator {
 
     #[must_use]
     pub fn pulse_width_encoder_table(&self) -> Vec<PulseWidth> {
-        let mut dst = vec![PulseWidth::new(0); 256];
-        self.pulse_width_encoder_table_inplace(&mut dst);
-        dst
+        let mut buffer = Vec::with_capacity(256);
+        unsafe {
+            self.pulse_width_encoder_table_inplace(buffer.as_mut_ptr());
+            buffer.set_len(256);
+        }
+        buffer
     }
 
-    pub fn pulse_width_encoder_table_inplace(&self, dst: &mut [PulseWidth]) {
-        dst.iter_mut().enumerate().for_each(|(i, d)| {
-            *d = self.pulse_width_encoder_table_at(i);
+    pub unsafe fn pulse_width_encoder_table_inplace(&self, dst: *mut PulseWidth) {
+        (0..256).for_each(|i| {
+            unsafe { dst.add(i).write(self.pulse_width_encoder_table_at(i)) };
         });
     }
 
@@ -40,7 +43,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_pulse_width() {
+    fn to_pulse_width() {
         let fpga = FPGAEmulator::new(249);
         (0x00..=0xFF).for_each(|a| {
             (0x00..=0xFF).for_each(|b| {

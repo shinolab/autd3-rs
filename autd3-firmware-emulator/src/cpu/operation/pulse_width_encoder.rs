@@ -29,7 +29,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn pwe_memory_layout() {
+    fn mem_layout() {
         assert_eq!(2, std::mem::size_of::<Pwe>());
         assert_eq!(0, std::mem::offset_of!(Pwe, tag));
     }

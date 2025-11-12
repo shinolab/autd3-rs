@@ -72,7 +72,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn firminfo_memory_layout() {
+    fn mem_layout() {
         assert_eq!(2, std::mem::size_of::<FirmInfo>());
         assert_eq!(0, std::mem::offset_of!(FirmInfo, tag));
         assert_eq!(1, std::mem::offset_of!(FirmInfo, ty));

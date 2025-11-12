@@ -56,25 +56,24 @@ impl FPGAEmulator {
         &self,
         segment: Segment,
         idx: usize,
-        phase_corr_buf: &mut [Phase],
-        output_mask_buf: &mut [bool],
-        dst: &mut [Drive],
+        phase_corr_buf: *mut Phase,
+        output_mask_buf: *mut bool,
+        dst: *mut Drive,
     ) {
         let bram = &self.mem.stm_bram[&segment];
         let sound_speed = self.sound_speed(segment);
         let num_foci = self.num_foci(segment) as usize;
 
-        self.phase_correction_inplace(phase_corr_buf);
-        self.output_mask_inplace(segment, output_mask_buf);
+        unsafe {
+            self.phase_correction_inplace(phase_corr_buf);
+            self.output_mask_inplace(segment, output_mask_buf)
+        };
 
-        self.mem
-            .tr_pos
+        self.local_tr_pos()
             .iter()
-            .zip(phase_corr_buf.iter())
-            .zip(output_mask_buf.iter())
             .take(self.mem.num_transducers)
             .enumerate()
-            .for_each(|(i, ((&tr, &p), &mask))| {
+            .for_each(|(i, tr)| {
                 let tr_z = ((tr >> 32) & 0xFFFF) as i16 as i32;
                 let tr_x = ((tr >> 16) & 0xFFFF) as i16 as i32;
                 let tr_y = (tr & 0xFFFF) as i16 as i32;
@@ -107,19 +106,21 @@ impl FPGAEmulator {
                 let sin = ((sin / num_foci as u16) >> 1) as usize;
                 let cos = ((cos / num_foci as u16) >> 1) as usize;
                 let phase = self.mem.atan_table[(sin << 7) | cos];
-                dst[i] = Drive {
-                    phase: Phase(phase) + p,
-                    intensity: Intensity(if mask { intensity } else { 0x00 }),
+                unsafe {
+                    let p = phase_corr_buf.add(i).read();
+                    let mask = output_mask_buf.add(i).read();
+                    dst.add(i).write(Drive {
+                        phase: Phase(phase) + p,
+                        intensity: Intensity(if mask { intensity } else { 0x00 }),
+                    })
                 };
             });
     }
 
-    // GRCOV_EXCL_START
     #[must_use]
     pub fn local_tr_pos(&self) -> &[u64] {
         self.mem.tr_pos.mem.as_slice()
     }
-    // GRCOV_EXCL_STOP
 
     #[must_use]
     pub fn local_tr_pos_at(&self, idx: usize) -> u64 {

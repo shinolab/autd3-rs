@@ -179,7 +179,6 @@ pub const GPIO_IN_FLAG_2: u8 = 1 << 2;
 pub const GPIO_IN_FLAG_3: u8 = 1 << 3;
 
 pub const NO_ERR: u8 = 0x00;
-#[allow(clippy::identity_op)]
 pub const ERR_NOT_SUPPORTED_TAG: u8 = 0x01;
 pub const ERR_INVALID_MSG_ID: u8 = 0x02;
 pub const ERR_INVALID_INFO_TYPE: u8 = 0x03;

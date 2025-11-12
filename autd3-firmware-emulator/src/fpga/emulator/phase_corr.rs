@@ -16,13 +16,19 @@ impl FPGAEmulator {
 
     #[must_use]
     pub fn phase_correction(&self) -> Vec<Phase> {
-        let mut dst = vec![Phase::ZERO; self.mem.num_transducers];
-        self.phase_correction_inplace(&mut dst);
-        dst
+        let len = self.mem.num_transducers;
+        let mut buffer = Vec::with_capacity(len);
+        unsafe {
+            self.phase_correction_inplace(buffer.as_mut_ptr());
+            buffer.set_len(len);
+        }
+        buffer
     }
 
-    pub fn phase_correction_inplace(&self, dst: &mut [Phase]) {
-        (0..self.mem.num_transducers).for_each(|i| dst[i] = self._phase_corr(i));
+    pub unsafe fn phase_correction_inplace(&self, dst: *mut Phase) {
+        (0..self.mem.num_transducers).for_each(|i| {
+            unsafe { dst.add(i).write(self._phase_corr(i)) };
+        });
     }
 }
 

@@ -61,7 +61,6 @@ impl CPUEmulator {
             std::mem::size_of::<u64>() >> 1,
         );
         self.set_and_wait_update(CTL_FLAG_MOD_SET);
-
         NO_ERR
     }
 
@@ -86,10 +85,6 @@ impl CPUEmulator {
 
             let write;
             let data = if (d.subseq.flag & MODULATION_FLAG_BEGIN) == MODULATION_FLAG_BEGIN {
-                self.mod_cycle = 0;
-
-                write = d.head.size as u16;
-
                 if Self::validate_transition_mode(
                     self.mod_segment,
                     segment,
@@ -109,10 +104,11 @@ impl CPUEmulator {
                 if d.head.transition_mode != TRANSITION_MODE_NONE {
                     self.mod_segment = segment;
                 }
-                self.mod_rep[segment as usize] = d.head.rep;
-                self.mod_freq_div[segment as usize] = d.head.freq_div;
+                self.mod_cycle = 0;
                 self.mod_transition_mode = d.head.transition_mode;
                 self.mod_transition_value = d.head.transition_value;
+                self.mod_freq_div[segment as usize] = d.head.freq_div;
+                self.mod_rep[segment as usize] = d.head.rep;
 
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
@@ -126,11 +122,12 @@ impl CPUEmulator {
                 );
 
                 self.change_mod_wr_segment(segment as _);
+                self.change_mod_wr_page(0);
 
+                write = d.head.size as u16;
                 data[std::mem::size_of::<ModulationHead>()..].as_ptr() as *const u16
             } else {
                 write = d.subseq.size;
-
                 data[std::mem::size_of::<ModulationSubseq>()..].as_ptr() as *const u16
             };
 
@@ -219,7 +216,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn modulation_memory_layout() {
+    fn mem_layout() {
         assert_eq!(16, std::mem::size_of::<ModulationHead>());
         assert_eq!(0, std::mem::offset_of!(ModulationHead, tag));
         assert_eq!(1, std::mem::offset_of!(ModulationHead, flag));

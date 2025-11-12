@@ -81,7 +81,7 @@ fn send_gain_stm_phase_intensity_full_infinite() -> Result<(), Box<dyn std::erro
             bufs.iter()
                 .map(|buf| TestGain { data: buf.clone() })
                 .collect::<Vec<_>>(),
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
             GainSTMOption::default(),
         ),
         segment: Segment::S0,
@@ -113,7 +113,7 @@ fn send_gain_stm_phase_intensity_full_infinite() -> Result<(), Box<dyn std::erro
 }
 
 #[test]
-fn send_gain_stm_phase_intensity_full_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn send_gain_stm_phase_intensity_full() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
@@ -141,7 +141,7 @@ fn send_gain_stm_phase_intensity_full_unsafe() -> Result<(), Box<dyn std::error:
             bufs.iter()
                 .map(|buf| TestGain { data: buf.clone() })
                 .collect::<Vec<_>>(),
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
             GainSTMOption::default(),
         ),
         loop_count: NonZeroU16::MIN,
@@ -177,7 +177,7 @@ fn send_gain_stm_phase_intensity_full_unsafe() -> Result<(), Box<dyn std::error:
 #[case(2)]
 #[case(3)]
 #[case(GAIN_STM_BUF_SIZE_MAX)]
-fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::error::Error>> {
+fn send_gain_stm_phase_full(#[case] n: usize) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new(); 1];
@@ -187,10 +187,11 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::
     let segment = Segment::S1;
     let d = WithSegment {
         inner: GainSTM {
-            config: SamplingConfig::new(
-                NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
-                    .unwrap(),
-            ),
+            config: SamplingConfig::new(unsafe {
+                NonZeroU16::new_unchecked(
+                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
+                )
+            }),
             gains: bufs
                 .iter()
                 .map(|buf| TestGain { data: buf.clone() })
@@ -232,7 +233,7 @@ fn send_gain_stm_phase_full_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::
 #[case(5)]
 #[case(GAIN_STM_BUF_SIZE_MAX)]
 
-fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::error::Error>> {
+fn send_gain_stm_phase_half(#[case] n: usize) -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new(); 1];
@@ -253,12 +254,11 @@ fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::
             let transition_mode = GPIO(gpio);
             let d = WithFiniteLoop {
                 inner: GainSTM {
-                    config: SamplingConfig::new(
-                        NonZeroU16::new(
+                    config: SamplingConfig::new(unsafe {
+                        NonZeroU16::new_unchecked(
                             SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
                         )
-                        .unwrap(),
-                    ),
+                    }),
                     gains: bufs
                         .iter()
                         .map(|buf| TestGain { data: buf.clone() })
@@ -298,7 +298,7 @@ fn send_gain_stm_phase_half_unsafe(#[case] n: usize) -> Result<(), Box<dyn std::
 }
 
 #[test]
-fn change_gain_stm_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn change_gain_stm_segment() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new(); 1];
@@ -308,10 +308,11 @@ fn change_gain_stm_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(Segment::S0, cpu.fpga().req_stm_segment());
     let d = WithSegment {
         inner: GainSTM {
-            config: SamplingConfig::new(
-                NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT))
-                    .unwrap(),
-            ),
+            config: SamplingConfig::new(unsafe {
+                NonZeroU16::new_unchecked(
+                    SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
+                )
+            }),
             gains: gen_random_buf(2, &geometry)
                 .into_iter()
                 .map(|buf| TestGain { data: buf.clone() })
@@ -386,12 +387,11 @@ fn gain_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
                     .into_iter()
                     .map(|buf| TestGain { data: buf.clone() })
                     .collect::<Vec<_>>(),
-                config: SamplingConfig::new(
-                    NonZeroU16::new(
+                config: SamplingConfig::new(unsafe {
+                    NonZeroU16::new_unchecked(
                         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
                     )
-                    .unwrap(),
-                ),
+                }),
                 option: GainSTMOption::default(),
             },
             segment: Segment::S1,
@@ -405,8 +405,8 @@ fn gain_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
 
         let d = Silencer {
             config: FixedCompletionSteps {
-                intensity: NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
-                phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
+                intensity: unsafe { NonZeroU16::new_unchecked(SILENCER_STEPS_INTENSITY_DEFAULT) },
+                phase: unsafe { NonZeroU16::new_unchecked(SILENCER_STEPS_PHASE_DEFAULT * 2) },
                 strict: true,
             },
         };
@@ -457,7 +457,7 @@ fn send_gain_stm_invalid_segment_transition() -> Result<(), Box<dyn std::error::
                 foci: (0..2)
                     .map(|_| ControlPoint::from(Point3::origin()))
                     .collect::<Vec<_>>(),
-                config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+                config: SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
             },
             segment,
             transition_mode,

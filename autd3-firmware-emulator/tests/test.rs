@@ -53,10 +53,7 @@ where
         .iter()
         .map(|dev| generator.generate(dev))
         .collect::<Vec<_>>();
-    loop {
-        if OperationHandler::is_done(&op) {
-            break;
-        }
+    while !OperationHandler::is_done(&op) {
         msg_id.increment();
         OperationHandler::pack(*msg_id, &mut op, geometry, tx, parallel)?;
         cpu.send(tx);
@@ -131,7 +128,7 @@ fn send_ignore_same_data() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn send_slot_2_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn send_slot_2() -> Result<(), Box<dyn std::error::Error>> {
     let geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new(); 1];

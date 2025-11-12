@@ -13,7 +13,7 @@ fn fpga_state(cpu: &CPUEmulator) -> FPGAState {
 }
 
 #[test]
-fn send_reads_fpga_state_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn send_reads_fpga_state() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new(); 1];

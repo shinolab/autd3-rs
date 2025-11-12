@@ -40,6 +40,7 @@ impl CPUEmulator {
                 ADDR_SILENCER_UPDATE_RATE_PHASE,
                 d.value_phase,
             );
+            self.silencer_strict = false;
         } else {
             let strict = self.silencer_strict;
             let min_freq_div_intensity = self.min_freq_div_intensity;
@@ -84,7 +85,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn silencer_memory_layout() {
+    fn mem_layout() {
         assert_eq!(6, std::mem::size_of::<ConfigSilencer>());
         assert_eq!(0, std::mem::offset_of!(ConfigSilencer, tag));
         assert_eq!(1, std::mem::offset_of!(ConfigSilencer, flag));

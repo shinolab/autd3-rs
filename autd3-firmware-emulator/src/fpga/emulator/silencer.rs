@@ -154,18 +154,20 @@ impl FPGAEmulator {
     #[must_use]
     pub fn silencer_completion_steps(&self) -> FixedCompletionSteps {
         FixedCompletionSteps {
-            intensity: NonZeroU16::new(
-                self.mem
-                    .controller_bram
-                    .read(ADDR_SILENCER_COMPLETION_STEPS_INTENSITY),
-            )
-            .unwrap(),
-            phase: NonZeroU16::new(
-                self.mem
-                    .controller_bram
-                    .read(ADDR_SILENCER_COMPLETION_STEPS_PHASE),
-            )
-            .unwrap(),
+            intensity: unsafe {
+                NonZeroU16::new_unchecked(
+                    self.mem
+                        .controller_bram
+                        .read(ADDR_SILENCER_COMPLETION_STEPS_INTENSITY),
+                )
+            },
+            phase: unsafe {
+                NonZeroU16::new_unchecked(
+                    self.mem
+                        .controller_bram
+                        .read(ADDR_SILENCER_COMPLETION_STEPS_PHASE),
+                )
+            },
             strict: true,
         }
     }

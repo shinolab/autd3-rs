@@ -53,8 +53,6 @@ impl CPUEmulator {
             let send = (d.subseq.flag >> 6) + 1;
 
             let src_base = if (d.subseq.flag & GAIN_STM_FLAG_BEGIN) == GAIN_STM_FLAG_BEGIN {
-                self.gain_stm_mode = d.head.mode;
-
                 if Self::validate_transition_mode(
                     self.stm_segment,
                     segment,
@@ -75,10 +73,11 @@ impl CPUEmulator {
                     self.stm_segment = segment;
                 }
                 self.stm_cycle[segment as usize] = 0;
-                self.stm_rep[segment as usize] = d.head.rep;
+                self.gain_stm_mode = d.head.mode;
                 self.stm_transition_mode = d.head.transition_mode;
                 self.stm_transition_value = d.head.transition_value;
                 self.stm_freq_div[segment as usize] = d.head.freq_div;
+                self.stm_rep[segment as usize] = d.head.rep;
 
                 self.bram_write(
                     BRAM_SELECT_CONTROLLER,
@@ -263,7 +262,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn gain_stm_memory_layout() {
+    fn mem_layout() {
         assert_eq!(16, std::mem::size_of::<GainSTMHead>());
         assert_eq!(0, std::mem::offset_of!(GainSTMHead, tag));
         assert_eq!(1, std::mem::offset_of!(GainSTMHead, flag));
