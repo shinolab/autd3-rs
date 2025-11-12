@@ -9,7 +9,6 @@ use autd3_firmware_emulator::CPUEmulator;
 #[doc(hidden)]
 pub struct AuditOption {
     pub initial_msg_id: Option<MsgId>,
-    pub initial_phase_corr: Option<u8>,
     pub broken: bool,
 }
 
@@ -66,12 +65,6 @@ impl Link for Audit {
                 let mut cpu = CPUEmulator::new(i, dev.num_transducers());
                 if let Some(msg_id) = self.option.initial_msg_id {
                     cpu.set_last_msg_id(msg_id);
-                }
-                if let Some(initial_phase_corr) = self.option.initial_phase_corr {
-                    cpu.fpga_mut().set_phase_corr_bram(u16::from_le_bytes([
-                        initial_phase_corr,
-                        initial_phase_corr,
-                    ]));
                 }
                 cpu
             })
