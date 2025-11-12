@@ -42,12 +42,12 @@ pub struct UnitQuaternion {
 impl UnitQuaternion {
     #[inline]
     #[must_use]
-    pub fn new(asisangle: Vector3) -> Self {
-        let angle = asisangle.norm();
+    pub fn new(axis_angle: Vector3) -> Self {
+        let angle = axis_angle.norm();
         if angle == 0.0 {
             Self::identity()
         } else {
-            let axis = UnitVector3::new_unchecked(asisangle / angle);
+            let axis = UnitVector3::new_unchecked(axis_angle / angle);
             Self::from_axis_angle(&axis, angle)
         }
     }
