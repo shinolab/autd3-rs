@@ -105,10 +105,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn gain_memory_layout() {
+    fn mem_layout() {
         assert_eq!(4, std::mem::size_of::<Gain>());
         assert_eq!(0, std::mem::offset_of!(Gain, tag));
         assert_eq!(1, std::mem::offset_of!(Gain, segment));
         assert_eq!(2, std::mem::offset_of!(Gain, flag));
+
+        assert_eq!(2, std::mem::size_of::<GainUpdate>());
+        assert_eq!(0, std::mem::offset_of!(GainUpdate, tag));
+        assert_eq!(1, std::mem::offset_of!(GainUpdate, segment));
     }
 }

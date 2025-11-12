@@ -22,7 +22,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn cpu_gpio_out_memory_layout() {
+    fn mem_layout() {
         assert_eq!(2, std::mem::size_of::<CpuGPIOOut>());
         assert_eq!(0, std::mem::offset_of!(CpuGPIOOut, tag));
         assert_eq!(1, std::mem::offset_of!(CpuGPIOOut, pa_podr));

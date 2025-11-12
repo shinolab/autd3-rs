@@ -31,8 +31,6 @@ impl CPUEmulator {
     #[must_use]
     pub(crate) unsafe fn clear(&mut self, _data: &[u8]) -> u8 {
         unsafe {
-            // let _d = Self::cast::<Clear>(data);
-
             self.port_a_podr = 0x00;
 
             self.reads_fpga_state = false;
@@ -186,7 +184,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn clear_memory_layout() {
+    fn mem_layout() {
         assert_eq!(2, std::mem::size_of::<Clear>());
         assert_eq!(0, std::mem::offset_of!(Clear, tag));
     }

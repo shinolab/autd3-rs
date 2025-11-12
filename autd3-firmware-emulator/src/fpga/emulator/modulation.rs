@@ -43,13 +43,19 @@ impl FPGAEmulator {
 
     #[must_use]
     pub fn modulation_buffer(&self, segment: Segment) -> Vec<u8> {
-        let mut dst = vec![0; self.modulation_cycle(segment)];
-        self.modulation_buffer_inplace(segment, &mut dst);
-        dst
+        let len = self.modulation_cycle(segment);
+        let mut buffer = Vec::with_capacity(len);
+        unsafe {
+            self.modulation_buffer_inplace(segment, buffer.as_mut_ptr());
+            buffer.set_len(len);
+        }
+        buffer
     }
 
-    pub fn modulation_buffer_inplace(&self, segment: Segment, dst: &mut [u8]) {
-        (0..self.modulation_cycle(segment)).for_each(|i| dst[i] = self.modulation_at(segment, i));
+    pub unsafe fn modulation_buffer_inplace(&self, segment: Segment, dst: *mut u8) {
+        (0..self.modulation_cycle(segment)).for_each(|i| {
+            unsafe { dst.add(i).write(self.modulation_at(segment, i)) };
+        });
     }
 
     #[must_use]

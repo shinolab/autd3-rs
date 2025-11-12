@@ -71,7 +71,7 @@ where
     let d = WithSegment::new(
         TestModulation {
             buf: m.clone(),
-            sampling_config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            sampling_config: SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
         },
         segment,
         transition_mode,
@@ -125,7 +125,7 @@ where
     transition_mode::GPIO(GPIOIn::I3)
 )]
 #[case(MOD_BUF_SIZE_MIN, NonZeroU16::MIN, Segment::S1, transition_mode::Later)]
-fn send_mod_with_finite_loop_unsafe<T: TransitionMode>(
+fn send_mod_with_finite_loop<T: TransitionMode>(
     #[case] n: usize,
     #[case] loop_count: NonZeroU16,
     #[case] segment: Segment,
@@ -150,7 +150,7 @@ where
     let d = WithFiniteLoop::new(
         TestModulation {
             buf: m.clone(),
-            sampling_config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            sampling_config: SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
         },
         loop_count,
         segment,
@@ -183,7 +183,7 @@ where
 }
 
 #[test]
-fn swap_mod_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn swap_mod_segment() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new(); 1];
@@ -194,7 +194,7 @@ fn swap_mod_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     let d = WithSegment {
         inner: TestModulation {
             buf: m.clone(),
-            sampling_config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            sampling_config: SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
         },
         segment: Segment::S1,
         transition_mode: Later,
@@ -253,9 +253,9 @@ fn mod_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
         let d = WithSegment {
             inner: TestModulation {
                 buf: (0..2).map(|_| u8::MAX).collect::<Vec<_>>(),
-                sampling_config: SamplingConfig::new(
-                    NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
-                ),
+                sampling_config: SamplingConfig::new(unsafe {
+                    NonZeroU16::new_unchecked(SILENCER_STEPS_PHASE_DEFAULT)
+                }),
             },
             segment: Segment::S1,
             transition_mode: Later,
@@ -267,8 +267,8 @@ fn mod_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
 
         let d = Silencer {
             config: FixedCompletionSteps {
-                intensity: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
-                phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+                intensity: unsafe { NonZeroU16::new_unchecked(SILENCER_STEPS_PHASE_DEFAULT * 2) },
+                phase: unsafe { NonZeroU16::new_unchecked(SILENCER_STEPS_PHASE_DEFAULT) },
                 strict: true,
             },
         };
@@ -339,7 +339,7 @@ fn send_mod_invalid_transition_mode() -> Result<(), Box<dyn std::error::Error>> 
 #[case(Ok(()), DcSysTime::ZERO, DcSysTime::ZERO + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
 #[case(Err(AUTDDriverError::MissTransitionTime), DcSysTime::ZERO, DcSysTime::ZERO + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN)-autd3_driver::ethercat::EC_CYCLE_TIME_BASE)]
 #[case(Err(AUTDDriverError::MissTransitionTime), DcSysTime::ZERO + Duration::from_nanos(1), DcSysTime::ZERO + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
-fn test_miss_transition_time(
+fn miss_transition_time(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] systime: DcSysTime,
     #[case] transition_time: DcSysTime,

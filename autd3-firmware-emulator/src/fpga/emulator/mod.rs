@@ -75,12 +75,10 @@ impl FPGAEmulator {
         }
     }
 
-    // GRCOV_EXCL_START
     #[cfg(feature = "time")]
     pub fn update(&mut self) {
         self.update_with_sys_time(DcSysTime::now());
     }
-    // GRCOV_EXCL_STOP
 
     pub fn update_with_sys_time(&mut self, sys_time: DcSysTime) {
         self.mod_swapchain.update(self.gpio_in(), sys_time);
@@ -130,10 +128,6 @@ impl FPGAEmulator {
     #[must_use]
     pub fn is_force_fan(&self) -> bool {
         (self.mem.controller_bram.read(ADDR_CTL_FLAG) & (1 << CTL_FLAG_FORCE_FAN_BIT)) != 0
-    }
-
-    pub fn set_phase_corr_bram(&mut self, value: u16) {
-        self.mem.phase_corr_bram.mem_mut().fill(value);
     }
 }
 

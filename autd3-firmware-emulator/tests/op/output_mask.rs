@@ -15,7 +15,7 @@ use crate::{create_geometry, send};
 #[case(Segment::S0)]
 #[case(Segment::S1)]
 #[test]
-fn output_mask_unsafe(#[case] segment: Segment) -> Result<(), Box<dyn std::error::Error>> {
+fn output_mask(#[case] segment: Segment) -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);

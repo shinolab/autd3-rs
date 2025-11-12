@@ -30,7 +30,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn output_mask_layout() {
+    fn mem_layout() {
         assert_eq!(2, std::mem::size_of::<OutputMask>());
         assert_eq!(0, std::mem::offset_of!(OutputMask, tag));
         assert_eq!(1, std::mem::offset_of!(OutputMask, segment));

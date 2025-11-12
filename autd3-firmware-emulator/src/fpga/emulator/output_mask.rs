@@ -13,14 +13,22 @@ impl FPGAEmulator {
 
     #[must_use]
     pub fn output_mask(&self, segment: Segment) -> Vec<bool> {
-        let mut dst = vec![false; self.mem.num_transducers];
-        self.output_mask_inplace(segment, &mut dst);
-        dst
+        let len = self.mem.num_transducers;
+        let mut buffer = Vec::with_capacity(len);
+        unsafe {
+            self.output_mask_inplace(segment, buffer.as_mut_ptr());
+            buffer.set_len(len);
+        }
+        buffer
     }
 
-    pub fn output_mask_inplace(&self, segment: Segment, dst: &mut [bool]) {
-        (0..self.mem.num_transducers)
-            .for_each(|i| dst[i] = self._output_mask(i | (segment as usize) << 8));
+    pub unsafe fn output_mask_inplace(&self, segment: Segment, dst: *mut bool) {
+        (0..self.mem.num_transducers).for_each(|i| {
+            unsafe {
+                dst.add(i)
+                    .write(self._output_mask(i | (segment as usize) << 8))
+            };
+        });
     }
 }
 

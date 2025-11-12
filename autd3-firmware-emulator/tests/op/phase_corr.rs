@@ -10,7 +10,7 @@ use rand::*;
 use crate::{create_geometry, send};
 
 #[test]
-fn phase_corr_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn phase_corr() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);

@@ -47,7 +47,7 @@ pub fn gen_random_foci<const N: usize>(num: usize) -> Vec<ControlPoints<N>> {
 }
 
 #[test]
-fn test_send_foci_stm_infinite() -> Result<(), Box<dyn std::error::Error>> {
+fn send_foci_stm_infinite() -> Result<(), Box<dyn std::error::Error>> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -78,7 +78,7 @@ fn test_send_foci_stm_infinite() -> Result<(), Box<dyn std::error::Error>> {
     let stm = WithSegment {
         inner: FociSTM::new(
             foci.clone(),
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
         ),
         segment: Segment::S0,
         transition_mode: Immediate,
@@ -123,7 +123,7 @@ fn test_send_foci_stm_infinite() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn test_send_foci_stm_finite_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn send_foci_stm_finite() -> Result<(), Box<dyn std::error::Error>> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -154,7 +154,7 @@ fn test_send_foci_stm_finite_unsafe() -> Result<(), Box<dyn std::error::Error>> 
     let stm = WithFiniteLoop {
         inner: FociSTM::new(
             foci.clone(),
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+            SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
         ),
         segment: Segment::S1,
         loop_count: NonZeroU16::MIN,
@@ -201,7 +201,7 @@ fn test_send_foci_stm_finite_unsafe() -> Result<(), Box<dyn std::error::Error>> 
 }
 
 #[test]
-fn change_foci_stm_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn change_foci_stm_segment() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new(); 1];
@@ -238,7 +238,7 @@ fn change_foci_stm_segment_unsafe() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn test_foci_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
+fn foci_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new(); 1];
@@ -277,12 +277,11 @@ fn test_foci_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> 
         let stm = WithSegment {
             inner: FociSTM {
                 foci: gen_random_foci::<1>(2),
-                config: SamplingConfig::new(
-                    NonZeroU16::new(
+                config: SamplingConfig::new(unsafe {
+                    NonZeroU16::new_unchecked(
                         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
                     )
-                    .unwrap(),
-                ),
+                }),
             },
             segment: Segment::S1,
             transition_mode: Later,
@@ -295,8 +294,8 @@ fn test_foci_stm_freq_div_too_small() -> Result<(), Box<dyn std::error::Error>> 
 
         let d = Silencer {
             config: FixedCompletionSteps {
-                intensity: NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
-                phase: NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT * 2).unwrap(),
+                intensity: unsafe { NonZeroU16::new_unchecked(SILENCER_STEPS_INTENSITY_DEFAULT) },
+                phase: unsafe { NonZeroU16::new_unchecked(SILENCER_STEPS_PHASE_DEFAULT * 2) },
                 strict: true,
             },
         };
@@ -436,7 +435,7 @@ fn send_foci_stm_invalid_transition_mode() -> Result<(), Box<dyn std::error::Err
 #[case(Ok(()), DcSysTime::ZERO, DcSysTime::ZERO + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
 #[case(Err(AUTDDriverError::MissTransitionTime), DcSysTime::ZERO, DcSysTime::ZERO + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN)-autd3_driver::ethercat::EC_CYCLE_TIME_BASE)]
 #[case(Err(AUTDDriverError::MissTransitionTime), DcSysTime::ZERO + Duration::from_nanos(1), DcSysTime::ZERO + Duration::from_nanos(SYS_TIME_TRANSITION_MARGIN))]
-fn test_miss_transition_time(
+fn miss_transition_time(
     #[case] expect: Result<(), AUTDDriverError>,
     #[case] systime: DcSysTime,
     #[case] transition_time: DcSysTime,
@@ -472,7 +471,7 @@ fn test_miss_transition_time(
     Ok(())
 }
 
-fn test_send_foci_stm_n<const N: usize>() -> Result<(), Box<dyn std::error::Error>> {
+fn send_foci_stm_n<const N: usize>() -> Result<(), Box<dyn std::error::Error>> {
     let sin_table = include_bytes!("sin.dat");
     let atan_table = include_bytes!("atan.dat");
 
@@ -494,7 +493,7 @@ fn test_send_foci_stm_n<const N: usize>() -> Result<(), Box<dyn std::error::Erro
         let stm = WithSegment {
             inner: FociSTM {
                 foci: foci.clone(),
-                config: SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+                config: SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
             },
             segment,
             transition_mode: Immediate,
@@ -550,36 +549,36 @@ fn test_send_foci_stm_n<const N: usize>() -> Result<(), Box<dyn std::error::Erro
 }
 
 #[test]
-fn test_send_foci_stm_2() -> Result<(), Box<dyn std::error::Error>> {
-    test_send_foci_stm_n::<2>()
+fn send_foci_stm_2() -> Result<(), Box<dyn std::error::Error>> {
+    send_foci_stm_n::<2>()
 }
 
 #[test]
-fn test_send_foci_stm_3() -> Result<(), Box<dyn std::error::Error>> {
-    test_send_foci_stm_n::<3>()
+fn send_foci_stm_3() -> Result<(), Box<dyn std::error::Error>> {
+    send_foci_stm_n::<3>()
 }
 
 #[test]
-fn test_send_foci_stm_4() -> Result<(), Box<dyn std::error::Error>> {
-    test_send_foci_stm_n::<4>()
+fn send_foci_stm_4() -> Result<(), Box<dyn std::error::Error>> {
+    send_foci_stm_n::<4>()
 }
 
 #[test]
-fn test_send_foci_stm_5() -> Result<(), Box<dyn std::error::Error>> {
-    test_send_foci_stm_n::<5>()
+fn send_foci_stm_5() -> Result<(), Box<dyn std::error::Error>> {
+    send_foci_stm_n::<5>()
 }
 
 #[test]
-fn test_send_foci_stm_6() -> Result<(), Box<dyn std::error::Error>> {
-    test_send_foci_stm_n::<6>()
+fn send_foci_stm_6() -> Result<(), Box<dyn std::error::Error>> {
+    send_foci_stm_n::<6>()
 }
 
 #[test]
-fn test_send_foci_stm_7() -> Result<(), Box<dyn std::error::Error>> {
-    test_send_foci_stm_n::<7>()
+fn send_foci_stm_7() -> Result<(), Box<dyn std::error::Error>> {
+    send_foci_stm_n::<7>()
 }
 
 #[test]
-fn test_send_foci_stm_8() -> Result<(), Box<dyn std::error::Error>> {
-    test_send_foci_stm_n::<8>()
+fn send_foci_stm_8() -> Result<(), Box<dyn std::error::Error>> {
+    send_foci_stm_n::<8>()
 }

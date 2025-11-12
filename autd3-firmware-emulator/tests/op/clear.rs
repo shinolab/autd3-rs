@@ -15,7 +15,7 @@ use autd3_driver::datagram::*;
 use autd3_firmware_emulator::CPUEmulator;
 
 #[test]
-fn send_clear_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn send_clear() -> Result<(), Box<dyn std::error::Error>> {
     let mut geometry = create_geometry(1);
     let mut cpu = CPUEmulator::new(0, geometry.num_transducers());
     let mut tx = vec![TxMessage::new(); 1];
@@ -36,8 +36,8 @@ fn send_clear_unsafe() -> Result<(), Box<dyn std::error::Error>> {
 
         let d = Silencer {
             config: FixedUpdateRate {
-                intensity: NonZeroU16::new(1).unwrap(),
-                phase: NonZeroU16::new(1).unwrap(),
+                intensity: unsafe { NonZeroU16::new_unchecked(1) },
+                phase: unsafe { NonZeroU16::new_unchecked(1) },
             },
         };
         assert_eq!(
@@ -76,12 +76,11 @@ fn send_clear_unsafe() -> Result<(), Box<dyn std::error::Error>> {
         let d = WithSegment {
             inner: FociSTM {
                 foci: gen_random_foci::<1>(2),
-                config: SamplingConfig::new(
-                    NonZeroU16::new(
+                config: SamplingConfig::new(unsafe {
+                    NonZeroU16::new_unchecked(
                         SILENCER_STEPS_INTENSITY_DEFAULT.max(SILENCER_STEPS_PHASE_DEFAULT),
                     )
-                    .unwrap(),
-                ),
+                }),
             },
             segment: Segment::S0,
             transition_mode: transition_mode::Ext,
@@ -114,17 +113,17 @@ fn send_clear_unsafe() -> Result<(), Box<dyn std::error::Error>> {
     assert!(!cpu.reads_fpga_state());
     assert_eq!(
         FixedUpdateRate {
-            intensity: NonZeroU16::new(256).unwrap(),
-            phase: NonZeroU16::new(256).unwrap(),
+            intensity: unsafe { NonZeroU16::new_unchecked(256) },
+            phase: unsafe { NonZeroU16::new_unchecked(256) },
         },
         cpu.fpga().silencer_update_rate()
     );
     assert_eq!(
-        NonZeroU16::new(SILENCER_STEPS_INTENSITY_DEFAULT).unwrap(),
+        unsafe { NonZeroU16::new_unchecked(SILENCER_STEPS_INTENSITY_DEFAULT) },
         cpu.fpga().silencer_completion_steps().intensity
     );
     assert_eq!(
-        NonZeroU16::new(SILENCER_STEPS_PHASE_DEFAULT).unwrap(),
+        unsafe { NonZeroU16::new_unchecked(SILENCER_STEPS_PHASE_DEFAULT) },
         cpu.fpga().silencer_completion_steps().phase
     );
     assert!(cpu.fpga().silencer_fixed_completion_steps_mode());

@@ -32,7 +32,7 @@ impl GainCalculatorGenerator<'_> for TestGain {
 
     fn generate(&mut self, device: &Device) -> Self::Calculator {
         Impl {
-            data: self.data.remove(&device.idx()).unwrap(),
+            data: self.data.remove(&device.idx()).unwrap_or_default(),
         }
     }
 }
@@ -51,7 +51,7 @@ impl Gain<'_> for TestGain {
 }
 
 #[test]
-fn send_gain_unsafe() -> Result<(), Box<dyn std::error::Error>> {
+fn send_gain() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     let mut geometry = create_geometry(1);
