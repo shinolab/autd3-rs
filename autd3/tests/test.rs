@@ -15,7 +15,6 @@ fn initial_msg_id() -> Result<(), Box<dyn std::error::Error>> {
         [AUTD3::default()],
         Audit::new(AuditOption {
             initial_msg_id: Some(MsgId::new(0x01)),
-            initial_phase_corr: Some(0xFF),
             ..Default::default()
         }),
     )?;
