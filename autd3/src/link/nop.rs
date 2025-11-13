@@ -68,3 +68,5 @@ impl Link for Nop {
         self.is_open
     }
 }
+
+impl autd3_core::link::AsyncLink for Nop {}

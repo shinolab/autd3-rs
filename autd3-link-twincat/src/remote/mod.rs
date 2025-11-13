@@ -126,3 +126,5 @@ impl Link for RemoteTwinCAT {
         self.client.is_some()
     }
 }
+
+impl autd3_core::link::AsyncLink for RemoteTwinCAT {}

@@ -71,3 +71,5 @@ impl Link for TwinCAT {
         false
     }
 }
+
+impl autd3_core::link::AsyncLink for TwinCAT {}

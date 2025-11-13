@@ -189,6 +189,8 @@ impl Link for TwinCAT {
     }
 }
 
+impl autd3_core::link::AsyncLink for TwinCAT {}
+
 impl Drop for TwinCAT {
     fn drop(&mut self) {
         if !self.dll_handle.is_null() {
