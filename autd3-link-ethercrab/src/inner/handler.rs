@@ -2,7 +2,7 @@ use std::{
     sync::{
         Arc, RwLock,
         atomic::AtomicBool,
-        mpsc::{Receiver, RecvError, SyncSender, sync_channel},
+        mpsc::{Receiver, SyncSender, sync_channel},
     },
     time::Duration,
 };
@@ -28,6 +28,20 @@ use futures_util::stream::{FuturesOrdered, FuturesUnordered, StreamExt};
 use std::time::Instant;
 #[cfg(feature = "tokio")]
 use tokio::time::Instant;
+
+async fn sleep(duration: Duration) {
+    #[cfg(feature = "tokio")]
+    tokio::time::sleep(duration).await;
+    #[cfg(not(feature = "tokio"))]
+    super::timer::Timer::after(duration).await;
+}
+
+async fn sleep_until(deadline: Instant) {
+    #[cfg(feature = "tokio")]
+    tokio::time::sleep_until(deadline).await;
+    #[cfg(not(feature = "tokio"))]
+    super::timer::Timer::until(deadline).await;
+}
 
 #[cfg(not(feature = "tokio"))]
 use std::thread::JoinHandle;
@@ -396,9 +410,9 @@ impl EtherCrabHandler {
             if start.elapsed() > timeouts.state_transition {
                 return Err(EtherCrabError::NotResponding);
             }
-            std::thread::sleep(Duration::from_millis(10));
+            sleep(Duration::from_millis(10)).await;
         }
-        std::thread::sleep(Duration::from_millis(100));
+        sleep(Duration::from_millis(100)).await;
         #[cfg(feature = "tracing")]
         tracing::info!("All devices entered OP in {:?}", _op_request.elapsed());
         run.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -454,8 +468,10 @@ impl EtherCrabHandler {
         Ok(())
     }
 
-    pub fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, RecvError> {
-        self.buffer_queue_receiver.recv()
+    pub fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        self.buffer_queue_receiver
+            .recv()
+            .map_err(|e| LinkError::new(format!("Failed to allocate TX buffer: {}", e)))
     }
 
     pub fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
@@ -542,10 +558,7 @@ async fn wait_for_align(
                 return Err(EtherCrabError::SyncTimeout(max_deviation));
             }
         }
-        #[cfg(feature = "tokio")]
-        tokio::time::sleep(Duration::from_millis(1)).await;
-        #[cfg(not(feature = "tokio"))]
-        super::timer::Timer::after(Duration::from_millis(1)).await;
+        sleep(Duration::from_millis(1)).await;
     }
 
     #[cfg(feature = "tracing")]
@@ -560,10 +573,7 @@ async fn send_task(
 ) -> Result<bool, ethercrab::error::Error> {
     let start = Instant::now();
     let resp = group.tx_rx_dc(main_device).await?;
-    #[cfg(feature = "tokio")]
-    tokio::time::sleep_until(start + resp.extra.next_cycle_wait).await;
-    #[cfg(not(feature = "tokio"))]
-    super::timer::Timer::until(start + resp.extra.next_cycle_wait).await;
+    sleep_until(start + resp.extra.next_cycle_wait).await;
     Ok(resp.all_op())
 }
 
@@ -758,6 +768,6 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                 err_handler(0, Status::Resumed);
             }
         }
-        std::thread::sleep(interval);
+        sleep(interval).await;
     }
 }
