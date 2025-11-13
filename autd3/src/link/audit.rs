@@ -113,3 +113,5 @@ impl Link for Audit {
         self.is_open
     }
 }
+
+impl autd3_core::link::AsyncLink for Audit {}
