@@ -1,8 +1,8 @@
 use std::future::Future;
 
 use autd3_core::{
-    geometry::{Geometry, Quaternion},
-    link::{Link, LinkError, RxMessage, TxMessage},
+    geometry::{Geometry, Point3, Quaternion, UnitQuaternion},
+    link::{Ack, AsyncLink, LinkError, RxMessage, TxMessage},
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
@@ -16,24 +16,32 @@ use crate::{
 };
 
 /// A server that accepts connections from [`Remote`](crate::Remote) clients and forwards requests to a link.
-pub struct RemoteServer<L: Link> {
-    link: L,
+pub struct RemoteServer<L: AsyncLink, F: Fn() -> L> {
+    link_factory: F,
+    link: Option<L>,
     port: u16,
+    rx_buf: Option<Vec<RxMessage>>,
+    num_devices: usize,
     shutdown: Option<Box<dyn Future<Output = ()> + Send + Unpin>>,
+    read_buffer: Vec<u8>,
 }
 
-impl<L: Link> RemoteServer<L> {
+impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
     /// Create a new [`RemoteServer`].
     ///
     /// # Arguments
     ///
     /// * `port` - The port to listen on
-    /// * `link` - The link to forward requests to
-    pub const fn new(port: u16, link: L) -> Self {
+    /// * `link` - A factory function that creates a new link instance
+    pub const fn new(port: u16, link_factory: F) -> Self {
         Self {
-            link,
+            link_factory,
+            link: None,
             port,
+            num_devices: 0,
+            rx_buf: None,
             shutdown: None,
+            read_buffer: Vec::new(),
         }
     }
 
@@ -42,9 +50,9 @@ impl<L: Link> RemoteServer<L> {
     /// # Arguments
     ///
     /// * `signal` - A future that completes when the server should shut down
-    pub fn with_graceful_shutdown<F>(mut self, signal: F) -> Self
+    pub fn with_graceful_shutdown<S>(mut self, signal: S) -> Self
     where
-        F: Future<Output = ()> + Send + 'static,
+        S: Future<Output = ()> + Send + 'static,
     {
         self.shutdown = Some(Box::new(Box::pin(signal)));
         self
@@ -66,31 +74,36 @@ impl<L: Link> RemoteServer<L> {
     /// - Failed to process a request
     pub async fn run(&mut self) -> Result<(), LinkError> {
         let listener = TcpListener::bind(("0.0.0.0", self.port)).await?;
+        tracing::info!("Remote server listening on port {}", self.port);
 
-        let res = if let Some(shutdown) = self.shutdown.take() {
+        if let Some(shutdown) = self.shutdown.take() {
             select! {
                 result = self.accept_loop(&listener) => result,
-                _ = shutdown => Ok(()),
+                _ = shutdown => {
+                    tracing::info!("Shutdown signal received, stopping server");
+                    Ok(())
+                },
             }
         } else {
             self.accept_loop(&listener).await
-        };
-
-        self.link.close()?;
-
-        res
+        }
     }
 
     async fn accept_loop(&mut self, listener: &TcpListener) -> Result<(), LinkError> {
         loop {
             let (stream, _) = listener.accept().await?;
+            tracing::info!("Client connected: {:?}", stream.peer_addr()?);
             self.handle_client(stream).await?;
+            tracing::info!("Client disconnected");
+            if let Some(mut link) = self.link.take() {
+                AsyncLink::close(&mut link).await?;
+            }
         }
     }
 
     async fn handle_client(&mut self, mut stream: TcpStream) -> Result<(), LinkError> {
         loop {
-            let mut msg_type = [0u8; 1];
+            let mut msg_type = [0u8; size_of::<u8>()];
             if stream.read_exact(&mut msg_type).await.is_err() {
                 break;
             }
@@ -107,10 +120,7 @@ impl<L: Link> RemoteServer<L> {
                     }
                     result
                 }
-                _ => Err(LinkError::new(format!(
-                    "Unknown message type: {}",
-                    msg_type[0]
-                ))),
+                msg => Err(LinkError::new(format!("Unknown message type: {}", msg))),
             };
 
             if let Err(e) = result {
@@ -123,38 +133,55 @@ impl<L: Link> RemoteServer<L> {
     }
 
     async fn handle_config_geometry(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
-        let geometry = self.read_geometry(stream).await?;
+        if self.link.is_some() {
+            tracing::error!("Link is already open");
+            Err(LinkError::new("Link is already opened"))
+        } else {
+            let geometry = Self::read_geometry(stream).await?;
+            tracing::info!("Opening link...");
 
-        self.link.open(&geometry)?;
+            let mut link = (self.link_factory)();
+            AsyncLink::open(&mut link, &geometry).await?;
+            self.num_devices = geometry.num_devices();
+            tracing::info!(
+                "Link opened with {} device{}",
+                self.num_devices,
+                if self.num_devices == 1 { "" } else { "s" }
+            );
 
-        stream.write_all(&[MSG_OK]).await?;
-        Ok(())
+            stream.write_all(&[MSG_OK]).await?;
+
+            self.link = Some(link);
+
+            Ok(())
+        }
     }
 
     async fn handle_update_geometry(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
-        let geometry = self.read_geometry(stream).await?;
-
-        self.link.update(&geometry)?;
-
-        stream.write_all(&[MSG_OK]).await?;
-        Ok(())
+        if let Some(link) = self.link.as_mut() {
+            let geometry = Self::read_geometry(stream).await?;
+            AsyncLink::update(link, &geometry).await?;
+            stream.write_all(&[MSG_OK]).await?;
+            Ok(())
+        } else {
+            Err(LinkError::closed())
+        }
     }
 
-    async fn read_geometry(&self, stream: &mut TcpStream) -> std::io::Result<Geometry> {
-        let mut num_devices_buf = [0u8; 4];
+    async fn read_geometry(stream: &mut TcpStream) -> std::io::Result<Geometry> {
+        let mut num_devices_buf = [0u8; size_of::<u32>()];
         stream.read_exact(&mut num_devices_buf).await?;
         let num_devices = u32::from_le_bytes(num_devices_buf);
 
         let mut devices = Vec::new();
-
         for _ in 0..num_devices {
-            let mut pos_buf = [0u8; 12];
+            let mut pos_buf = [0u8; size_of::<f32>() * 3];
             stream.read_exact(&mut pos_buf).await?;
             let x = f32::from_le_bytes([pos_buf[0], pos_buf[1], pos_buf[2], pos_buf[3]]);
             let y = f32::from_le_bytes([pos_buf[4], pos_buf[5], pos_buf[6], pos_buf[7]]);
             let z = f32::from_le_bytes([pos_buf[8], pos_buf[9], pos_buf[10], pos_buf[11]]);
 
-            let mut rot_buf = [0u8; 16];
+            let mut rot_buf = [0u8; size_of::<f32>() * 4];
             stream.read_exact(&mut rot_buf).await?;
             let w = f32::from_le_bytes([rot_buf[0], rot_buf[1], rot_buf[2], rot_buf[3]]);
             let i = f32::from_le_bytes([rot_buf[4], rot_buf[5], rot_buf[6], rot_buf[7]]);
@@ -163,74 +190,79 @@ impl<L: Link> RemoteServer<L> {
 
             devices.push(
                 autd3_core::devices::AUTD3 {
-                    pos: autd3_core::geometry::Point3::new(x, y, z),
-                    rot: autd3_core::geometry::UnitQuaternion::new_unchecked(Quaternion::new(
-                        w, i, j, k,
-                    )),
+                    pos: Point3::new(x, y, z),
+                    rot: UnitQuaternion::new_unchecked(Quaternion::new(w, i, j, k)),
                 }
                 .into(),
             );
         }
 
-        Ok(autd3_core::geometry::Geometry::new(devices))
+        Ok(Geometry::new(devices))
     }
 
     async fn handle_send_data(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
-        let mut _num_devices = [0u8; 4];
-        stream.read_exact(&mut _num_devices).await?;
+        if let Some(link) = self.link.as_mut() {
+            let mut tx = AsyncLink::alloc_tx_buffer(link).await?;
 
-        let mut tx = self.link.alloc_tx_buffer()?;
+            for tx_msg in tx.iter_mut() {
+                let bytes = unsafe {
+                    std::slice::from_raw_parts_mut(
+                        tx_msg as *mut TxMessage as *mut u8,
+                        size_of::<TxMessage>(),
+                    )
+                };
+                stream.read_exact(bytes).await?;
+            }
 
-        let data_size = std::mem::size_of::<TxMessage>();
-        for tx_msg in tx.iter_mut() {
-            let bytes = unsafe {
-                std::slice::from_raw_parts_mut(tx_msg as *mut TxMessage as *mut u8, data_size)
-            };
-            stream.read_exact(bytes).await?;
+            AsyncLink::send(link, tx).await?;
+
+            stream.write_all(&[MSG_OK]).await?;
+
+            Ok(())
+        } else {
+            Err(LinkError::closed())
         }
-
-        self.link.send(tx)?;
-
-        stream.write_all(&[MSG_OK]).await?;
-
-        Ok(())
     }
 
     async fn handle_read_data(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
-        let num_devices = self.link.alloc_tx_buffer()?.len();
-        let mut rx = Vec::with_capacity(num_devices);
-        #[allow(clippy::uninit_vec)]
-        unsafe {
-            rx.set_len(num_devices);
+        let num_devices = self.num_devices;
+        let mut rx = match self.rx_buf.take() {
+            Some(buf) if buf.len() == num_devices => buf,
+            _ => vec![RxMessage::new(0, Ack::new(0, 0)); num_devices],
+        };
+        if let Some(link) = self.link.as_mut() {
+            AsyncLink::receive(link, &mut rx).await?;
+
+            let buffer_size = size_of::<u8>() + size_of::<RxMessage>() * rx.len();
+            if self.read_buffer.len() < buffer_size {
+                self.read_buffer.resize(buffer_size, 0);
+            }
+
+            self.read_buffer[0] = MSG_OK;
+            unsafe {
+                std::ptr::copy_nonoverlapping(
+                    rx.as_ptr() as *const u8,
+                    self.read_buffer.as_mut_ptr().add(1),
+                    size_of::<RxMessage>() * rx.len(),
+                );
+            }
+            self.rx_buf = Some(rx);
+            stream.write_all(&self.read_buffer).await?;
+
+            Ok(())
+        } else {
+            Err(LinkError::closed())
         }
-
-        self.link.receive(&mut rx)?;
-
-        let num_devices = rx.len() as u32;
-        let data_size = std::mem::size_of::<RxMessage>();
-
-        let mut buffer = Vec::with_capacity(1 + 4 + data_size * rx.len());
-        buffer.push(MSG_OK);
-        buffer.extend_from_slice(&num_devices.to_le_bytes());
-
-        for msg in &rx {
-            let bytes = unsafe {
-                std::slice::from_raw_parts(msg as *const RxMessage as *const u8, data_size)
-            };
-            buffer.extend_from_slice(bytes);
-        }
-
-        stream.write_all(&buffer).await?;
-
-        Ok(())
     }
 
     async fn handle_close(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
-        self.link.close()?;
-
-        stream.write_all(&[MSG_OK]).await?;
-
-        Ok(())
+        if let Some(link) = self.link.as_mut() {
+            AsyncLink::close(link).await?;
+            stream.write_all(&[MSG_OK]).await?;
+            Ok(())
+        } else {
+            Err(LinkError::closed())
+        }
     }
 
     async fn send_error(&self, stream: &mut TcpStream, error: &LinkError) -> std::io::Result<()> {
@@ -238,7 +270,7 @@ impl<L: Link> RemoteServer<L> {
         let error_bytes = error_msg.as_bytes();
         let error_len = error_bytes.len() as u32;
 
-        let mut buffer = Vec::with_capacity(1 + 4 + error_bytes.len());
+        let mut buffer = Vec::with_capacity(size_of::<u8>() + size_of::<u32>() + error_bytes.len());
         buffer.push(MSG_ERROR);
         buffer.extend_from_slice(&error_len.to_le_bytes());
         buffer.extend_from_slice(error_bytes);

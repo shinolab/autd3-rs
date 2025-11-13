@@ -16,8 +16,9 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 default = ["link"]
 link = []
-server = ["autd3-core/devices", "tokio"]
+server = ["autd3-core/devices", "tokio", "tracing"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["link"] }
-tokio = { version = "1.48.0", features = ["io-util", "net", "macros"], optional = true }
+tracing = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["io-util", "net", "macros"], optional = true }

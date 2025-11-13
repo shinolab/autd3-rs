@@ -14,7 +14,8 @@ use autd3_core::link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage};
 struct RemoteInner {
     stream: TcpStream,
     last_geometry_version: usize,
-    buffer_pool: TxBufferPoolSync,
+    tx_buffer_pool: TxBufferPoolSync,
+    buffer: Vec<u8>,
 }
 
 impl RemoteInner {
@@ -35,13 +36,14 @@ impl RemoteInner {
         Self::send_geometry(&mut stream, MSG_CONFIG_GEOMETRY, geometry)?;
         Self::wait_response(&mut stream)?;
 
-        let mut buffer_pool = TxBufferPoolSync::default();
-        buffer_pool.init(geometry);
+        let mut tx_buffer_pool = TxBufferPoolSync::default();
+        tx_buffer_pool.init(geometry);
 
         Ok(Self {
             stream,
             last_geometry_version: geometry.version(),
-            buffer_pool,
+            tx_buffer_pool,
+            buffer: Vec::new(),
         })
     }
 
@@ -51,10 +53,14 @@ impl RemoteInner {
         geometry: &autd3_core::geometry::Geometry,
     ) -> Result<(), LinkError> {
         let num_devices = geometry.len() as u32;
-        let mut buffer = Vec::with_capacity(1 + 4 + (3 + 16) * geometry.len());
+
+        let mut buffer = Vec::with_capacity(
+            size_of::<u8>()
+                + size_of::<u32>()
+                + (size_of::<f32>() * 3 + size_of::<f32>() * 4) * geometry.len(),
+        );
         buffer.push(msg_type);
         buffer.extend_from_slice(&num_devices.to_le_bytes());
-
         geometry.iter().for_each(|dev| {
             let pos = dev[0].position();
             buffer.extend_from_slice(&pos.x.to_le_bytes());
@@ -74,13 +80,13 @@ impl RemoteInner {
     }
 
     fn wait_response(stream: &mut TcpStream) -> Result<(), LinkError> {
-        let mut status = [0u8; 1];
+        let mut status = [0u8; size_of::<u8>()];
         stream.read_exact(&mut status)?;
 
         match status[0] {
             MSG_OK => Ok(()),
             MSG_ERROR => {
-                let mut error_len_buf = [0u8; 4];
+                let mut error_len_buf = [0u8; size_of::<u32>()];
                 stream.read_exact(&mut error_len_buf)?;
                 let error_len = u32::from_le_bytes(error_len_buf) as usize;
 
@@ -90,18 +96,13 @@ impl RemoteInner {
                 let error_str = String::from_utf8_lossy(&error_msg);
                 Err(LinkError::new(format!("Server error: {}", error_str)))
             }
-            _ => Err(LinkError::new(format!(
-                "Unknown response status: {}",
-                status[0]
-            ))),
+            msg => Err(LinkError::new(format!("Unknown response status: {}", msg))),
         }
     }
 
     fn close(&mut self) -> Result<(), LinkError> {
         self.stream.write_all(&[MSG_CLOSE])?;
-
         Self::wait_response(&mut self.stream)?;
-
         Ok(())
     }
 
@@ -110,87 +111,49 @@ impl RemoteInner {
             return Ok(());
         }
         self.last_geometry_version = geometry.version();
-
         Self::send_geometry(&mut self.stream, MSG_UPDATE_GEOMETRY, geometry)?;
         Self::wait_response(&mut self.stream)?;
-
         Ok(())
     }
 
     fn alloc_tx_buffer(&mut self) -> Vec<TxMessage> {
-        self.buffer_pool.borrow()
+        self.tx_buffer_pool.borrow()
     }
 
     fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
-        let num_devices = tx.len() as u32;
-        let data_size = std::mem::size_of::<TxMessage>();
-
-        let mut buffer = Vec::with_capacity(1 + 4 + data_size * tx.len());
-        buffer.push(MSG_SEND_DATA);
-        buffer.extend_from_slice(&num_devices.to_le_bytes());
-
-        for msg in &tx {
-            let bytes = unsafe {
-                std::slice::from_raw_parts(msg as *const TxMessage as *const u8, data_size)
-            };
-            buffer.extend_from_slice(bytes);
+        let buffer_size = size_of::<u8>() + size_of::<TxMessage>() * tx.len();
+        if self.buffer.len() < buffer_size {
+            self.buffer.resize(buffer_size, 0);
         }
 
-        self.stream.write_all(&buffer)?;
+        self.buffer[0] = MSG_SEND_DATA;
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                tx.as_ptr() as *const u8,
+                self.buffer.as_mut_ptr().add(1),
+                size_of::<TxMessage>() * tx.len(),
+            );
+        }
+        self.tx_buffer_pool.return_buffer(tx);
 
-        self.buffer_pool.return_buffer(tx);
-
+        self.stream.write_all(&self.buffer)?;
         Self::wait_response(&mut self.stream)?;
 
         Ok(())
     }
 
-    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<bool, LinkError> {
+    fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         self.stream.write_all(&[MSG_READ_DATA])?;
-
-        let mut status = [0u8; 1];
-        self.stream.read_exact(&mut status)?;
-
-        match status[0] {
-            MSG_OK => {
-                let mut num_devices = [0u8; 4];
-                self.stream.read_exact(&mut num_devices)?;
-
-                let num_devices = u32::from_le_bytes(num_devices) as usize;
-
-                if num_devices != rx.len() {
-                    return Ok(false);
-                }
-
-                let data_size = std::mem::size_of::<RxMessage>();
-                for rx_msg in rx.iter_mut() {
-                    let bytes = unsafe {
-                        std::slice::from_raw_parts_mut(
-                            rx_msg as *mut RxMessage as *mut u8,
-                            data_size,
-                        )
-                    };
-                    self.stream.read_exact(bytes)?;
-                }
-
-                Ok(true)
-            }
-            MSG_ERROR => {
-                let mut error_len_buf = [0u8; 4];
-                self.stream.read_exact(&mut error_len_buf)?;
-                let error_len = u32::from_le_bytes(error_len_buf) as usize;
-
-                let mut error_msg = vec![0u8; error_len];
-                self.stream.read_exact(&mut error_msg)?;
-
-                let error_str = String::from_utf8_lossy(&error_msg);
-                Err(LinkError::new(format!("Server error: {}", error_str)))
-            }
-            _ => Err(LinkError::new(format!(
-                "Unknown response status: {}",
-                status[0]
-            ))),
-        }
+        Self::wait_response(&mut self.stream)?;
+        rx.iter_mut()
+            .map(|msg| unsafe {
+                std::slice::from_raw_parts_mut(
+                    msg as *mut RxMessage as *mut u8,
+                    size_of::<RxMessage>(),
+                )
+            })
+            .try_for_each(|bytes| self.stream.read_exact(bytes))?;
+        Ok(())
     }
 }
 
@@ -241,9 +204,10 @@ impl Link for Remote {
 
     fn update(&mut self, geometry: &autd3_core::geometry::Geometry) -> Result<(), LinkError> {
         if let Some(inner) = self.inner.as_mut() {
-            inner.update(geometry)?;
+            inner.update(geometry)
+        } else {
+            Err(LinkError::closed())
         }
-        Ok(())
     }
 
     fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
@@ -256,8 +220,7 @@ impl Link for Remote {
 
     fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         if let Some(inner) = self.inner.as_mut() {
-            inner.send(tx)?;
-            Ok(())
+            inner.send(tx)
         } else {
             Err(LinkError::closed())
         }
@@ -265,8 +228,7 @@ impl Link for Remote {
 
     fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
         if let Some(inner) = self.inner.as_mut() {
-            inner.receive(rx)?;
-            Ok(())
+            inner.receive(rx)
         } else {
             Err(LinkError::closed())
         }
@@ -276,3 +238,5 @@ impl Link for Remote {
         self.inner.is_some()
     }
 }
+
+impl autd3_core::link::AsyncLink for Remote {}

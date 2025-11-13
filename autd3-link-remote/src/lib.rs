@@ -49,24 +49,13 @@ pub use server::RemoteServer;
 // Response (Success):
 // - 1 byte: status (0x00 = OK)
 //
-// Response (Error):
-// - 1 byte: status (0xFF = Error)
-// - 4 bytes: error message length (u32, little-endian)
-// - N bytes: error message (UTF-8 string)
-//
 // ### Send Data
 // Request:
 // - 1 byte: message type (0x03)
-// - 4 bytes: number of devices (u32, little-endian)
 // - Raw TxMessage data for each device
 //
 // Response (Success):
 // - 1 byte: status (0x00 = OK)
-//
-// Response (Error):
-// - 1 byte: status (0xFF = Error)
-// - 4 bytes: error message length (u32, little-endian)
-// - N bytes: error message (UTF-8 string)
 //
 // ### Read Data
 // Request:
@@ -74,13 +63,7 @@ pub use server::RemoteServer;
 //
 // Response (Success):
 // - 1 byte: status (0x00 = OK)
-// - 4 bytes: number of devices (u32, little-endian)
 // - Raw RxMessage data for each device
-//
-// Response (Error):
-// - 1 byte: status (0xFF = Error)
-// - 4 bytes: error message length (u32, little-endian)
-// - N bytes: error message (UTF-8 string)
 //
 // ### Close
 // Request:
@@ -89,7 +72,7 @@ pub use server::RemoteServer;
 // Response (Success):
 // - 1 byte: status (0x00 = OK)
 //
-// Response (Error):
+// ### Error Response
 // - 1 byte: status (0xFF = Error)
 // - 4 bytes: error message length (u32, little-endian)
 // - N bytes: error message (UTF-8 string)

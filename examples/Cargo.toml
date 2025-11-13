@@ -12,7 +12,7 @@ nop = ["autd3/link-nop"]
 twincat = ["autd3-link-twincat/local"]
 ethercrab = ["autd3-link-ethercrab", "tracing", "tracing-subscriber"]
 remote = ["autd3-link-remote/link"]
-remote_server = ["autd3-link-remote/server", "autd3/link-nop", "tokio"]
+remote_server = ["autd3-link-remote/server", "autd3/link-nop", "tokio", "tracing-subscriber"]
 remote_twincat = ["autd3-link-twincat/remote"]
 all = ["twincat", "ethercrab", "remote", "remote_server", "remote_twincat"]
 
@@ -22,9 +22,9 @@ autd3-gain-holo = { workspace = true, features = ["default"] }
 autd3-link-ethercrab = { workspace = true, optional = true, features = ["default"] }
 autd3-link-remote = { workspace = true, optional = true }
 autd3-link-twincat = { workspace = true, optional = true }
-tracing = { version = "0.1.41", optional = true }
+tracing = { workspace = true, optional = true }
 tracing-subscriber = { version = "0.3.20", features = ["fmt", "env-filter"], optional = true }
-tokio = { version = "1.48.0", features = ["rt", "macros", "signal"], optional = true }
+tokio = { workspace = true, features = ["rt", "macros", "signal"], optional = true }
 
 [[bin]]
 name = "nop"
