@@ -9,7 +9,7 @@ use std::{
 
 use crate::{
     error::EtherCrabError,
-    inner::{EtherCrabOptionFull, status::Status},
+    inner::{EtherCrabOptionFull, status::Status, utils::PduStorageWrapper},
 };
 
 use autd3_core::{
@@ -40,8 +40,6 @@ pub const MAX_PDU_DATA: usize =
 pub const MAX_FRAMES: usize = 16;
 pub const PDI_LEN: usize = (EC_OUTPUT_FRAME_SIZE + EC_INPUT_FRAME_SIZE) * MAX_SUBDEVICES;
 
-static PDU_STORAGE: PduStorage<MAX_FRAMES, MAX_PDU_DATA> = PduStorage::new();
-
 pub struct EtherCrabHandler {
     is_open: Arc<AtomicBool>,
     tx_rx_th: Option<std::thread::JoinHandle<Result<(), EtherCrabError>>>,
@@ -50,6 +48,7 @@ pub struct EtherCrabHandler {
     sender: SyncSender<Vec<TxMessage>>,
     buffer_queue_receiver: Receiver<Vec<TxMessage>>,
     inputs: Arc<RwLock<Vec<u8>>>,
+    _pdu_storage: PduStorageWrapper,
 }
 
 const SUB_GROUP_PDI_LEN: usize = (EC_OUTPUT_FRAME_SIZE + EC_INPUT_FRAME_SIZE) * 2;
@@ -130,7 +129,8 @@ impl EtherCrabHandler {
             state_check_period,
         } = option;
 
-        let (tx, rx, pdu_loop) = PDU_STORAGE
+        let pdu_storage = PduStorageWrapper::new();
+        let (tx, rx, pdu_loop) = pdu_storage
             .try_split()
             .map_err(|_| EtherCrabError::PduStorageError)?;
 
@@ -411,6 +411,7 @@ impl EtherCrabHandler {
             sender,
             buffer_queue_receiver,
             inputs,
+            _pdu_storage: pdu_storage,
         })
     }
 
