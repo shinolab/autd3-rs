@@ -76,19 +76,14 @@ impl From<EtherCrabOption> for EtherCrabOptionFull {
             #[cfg(all(not(feature = "tokio"), target_os = "windows"))]
             main_thread_builder: ThreadBuilder::default().name("main-thread").priority(
                 ThreadPriority::Os(thread_priority::ThreadPriorityOsValue::from(
-                    thread_priority::WinAPIThreadPriority::TimeCritical,
+                    thread_priority::WinAPIThreadPriority::Highest,
                 )),
             ),
             #[cfg(all(not(feature = "tokio"), not(target_os = "windows")))]
-            main_thread_builder: ThreadBuilder::default()
-                .name("main-thread")
-                .priority(
-                    thread_priority::ThreadPriorityValue::try_from(99)
-                        .map_or_else(|_| ThreadPriority::Max, ThreadPriority::Crossplatform),
-                )
-                .policy(thread_priority::ThreadSchedulePolicy::Realtime(
-                    thread_priority::RealtimeThreadSchedulePolicy::Fifo,
-                )),
+            main_thread_builder: ThreadBuilder::default().name("main-thread").priority(
+                thread_priority::ThreadPriorityValue::try_from(99)
+                    .map_or_else(|_| ThreadPriority::Max, ThreadPriority::Crossplatform),
+            ),
             #[cfg(all(not(feature = "tokio"), feature = "core_affinity"))]
             main_thread_affinity: None,
             #[cfg(feature = "core_affinity")]
