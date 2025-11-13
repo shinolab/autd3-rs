@@ -28,12 +28,18 @@ pub struct EtherCrabOptionFull {
     pub sync_timeout: Duration,
     /// The [`ThreadBuilder`] for the TX/RX thread.
     pub tx_rx_thread_builder: ThreadBuilder,
+    #[cfg_attr(docsrs, doc(cfg(feature = "core_affinity")))]
     #[cfg(feature = "core_affinity")]
     /// The CPU affinity for the TX/RX thread.
     pub tx_rx_thread_affinity: Option<core_affinity::CoreId>,
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "tokio"))))]
     #[cfg(not(feature = "tokio"))]
     /// The [`ThreadBuilder`] for the main thread.
     pub main_thread_builder: ThreadBuilder,
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(not(feature = "tokio"), feature = "core_affinity")))
+    )]
     #[cfg(all(not(feature = "tokio"), feature = "core_affinity"))]
     /// The CPU affinity for the main thread.
     pub main_thread_affinity: Option<core_affinity::CoreId>,
