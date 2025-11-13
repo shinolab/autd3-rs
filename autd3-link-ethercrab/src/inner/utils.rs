@@ -7,6 +7,44 @@ use crate::{
     inner::handler::{MAX_FRAMES, MAX_PDU_DATA, MAX_SUBDEVICES, PDI_LEN},
 };
 
+pub(crate) struct PduStorageWrapper {
+    pdu_storage: *mut PduStorage<MAX_FRAMES, MAX_PDU_DATA>,
+}
+
+unsafe impl Send for PduStorageWrapper {}
+
+impl PduStorageWrapper {
+    pub fn new() -> Self {
+        let pdu_storage: Box<PduStorage<MAX_FRAMES, MAX_PDU_DATA>> = Box::new(PduStorage::new());
+        Self {
+            pdu_storage: Box::into_raw(pdu_storage),
+        }
+    }
+
+    pub fn try_split(
+        &self,
+    ) -> Result<
+        (
+            ethercrab::PduTx<'static>,
+            ethercrab::PduRx<'static>,
+            ethercrab::PduLoop<'static>,
+        ),
+        (),
+    > {
+        unsafe { (&*self.pdu_storage).try_split() }
+    }
+}
+
+impl Drop for PduStorageWrapper {
+    fn drop(&mut self) {
+        if self.pdu_storage.is_null() {
+            return;
+        }
+        let _pdu_storage = unsafe { Box::from_raw(self.pdu_storage) };
+        self.pdu_storage = std::ptr::null_mut();
+    }
+}
+
 pub async fn lookup_autd() -> Result<String, EtherCrabError> {
     let devices = pcap::Device::list()?;
     #[cfg(feature = "tracing")]
@@ -19,8 +57,7 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
             interface.desc.as_deref().unwrap_or("No description")
         );
 
-        let pdu_storage: Box<PduStorage<MAX_FRAMES, MAX_PDU_DATA>> = Box::new(PduStorage::new());
-        let pdu_storage = Box::leak(pdu_storage);
+        let pdu_storage = PduStorageWrapper::new();
         let (tx, rx, pdu_loop) = match pdu_storage.try_split() {
             Ok((tx, rx, pdu_loop)) => (tx, rx, pdu_loop),
             Err(_e) => {
