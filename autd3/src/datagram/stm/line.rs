@@ -2,7 +2,7 @@ use autd3_core::{
     environment::Environment,
     firmware::{Intensity, Phase},
     gain::{GainError, TransducerMask},
-    geometry::{Device, Geometry},
+    geometry::{Device, Geometry, Isometry3},
 };
 use autd3_driver::{
     datagram::{
@@ -64,9 +64,9 @@ impl LineSTMIterator {
 }
 
 impl FociSTMIterator<1> for LineSTMIterator {
-    fn next(&mut self) -> ControlPoints<1> {
+    fn next(&mut self, iso: &Isometry3) -> ControlPoints<1> {
         ControlPoints {
-            points: [ControlPoint::from(self.next().unwrap())],
+            points: [ControlPoint::from(iso * self.next().unwrap())],
             intensity: self.intensity,
         }
     }
@@ -180,7 +180,7 @@ mod tests {
             let mut g = FociSTMGenerator::init(line.clone())?;
             let mut iterator = FociSTMIteratorGenerator::generate(&mut g, &device);
             expect.iter().for_each(|e| {
-                let f = FociSTMIterator::<1>::next(&mut iterator).points[0];
+                let f = FociSTMIterator::<1>::next(&mut iterator, device.inv()).points[0];
                 assert_near_vector3!(e, f.point);
             });
             assert!(iterator.next().is_none());

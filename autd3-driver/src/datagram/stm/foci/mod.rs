@@ -23,6 +23,7 @@ use autd3_core::{
         SamplingConfig, Segment,
         transition_mode::{Ext, GPIO, Immediate, Later, SyncIdx, SysTime, TransitionModeParams},
     },
+    geometry::Isometry3,
 };
 
 /// A trait to generate a [`ControlPoints`] for  [`FociSTM`].
@@ -30,7 +31,7 @@ use autd3_core::{
 /// [`FociSTM`]: crate::datagram::FociSTM
 pub trait FociSTMIterator<const N: usize>: Send {
     /// Returns the next [`ControlPoints`].
-    fn next(&mut self) -> ControlPoints<N>;
+    fn next(&mut self, iso: &Isometry3) -> ControlPoints<N>;
 }
 
 /// A trait to generate the [`FociSTMIterator`].
@@ -188,7 +189,7 @@ impl<
             FociSTMInspectionResult {
                 data: {
                     let mut d = g.generate(dev);
-                    (0..n).map(|_| d.next()).collect()
+                    (0..n).map(|_| d.next(dev.inv())).collect()
                 },
                 config: sampling_config,
             }
