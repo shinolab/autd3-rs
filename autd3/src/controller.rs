@@ -76,7 +76,8 @@ impl<L: Link> Controller<L> {
             default_sender_option: option,
         };
 
-        cnt.sender(option, sleeper).initialize_devices()?;
+        cnt.sender_with_sleeper(option, sleeper)
+            .initialize_devices()?;
 
         Ok(cnt)
     }
@@ -102,7 +103,16 @@ impl<L: Link> Controller<L> {
     }
 
     /// Returns the [`Sender`] to send data to the devices.
-    pub fn sender<S: Sleeper>(&mut self, option: SenderOption, sleeper: S) -> Sender<'_, L, S> {
+    pub fn sender(&mut self, option: SenderOption) -> Sender<'_, L, StdSleeper> {
+        self.sender_with_sleeper(option, StdSleeper)
+    }
+
+    /// Returns the [`Sender`] to send data to the devices with the given [`Sleeper`].
+    pub fn sender_with_sleeper<S: Sleeper>(
+        &mut self,
+        option: SenderOption,
+        sleeper: S,
+    ) -> Sender<'_, L, S> {
         Sender::new(
             &mut self.msg_id,
             &mut self.link,
@@ -125,7 +135,7 @@ impl<L: Link> Controller<L> {
         AUTDDriverError: From<<<D::G as autd3_driver::firmware::operation::OperationGenerator<'a>>::O1 as autd3_driver::firmware::operation::Operation<'a>>::Error>
             + From<<<D::G as autd3_driver::firmware::operation::OperationGenerator<'a>>::O2 as autd3_driver::firmware::operation::Operation<'a>>::Error>,
     {
-        self.sender(self.default_sender_option, StdSleeper).send(s)
+        self.sender(self.default_sender_option).send(s)
     }
 
     /// Returns the inspection result.
@@ -138,13 +148,12 @@ impl<L: Link> Controller<L> {
 
     /// Closes the controller.
     pub fn close(mut self) -> Result<(), AUTDDriverError> {
-        self.close_impl(self.default_sender_option, StdSleeper)
+        self.close_impl(self.default_sender_option)
     }
 
     /// Returns the firmware version of the devices.
     pub fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDDriverError> {
-        self.sender(self.default_sender_option, StdSleeper)
-            .firmware_version()
+        self.sender(self.default_sender_option).firmware_version()
     }
 
     /// Returns the FPGA state of the devices.
@@ -175,16 +184,11 @@ impl<L: Link> Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
-    fn close_impl<S: Sleeper>(
-        &mut self,
-        option: SenderOption,
-        sleeper: S,
-    ) -> Result<(), AUTDDriverError> {
+    fn close_impl(&mut self, option: SenderOption) -> Result<(), AUTDDriverError> {
         if !self.link.is_open() {
             return Ok(());
         }
-
-        self.sender(option, sleeper).close()
+        self.sender(option).close()
     }
 }
 
@@ -259,7 +263,7 @@ impl<L: Link> Drop for Controller<L> {
         if !self.link.is_open() {
             return;
         }
-        let _ = self.close_impl(self.default_sender_option, StdSleeper);
+        let _ = self.close_impl(self.default_sender_option);
     }
 }
 
@@ -456,7 +460,7 @@ pub(crate) mod tests {
     fn close() -> Result<(), Box<dyn std::error::Error>> {
         {
             let mut autd = create_controller(1)?;
-            autd.close_impl(SenderOption::default(), StdSleeper)?;
+            autd.close_impl(SenderOption::default())?;
             autd.close()?;
         }
 
