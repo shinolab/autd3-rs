@@ -124,8 +124,7 @@ impl<const N: usize, Iterator: FociSTMIterator<N>> Operation<'_> for FociSTMOp<N
 
             let mut idx = offset;
             (0..send_num).try_for_each(|_| {
-                let p = self.iter.next();
-                let p = p.transform(device.inv());
+                let p = self.iter.next(device.inv());
                 crate::firmware::operation::write_to_tx(
                     &mut tx[idx..],
                     STMFocus::create(&p[0].point, p.intensity.0)?,
@@ -238,9 +237,12 @@ mod tests {
         ethercat::DcSysTime,
         geometry::Point3,
     };
-    use autd3_core::firmware::{
-        FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X, Intensity,
-        transition_mode::{self, TransitionMode},
+    use autd3_core::{
+        firmware::{
+            FOCI_STM_FIXED_NUM_UNIT, FOCI_STM_FIXED_NUM_UPPER_X, Intensity,
+            transition_mode::{self, TransitionMode},
+        },
+        geometry::Isometry3,
     };
     use rand::prelude::*;
 
@@ -249,7 +251,7 @@ mod tests {
     }
 
     impl<const N: usize> FociSTMIterator<N> for TestIterator<N> {
-        fn next(&mut self) -> ControlPoints<N> {
+        fn next(&mut self, _iso: &Isometry3) -> ControlPoints<N> {
             self.points.pop_front().unwrap()
         }
     }
