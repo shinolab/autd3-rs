@@ -8,6 +8,7 @@ use autd3_core::link::MsgId;
 
 mod datagram;
 mod link;
+mod old;
 
 #[test]
 fn initial_msg_id() -> Result<(), Box<dyn std::error::Error>> {

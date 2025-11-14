@@ -2,12 +2,9 @@ use std::time::{Duration, Instant};
 
 use super::SenderOption;
 use crate::{
-    datagram::{
-        Clear, FirmwareVersionType, FixedCompletionSteps, Silencer,
-        implements::{Null, Static},
-    },
     error::AUTDDriverError,
     firmware::{
+        cpu::{check_firmware_err, check_if_msg_is_processed},
         operation::{Operation, OperationGenerator, OperationHandler},
         version::FirmwareVersion,
     },
@@ -80,18 +77,31 @@ impl<'a, L: Link, S: Sleeper> Sender<'a, L, S> {
     }
 
     #[doc(hidden)]
-    pub fn initialize_devices(mut self) -> Result<(), crate::error::AUTDDriverError> {
+    pub fn initialize_devices(mut self) -> Result<(), AUTDDriverError> {
+        const V12_1: u8 = 0xA5;
+
+        let r = self._initialize_devices();
+        if r.is_err()
+            && let Ok(list) = self.firmware_version()
+            && list.into_iter().all(|f| f.cpu.major.0 < V12_1)
+        {
+            return Err(AUTDDriverError::UnsupportedFirmware);
+        }
+        r
+    }
+
+    fn _initialize_devices(&mut self) -> Result<(), AUTDDriverError> {
+        use crate::datagram::{Clear, Nop, Synchronize};
+
         // If the device is used continuously without powering off, the first data may be ignored because the first msg_id equals to the remaining msg_id in the device.
         // Therefore, send a meaningless data.
-        self.send(crate::datagram::Nop)?;
+        self.send(Nop)?;
 
-        self.send((Clear::new(), crate::datagram::Synchronize::new()))
+        self.send((Clear::new(), Synchronize::new()))
     }
 
     #[doc(hidden)]
-    pub fn firmware_version(
-        mut self,
-    ) -> Result<Vec<crate::firmware::version::FirmwareVersion>, crate::error::AUTDDriverError> {
+    pub fn firmware_version(mut self) -> Result<Vec<FirmwareVersion>, AUTDDriverError> {
         use crate::{
             datagram::FirmwareVersionType::*,
             firmware::version::{CPUVersion, FPGAVersion, Major, Minor},
@@ -123,7 +133,12 @@ impl<'a, L: Link, S: Sleeper> Sender<'a, L, S> {
     }
 
     #[doc(hidden)]
-    pub fn close(mut self) -> Result<(), crate::error::AUTDDriverError> {
+    pub fn close(mut self) -> Result<(), AUTDDriverError> {
+        use crate::datagram::{
+            Clear, FixedCompletionSteps, Silencer,
+            implements::{Null, Static},
+        };
+
         [
             self.send(Silencer {
                 config: FixedCompletionSteps {
@@ -207,7 +222,7 @@ impl<'a, L: Link, S: Sleeper> Sender<'a, L, S> {
             self.link.ensure_is_open()?;
             self.link.receive(self.rx)?;
 
-            if crate::firmware::cpu::check_if_msg_is_processed(*self.msg_id, self.rx)
+            if check_if_msg_is_processed(*self.msg_id, self.rx)
                 .zip(self.sent_flags.iter())
                 .filter_map(|(r, sent)| sent.then_some(r))
                 .all(std::convert::identity)
@@ -229,16 +244,16 @@ impl<'a, L: Link, S: Sleeper> Sender<'a, L, S> {
 
         self.rx
             .iter()
-            .try_fold((), |_, r| crate::firmware::cpu::check_firmware_err(r.ack()))
+            .try_fold((), |_, r| check_firmware_err(r.ack()))
     }
 
     pub(crate) fn fetch_firminfo(
         &mut self,
-        ty: FirmwareVersionType,
+        ty: crate::datagram::FirmwareVersionType,
     ) -> Result<Vec<u8>, AUTDDriverError> {
         self.send(ty).map_err(|_| {
             AUTDDriverError::ReadFirmwareVersionFailed(
-                crate::firmware::cpu::check_if_msg_is_processed(*self.msg_id, self.rx).collect(),
+                check_if_msg_is_processed(*self.msg_id, self.rx).collect(),
             )
         })?;
         Ok(self.rx.iter().map(|rx| rx.data()).collect())
