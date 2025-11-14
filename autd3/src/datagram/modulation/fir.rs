@@ -1,26 +1,31 @@
+use std::borrow::Cow;
+
 use autd3_core::derive::*;
 
 /// [`Modulation`] that applies FIR filter to the original [`Modulation`].
 #[derive(Modulation, Debug, Clone)]
-pub struct Fir<M: Modulation> {
+pub struct Fir<'a, M>
+where
+    M: Modulation,
+{
     /// The target [`Modulation`] to apply FIR filter.
     pub target: M,
     /// The coefficients of the FIR filter.
-    pub coef: Vec<f32>,
+    pub coef: Cow<'a, [f32]>, // This can be a simple reference in Rust, but to own the value for capi, we use `Cow`.
 }
 
-impl<M: Modulation> Fir<M> {
+impl<'a, M: Modulation> Fir<'a, M> {
     /// Create a new [`Fir`].
     #[must_use]
-    pub fn new(target: M, coef: impl IntoIterator<Item = impl std::borrow::Borrow<f32>>) -> Self {
+    pub fn new(target: M, coef: impl Into<Cow<'a, [f32]>>) -> Self {
         Self {
             target,
-            coef: coef.into_iter().map(|v| *v.borrow()).collect(),
+            coef: coef.into(),
         }
     }
 }
 
-impl<M: Modulation> Modulation for Fir<M> {
+impl<'a, M: Modulation> Modulation for Fir<'a, M> {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
         let src = self.target.calc()?;
         let src_len = src.len() as isize;
@@ -60,7 +65,7 @@ mod tests {
                     buffer: [u8::MIN; 2].to_vec(),
                     sampling_config: config,
                 },
-                vec![1.0]
+                &[1.0]
             )
             .sampling_config()
         );
@@ -178,8 +183,8 @@ mod tests {
                 89, 86, 83, 80, 77, 75, 73, 72, 70, 70, 69, 69, 69, 70, 70, 72, 73, 75, 77, 80, 83,
                 86, 89, 93, 96, 100, 105, 109, 113, 118, 122
             ],
-            *Fir {
-                target: Fourier {
+            *Fir::new(
+                Fourier {
                     components: vec![
                         Sine {
                             freq: 50 * Hz,
@@ -193,7 +198,7 @@ mod tests {
                     option: Default::default()
                 },
                 coef
-            }
+            )
             .calc()?
         );
 
