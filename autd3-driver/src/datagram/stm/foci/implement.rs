@@ -74,6 +74,21 @@ where
     }
 }
 
+impl<'a, const N: usize> FociSTMGenerator<N> for &'a [ControlPoints<N>] {
+    type T = SliceFociSTMIterator<N, &'a [ControlPoints<N>]>;
+
+    fn init(self) -> Result<Self::T, AUTDDriverError> {
+        Ok(SliceFociSTMIterator {
+            foci: Arc::new(self),
+            i: 0,
+        })
+    }
+
+    fn len(&self) -> usize {
+        <[ControlPoints<N>]>::len(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::Duration;

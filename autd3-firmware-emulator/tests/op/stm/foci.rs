@@ -77,7 +77,7 @@ fn send_foci_stm_infinite() -> Result<(), Box<dyn std::error::Error>> {
 
     let stm = WithSegment {
         inner: FociSTM::new(
-            foci.clone(),
+            foci.as_ref(),
             SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
         ),
         segment: Segment::S0,
@@ -153,7 +153,7 @@ fn send_foci_stm_finite() -> Result<(), Box<dyn std::error::Error>> {
 
     let stm = WithFiniteLoop {
         inner: FociSTM::new(
-            foci.clone(),
+            foci.as_ref(),
             SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
         ),
         segment: Segment::S1,
@@ -492,7 +492,7 @@ fn send_foci_stm_n<const N: usize>() -> Result<(), Box<dyn std::error::Error>> {
 
         let stm = WithSegment {
             inner: FociSTM {
-                foci: foci.clone(),
+                foci: foci.as_ref(),
                 config: SamplingConfig::new(unsafe { NonZeroU16::new_unchecked(freq_div) }),
             },
             segment,
