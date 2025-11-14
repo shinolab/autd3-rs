@@ -36,8 +36,8 @@ pub fn fir(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::E
         pos: center,
         option: Default::default(),
     };
-    let m = Fir {
-        target: Sine {
+    let m = Fir::new(
+        Sine {
             freq: 150. * Hz,
             option: SineOption {
                 sampling_config: SamplingConfig::new(20. * kHz),
@@ -45,7 +45,7 @@ pub fn fir(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::E
             },
         },
         coef,
-    };
+    );
 
     autd.send((m, g))?;
 
