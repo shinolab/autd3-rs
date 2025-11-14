@@ -24,7 +24,7 @@ use autd3_core::{
 /// ```
 /// # use autd3_driver::datagram::PulseWidthEncoder;
 /// # use autd3_core::firmware::PulseWidth;
-/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::from_duty(i.0 as f32 / 510.).unwrap());
+/// PulseWidthEncoder::new(|_dev| |i| PulseWidth::from_duty(i.0 as f32 / 510.));
 /// ```
 ///
 /// [`Intensity`]: autd3_core::firmware::Intensity
@@ -74,9 +74,7 @@ impl Default
     for PulseWidthEncoder<fn(&Device) -> fn(Intensity) -> PulseWidth, fn(Intensity) -> PulseWidth>
 {
     fn default() -> Self {
-        Self::new(|_| {
-            |intensity| PulseWidth::from_duty((intensity.0 as f32 / 255.).asin() / PI).unwrap()
-        })
+        Self::new(|_| |intensity| PulseWidth::from_duty((intensity.0 as f32 / 255.).asin() / PI))
     }
 }
 

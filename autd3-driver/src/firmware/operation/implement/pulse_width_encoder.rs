@@ -49,7 +49,7 @@ impl<F: Fn(Intensity) -> PulseWidth + Send> Operation<'_> for PulseWidthEncoderO
             .try_for_each(|(i, dst)| {
                 crate::firmware::operation::write_to_tx(
                     dst,
-                    (self.f)(Intensity(i as u8)).pulse_width::<u16>()?,
+                    (self.f)(Intensity(i as u8)).pulse_width()?,
                 );
                 Ok(())
             })?;
