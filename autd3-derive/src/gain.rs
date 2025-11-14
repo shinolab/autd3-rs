@@ -14,9 +14,9 @@ fn format_generics(input: &DeriveInput) -> (String, String, String, String) {
     } else {
         lifetimes
             .iter()
-            .map(|l| format!("'{}", l))
+            .map(|l| format!("'{}, ", l))
             .collect::<Vec<_>>()
-            .join(", ")
+            .join("")
     };
 
     let type_params = if input.generics.type_params_with_bounds.is_empty() {
