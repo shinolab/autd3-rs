@@ -286,8 +286,8 @@ mod tests {
     #[rstest::rstest]
     #[case(SamplingConfigError::FreqInvalid(1 * autd3_core::common::Hz), AUTDDriverError::SamplingConfig(SamplingConfigError::FreqInvalid(1 * autd3_core::common::Hz)))]
     #[case(
-        PulseWidthError::PulseWidthOutOfRange(1, 1),
-        AUTDDriverError::PulseWidth(PulseWidthError::PulseWidthOutOfRange(1, 1))
+        PulseWidthError::PulseWidthOutOfRange(1),
+        AUTDDriverError::PulseWidth(PulseWidthError::PulseWidthOutOfRange(1))
     )]
     #[case(
         ModulationError::new("test"),
@@ -346,8 +346,8 @@ mod tests {
         AUTDDriverError::UnsupportedGPIOOutputType("test".to_string())
     )]
     #[case(
-        "Pulse width (1) is out of range [0, 1)",
-        AUTDDriverError::PulseWidth(PulseWidthError::PulseWidthOutOfRange(1, 1))
+        "Pulse width (1) is out of range [0, 512)",
+        AUTDDriverError::PulseWidth(PulseWidthError::PulseWidthOutOfRange(1))
     )]
     #[case("test", AUTDDriverError::Modulation(ModulationError::new("test")))]
     #[case("test", AUTDDriverError::Gain(GainError::new("test")))]
@@ -413,7 +413,7 @@ mod tests {
     #[case(false, AUTDDriverError::UnsupportedGPIOOutputType("test".to_string()))]
     #[case(
         true,
-        AUTDDriverError::PulseWidth(PulseWidthError::PulseWidthOutOfRange(1, 1))
+        AUTDDriverError::PulseWidth(PulseWidthError::PulseWidthOutOfRange(1))
     )]
     #[case(true, AUTDDriverError::Modulation(ModulationError::new("test")))]
     #[case(true, AUTDDriverError::Gain(GainError::new("test")))]
