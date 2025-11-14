@@ -181,10 +181,12 @@ impl<'a, L: Link, S: Sleeper> Sender<'a, L, S> {
                 return Ok(());
             }
 
-            let next = send_timing + self.option.send_interval;
-            self.sleeper
-                .sleep(next.saturating_duration_since(Instant::now()));
-            send_timing = next;
+            if let Some(interval) = self.option.send_interval {
+                let next = send_timing + interval;
+                self.sleeper
+                    .sleep(next.saturating_duration_since(Instant::now()));
+                send_timing = next;
+            }
         }
     }
 
@@ -217,10 +219,12 @@ impl<'a, L: Link, S: Sleeper> Sender<'a, L, S> {
                 return Err(AUTDDriverError::ConfirmResponseFailed);
             }
 
-            let next = receive_timing + self.option.receive_interval;
-            self.sleeper
-                .sleep(next.saturating_duration_since(Instant::now()));
-            receive_timing = next;
+            if let Some(interval) = self.option.receive_interval {
+                let next = receive_timing + interval;
+                self.sleeper
+                    .sleep(next.saturating_duration_since(Instant::now()));
+                receive_timing = next;
+            }
         }
 
         self.rx
