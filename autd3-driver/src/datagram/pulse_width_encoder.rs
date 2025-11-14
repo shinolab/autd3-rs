@@ -29,19 +29,25 @@ use autd3_core::{
 ///
 /// [`Intensity`]: autd3_core::firmware::Intensity
 #[derive(Clone, Debug)]
-pub struct PulseWidthEncoder<F> {
+pub struct PulseWidthEncoder<F, H> {
     pub(crate) f: F,
+    _h: std::marker::PhantomData<H>,
 }
 
-impl<H: Fn(Intensity) -> PulseWidth, F: Fn(&Device) -> H> PulseWidthEncoder<F> {
+impl<'a, H: Fn(Intensity) -> PulseWidth, F: Fn(&'a Device) -> H> PulseWidthEncoder<F, H> {
     /// Creates a new [`PulseWidthEncoder`].
     #[must_use]
     pub const fn new(f: F) -> Self {
-        Self { f }
+        Self {
+            f,
+            _h: std::marker::PhantomData,
+        }
     }
 }
 
-impl<H: Fn(Intensity) -> PulseWidth, F: Fn(&Device) -> H> Datagram<'_> for PulseWidthEncoder<F> {
+impl<'a, H: Fn(Intensity) -> PulseWidth, F: Fn(&'a Device) -> H> Datagram<'_>
+    for PulseWidthEncoder<F, H>
+{
     type G = PulseWidthEncoderOperationGenerator<F>;
     type Error = Infallible;
 
@@ -64,7 +70,9 @@ impl<H: Fn(Intensity) -> PulseWidth, F: Fn(&Device) -> H> Datagram<'_> for Pulse
     }
 }
 
-impl Default for PulseWidthEncoder<fn(&Device) -> fn(Intensity) -> PulseWidth> {
+impl Default
+    for PulseWidthEncoder<fn(&Device) -> fn(Intensity) -> PulseWidth, fn(Intensity) -> PulseWidth>
+{
     fn default() -> Self {
         Self::new(|_| {
             |intensity| PulseWidth::from_duty((intensity.0 as f32 / 255.).asin() / PI).unwrap()
@@ -75,4 +83,15 @@ impl Default for PulseWidthEncoder<fn(&Device) -> fn(Intensity) -> PulseWidth> {
 #[doc(hidden)]
 pub struct PulseWidthEncoderOperationGenerator<F> {
     pub f: F,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use autd3_core::firmware::PulseWidth;
+
+    #[test]
+    fn pulse_width_encoder() {
+        let _ = PulseWidthEncoder::new(|dev| |_i| PulseWidth::new(dev.idx() as _));
+    }
 }
