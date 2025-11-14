@@ -22,13 +22,10 @@ fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(0, autd.link()[0].idx());
 
     {
-        autd.sender(
-            SenderOption {
-                timeout: Some(Duration::from_millis(20)),
-                ..Default::default()
-            },
-            StdSleeper,
-        )
+        autd.sender(SenderOption {
+            timeout: Some(Duration::from_millis(20)),
+            ..Default::default()
+        })
         .send(Null {})?;
     }
 
