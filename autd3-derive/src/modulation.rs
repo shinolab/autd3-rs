@@ -9,9 +9,9 @@ fn format_generics(input: &DeriveInput) -> (String, String) {
             .generics
             .lifetimes
             .iter()
-            .map(|l| format!("'{}", l))
+            .map(|l| format!("'{}, ", l))
             .collect::<Vec<_>>()
-            .join(", ")
+            .join("")
     };
 
     let type_params = if input.generics.type_params_with_bounds.is_empty() {
@@ -36,7 +36,7 @@ pub(crate) fn impl_mod_macro(input: DeriveInput) -> TokenStream {
         .unwrap_or_default();
 
     let code = format!(
-        r"impl<{lifetimes}{type_params}> DatagramL<'_> for {name}{ty_generics} {where_clause}{{
+        r"impl<{lifetimes}{type_params}> DatagramL<'_> for {name}{ty_generics} {where_clause} {{
             type G = ModulationOperationGenerator;
             type Error = ModulationError;
             fn operation_generator_with_finite_loop(self, _: &Geometry, _: &Environment, _: &DeviceMask, segment: Segment, transition_params: transition_mode::TransitionModeParams, rep: u16) -> Result<Self::G, Self::Error> {{
@@ -46,7 +46,7 @@ pub(crate) fn impl_mod_macro(input: DeriveInput) -> TokenStream {
             }}
             fn option(&self) -> DatagramOption {{ DatagramOption::default() }}
         }}
-        impl<{lifetimes}{type_params}> Inspectable<'_> for {name}{ty_generics} {where_clause}{{
+        impl<{lifetimes}{type_params}> Inspectable<'_> for {name}{ty_generics} {where_clause} {{
             type Result = ModulationInspectionResult;
             fn inspect(self, geometry: &Geometry, _: &Environment, filter: &DeviceMask) -> Result<InspectionResult<Self::Result>, ModulationError> {{
                 let sampling_config = self.sampling_config();
