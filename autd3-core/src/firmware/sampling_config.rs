@@ -8,8 +8,6 @@ use crate::{
 #[derive(Debug, PartialEq, Copy, Clone)]
 /// An error produced by the sampling configuration.
 pub enum SamplingConfigError {
-    /// Invalid sampling divide.
-    DivideInvalid,
     /// Invalid sampling frequency.
     FreqInvalid(Freq<u32>),
     /// Invalid sampling frequency.
@@ -27,7 +25,6 @@ pub enum SamplingConfigError {
 impl core::fmt::Display for SamplingConfigError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            SamplingConfigError::DivideInvalid => write!(f, "Sampling divide must not be zero"),
             SamplingConfigError::FreqInvalid(freq) => {
                 write!(
                     f,
@@ -357,7 +354,6 @@ mod tests {
     }
 
     #[rstest::rstest]
-    #[case("Sampling divide must not be zero", SamplingConfigError::DivideInvalid)]
     #[case(
         "Sampling frequency (39999 Hz) must divide the ultrasound frequency",
         SamplingConfigError::FreqInvalid(39999 * Hz),
