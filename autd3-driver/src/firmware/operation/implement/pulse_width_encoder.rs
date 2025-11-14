@@ -68,13 +68,13 @@ impl<F: Fn(Intensity) -> PulseWidth + Send> Operation<'_> for PulseWidthEncoderO
     }
 }
 
-impl<H: Fn(Intensity) -> PulseWidth + Send, F: Fn(&Device) -> H> OperationGenerator<'_>
+impl<'a, H: Fn(Intensity) -> PulseWidth + Send, F: Fn(&'a Device) -> H> OperationGenerator<'a>
     for PulseWidthEncoderOperationGenerator<F>
 {
     type O1 = PulseWidthEncoderOp<H>;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         Some((Self::O1::new((self.f)(device)), Self::O2 {}))
     }
 }

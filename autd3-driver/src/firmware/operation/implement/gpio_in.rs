@@ -80,11 +80,13 @@ impl Operation<'_> for EmulateGPIOInOp {
     }
 }
 
-impl<H: Fn(GPIOIn) -> bool, F: Fn(&Device) -> H> OperationGenerator<'_> for EmulateGPIOIn<F> {
+impl<'a, H: Fn(GPIOIn) -> bool, F: Fn(&'a Device) -> H> OperationGenerator<'a>
+    for EmulateGPIOIn<F, H>
+{
     type O1 = EmulateGPIOInOp;
     type O2 = NullOp;
 
-    fn generate(&mut self, device: &Device) -> Option<(Self::O1, Self::O2)> {
+    fn generate(&mut self, device: &'a Device) -> Option<(Self::O1, Self::O2)> {
         Some((
             Self::O1::new([GPIOIn::I0, GPIOIn::I1, GPIOIn::I2, GPIOIn::I3].map((self.f)(device))),
             Self::O2 {},
