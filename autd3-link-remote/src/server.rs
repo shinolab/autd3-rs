@@ -93,15 +93,17 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
         loop {
             let (stream, _) = listener.accept().await?;
             tracing::info!("Client connected: {:?}", stream.peer_addr()?);
-            self.handle_client(stream).await?;
+            self.handle_client(stream).await;
             tracing::info!("Client disconnected");
-            if let Some(mut link) = self.link.take() {
-                AsyncLink::close(&mut link).await?;
+            if let Some(mut link) = self.link.take()
+                && let Err(e) = AsyncLink::close(&mut link).await
+            {
+                tracing::error!("Error closing link: {}", e);
             }
         }
     }
 
-    async fn handle_client(&mut self, mut stream: TcpStream) -> Result<(), LinkError> {
+    async fn handle_client(&mut self, mut stream: TcpStream) {
         loop {
             let mut msg_type = [0u8; size_of::<u8>()];
             if stream.read_exact(&mut msg_type).await.is_err() {
@@ -113,23 +115,18 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
                 MSG_UPDATE_GEOMETRY => self.handle_update_geometry(&mut stream).await,
                 MSG_SEND_DATA => self.handle_send_data(&mut stream).await,
                 MSG_READ_DATA => self.handle_read_data(&mut stream).await,
-                MSG_CLOSE => {
-                    let result = self.handle_close(&mut stream).await;
-                    if result.is_ok() {
-                        break;
-                    }
-                    result
-                }
+                MSG_CLOSE => self.handle_close(&mut stream).await,
                 msg => Err(LinkError::new(format!("Unknown message type: {}", msg))),
             };
 
             if let Err(e) = result {
                 let _ = self.send_error(&mut stream, &e).await;
-                return Err(e);
+                tracing::error!("Error handling client request: {}", e);
+            }
+            if msg_type[0] == MSG_CLOSE {
+                break;
             }
         }
-
-        Ok(())
     }
 
     async fn handle_config_geometry(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
