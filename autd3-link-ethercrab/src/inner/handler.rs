@@ -298,15 +298,15 @@ impl EtherCrabHandler {
                 })
                 .await?,
         );
-        let _op_request = Instant::now();
 
+        let _op_request = Instant::now();
         let all_op = Arc::new(AtomicBool::new(false));
         let buf_size = buf_size.get();
         let (sender, receiver) = sync_channel(buf_size);
         let (buffer_queue_sender, buffer_queue_receiver) = sync_channel(buf_size);
-        for _ in 0..buf_size {
+        (0..buf_size).for_each(|_| {
             let _ = buffer_queue_sender.send(vec![TxMessage::new(); groups.len()]);
-        }
+        });
         let inputs = Arc::new(RwLock::new(vec![
             0x00u8;
             groups.len() * EC_INPUT_FRAME_SIZE
