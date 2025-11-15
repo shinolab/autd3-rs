@@ -103,7 +103,7 @@ mod tests {
     use super::{super::super::Pa, *};
 
     #[test]
-    fn naive_option_default() {
+    fn option_default() {
         let option = NaiveOption::default();
         assert_eq!(
             option.constraint,
@@ -112,7 +112,7 @@ mod tests {
     }
 
     #[test]
-    fn test_naive_all() {
+    fn all() {
         let geometry = create_geometry(1, 1);
 
         let g = Naive::new(
@@ -136,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn test_naive_all_disabled() -> Result<(), Box<dyn std::error::Error>> {
+    fn all_disabled() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = create_geometry(2, 1);
 
         let g = Naive {
@@ -168,7 +168,7 @@ mod tests {
     }
 
     #[test]
-    fn test_naive_filtered() {
+    fn filtered() {
         let geometry = create_geometry(2, 1);
 
         let g = Naive {
@@ -210,7 +210,7 @@ mod tests {
     }
 
     #[test]
-    fn test_naive_filtered_disabled() -> Result<(), Box<dyn std::error::Error>> {
+    fn filtered_disabled() -> Result<(), Box<dyn std::error::Error>> {
         let geometry = create_geometry(2, 1);
 
         let g = Naive {

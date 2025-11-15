@@ -119,7 +119,7 @@ mod tests {
     use super::{super::super::Pa, *};
 
     #[test]
-    fn gs_option_default() {
+    fn option_default() {
         let option = GSOption::default();
         assert_eq!(option.repeat, NonZeroUsize::new(100).unwrap());
         assert_eq!(
@@ -129,7 +129,7 @@ mod tests {
     }
 
     #[test]
-    fn test_gs_all() {
+    fn all() {
         let geometry = create_geometry(1, 1);
 
         let g = GS::new(
@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn test_gs_filtered() {
+    fn filtered() {
         let geometry = create_geometry(2, 1);
 
         let g = GS {
