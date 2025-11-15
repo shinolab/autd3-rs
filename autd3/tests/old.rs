@@ -72,7 +72,7 @@ impl Link for OldFirmwareEmulator {
 }
 
 #[test]
-fn test_retry_with_disabled_device() {
+fn unsupported_firmware() {
     use autd3::{Controller, core::devices::AUTD3, driver::error::AUTDDriverError};
 
     let r = Controller::open([AUTD3::default()], OldFirmwareEmulator::default());

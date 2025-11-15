@@ -15,7 +15,6 @@ pub struct AuditOption {
 #[doc(hidden)]
 pub struct Audit {
     option: AuditOption,
-    is_open: bool,
     cpus: Vec<CPUEmulator>,
     broken: bool,
     buffer_pool: TxBufferPoolSync,
@@ -39,7 +38,6 @@ impl Audit {
     pub const fn new(option: AuditOption) -> Self {
         Self {
             option,
-            is_open: false,
             cpus: Vec::new(),
             broken: false,
             buffer_pool: TxBufferPoolSync::new(),
@@ -57,7 +55,6 @@ impl Audit {
 
 impl Link for Audit {
     fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
-        self.is_open = true;
         self.cpus = geometry
             .iter()
             .enumerate()
@@ -75,7 +72,7 @@ impl Link for Audit {
     }
 
     fn close(&mut self) -> Result<(), LinkError> {
-        self.is_open = false;
+        self.cpus.clear();
         Ok(())
     }
 
@@ -110,7 +107,7 @@ impl Link for Audit {
     }
 
     fn is_open(&self) -> bool {
-        self.is_open
+        !self.cpus.is_empty()
     }
 }
 

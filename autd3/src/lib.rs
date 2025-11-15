@@ -11,25 +11,32 @@
 
 /// [`Controller`] module.
 pub mod controller;
-/// Primitive [`Gain`], [`Modulation`] and utilities for [`GainSTM`] and [`FociSTM`].
+#[cfg_attr(docsrs, doc(cfg(feature = "gain")))]
+#[cfg(feature = "gain")]
+/// Primitive [`Gain`]s
 ///
 /// [`Gain`]: autd3_core::gain::Gain
-/// [`Modulation`]: autd3_core::modulation::Modulation
-/// [`GainSTM`]: autd3_driver::datagram::GainSTM
-/// [`FociSTM`]: autd3_driver::datagram::FociSTM
-pub mod datagram;
+pub mod gain;
 #[doc(hidden)]
 pub mod link;
+#[cfg_attr(docsrs, doc(cfg(feature = "modulation")))]
+#[cfg(feature = "modulation")]
+/// Primitive [`Modulation`]s
+///
+/// [`Modulation`]: autd3_core::modulation::Modulation
+pub mod modulation;
 /// Prelude module.
 pub mod prelude;
+#[cfg_attr(docsrs, doc(cfg(feature = "stm")))]
+#[cfg(feature = "stm")]
+/// Utilities for [`GainSTM`] and [`FociSTM`]
+///
+/// [`GainSTM`]: autd3_driver::datagram::GainSTM
+/// [`FociSTM`]: autd3_driver::datagram::FociSTM
+pub mod stm;
 
 pub use autd3_core as core;
 pub use autd3_driver as driver;
-#[cfg(feature = "gain")]
-pub use datagram::gain;
-#[cfg(feature = "modulation")]
-pub use datagram::modulation;
-
 pub use controller::Controller;
 
 #[cfg(test)]

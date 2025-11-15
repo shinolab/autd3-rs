@@ -10,7 +10,7 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = []
+features = ["gain", "modulation", "stm"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]

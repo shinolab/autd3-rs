@@ -124,7 +124,7 @@ mod tests {
     use autd3_driver::common::{Hz, PI, rad};
 
     #[test]
-    fn test_fourier() -> Result<(), Box<dyn std::error::Error>> {
+    fn fourier() -> Result<(), Box<dyn std::error::Error>> {
         let f0 = Sine {
             freq: 50. * Hz,
             option: SineOption {

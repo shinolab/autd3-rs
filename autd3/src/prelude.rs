@@ -1,15 +1,15 @@
 #[cfg(feature = "gain")]
-pub use crate::datagram::gain::{
+pub use crate::gain::{
     self, Bessel, BesselOption, Focus, FocusOption, GainGroup, Null, Plane, PlaneOption, Uniform,
 };
 
 #[cfg(feature = "modulation")]
-pub use crate::datagram::modulation::{
+pub use crate::modulation::{
     self, Fir, FourierOption, RadiationPressure, Sine, SineOption, Square, SquareOption, Static,
 };
 
 #[cfg(feature = "stm")]
-pub use crate::datagram::stm::{Circle, Line};
+pub use crate::stm::{Circle, Line};
 
 #[cfg(feature = "link-nop")]
 pub use crate::link::Nop;
@@ -23,7 +23,6 @@ pub use autd3_core::{
         transition_mode,
     },
     modulation::Modulation,
-    sleep::{self, StdSleeper},
 };
 
 pub use autd3_driver::{

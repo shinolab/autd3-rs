@@ -2,7 +2,7 @@ use autd3::prelude::*;
 use autd3_core::link::{Link, LinkError};
 
 #[test]
-fn nop_test() -> Result<(), Box<dyn std::error::Error>> {
+fn nop() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::open([AUTD3::default()], Nop::new())?;
 
     assert!(autd.send(Static::default()).is_ok());
