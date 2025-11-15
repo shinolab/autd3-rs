@@ -123,7 +123,7 @@ mod tests {
     use super::{super::super::Pa, *};
 
     #[test]
-    fn gspat_option_default() {
+    fn option_default() {
         let option = GSPATOption::default();
         assert_eq!(option.repeat, NonZeroUsize::new(100).unwrap());
         assert_eq!(
@@ -133,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn test_gspat_all() {
+    fn all() {
         let geometry = create_geometry(1, 1);
 
         let g = GSPAT::new(
@@ -158,7 +158,7 @@ mod tests {
     }
 
     #[test]
-    fn test_gspat_filtered() {
+    fn filtered() {
         let geometry = create_geometry(2, 1);
 
         let g = GSPAT {

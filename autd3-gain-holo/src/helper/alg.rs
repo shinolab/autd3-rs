@@ -48,7 +48,6 @@ impl Ptr {
     }
 }
 unsafe impl Send for Ptr {}
-unsafe impl Sync for Ptr {}
 
 #[cfg(feature = "use_nalgebra")]
 fn uninit_mat(row: usize, col: usize) -> MatrixXc {

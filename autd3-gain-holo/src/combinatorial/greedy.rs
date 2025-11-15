@@ -232,13 +232,33 @@ impl<D: Directivity> Gain<'_> for Greedy<D> {
 
 #[cfg(test)]
 mod tests {
-
     use crate::tests::create_geometry;
 
     use super::{super::super::Pa, *};
 
+    #[rstest::rstest]
+    #[case([(0..249).map(|i| (0, i)).collect::<Vec<_>>(), (0..249).map(|i| (1, i)).collect::<Vec<_>>()].concat(), TransducerMask::AllEnabled)]
+    #[case((0..249).map(|i| (1, i)).collect::<Vec<_>>(), TransducerMask::new([DeviceTransducerMask::AllDisabled, DeviceTransducerMask::AllEnabled]))]
     #[test]
-    fn test_greedy() {
+    fn indices(#[case] expected: Vec<(usize, usize)>, #[case] filter: TransducerMask) {
+        let geometry = create_geometry(2, 1);
+
+        let mut indices = Greedy::<Sphere>::generate_indices(&geometry, &filter);
+        indices.sort();
+        assert_eq!(expected, indices);
+    }
+
+    #[rstest::rstest]
+    #[case(HashMap::from([(0, vec![Drive::NULL; 249]), (1, vec![Drive::NULL; 249])]), TransducerMask::AllEnabled)]
+    #[case(HashMap::from([(1, vec![Drive::NULL; 249])]), TransducerMask::new([DeviceTransducerMask::AllDisabled, DeviceTransducerMask::AllEnabled]))]
+    #[test]
+    fn alloc_result(#[case] expected: HashMap<usize, Vec<Drive>>, #[case] filter: TransducerMask) {
+        let geometry = create_geometry(2, 1);
+        assert_eq!(expected, Greedy::<Sphere>::alloc_result(&geometry, &filter));
+    }
+
+    #[test]
+    fn greedy() {
         let geometry = create_geometry(1, 1);
 
         let g = Greedy::new(
@@ -258,32 +278,8 @@ mod tests {
         );
     }
 
-    #[rstest::rstest]
-    #[case([(0..249).map(|i| (0, i)).collect::<Vec<_>>(), (0..249).map(|i| (1, i)).collect::<Vec<_>>()].concat(), TransducerMask::AllEnabled)]
-    #[case((0..249).map(|i| (1, i)).collect::<Vec<_>>(), TransducerMask::new([DeviceTransducerMask::AllDisabled, DeviceTransducerMask::AllEnabled]))]
     #[test]
-    fn test_greedy_indices(#[case] expected: Vec<(usize, usize)>, #[case] filter: TransducerMask) {
-        let geometry = create_geometry(2, 1);
-
-        let mut indices = Greedy::<Sphere>::generate_indices(&geometry, &filter);
-        indices.sort();
-        assert_eq!(expected, indices);
-    }
-
-    #[rstest::rstest]
-    #[case(HashMap::from([(0, vec![Drive::NULL; 249]), (1, vec![Drive::NULL; 249])]), TransducerMask::AllEnabled)]
-    #[case(HashMap::from([(1, vec![Drive::NULL; 249])]), TransducerMask::new([DeviceTransducerMask::AllDisabled, DeviceTransducerMask::AllEnabled]))]
-    #[test]
-    fn test_greedy_alloc_result(
-        #[case] expected: HashMap<usize, Vec<Drive>>,
-        #[case] filter: TransducerMask,
-    ) {
-        let geometry = create_geometry(2, 1);
-        assert_eq!(expected, Greedy::<Sphere>::alloc_result(&geometry, &filter));
-    }
-
-    #[test]
-    fn test_greedy_filtered() {
+    fn filtered() {
         let geometry = create_geometry(1, 1);
 
         let g = Greedy {

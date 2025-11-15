@@ -92,7 +92,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_db() {
+    fn db() {
         let amp = 121.5 * dB;
 
         approx::assert_abs_diff_eq!(amp.spl(), 121.5, epsilon = 1e-3);
@@ -100,7 +100,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pascal() {
+    fn pascal() {
         let amp = 23.77 * Pa;
 
         approx::assert_abs_diff_eq!(amp.pascal(), 23.77, epsilon = 1e-3);
@@ -113,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn test_kilo_pascal() {
+    fn kilo_pascal() {
         let amp = 23.77e-3 * kPa;
 
         approx::assert_abs_diff_eq!(amp.pascal(), 23.77, epsilon = 1e-3);

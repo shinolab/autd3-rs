@@ -91,7 +91,7 @@ mod tests {
     }
 
     #[rstest::rstest]
-    fn test_propagate(tr: Transducer, rot: UnitQuaternion, target: Point3, sound_speed: f32) {
+    fn propagate(tr: Transducer, rot: UnitQuaternion, target: Point3, sound_speed: f32) {
         let device = Device::new(rot, vec![tr.clone()]);
         let wavelength = sound_speed / ULTRASOUND_FREQ.hz() as f32;
         let wavenumber = 2. * PI / wavelength;
