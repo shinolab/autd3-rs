@@ -30,6 +30,7 @@ pub use server::RemoteServer;
 // - `0x03`: Send Data
 // - `0x04`: Read Data
 // - `0x05`: Close
+// - `0x10`: Hello (handshake)
 //
 // ## Response Status Codes
 //
@@ -37,6 +38,15 @@ pub use server::RemoteServer;
 // - `0xFF`: Error
 //
 // ## Message Formats
+//
+// ### Hello (Handshake)
+// Request:
+// - 1 byte: message type (0x10)
+// - 2 bytes: protocol version (u16, little-endian)
+// - 11 bytes: magic string `AUTD3REMOTE`
+//
+// Response (Success):
+// - 1 byte: status (0x00 = OK)
 //
 // ### Configure/Update Geometry
 // Request:
@@ -82,6 +92,10 @@ pub(crate) const MSG_UPDATE_GEOMETRY: u8 = 0x02;
 pub(crate) const MSG_SEND_DATA: u8 = 0x03;
 pub(crate) const MSG_READ_DATA: u8 = 0x04;
 pub(crate) const MSG_CLOSE: u8 = 0x05;
+pub(crate) const MSG_HELLO: u8 = 0x10;
 
 pub(crate) const MSG_OK: u8 = 0x00;
 pub(crate) const MSG_ERROR: u8 = 0xFF;
+
+pub(crate) const REMOTE_PROTOCOL_VERSION: u16 = 1;
+pub(crate) const REMOTE_PROTOCOL_MAGIC: &[u8; 11] = b"AUTD3REMOTE";
