@@ -32,7 +32,7 @@ fn initial_msg_id() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn test_retry_with_disabled_device() -> Result<(), Box<dyn std::error::Error>> {
+fn retry_with_disabled_device() -> Result<(), Box<dyn std::error::Error>> {
     let mut cnt = Controller::open([AUTD3::default(); 2], Audit::new(Default::default()))?;
 
     assert_eq!(Ok(()), cnt.send(Null {}));

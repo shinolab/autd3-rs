@@ -9,7 +9,7 @@ use autd3_core::link::{Ack, LinkError, RxMessage};
 use autd3_driver::firmware::fpga::FPGAState;
 
 #[test]
-fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
+fn audit() -> Result<(), Box<dyn std::error::Error>> {
     let mut autd = Controller::open_with(
         [AUTD3::default()],
         Audit::new(AuditOption::default()),
@@ -17,7 +17,7 @@ fn audit_test() -> Result<(), Box<dyn std::error::Error>> {
             timeout: Some(Duration::from_millis(10)),
             ..Default::default()
         },
-        StdSleeper,
+        autd3_core::sleep::StdSleeper,
     )?;
     assert_eq!(0, autd.link()[0].idx());
 

@@ -1,18 +1,18 @@
 use autd3_core::derive::*;
 
-use autd3_driver::{common::rad, geometry::UnitVector3};
+use autd3_driver::{common::rad, geometry::Point3};
 
-/// The option of [`Plane`].
+/// The option of [`Focus`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]
-pub struct PlaneOption {
-    /// The intensity of the wave.
+pub struct FocusOption {
+    /// The intensity of the focus.
     pub intensity: Intensity,
-    /// The phase offset of the wave.
+    /// The phase offset of the focus.
     pub phase_offset: Phase,
 }
 
-impl Default for PlaneOption {
+impl Default for FocusOption {
     fn default() -> Self {
         Self {
             intensity: Intensity::MAX,
@@ -21,35 +21,35 @@ impl Default for PlaneOption {
     }
 }
 
-/// Plane wave
+/// Single focus
 #[derive(Gain, Clone, PartialEq, Debug)]
-pub struct Plane {
-    /// The direction of the plane wave.
-    pub dir: UnitVector3,
+pub struct Focus {
+    /// The position of the focus
+    pub pos: Point3,
     /// The option of the gain.
-    pub option: PlaneOption,
+    pub option: FocusOption,
 }
 
-impl Plane {
-    /// Create a new [`Plane`].
+impl Focus {
+    /// Create a new [`Focus`].
     #[must_use]
-    pub const fn new(dir: UnitVector3, option: PlaneOption) -> Self {
-        Self { dir, option }
+    pub const fn new(pos: Point3, option: FocusOption) -> Self {
+        Self { pos, option }
     }
 }
 
 #[derive(Clone, Copy)]
 pub struct Impl {
-    dir: UnitVector3,
-    intensity: Intensity,
-    phase_offset: Phase,
-    wavenumber: f32,
+    pub(crate) pos: Point3,
+    pub(crate) intensity: Intensity,
+    pub(crate) phase_offset: Phase,
+    pub(crate) wavenumber: f32,
 }
 
 impl GainCalculator<'_> for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
         Drive {
-            phase: Phase::from(-self.dir.dot(&tr.position().coords) * self.wavenumber * rad)
+            phase: Phase::from(-(self.pos - tr.position()).norm() * self.wavenumber * rad)
                 + self.phase_offset,
             intensity: self.intensity,
         }
@@ -64,7 +64,7 @@ impl GainCalculatorGenerator<'_> for Impl {
     }
 }
 
-impl Gain<'_> for Plane {
+impl Gain<'_> for Focus {
     type G = Impl;
 
     fn init(
@@ -74,7 +74,7 @@ impl Gain<'_> for Plane {
         _: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         Ok(Impl {
-            dir: self.dir,
+            pos: self.pos,
             intensity: self.option.intensity,
             phase_offset: self.option.phase_offset,
             wavenumber: env.wavenumber(),
@@ -84,15 +84,13 @@ impl Gain<'_> for Plane {
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
+    use crate::tests::{create_geometry, random_point3};
 
     use super::*;
-
-    use crate::tests::{create_geometry, random_vector3};
-
-    fn plane_check(
+    use rand::Rng;
+    fn focus_check(
         mut b: Impl,
-        dir: UnitVector3,
+        pos: Point3,
         intensity: Intensity,
         phase_offset: Phase,
         geometry: &Geometry,
@@ -102,7 +100,7 @@ mod tests {
             let d = b.generate(dev);
             dev.iter().for_each(|tr| {
                 let expected_phase =
-                    Phase::from(-dir.dot(&tr.position().coords) * env.wavenumber() * rad)
+                    Phase::from(-(tr.position() - pos).norm() * env.wavenumber() * rad)
                         + phase_offset;
                 let d = d.calc(tr);
                 assert_eq!(expected_phase, d.phase);
@@ -112,38 +110,38 @@ mod tests {
     }
 
     #[test]
-    fn test_plane() {
+    fn focus() {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
         let env = Environment::new();
 
-        let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
-        let g = Plane::new(dir, PlaneOption::default());
-        plane_check(
+        let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
+        let g = Focus::new(pos, Default::default());
+        focus_check(
             g.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .unwrap(),
-            dir,
+            pos,
             Intensity::MAX,
             Phase::ZERO,
             &geometry,
             &env,
         );
 
-        let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
+        let pos = random_point3(-100.0..100.0, -100.0..100.0, 100.0..200.0);
         let intensity = Intensity(rng.random());
         let phase_offset = Phase(rng.random());
-        let g = Plane {
-            dir,
-            option: PlaneOption {
+        let g = Focus {
+            pos,
+            option: FocusOption {
                 intensity,
                 phase_offset,
             },
         };
-        plane_check(
+        focus_check(
             g.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .unwrap(),
-            dir,
+            pos,
             intensity,
             phase_offset,
             &geometry,

@@ -28,8 +28,8 @@ impl Default for BesselOption {
 /// This [`Gain`] generates a Bessel beam. See [Hasegawa, 2017](https://doi.org/10.1063/1.4985159) for more details.
 #[derive(Gain, Clone, PartialEq, Debug)]
 pub struct Bessel {
-    /// The vertex of the beam.
-    pub pos: Point3,
+    /// The apex of the beam.
+    pub apex: Point3,
     /// The direction of the beam.
     pub dir: UnitVector3,
     /// The angle between the plane perpendicular to the beam and the side of the virtual cone that generates the beam.
@@ -41,9 +41,9 @@ pub struct Bessel {
 impl Bessel {
     /// Create a new [`Bessel`].
     #[must_use]
-    pub const fn new(pos: Point3, dir: UnitVector3, theta: Angle, option: BesselOption) -> Self {
+    pub const fn new(apex: Point3, dir: UnitVector3, theta: Angle, option: BesselOption) -> Self {
         Self {
-            pos,
+            apex,
             dir,
             theta,
             option,
@@ -53,7 +53,7 @@ impl Bessel {
 
 #[derive(Clone, Copy)]
 pub struct Impl {
-    pos: Point3,
+    apex: Point3,
     intensity: Intensity,
     phase_offset: Phase,
     wavenumber: f32,
@@ -63,7 +63,7 @@ pub struct Impl {
 
 impl GainCalculator<'_> for Impl {
     fn calc(&self, tr: &Transducer) -> Drive {
-        let r = self.rot * (tr.position() - self.pos);
+        let r = self.rot * (tr.position() - self.apex);
         let dist = self.theta.sin() * r.xy().norm() - self.theta.cos() * r.z;
         Drive {
             phase: Phase::from(-dist * self.wavenumber * rad) + self.phase_offset,
@@ -90,7 +90,7 @@ impl Gain<'_> for Bessel {
         _: &TransducerMask,
     ) -> Result<Self::G, GainError> {
         Ok(Impl {
-            pos: self.pos,
+            apex: self.apex,
             intensity: self.option.intensity,
             phase_offset: self.option.phase_offset,
             wavenumber: env.wavenumber(),
@@ -121,7 +121,7 @@ mod tests {
     #[allow(clippy::too_many_arguments)]
     fn bessel_check(
         mut b: Impl,
-        pos: Point3,
+        apex: Point3,
         dir: UnitVector3,
         theta: Angle,
         intensity: Intensity,
@@ -141,7 +141,7 @@ mod tests {
                         .map_or_else(UnitQuaternion::identity, |v| {
                             UnitQuaternion::new(v * -theta_v)
                         });
-                    let r = tr.position() - pos;
+                    let r = tr.position() - apex;
                     let r = rot * r;
                     let dist = theta.radian().sin() * (r.x * r.x + r.y * r.y).sqrt()
                         - theta.radian().cos() * r.z;
@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bessel() -> Result<(), Box<dyn std::error::Error>> {
+    fn bessel() -> Result<(), Box<dyn std::error::Error>> {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(1);
@@ -170,13 +170,13 @@ mod tests {
         assert_eq!(Intensity::MAX, g.option.intensity);
         assert_eq!(Phase::ZERO, g.option.phase_offset);
 
-        let pos = random_point3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
+        let apex = random_point3(-500.0..500.0, -500.0..500.0, 50.0..500.0);
         let dir = UnitVector3::new_normalize(random_vector3(-1.0..1.0, -1.0..1.0, -1.0..1.0));
         let theta = rng.random_range(-PI..PI) * rad;
         let intensity = Intensity(rng.random());
         let phase_offset = Phase(rng.random());
         let g = Bessel {
-            pos,
+            apex,
             dir,
             theta,
             option: BesselOption {
@@ -187,7 +187,7 @@ mod tests {
         bessel_check(
             g.init(&geometry, &env, &TransducerMask::AllEnabled)
                 .unwrap(),
-            pos,
+            apex,
             dir,
             theta,
             intensity,

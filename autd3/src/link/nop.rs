@@ -11,7 +11,6 @@ use autd3_firmware_emulator::CPUEmulator;
 /// This link is mainly used for explanation.
 #[derive(Default)]
 pub struct Nop {
-    is_open: bool,
     cpus: Vec<CPUEmulator>,
     buffer_pool: TxBufferPoolSync,
 }
@@ -20,7 +19,6 @@ impl Nop {
     /// Creates a new [`Nop`].
     pub const fn new() -> Self {
         Self {
-            is_open: false,
             cpus: Vec::new(),
             buffer_pool: TxBufferPoolSync::new(),
         }
@@ -29,7 +27,6 @@ impl Nop {
 
 impl Link for Nop {
     fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
-        self.is_open = true;
         self.cpus = geometry
             .iter()
             .enumerate()
@@ -40,7 +37,7 @@ impl Link for Nop {
     }
 
     fn close(&mut self) -> Result<(), LinkError> {
-        self.is_open = false;
+        self.cpus.clear();
         Ok(())
     }
 
@@ -65,7 +62,7 @@ impl Link for Nop {
     }
 
     fn is_open(&self) -> bool {
-        self.is_open
+        !self.cpus.is_empty()
     }
 }
 

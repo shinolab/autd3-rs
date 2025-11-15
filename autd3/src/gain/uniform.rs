@@ -50,7 +50,7 @@ mod tests {
     use rand::Rng;
 
     #[test]
-    fn test_uniform() {
+    fn uniform() {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(1);

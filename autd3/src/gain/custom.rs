@@ -77,21 +77,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_custom() {
+    fn custom() {
         let mut rng = rand::rng();
 
         let geometry = create_geometry(2);
         let env = Environment::new();
 
-        let test_id = rng.random_range(0..geometry[0].num_transducers());
-        let test_drive = Drive {
+        let id = rng.random_range(0..geometry[0].num_transducers());
+        let drive = Drive {
             phase: Phase(rng.random()),
             intensity: Intensity(rng.random()),
         };
         let transducer_test = Custom::new(move |dev| {
             move |tr| {
-                if dev.idx() == 0 && tr.idx() == test_id {
-                    test_drive
+                if dev.idx() == 0 && tr.idx() == id {
+                    drive
                 } else {
                     Drive::NULL
                 }
@@ -104,8 +104,8 @@ mod tests {
         geometry.iter().for_each(|dev| {
             let d = d.generate(dev);
             dev.iter().enumerate().for_each(|(idx, tr)| {
-                if dev.idx() == 0 && idx == test_id {
-                    assert_eq!(test_drive, d.calc(tr));
+                if dev.idx() == 0 && idx == id {
+                    assert_eq!(drive, d.calc(tr));
                 } else {
                     assert_eq!(Drive::NULL, d.calc(tr));
                 }

@@ -129,7 +129,6 @@ impl GainSTMGenerator<'_> for Line {
 impl FociSTMGenerator<1> for Line {
     type T = LineSTMIterator;
 
-    // GRCOV_EXCL_START
     fn init(self) -> Result<Self::T, AUTDDriverError> {
         Ok(LineSTMIterator {
             start: self.start,
@@ -140,7 +139,6 @@ impl FociSTMGenerator<1> for Line {
             i: 0,
         })
     }
-    // GRCOV_EXCL_STOP
 
     fn len(&self) -> usize {
         self.num_points
