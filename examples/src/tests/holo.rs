@@ -6,43 +6,24 @@ use std::io::{self, Write};
 pub fn holo(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
     autd.send(Silencer::default())?;
 
+    let target_amp = 2.5e3 * autd.num_devices() as f32 * Pa;
     let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
     let p = Vector3::new(30. * mm, 0., 0.);
-    let target_amp = 2.5e3 * autd.num_devices() as f32 * Pa;
     let foci = [(center + p, target_amp), (center - p, target_amp)];
 
     let mut gains: Vec<(&str, BoxedGain)> = vec![
-        (
-            "GS",
-            BoxedGain::new(GS {
-                foci: foci.to_vec(),
-                option: Default::default(),
-                directivity: std::marker::PhantomData::<Sphere>,
-            }),
-        ),
+        ("GS", BoxedGain::new(GS::new(foci, GSOption::default()))),
         (
             "GSPAT",
-            BoxedGain::new(GSPAT {
-                foci: foci.to_vec(),
-                option: Default::default(),
-                directivity: std::marker::PhantomData::<Sphere>,
-            }),
+            BoxedGain::new(GSPAT::new(foci, GSPATOption::default())),
         ),
         (
             "Naive",
-            BoxedGain::new(Naive {
-                foci: foci.to_vec(),
-                option: Default::default(),
-                directivity: std::marker::PhantomData::<Sphere>,
-            }),
+            BoxedGain::new(Naive::new(foci, NaiveOption::default())),
         ),
         (
             "Greedy",
-            BoxedGain::new(Greedy {
-                foci: foci.to_vec(),
-                option: Default::default(),
-                directivity: std::marker::PhantomData::<Sphere>,
-            }),
+            BoxedGain::new(Greedy::new(foci, GreedyOption::default())),
         ),
     ];
 
@@ -62,11 +43,13 @@ pub fn holo(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::
         .filter(|&i| i < gains.len())
         .unwrap_or(1);
 
+    let g = gains.swap_remove(idx).1;
+
     let m = Sine {
         freq: 150. * Hz,
         option: Default::default(),
     };
-    let g = gains.swap_remove(idx).1;
+
     autd.send((m, g))?;
 
     Ok(())

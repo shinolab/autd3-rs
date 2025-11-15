@@ -3,8 +3,6 @@ use std::collections::HashMap;
 use autd3::{core::link::Link, prelude::*};
 
 pub fn group_by_device(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error::Error>> {
-    let center = autd.center() + Vector3::new(0., 0., 150.0 * mm);
-
     autd.send(Group {
         key_map: |dev| match dev.idx() {
             0 => Some("null"),
@@ -16,7 +14,7 @@ pub fn group_by_device(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn s
             (
                 "focus",
                 BoxedDatagram::new(Focus {
-                    pos: center,
+                    pos: autd.center() + Vector3::new(0., 0., 150.0 * mm),
                     option: Default::default(),
                 }),
             ),
@@ -29,8 +27,6 @@ pub fn group_by_device(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn s
 pub fn group_by_transducer(
     autd: &mut Controller<impl Link>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let pos = autd.center() + Vector3::new(0., 0., 150.0 * mm);
-
     let g = GainGroup::new(
         move |dev| {
             move |tr| {
@@ -45,7 +41,7 @@ pub fn group_by_transducer(
             (
                 "focus",
                 BoxedGain::new(Focus {
-                    pos,
+                    pos: autd.center() + Vector3::new(0., 0., 150.0 * mm),
                     option: Default::default(),
                 }),
             ),
@@ -57,6 +53,7 @@ pub fn group_by_transducer(
         freq: 150. * Hz,
         option: Default::default(),
     };
+
     autd.send((m, g))?;
 
     Ok(())

@@ -57,9 +57,7 @@ impl Burst {
 
 impl Modulation for Burst {
     fn calc(self) -> Result<Vec<u8>, ModulationError> {
-        Ok((0..4000)
-            .map(|i| if i == 3999 { u8::MAX } else { u8::MIN })
-            .collect())
+        Ok([vec![u8::MIN; 3999], vec![u8::MAX]].concat())
     }
 
     fn sampling_config(&self) -> SamplingConfig {
@@ -71,6 +69,7 @@ pub fn user_defined(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std:
     autd.send(Silencer::disable())?;
 
     let g = MyUniform::new();
+
     let m = Burst::new();
 
     autd.send((m, g))?;
