@@ -5,11 +5,34 @@ use std::{
 };
 
 use crate::{
-    MSG_CLOSE, MSG_CONFIG_GEOMETRY, MSG_ERROR, MSG_OK, MSG_READ_DATA, MSG_SEND_DATA,
-    MSG_UPDATE_GEOMETRY,
+    MSG_CLOSE, MSG_CONFIG_GEOMETRY, MSG_ERROR, MSG_HELLO, MSG_OK, MSG_READ_DATA, MSG_SEND_DATA,
+    MSG_UPDATE_GEOMETRY, REMOTE_PROTOCOL_MAGIC, REMOTE_PROTOCOL_VERSION,
 };
 
-use autd3_core::link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage};
+use autd3_core::{
+    geometry::Geometry,
+    link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
+};
+
+const REMOTE_HANDSHAKE_LEN: usize =
+    size_of::<u8>() + size_of::<u16>() + REMOTE_PROTOCOL_MAGIC.len();
+const fn handshake_payload() -> [u8; REMOTE_HANDSHAKE_LEN] {
+    let mut payload = [0u8; REMOTE_HANDSHAKE_LEN];
+    payload[0] = MSG_HELLO;
+
+    let version = REMOTE_PROTOCOL_VERSION.to_le_bytes();
+    let version_end = 1 + version.len();
+    let mut i = 1;
+    while i < version_end {
+        payload[i] = version[i - 1];
+        i += 1;
+    }
+    while i < REMOTE_HANDSHAKE_LEN {
+        payload[i] = REMOTE_PROTOCOL_MAGIC[i - version_end];
+        i += 1;
+    }
+    payload
+}
 
 struct RemoteInner {
     stream: TcpStream,
@@ -22,7 +45,7 @@ impl RemoteInner {
     fn open(
         addr: &SocketAddr,
         timeout: Option<Duration>,
-        geometry: &autd3_core::geometry::Geometry,
+        geometry: &Geometry,
     ) -> Result<RemoteInner, LinkError> {
         let mut stream = if let Some(timeout) = timeout {
             TcpStream::connect_timeout(addr, timeout)
@@ -33,6 +56,7 @@ impl RemoteInner {
         stream.set_write_timeout(timeout)?;
         stream.set_read_timeout(timeout)?;
 
+        Self::perform_handshake(&mut stream)?;
         Self::send_geometry(&mut stream, MSG_CONFIG_GEOMETRY, geometry)?;
         Self::wait_response(&mut stream)?;
 
@@ -77,6 +101,12 @@ impl RemoteInner {
         stream.write_all(&buffer)?;
 
         Ok(())
+    }
+
+    fn perform_handshake(stream: &mut TcpStream) -> Result<(), LinkError> {
+        const PAYLOAD: [u8; REMOTE_HANDSHAKE_LEN] = handshake_payload();
+        stream.write_all(&PAYLOAD)?;
+        Self::wait_response(stream)
     }
 
     fn wait_response(stream: &mut TcpStream) -> Result<(), LinkError> {
@@ -240,3 +270,21 @@ impl Link for Remote {
 }
 
 impl autd3_core::link::AsyncLink for Remote {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn handshake_payload_format() {
+        let payload = handshake_payload();
+        assert_eq!(payload.len(), REMOTE_HANDSHAKE_LEN);
+        assert_eq!(payload[0], MSG_HELLO);
+        let version_bytes = REMOTE_PROTOCOL_VERSION.to_le_bytes();
+        assert_eq!(payload[1..1 + version_bytes.len()], version_bytes);
+        assert_eq!(
+            &payload[1 + version_bytes.len()..],
+            REMOTE_PROTOCOL_MAGIC.as_slice()
+        );
+    }
+}

@@ -11,8 +11,8 @@ use tokio::{
 };
 
 use crate::{
-    MSG_CLOSE, MSG_CONFIG_GEOMETRY, MSG_ERROR, MSG_OK, MSG_READ_DATA, MSG_SEND_DATA,
-    MSG_UPDATE_GEOMETRY,
+    MSG_CLOSE, MSG_CONFIG_GEOMETRY, MSG_ERROR, MSG_HELLO, MSG_OK, MSG_READ_DATA, MSG_SEND_DATA,
+    MSG_UPDATE_GEOMETRY, REMOTE_PROTOCOL_MAGIC, REMOTE_PROTOCOL_VERSION,
 };
 
 /// A server that accepts connections from [`Remote`](crate::Remote) clients and forwards requests to a link.
@@ -50,12 +50,14 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
     /// # Arguments
     ///
     /// * `signal` - A future that completes when the server should shut down
-    pub fn with_graceful_shutdown<S>(mut self, signal: S) -> Self
+    pub fn with_graceful_shutdown<S>(self, signal: S) -> Self
     where
         S: Future<Output = ()> + Send + 'static,
     {
-        self.shutdown = Some(Box::new(Box::pin(signal)));
-        self
+        Self {
+            shutdown: Some(Box::new(Box::pin(signal))),
+            ..self
+        }
     }
 
     /// Run the server.
@@ -104,29 +106,86 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
     }
 
     async fn handle_client(&mut self, mut stream: TcpStream) {
+        let mut handshake_completed = false;
+
         loop {
             let mut msg_type = [0u8; size_of::<u8>()];
             if stream.read_exact(&mut msg_type).await.is_err() {
                 break;
             }
 
-            let result = match msg_type[0] {
-                MSG_CONFIG_GEOMETRY => self.handle_config_geometry(&mut stream).await,
-                MSG_UPDATE_GEOMETRY => self.handle_update_geometry(&mut stream).await,
-                MSG_SEND_DATA => self.handle_send_data(&mut stream).await,
-                MSG_READ_DATA => self.handle_read_data(&mut stream).await,
-                MSG_CLOSE => self.handle_close(&mut stream).await,
-                msg => Err(LinkError::new(format!("Unknown message type: {}", msg))),
+            let msg = msg_type[0];
+            let result = if msg == MSG_HELLO {
+                tracing::info!("Handling handshake...");
+                if handshake_completed {
+                    tracing::error!("Handshake already completed");
+                    Err(LinkError::new("Handshake already completed"))
+                } else {
+                    match Self::handle_handshake(&mut stream).await {
+                        Ok(()) => {
+                            tracing::info!("Handshake completed");
+                            handshake_completed = true;
+                            Ok(())
+                        }
+                        Err(e) => {
+                            tracing::error!("Handshake failed: {}", e);
+                            Err(e)
+                        }
+                    }
+                }
+            } else if !handshake_completed {
+                Err(LinkError::new(
+                    "Handshake is required before sending commands",
+                ))
+            } else {
+                match msg {
+                    MSG_CONFIG_GEOMETRY => self.handle_config_geometry(&mut stream).await,
+                    MSG_UPDATE_GEOMETRY => self.handle_update_geometry(&mut stream).await,
+                    MSG_SEND_DATA => self.handle_send_data(&mut stream).await,
+                    MSG_READ_DATA => self.handle_read_data(&mut stream).await,
+                    MSG_CLOSE => self.handle_close(&mut stream).await,
+                    other => Err(LinkError::new(format!("Unknown message type: {}", other))),
+                }
             };
 
-            if let Err(e) = result {
-                let _ = self.send_error(&mut stream, &e).await;
-                tracing::error!("Error handling client request: {}", e);
-            }
-            if msg_type[0] == MSG_CLOSE {
-                break;
+            match result {
+                Ok(()) => {
+                    if msg == MSG_CLOSE {
+                        break;
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("Error handling client request: {}", e);
+                    let _ = self.send_error(&mut stream, &e).await;
+                    if !handshake_completed || msg == MSG_CLOSE {
+                        break;
+                    }
+                }
             }
         }
+    }
+
+    async fn handle_handshake(stream: &mut TcpStream) -> Result<(), LinkError> {
+        let mut version_buf = [0u8; size_of::<u16>()];
+        stream.read_exact(&mut version_buf).await?;
+        let version = u16::from_le_bytes(version_buf);
+        if version != REMOTE_PROTOCOL_VERSION {
+            return Err(LinkError::new(format!(
+                "Unsupported protocol version: {}",
+                version
+            )));
+        }
+        tracing::info!("Client protocol version: {}", version);
+
+        let mut magic_buf = [0u8; REMOTE_PROTOCOL_MAGIC.len()];
+        stream.read_exact(&mut magic_buf).await?;
+        if &magic_buf != REMOTE_PROTOCOL_MAGIC {
+            tracing::error!("Invalid client magic: {:?}", magic_buf);
+            return Err(LinkError::new("Invalid client magic"));
+        }
+
+        stream.write_all(&[MSG_OK]).await?;
+        Ok(())
     }
 
     async fn handle_config_geometry(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
