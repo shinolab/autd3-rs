@@ -7,6 +7,7 @@ pub fn custom(autd: &mut Controller<impl Link>) -> Result<(), Box<dyn std::error
         buffer: vec![0, 255],
         sampling_config: 4. * kHz,
     };
+
     let g = autd3::gain::Custom::new(|dev| {
         move |tr| match (dev.idx(), tr.idx()) {
             (0, 0) | (0, 248) => Drive {
