@@ -1,6 +1,38 @@
 # Changelog
 
 
+# 38.0.0 (2025-11-15)
+
+## 🚀 Features
+
+- Add `AsyncLink`
+- [**breaking**] Update `Fir` to use `Cow<[f32]>` for coefficients instead of `Vec<f32>`
+- Explicate lifetime of `EmulateGPIOIn` and `PulseWidthEncoder` to make lifetime analysis for nested closures correct
+- [**breaking**] Update `PulseWidth` to use `u16` for pulse width values and adjust error handling
+- [**breaking**] Remove `sleeper` parameter from `Controller::sender`
+- [**breaking**] Make `SenderOption::send_interval` and `SenderOption::receive_interval` optional
+- Allow to construct `FociSTM` from slice
+- Impl handshake protocol for remote server communication
+
+## 🗑️ Removals
+
+- `SamplingConfigError::DivideInvalid` variant
+
+## 🐛 Bug Fixes
+
+- Allow to reopen `EtherCrab` link
+- Avoid bloking sleep in `EtherCrab` link
+- Unable to reconnect to `RemoteServer`
+- Improve error handling in `RemoteServer`
+- `Gain` and `Modulation` derive macro with lifetime parameters
+- Using old firmware causes a `ConfirmResponseFailed` error
+- Use `MaybeUninit` for uninitialized `AmsAddr` in TwinCAT link
+
+## ⚡ Performance
+
+- Avoid unnecessary clone in `FociSTMIterator`
+
+
 # 37.0.1 (2025-11-05)
 
 ## 🚀 Features
