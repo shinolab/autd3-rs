@@ -1,4 +1,7 @@
-use std::ffi::{CStr, c_char, c_void};
+use std::{
+    ffi::{CStr, c_char, c_void},
+    mem::MaybeUninit,
+};
 
 use autd3_core::{
     geometry::Geometry,
@@ -88,16 +91,17 @@ impl Link for TwinCAT {
             return Err(AdsError::OpenPort.into());
         }
 
-        let mut ams_addr: AmsAddr = unsafe { std::mem::zeroed() };
+        let mut ams_addr: MaybeUninit<AmsAddr> = MaybeUninit::uninit();
         let n_err = unsafe {
             let ads_get_local_address_ex: unsafe extern "C" fn(i32, *mut AmsAddr) -> i32 =
                 self.get_proc_address(c"AdsGetLocalAddressEx")?;
-            ads_get_local_address_ex(port, &mut ams_addr as *mut _)
+            ads_get_local_address_ex(port, ams_addr.as_mut_ptr())
         };
         if n_err != 0 {
             return Err(AdsError::GetLocalAddress(n_err).into());
         }
 
+        let ams_addr = unsafe { ams_addr.assume_init() };
         self.port = port;
         self.send_addr = AmsAddr {
             net_id: ams_addr.net_id,
