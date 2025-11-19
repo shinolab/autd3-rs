@@ -6,3 +6,12 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "deps: "
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions-dependencies:
+        patterns:
+          - "*"
