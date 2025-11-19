@@ -19,9 +19,9 @@ jobs:
     outputs:
       src: ${{ steps.changed-files-yaml.outputs.src_any_changed }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: changed-files-yaml
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         with:
           files_yaml: |
             src:
@@ -44,7 +44,7 @@ jobs:
           - os: ubuntu-latest
             features: "use_meter left_handed"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-build
         with:
           os: ${{ matrix.os }}
@@ -60,7 +60,7 @@ jobs:
     name: test-for-capi
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
@@ -85,7 +85,7 @@ jobs:
     name: build-docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
@@ -105,7 +105,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-build
         with:
           os: ubuntu-latest
@@ -116,7 +116,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           version: latest
       - run: cargo make cov lcov
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage
