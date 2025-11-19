@@ -11,6 +11,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: ""
     groups:
       github-actions-dependencies:
         patterns:
