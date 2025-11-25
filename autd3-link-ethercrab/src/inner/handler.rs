@@ -607,6 +607,8 @@ async fn wait_for_align(
                     .await
                 {
                     Ok(value) => {
+                        // DCSYSDIFF is not a 2's complement value.
+                        // See RZ/T1 Group User's Manual: Hardware, 30.17.2.5
                         const MASK: u32 = 0x7FFFFFFF;
                         if value & !MASK != 0 {
                             -((value & MASK) as i32)
