@@ -13,6 +13,7 @@ commit_preprocessors = [
   { pattern = "refactor: `autd3-link-ethercrab`", replace = "" },
   { pattern = "remove!: `RemoteTwinCAT` link", replace = "" },
   { pattern = "fix error messages", replace = "" },
+  { pattern = "(.*) github-actions-dependencies (.*)", replace = "" },
 ]
 commit_parsers = [
   { message = "^feat", group = "<!-- 0 -->🚀 Features" },
