@@ -222,10 +222,11 @@ impl<'a, L: Link, S: Sleeper> Sender<'a, L, S> {
             self.link.ensure_is_open()?;
             self.link.receive(self.rx)?;
 
-            if check_if_msg_is_processed(*self.msg_id, self.rx)
-                .zip(self.sent_flags.iter())
-                .filter_map(|(r, sent)| sent.then_some(r))
-                .all(std::convert::identity)
+            if timeout == Duration::ZERO
+                || check_if_msg_is_processed(*self.msg_id, self.rx)
+                    .zip(self.sent_flags.iter())
+                    .filter_map(|(r, sent)| sent.then_some(r))
+                    .all(std::convert::identity)
             {
                 break;
             }
