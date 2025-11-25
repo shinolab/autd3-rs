@@ -62,7 +62,8 @@ pub struct EtherCrabHandler {
     sender: SyncSender<Vec<TxMessage>>,
     buffer_queue_receiver: Receiver<Vec<TxMessage>>,
     inputs: Arc<RwLock<Vec<u8>>>,
-    _pdu_storage: PduStorageWrapper,
+    main_device: Option<Arc<MainDevice<'static>>>,
+    pdu_storage: PduStorageWrapper,
 }
 
 const SUB_GROUP_PDI_LEN: usize = (EC_OUTPUT_FRAME_SIZE + EC_INPUT_FRAME_SIZE) * 2;
@@ -372,6 +373,7 @@ impl EtherCrabHandler {
         #[cfg(feature = "tokio")]
         let state_check_task = tokio::task::spawn({
             let is_open = is_open.clone();
+            let main_device = main_device.clone();
             let run = run.clone();
             async move {
                 #[cfg(feature = "tracing")]
@@ -390,6 +392,7 @@ impl EtherCrabHandler {
         #[cfg(not(feature = "tokio"))]
         let state_check_task = std::thread::spawn({
             let is_open = is_open.clone();
+            let main_device = main_device.clone();
             let run = run.clone();
             move || {
                 #[cfg(feature = "tracing")]
@@ -425,7 +428,8 @@ impl EtherCrabHandler {
             sender,
             buffer_queue_receiver,
             inputs,
-            _pdu_storage: pdu_storage,
+            main_device: Some(main_device),
+            pdu_storage,
         })
     }
 
@@ -439,18 +443,17 @@ impl EtherCrabHandler {
         self.is_open
             .store(false, std::sync::atomic::Ordering::Relaxed);
 
-        if let Some(tx_rx_th) = self.tx_rx_th.take() {
-            #[cfg(target_os = "windows")]
-            {
-                tx_rx_th.thread().unpark();
-                let _ = tx_rx_th.join();
-            }
-            #[cfg(not(target_os = "windows"))]
-            {
-                let _ = tx_rx_th;
-            }
+        #[cfg(feature = "tracing")]
+        tracing::trace!("Waiting for state check task to finish");
+        if let Some(state_check_task) = self.state_check_task.take() {
+            #[cfg(feature = "tokio")]
+            let _ = state_check_task.await;
+            #[cfg(not(feature = "tokio"))]
+            let _ = state_check_task.join();
         }
 
+        #[cfg(feature = "tracing")]
+        tracing::trace!("Waiting for main task to finish");
         if let Some(task) = self.main_th.take() {
             #[cfg(feature = "tokio")]
             let _ = task.await;
@@ -458,12 +461,35 @@ impl EtherCrabHandler {
             let _ = task.join();
         }
 
-        if let Some(state_check_task) = self.state_check_task.take() {
-            #[cfg(feature = "tokio")]
-            let _ = state_check_task.await;
-            #[cfg(not(feature = "tokio"))]
-            let _ = state_check_task.join();
+        if let Some(main_device) = self.main_device.take() {
+            match Arc::try_unwrap(main_device) {
+                Ok(main_device) => {
+                    #[cfg(feature = "tracing")]
+                    tracing::trace!("Releasing all devices");
+                    unsafe {
+                        main_device.release_all();
+                    }
+                }
+                Err(_arc) => {
+                    #[cfg(feature = "tracing")]
+                    tracing::error!(
+                        "Cannot release devices because there are {} strong references",
+                        Arc::strong_count(&_arc),
+                    );
+                }
+            }
         }
+
+        #[cfg(feature = "tracing")]
+        tracing::trace!("Waiting for TX/RX task to finish");
+        if let Some(tx_rx_th) = self.tx_rx_th.take() {
+            tx_rx_th.thread().unpark();
+            let _ = tx_rx_th.join();
+        }
+
+        #[cfg(feature = "tracing")]
+        tracing::trace!("Releasing PDU storage");
+        self.pdu_storage.release();
 
         Ok(())
     }

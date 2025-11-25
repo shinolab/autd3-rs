@@ -33,15 +33,19 @@ impl PduStorageWrapper {
     > {
         unsafe { (&*self.pdu_storage).try_split() }
     }
-}
 
-impl Drop for PduStorageWrapper {
-    fn drop(&mut self) {
+    pub fn release(&mut self) {
         if self.pdu_storage.is_null() {
             return;
         }
         let _pdu_storage = unsafe { Box::from_raw(self.pdu_storage) };
         self.pdu_storage = std::ptr::null_mut();
+    }
+}
+
+impl Drop for PduStorageWrapper {
+    fn drop(&mut self) {
+        self.release();
     }
 }
 
@@ -142,7 +146,7 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
         }
         #[cfg(all(not(target_os = "windows"), feature = "tokio"))]
         {
-            th.abort();
+            unsafe { main_device.release_all() };
             let _ = th.await;
         }
 
