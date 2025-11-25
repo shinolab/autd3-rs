@@ -1,6 +1,16 @@
 # Changelog
 
 
+# 38.0.1 (2025-11-25)
+
+## 🐛 Bug Fixes
+
+- `Invalid enum discriminant` error occurs when closing ethercrab link
+- Handle zero timeout in message processing check
+- Prevent calling internal-only functions
+- Add minimum timer resolution option for Windows
+
+
 # 38.0.0 (2025-11-15)
 
 ## 🚀 Features
