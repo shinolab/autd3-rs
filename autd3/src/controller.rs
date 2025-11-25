@@ -8,7 +8,7 @@ use autd3_core::{
 
 use autd3_driver::{
     error::AUTDDriverError,
-    firmware::{fpga::FPGAState, transmission::Sender, version::FirmwareVersion},
+    firmware::{fpga::FPGAState, version::FirmwareVersion},
     geometry::{Device, Geometry},
 };
 
@@ -27,6 +27,24 @@ pub struct Controller<L: Link> {
     rx_buf: Vec<RxMessage>,
     /// The default sender option used for [`send`](Controller::send).
     pub default_sender_option: SenderOption,
+}
+
+/// A struct to send the [`Datagram`] to the devices.
+pub struct Sender<'a, L: Link, S: Sleeper> {
+    inner: autd3_driver::firmware::transmission::Sender<'a, L, S>,
+}
+
+impl<'a, L: Link, S: Sleeper> Sender<'a, L, S> {
+    /// Send the [`Datagram`] to the devices.
+    pub fn send<D: Datagram<'a>>(&mut self, s: D) -> Result<(), AUTDDriverError>
+    where
+        AUTDDriverError: From<D::Error>,
+        D::G: autd3_driver::firmware::operation::OperationGenerator<'a>,
+        AUTDDriverError: From<<<D::G as autd3_driver::firmware::operation::OperationGenerator<'a>>::O1 as autd3_driver::firmware::operation::Operation<'a>>::Error>
+            + From<<<D::G as autd3_driver::firmware::operation::OperationGenerator<'a>>::O2 as autd3_driver::firmware::operation::Operation<'a>>::Error>,
+    {
+        self.inner.send(s)
+    }
 }
 
 impl<L: Link> std::ops::Deref for Controller<L> {
@@ -76,8 +94,7 @@ impl<L: Link> Controller<L> {
             default_sender_option: option,
         };
 
-        cnt.sender_with_sleeper(option, sleeper)
-            .initialize_devices()?;
+        cnt.raw_sender(option, sleeper).initialize_devices()?;
 
         Ok(cnt)
     }
@@ -113,16 +130,9 @@ impl<L: Link> Controller<L> {
         option: SenderOption,
         sleeper: S,
     ) -> Sender<'_, L, S> {
-        Sender::new(
-            &mut self.msg_id,
-            &mut self.link,
-            &self.geometry,
-            &mut self.sent_flags,
-            &mut self.rx_buf,
-            &self.environment,
-            option,
-            sleeper,
-        )
+        Sender {
+            inner: self.raw_sender(option, sleeper),
+        }
     }
 
     /// Sends a data to the devices. This is a shortcut for [`Sender::send`].
@@ -153,7 +163,8 @@ impl<L: Link> Controller<L> {
 
     /// Returns the firmware version of the devices.
     pub fn firmware_version(&mut self) -> Result<Vec<FirmwareVersion>, AUTDDriverError> {
-        self.sender(self.default_sender_option).firmware_version()
+        self.raw_sender(self.default_sender_option, StdSleeper)
+            .firmware_version()
     }
 
     /// Returns the FPGA state of the devices.
@@ -184,11 +195,28 @@ impl<L: Link> Controller<L> {
 }
 
 impl<L: Link> Controller<L> {
+    fn raw_sender<S: Sleeper>(
+        &mut self,
+        option: SenderOption,
+        sleeper: S,
+    ) -> autd3_driver::firmware::transmission::Sender<'_, L, S> {
+        autd3_driver::firmware::transmission::Sender::new(
+            &mut self.msg_id,
+            &mut self.link,
+            &self.geometry,
+            &mut self.sent_flags,
+            &mut self.rx_buf,
+            &self.environment,
+            option,
+            sleeper,
+        )
+    }
+
     fn close_impl(&mut self, option: SenderOption) -> Result<(), AUTDDriverError> {
         if !self.link.is_open() {
             return Ok(());
         }
-        self.sender(option).close()
+        self.raw_sender(option, StdSleeper).close()
     }
 }
 
