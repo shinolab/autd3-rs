@@ -43,6 +43,9 @@ pub struct EtherCrabOptionFull {
     #[cfg(all(not(feature = "tokio"), feature = "core_affinity"))]
     /// The CPU affinity for the main thread.
     pub main_thread_affinity: Option<core_affinity::CoreId>,
+    #[cfg(target_os = "windows")]
+    /// The minimum timer resolution in milliseconds.
+    pub min_timer_resolution: Option<u32>,
 }
 
 impl Default for EtherCrabOptionFull {
@@ -85,6 +88,8 @@ impl PartialEq for EtherCrabOptionFull {
         let r = r && self.tx_rx_thread_affinity == other.tx_rx_thread_affinity;
         #[cfg(all(not(feature = "tokio"), feature = "core_affinity"))]
         let r = r && self.main_thread_affinity == other.main_thread_affinity;
+        #[cfg(target_os = "windows")]
+        let r = r && self.min_timer_resolution == other.min_timer_resolution;
         r
     }
 }

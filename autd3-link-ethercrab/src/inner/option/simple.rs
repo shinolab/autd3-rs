@@ -88,6 +88,8 @@ impl From<EtherCrabOption> for EtherCrabOptionFull {
             main_thread_affinity: None,
             #[cfg(feature = "core_affinity")]
             tx_rx_thread_affinity: None,
+            #[cfg(target_os = "windows")]
+            min_timer_resolution: Some(1),
         }
     }
 }

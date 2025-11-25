@@ -29,18 +29,53 @@ use std::time::Instant;
 #[cfg(feature = "tokio")]
 use tokio::time::Instant;
 
-async fn sleep(duration: Duration) {
+#[cfg(target_os = "windows")]
+unsafe extern "system" {
+    fn timeBeginPeriod(u: u32) -> u32;
+    fn timeEndPeriod(u: u32) -> u32;
+}
+
+async fn sleep(duration: Duration, _min_timer_resolution: Option<u32>) {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        if let Some(resolution) = _min_timer_resolution {
+            // For some reason, this is necessary on certain Windows PCs.
+            timeBeginPeriod(resolution);
+        }
+    }
+
     #[cfg(feature = "tokio")]
     tokio::time::sleep(duration).await;
     #[cfg(not(feature = "tokio"))]
     super::timer::Timer::after(duration).await;
+
+    #[cfg(target_os = "windows")]
+    unsafe {
+        if let Some(resolution) = _min_timer_resolution {
+            timeEndPeriod(resolution);
+        }
+    }
 }
 
-async fn sleep_until(deadline: Instant) {
+async fn sleep_until(deadline: Instant, _min_timer_resolution: Option<u32>) {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        if let Some(resolution) = _min_timer_resolution {
+            timeBeginPeriod(resolution);
+        }
+    }
+
     #[cfg(feature = "tokio")]
     tokio::time::sleep_until(deadline).await;
     #[cfg(not(feature = "tokio"))]
     super::timer::Timer::until(deadline).await;
+
+    #[cfg(target_os = "windows")]
+    unsafe {
+        if let Some(resolution) = _min_timer_resolution {
+            timeEndPeriod(resolution);
+        }
+    }
 }
 
 #[cfg(not(feature = "tokio"))]
@@ -142,7 +177,12 @@ impl EtherCrabHandler {
             #[cfg(all(not(feature = "tokio"), feature = "core_affinity"))]
             main_thread_affinity,
             state_check_period,
+            #[cfg(target_os = "windows")]
+            min_timer_resolution,
         } = option;
+
+        #[cfg(not(target_os = "windows"))]
+        let min_timer_resolution = None;
 
         let pdu_storage = PduStorageWrapper::new();
         let (tx, rx, pdu_loop) = pdu_storage
@@ -267,7 +307,14 @@ impl EtherCrabHandler {
         #[cfg(feature = "tracing")]
         tracing::info!("Done. PDI available.");
 
-        wait_for_align(&groups, &main_device, sync_tolerance, sync_timeout).await?;
+        wait_for_align(
+            &groups,
+            &main_device,
+            sync_tolerance,
+            sync_timeout,
+            min_timer_resolution,
+        )
+        .await?;
 
         #[cfg(feature = "tracing")]
         tracing::info!(
@@ -330,6 +377,7 @@ impl EtherCrabHandler {
                     buffer_queue_sender,
                     inputs,
                     receiver,
+                    min_timer_resolution,
                 )
                 .await;
             }
@@ -385,6 +433,7 @@ impl EtherCrabHandler {
                     groups,
                     err_handler,
                     state_check_period,
+                    min_timer_resolution,
                 )
                 .await;
             }
@@ -413,9 +462,9 @@ impl EtherCrabHandler {
             if start.elapsed() > timeouts.state_transition {
                 return Err(EtherCrabError::NotResponding);
             }
-            sleep(Duration::from_millis(10)).await;
+            sleep(Duration::from_millis(10), min_timer_resolution).await;
         }
-        sleep(Duration::from_millis(100)).await;
+        sleep(Duration::from_millis(100), min_timer_resolution).await;
         #[cfg(feature = "tracing")]
         tracing::info!("All devices entered OP in {:?}", _op_request.elapsed());
         run.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -525,6 +574,7 @@ async fn wait_for_align(
     main_device: &MainDevice<'_>,
     sync_tolerance: Duration,
     sync_timeout: Duration,
+    min_timer_resolution: Option<u32>,
 ) -> Result<(), EtherCrabError> {
     #[cfg(feature = "tracing")]
     tracing::info!("Waiting for devices to align");
@@ -584,7 +634,7 @@ async fn wait_for_align(
                 return Err(EtherCrabError::SyncTimeout(max_deviation));
             }
         }
-        sleep(Duration::from_millis(1)).await;
+        sleep(Duration::from_millis(1), min_timer_resolution).await;
     }
 
     #[cfg(feature = "tracing")]
@@ -596,13 +646,15 @@ async fn wait_for_align(
 async fn send_task(
     main_device: &MainDevice<'_>,
     group: &SubDeviceGroup<2, SUB_GROUP_PDI_LEN, Op, HasDc>,
+    min_timer_resolution: Option<u32>,
 ) -> Result<bool, ethercrab::error::Error> {
     let start = Instant::now();
     let resp = group.tx_rx_dc(main_device).await?;
-    sleep_until(start + resp.extra.next_cycle_wait).await;
+    sleep_until(start + resp.extra.next_cycle_wait, min_timer_resolution).await;
     Ok(resp.all_op())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn send_loop(
     running: Arc<AtomicBool>,
     all_op: Arc<AtomicBool>,
@@ -611,6 +663,7 @@ async fn send_loop(
     buffer_queue_sender: SyncSender<Vec<TxMessage>>,
     inputs: Arc<RwLock<Vec<u8>>>,
     receiver: Receiver<Vec<TxMessage>>,
+    min_timer_resolution: Option<u32>,
 ) {
     let mut inputs_buf = vec![0u8; group.len() * EC_INPUT_FRAME_SIZE];
     while running.load(std::sync::atomic::Ordering::Relaxed) {
@@ -650,7 +703,7 @@ async fn send_loop(
         let mut tasks = group
             .groups
             .iter()
-            .map(|g| send_task(&main_device, g))
+            .map(|g| send_task(&main_device, g, min_timer_resolution))
             .collect::<FuturesUnordered<_>>();
         let mut res = Vec::with_capacity(group.groups.len());
         while let Some(r) = tasks.next().await {
@@ -686,6 +739,7 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
     group: Arc<Groups<Op, HasDc>>,
     err_handler: F,
     interval: Duration,
+    min_timer_resolution: Option<u32>,
 ) {
     use super::ext::{State, SubDeviceExt};
 
@@ -794,6 +848,6 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                 err_handler(0, Status::Resumed);
             }
         }
-        sleep(interval).await;
+        sleep(interval, min_timer_resolution).await;
     }
 }
