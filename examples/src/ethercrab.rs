@@ -1,7 +1,7 @@
 mod tests;
 
 use autd3::prelude::*;
-use autd3_link_ethercrab::{EtherCrab, EtherCrabOption};
+use autd3_link_ethercrab::{EtherCrab, EtherCrabOption, Status};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
@@ -16,6 +16,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         EtherCrab::new(
             |idx, status| {
                 eprintln!("Device[{idx}]: {status}");
+                if status == Status::Lost {
+                    // Currently, recovery from lost is not implemented, so you must either terminate the program or open a new Controller.
+                    std::process::exit(1);
+                }
             },
             EtherCrabOption::default(),
         ),
