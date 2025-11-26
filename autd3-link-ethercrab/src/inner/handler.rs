@@ -707,34 +707,39 @@ async fn send_loop(
             .iter()
             .map(|g| send_task(&main_device, g, min_timer_resolution))
             .collect::<FuturesUnordered<_>>();
-        let mut res = Vec::with_capacity(group.groups.len());
+        let mut err = None;
+        let mut op = true;
         while let Some(r) = tasks.next().await {
-            res.push(r);
+            match r {
+                Ok(v) => {
+                    op &= v;
+                }
+                Err(e) => {
+                    err = Some(e);
+                }
+            }
         }
-        match res.into_iter().collect::<Result<Vec<_>, _>>() {
-            Ok(v) => {
-                all_op.store(
-                    v.into_iter().all(|r| r),
-                    std::sync::atomic::Ordering::Relaxed,
-                );
-            }
-            Err(ethercrab::error::Error::WorkingCounter { .. }) => {
-                #[cfg(feature = "tracing")]
-                tracing::warn!("Working counter error occurred");
-                continue;
-            }
-            Err(_e) => {
-                if running.load(std::sync::atomic::Ordering::Relaxed) {
-                    #[cfg(feature = "tracing")]
-                    if _e == ethercrab::error::Error::Timeout {
-                        tracing::trace!("Failed to perform DC synchronized Tx/Rx: {}", _e);
-                    } else {
+        if let Some(e) = err {
+            if running.load(std::sync::atomic::Ordering::Relaxed) {
+                match e {
+                    ethercrab::error::Error::WorkingCounter { .. } => {
+                        #[cfg(feature = "tracing")]
+                        tracing::warn!("Working counter error occurred");
+                    }
+                    ethercrab::error::Error::Timeout => {
+                        #[cfg(feature = "tracing")]
+                        tracing::trace!("Timeout occurred during DC synchronized Tx/Rx");
+                    }
+                    _e => {
+                        #[cfg(feature = "tracing")]
                         tracing::error!("Failed to perform DC synchronized Tx/Rx: {}", _e);
                     }
                 }
                 continue;
             }
-        };
+        } else {
+            all_op.store(op, std::sync::atomic::Ordering::Relaxed);
+        }
     }
 }
 
