@@ -726,7 +726,11 @@ async fn send_loop(
             Err(_e) => {
                 if running.load(std::sync::atomic::Ordering::Relaxed) {
                     #[cfg(feature = "tracing")]
-                    tracing::error!("Failed to perform DC synchronized Tx/Rx: {}", _e);
+                    if _e == ethercrab::error::Error::Timeout {
+                        tracing::trace!("Failed to perform DC synchronized Tx/Rx: {}", _e);
+                    } else {
+                        tracing::error!("Failed to perform DC synchronized Tx/Rx: {}", _e);
+                    }
                 }
                 continue;
             }
@@ -830,6 +834,13 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                         _expected,
                         _received
                     );
+                }
+                Err(ethercrab::error::Error::Timeout) => {
+                    all_op = false;
+                    do_check_state = true;
+                    if run.load(std::sync::atomic::Ordering::Relaxed) {
+                        err_handler(idx + 1, Status::Lost);
+                    }
                 }
                 Err(_e) => {
                     all_op = false;
