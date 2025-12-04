@@ -10,6 +10,7 @@ use std::{
 use crate::{
     error::EtherCrabError,
     inner::{EtherCrabOptionFull, status::Status, utils::PduStorageWrapper},
+    log,
 };
 
 use autd3_core::{
@@ -146,17 +147,14 @@ impl EtherCrabHandler {
         geometry: &autd3_core::geometry::Geometry,
         option: EtherCrabOptionFull,
     ) -> Result<EtherCrabHandler, EtherCrabError> {
-        #[cfg(feature = "tracing")]
-        tracing::debug!("Opening EtherCrab link with option: {:?}", option);
+        log::info!("Opening EtherCrab link with option: {:?}", option);
 
         let interface = match option.ifname.as_ref() {
             Some(ifname) => ifname.clone(),
             None => {
-                #[cfg(feature = "tracing")]
-                tracing::info!("No interface name is specified. Looking for AUTD device...");
+                log::info!("No interface name is specified. Looking for AUTD device...");
                 let ifname = crate::inner::utils::lookup_autd().await?;
-                #[cfg(feature = "tracing")]
-                tracing::info!("Found EtherCAT device on {:?}", ifname);
+                log::info!("Found EtherCAT device on {:?}", ifname);
                 ifname
             }
         };
@@ -200,19 +198,16 @@ impl EtherCrabHandler {
                 #[cfg(feature = "core_affinity")]
                 if let Some(affinity) = tx_rx_thread_affinity {
                     if core_affinity::set_for_current(affinity) {
-                        #[cfg(feature = "tracing")]
-                        tracing::info!("Set CPU affinity of TX/RX thread to core {}", affinity.id);
+                        log::info!("Set CPU affinity of TX/RX thread to core {}", affinity.id);
                     } else {
-                        #[cfg(feature = "tracing")]
-                        tracing::warn!(
+                        log::warn!(
                             "Failed to set CPU affinity of TX/RX thread to core {}",
                             affinity.id
                         );
                     }
                 }
 
-                #[cfg(feature = "tracing")]
-                tracing::info!("Starting TX/RX task");
+                log::info!("Starting TX/RX task");
                 #[cfg(target_os = "windows")]
                 let e = crate::inner::windows::tx_rx_task_blocking(&interface, tx, rx, is_open)
                     .map(|_| ());
@@ -228,15 +223,14 @@ impl EtherCrabHandler {
                         #[cfg(not(feature = "tokio"))]
                         Ok(fut) => super::executor::block_on(fut).map_err(EtherCrabError::from),
                         Err(e) => {
-                            #[cfg(feature = "tracing")]
-                            tracing::trace!("Failed to start TX/RX task: {}", e);
+                            log::trace!("Failed to start TX/RX task: {}", e);
                             Err(EtherCrabError::from(e))
                         }
                     }
                 }
                 .map(|_| ());
-                #[cfg(feature = "tracing")]
-                tracing::debug!("TX/RX task exited: {:?}", e);
+
+                log::debug!("TX/RX task exited: {:?}", e);
                 e
             }
         })?;
@@ -278,13 +272,11 @@ impl EtherCrabHandler {
                 if sub_device.name() == "AUTD" {
                     Ok(())
                 } else {
-                    #[cfg(feature = "tracing")]
-                    tracing::error!("Device[{}] is not an AUTD device.", _i);
+                    log::error!("Device[{}] is not an AUTD device.", _i);
                     Err(EtherCrabError::DeviceNotFound)
                 }
             })?;
-        #[cfg(feature = "tracing")]
-        tracing::info!(
+        log::info!(
             "Found {} AUTD3 device{} on {}",
             groups.len(),
             if groups.len() > 1 { "s" } else { "" },
@@ -299,13 +291,11 @@ impl EtherCrabHandler {
                 sub_device.set_dc_sync(DcSync::Sync0);
             });
 
-        #[cfg(feature = "tracing")]
-        tracing::info!("Moving into PRE-OP with PDI");
+        log::info!("Moving into PRE-OP with PDI");
         let groups: Groups<PreOpPdi, NoDc> = groups
             .transform(|group: SubDeviceGroup<_, _>| group.into_pre_op_pdi(&main_device))
             .await?;
-        #[cfg(feature = "tracing")]
-        tracing::info!("Done. PDI available.");
+        log::info!("Done. PDI available.");
 
         wait_for_align(
             &groups,
@@ -316,8 +306,7 @@ impl EtherCrabHandler {
         )
         .await?;
 
-        #[cfg(feature = "tracing")]
-        tracing::info!(
+        log::info!(
             "Configuring Sync0 with cycle time {:?}.",
             dc_configuration.sync0_period
         );
@@ -327,18 +316,15 @@ impl EtherCrabHandler {
             })
             .await?;
 
-        #[cfg(feature = "tracing")]
-        tracing::info!("Checking if all devices are in SAFE-OP");
+        log::info!("Checking if all devices are in SAFE-OP");
         let groups: Groups<SafeOp, HasDc> = groups
             .transform(|group: SubDeviceGroup<_, _, PreOpPdi, HasDc>| {
                 group.into_safe_op(&main_device)
             })
             .await?;
-        #[cfg(feature = "tracing")]
-        tracing::info!("All devices are in SAFE-OP");
+        log::info!("All devices are in SAFE-OP");
 
-        #[cfg(feature = "tracing")]
-        tracing::info!("Setting all devices to OP");
+        log::info!("Setting all devices to OP");
         let groups: Arc<Groups<Op, HasDc>> = Arc::new(
             groups
                 .transform(|group: SubDeviceGroup<_, _, SafeOp, HasDc>| {
@@ -367,8 +353,7 @@ impl EtherCrabHandler {
             let main_device = main_device.clone();
             let inputs = inputs.clone();
             async move {
-                #[cfg(feature = "tracing")]
-                tracing::info!("Starting main task");
+                log::info!("Starting main task");
                 send_loop(
                     is_open,
                     all_op,
@@ -387,11 +372,9 @@ impl EtherCrabHandler {
             #[cfg(feature = "core_affinity")]
             if let Some(affinity) = main_thread_affinity {
                 if core_affinity::set_for_current(affinity) {
-                    #[cfg(feature = "tracing")]
-                    tracing::info!("Set CPU affinity of main thread to {}", affinity.id);
+                    log::info!("Set CPU affinity of main thread to {}", affinity.id);
                 } else {
-                    #[cfg(feature = "tracing")]
-                    tracing::warn!(
+                    log::warn!(
                         "Failed to set CPU affinity of main thread to {}",
                         affinity.id
                     );
@@ -403,8 +386,7 @@ impl EtherCrabHandler {
             let main_device = main_device.clone();
             let inputs = inputs.clone();
             move |_| {
-                #[cfg(feature = "tracing")]
-                tracing::info!("Starting main task");
+                log::info!("Starting main task");
                 super::executor::block_on(send_loop(
                     is_open,
                     all_op,
@@ -424,8 +406,7 @@ impl EtherCrabHandler {
             let main_device = main_device.clone();
             let run = run.clone();
             async move {
-                #[cfg(feature = "tracing")]
-                tracing::info!("Starting state check task");
+                log::info!("Starting state check task");
                 error_handler(
                     is_open,
                     run,
@@ -444,8 +425,7 @@ impl EtherCrabHandler {
             let main_device = main_device.clone();
             let run = run.clone();
             move || {
-                #[cfg(feature = "tracing")]
-                tracing::info!("Starting state check task");
+                log::info!("Starting state check task");
                 super::executor::block_on(error_handler(
                     is_open,
                     run,
@@ -465,8 +445,7 @@ impl EtherCrabHandler {
             sleep(Duration::from_millis(10), min_timer_resolution).await;
         }
         sleep(Duration::from_millis(100), min_timer_resolution).await;
-        #[cfg(feature = "tracing")]
-        tracing::info!("All devices entered OP in {:?}", _op_request.elapsed());
+        log::info!("All devices entered OP in {:?}", _op_request.elapsed());
         run.store(true, std::sync::atomic::Ordering::Relaxed);
 
         Ok(EtherCrabHandler {
@@ -492,8 +471,7 @@ impl EtherCrabHandler {
         self.is_open
             .store(false, std::sync::atomic::Ordering::Relaxed);
 
-        #[cfg(feature = "tracing")]
-        tracing::trace!("Waiting for state check task to finish");
+        log::trace!("Waiting for state check task to finish");
         if let Some(state_check_task) = self.state_check_task.take() {
             #[cfg(feature = "tokio")]
             let _ = state_check_task.await;
@@ -501,8 +479,7 @@ impl EtherCrabHandler {
             let _ = state_check_task.join();
         }
 
-        #[cfg(feature = "tracing")]
-        tracing::trace!("Waiting for main task to finish");
+        log::trace!("Waiting for main task to finish");
         if let Some(task) = self.main_th.take() {
             #[cfg(feature = "tokio")]
             let _ = task.await;
@@ -513,15 +490,13 @@ impl EtherCrabHandler {
         if let Some(main_device) = self.main_device.take() {
             match Arc::try_unwrap(main_device) {
                 Ok(main_device) => {
-                    #[cfg(feature = "tracing")]
-                    tracing::trace!("Releasing all devices");
+                    log::trace!("Releasing all devices");
                     unsafe {
                         main_device.release_all();
                     }
                 }
                 Err(_arc) => {
-                    #[cfg(feature = "tracing")]
-                    tracing::error!(
+                    log::error!(
                         "Cannot release devices because there are {} strong references",
                         Arc::strong_count(&_arc),
                     );
@@ -529,15 +504,13 @@ impl EtherCrabHandler {
             }
         }
 
-        #[cfg(feature = "tracing")]
-        tracing::trace!("Waiting for TX/RX task to finish");
+        log::trace!("Waiting for TX/RX task to finish");
         if let Some(tx_rx_th) = self.tx_rx_th.take() {
             tx_rx_th.thread().unpark();
             let _ = tx_rx_th.join();
         }
 
-        #[cfg(feature = "tracing")]
-        tracing::trace!("Releasing PDU storage");
+        log::trace!("Releasing PDU storage");
         self.pdu_storage.release();
 
         Ok(())
@@ -576,8 +549,7 @@ async fn wait_for_align(
     sync_timeout: Duration,
     min_timer_resolution: Option<u32>,
 ) -> Result<(), EtherCrabError> {
-    #[cfg(feature = "tracing")]
-    tracing::info!("Waiting for devices to align");
+    log::info!("Waiting for devices to align");
 
     let mut averages = vec![super::smoothing::Smoothing::new(0.2); group.len()];
     let mut now = Instant::now();
@@ -625,11 +597,9 @@ async fn wait_for_align(
                 max_deviation = max_deviation.max(diff);
             }
 
-            #[cfg(feature = "tracing")]
-            tracing::debug!("Maximum system time difference is {:?}", max_deviation);
+            log::debug!("Maximum system time difference is {:?}", max_deviation);
             if max_deviation < sync_tolerance {
-                #[cfg(feature = "tracing")]
-                tracing::info!("Clocks settled after {:?}", start.elapsed());
+                log::info!("Clocks settled after {:?}", start.elapsed());
                 break;
             }
             if start.elapsed() > sync_timeout {
@@ -639,8 +609,7 @@ async fn wait_for_align(
         sleep(Duration::from_millis(1), min_timer_resolution).await;
     }
 
-    #[cfg(feature = "tracing")]
-    tracing::info!("Alignment done");
+    log::info!("Alignment done");
 
     Ok(())
 }
@@ -723,16 +692,13 @@ async fn send_loop(
             if running.load(std::sync::atomic::Ordering::Relaxed) {
                 match e {
                     ethercrab::error::Error::WorkingCounter { .. } => {
-                        #[cfg(feature = "tracing")]
-                        tracing::warn!("Working counter error occurred");
+                        log::warn!("Working counter error occurred");
                     }
                     ethercrab::error::Error::Timeout => {
-                        #[cfg(feature = "tracing")]
-                        tracing::trace!("Timeout occurred during DC synchronized Tx/Rx");
+                        log::trace!("Timeout occurred during DC synchronized Tx/Rx");
                     }
                     _e => {
-                        #[cfg(feature = "tracing")]
-                        tracing::error!("Failed to perform DC synchronized Tx/Rx: {}", _e);
+                        log::error!("Failed to perform DC synchronized Tx/Rx: {}", _e);
                     }
                 }
                 continue;
@@ -782,16 +748,14 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                                     expected: _expected,
                                     received: _received,
                                 }) => {
-                                    #[cfg(feature = "tracing")]
-                                    tracing::trace!(
+                                    log::trace!(
                                         "Write state failed: WorkingCounter {{ expected: {}, received: {} }}",
                                         _expected,
                                         _received
                                     );
                                 }
                                 Err(_e) => {
-                                    #[cfg(feature = "tracing")]
-                                    tracing::error!("Write state failed: {:?}", _e);
+                                    log::error!("Write state failed: {:?}", _e);
                                 }
                             }
                         } else if state.is_safe_op() {
@@ -808,22 +772,20 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                                     expected: _expected,
                                     received: _received,
                                 }) => {
-                                    #[cfg(feature = "tracing")]
-                                    tracing::trace!(
+                                    log::trace!(
                                         "Write state failed: WorkingCounter {{ expected: {}, received: {} }}",
                                         _expected,
                                         _received
                                     );
                                 }
                                 Err(_e) => {
-                                    #[cfg(feature = "tracing")]
-                                    tracing::error!("Write state failed: {:?}", _e);
+                                    log::error!("Write state failed: {:?}", _e);
                                 }
                             }
                         } else {
                             // TODO: reconfigure sub devices
-                            #[cfg(feature = "tracing")]
-                            tracing::error!("Unknown state: {}", state);
+
+                            log::error!("Unknown state: {}", state);
                         }
                     }
                 }
@@ -833,8 +795,8 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                 }) => {
                     all_op = false;
                     do_check_state = true;
-                    #[cfg(feature = "tracing")]
-                    tracing::trace!(
+
+                    log::trace!(
                         "Read state failed: WorkingCounter {{ expected: {}, received: {} }}",
                         _expected,
                         _received
@@ -851,8 +813,7 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                     all_op = false;
                     do_check_state = true;
                     if is_open.load(std::sync::atomic::Ordering::Relaxed) {
-                        #[cfg(feature = "tracing")]
-                        tracing::error!("Read state failed: {}", _e);
+                        log::error!("Read state failed: {}", _e);
                         continue;
                     } else {
                         break;

@@ -8,6 +8,7 @@
 mod error;
 mod ethercrab_link;
 mod inner;
+mod log;
 
 #[cfg(feature = "core_affinity")]
 pub use core_affinity;
