@@ -5,6 +5,7 @@ use ethercrab::{MainDevice, MainDeviceConfig, PduStorage, Timeouts, std::etherca
 use crate::{
     error::EtherCrabError,
     inner::handler::{MAX_FRAMES, MAX_PDU_DATA, MAX_SUBDEVICES, PDI_LEN},
+    log,
 };
 
 pub(crate) struct PduStorageWrapper {
@@ -51,11 +52,10 @@ impl Drop for PduStorageWrapper {
 
 pub async fn lookup_autd() -> Result<String, EtherCrabError> {
     let devices = pcap::Device::list()?;
-    #[cfg(feature = "tracing")]
-    tracing::debug!("Found {} network interfaces.", devices.len());
+
+    log::debug!("Found {} network interfaces.", devices.len());
     for interface in devices.into_iter() {
-        #[cfg(feature = "tracing")]
-        tracing::debug!(
+        log::debug!(
             "Searching AUTD device on {} ({}).",
             interface.name,
             interface.desc.as_deref().unwrap_or("No description")
@@ -65,8 +65,7 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
         let (tx, rx, pdu_loop) = match pdu_storage.try_split() {
             Ok((tx, rx, pdu_loop)) => (tx, rx, pdu_loop),
             Err(_e) => {
-                #[cfg(feature = "tracing")]
-                tracing::error!("Failed to split PDU storage: {:?}", _e);
+                log::error!("Failed to split PDU storage: {:?}", _e);
                 continue;
             }
         };
@@ -89,8 +88,7 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
                 .map(|_| ())
                 .map_err(EtherCrabError::from),
             Err(e) => {
-                #[cfg(feature = "tracing")]
-                tracing::trace!("Failed to start TX/RX task: {}", e);
+                log::trace!("Failed to start TX/RX task: {}", e);
                 Err(EtherCrabError::from(e))
             }
         });
@@ -100,8 +98,7 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
                 match ethercrab::std::tx_rx_task(&device, tx, rx) {
                     Ok(fut) => fut.await.map(|_| ()).map_err(EtherCrabError::from),
                     Err(e) => {
-                        #[cfg(feature = "tracing")]
-                        tracing::trace!("Failed to start TX/RX task: {}", e);
+                        log::trace!("Failed to start TX/RX task: {}", e);
                         Err(EtherCrabError::from(e))
                     }
                 }
@@ -113,16 +110,14 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
             .await
         {
             Ok(group) => {
-                #[cfg(feature = "tracing")]
-                tracing::trace!("Find EtherCAT device on {}", interface.name);
+                log::trace!("Find EtherCAT device on {}", interface.name);
                 !group.is_empty()
                     && group
                         .iter(&main_device)
                         .all(|sub_device| sub_device.name() == "AUTD")
             }
             Err(_e) => {
-                #[cfg(feature = "tracing")]
-                tracing::trace!(
+                log::trace!(
                     "Failed to initialize EtherCAT on {}: {}",
                     interface.name,
                     _e
