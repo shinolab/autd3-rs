@@ -33,3 +33,4 @@ pcap_sendqueue_transmit
 pcap_sendqueue_destroy
 pcap_findalldevs
 pcap_freealldevs
+pcap_breakloop
