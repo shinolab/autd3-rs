@@ -12,6 +12,14 @@ pub trait Sleeper {
     fn sleep(&self, duration: Duration);
 }
 
+/// A trait for sleep operations.
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg(feature = "async")]
+pub trait AsyncSleeper {
+    /// Sleep for the specified duration.
+    fn sleep(&self, duration: Duration) -> impl std::future::Future<Output = ()>;
+}
+
 impl Sleeper for Box<dyn Sleeper> {
     fn sleep(&self, duration: Duration) {
         self.as_ref().sleep(duration);

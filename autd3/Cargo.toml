@@ -10,10 +10,11 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = ["gain", "modulation", "stm"]
+all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
+async = ["autd3-driver/async", "autd3-core/async"]
 time = ["autd3-core/time"]
 use_nalgebra = ["autd3-core/use_nalgebra"]
 default = ["use_nalgebra", "parallel", "gain", "modulation", "stm", "time"]

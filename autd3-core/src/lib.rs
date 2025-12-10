@@ -57,7 +57,7 @@ pub mod link;
 pub mod modulation;
 #[cfg_attr(docsrs, doc(cfg(feature = "sleep")))]
 #[cfg(feature = "sleep")]
-#[doc(hidden)]
+/// Modules related to sleeping.
 pub mod sleep;
 #[cfg_attr(docsrs, doc(cfg(feature = "utils")))]
 #[cfg(feature = "utils")]

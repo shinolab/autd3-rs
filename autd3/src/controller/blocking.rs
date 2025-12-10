@@ -8,11 +8,9 @@ use autd3_core::{
 
 use autd3_driver::{
     error::AUTDDriverError,
-    firmware::{fpga::FPGAState, version::FirmwareVersion},
+    firmware::{fpga::FPGAState, transmission::SenderOption, version::FirmwareVersion},
     geometry::{Device, Geometry},
 };
-
-pub use autd3_driver::firmware::transmission::{ParallelMode, SenderOption};
 
 /// A controller for the AUTD devices.
 ///

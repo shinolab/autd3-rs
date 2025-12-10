@@ -14,6 +14,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
+async = []
 default = []
 firmware = ["common", "ethercat", "utils"]
 acoustics = ["common"]

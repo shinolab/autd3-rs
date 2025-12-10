@@ -8,13 +8,14 @@ repository = { workspace = true }
 
 [features]
 default = []
+async = ["autd3/async", "autd3/link-nop", "tokio", "tokio/time"]
 nop = ["autd3/link-nop"]
 twincat = ["autd3-link-twincat/local"]
 ethercrab = ["autd3-link-ethercrab", "tracing", "tracing-subscriber"]
 remote = ["autd3-link-remote/link"]
-remote_server = ["autd3-link-remote/server", "autd3/link-nop", "tokio", "tracing-subscriber"]
+remote_server = ["autd3-link-remote/server", "autd3/link-nop", "autd3/async", "tokio", "tokio/signal", "tracing-subscriber"]
 remote_twincat = ["autd3-link-twincat/remote"]
-all = ["twincat", "ethercrab", "remote", "remote_server", "remote_twincat"]
+all = ["async", "twincat", "ethercrab", "remote", "remote_server", "remote_twincat"]
 
 [dependencies]
 autd3 = { workspace = true, features = ["default"] }
@@ -24,7 +25,12 @@ autd3-link-remote = { workspace = true, optional = true }
 autd3-link-twincat = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 tracing-subscriber = { version = "0.3.20", features = ["fmt", "env-filter"], optional = true }
-tokio = { workspace = true, features = ["rt", "macros", "signal"], optional = true }
+tokio = { workspace = true, features = ["rt", "macros"], optional = true }
+
+[[bin]]
+name = "async"
+path = "src/async.rs"
+required-features = ["async"]
 
 [[bin]]
 name = "nop"

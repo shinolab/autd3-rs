@@ -17,7 +17,8 @@ pub mod controller;
 ///
 /// [`Gain`]: autd3_core::gain::Gain
 pub mod gain;
-#[doc(hidden)]
+#[cfg_attr(docsrs, doc(cfg(feature = "link-nop")))]
+/// Link modules.
 pub mod link;
 #[cfg_attr(docsrs, doc(cfg(feature = "modulation")))]
 #[cfg(feature = "modulation")]

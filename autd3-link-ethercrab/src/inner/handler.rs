@@ -155,6 +155,7 @@ impl EtherCrabHandler {
                 log::info!("No interface name is specified. Looking for AUTD device...");
                 let ifname = crate::inner::utils::lookup_autd().await?;
                 log::info!("Found EtherCAT device on {:?}", ifname);
+                #[allow(clippy::let_and_return)]
                 ifname
             }
         };

@@ -10,10 +10,11 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = ["local", "remote"]
+all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
+async = ["autd3-core/async"]
 default = ["local", "remote"]
 local = []
 remote = ["ads"]

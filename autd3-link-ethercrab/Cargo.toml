@@ -20,7 +20,7 @@ tracing = ["dep:tracing"]
 tokio = ["dep:tokio"]
 
 [dependencies]
-autd3-core = { workspace = true, features = ["link"] }
+autd3-core = { workspace = true, features = ["link", "async"] }
 core_affinity = { version = "0.8.3", default-features = false, optional = true }
 ethercrab = { version = "0.6.0", default-features = false, features = ["std"] }
 futures-util = { version = "0.3.31", default-features = false, features = ["std"] }

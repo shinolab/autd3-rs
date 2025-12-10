@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use super::SenderOption;
+use super::super::SenderOption;
 use crate::{
     error::AUTDDriverError,
     firmware::{

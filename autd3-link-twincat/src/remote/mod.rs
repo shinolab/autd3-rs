@@ -127,4 +127,37 @@ impl Link for RemoteTwinCAT {
     }
 }
 
-impl autd3_core::link::AsyncLink for RemoteTwinCAT {}
+#[cfg(feature = "async")]
+impl autd3_core::link::AsyncLink for RemoteTwinCAT {
+    async fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+        <Self as Link>::open(self, geometry)
+    }
+
+    async fn close(&mut self) -> Result<(), LinkError> {
+        <Self as Link>::close(self)
+    }
+
+    async fn update(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
+        <Self as Link>::update(self, geometry)
+    }
+
+    async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
+        <Self as Link>::alloc_tx_buffer(self)
+    }
+
+    async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
+        <Self as Link>::send(self, tx)
+    }
+
+    async fn receive(&mut self, rx: &mut [RxMessage]) -> Result<(), LinkError> {
+        <Self as Link>::receive(self, rx)
+    }
+
+    fn is_open(&self) -> bool {
+        <Self as Link>::is_open(self)
+    }
+
+    fn ensure_is_open(&self) -> Result<(), LinkError> {
+        <Self as Link>::ensure_is_open(self)
+    }
+}

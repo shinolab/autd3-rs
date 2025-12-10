@@ -14,6 +14,9 @@ mod link;
 #[cfg(feature = "link")]
 pub use link::{Remote, RemoteOption};
 
+#[cfg(all(feature = "link", feature = "async"))]
+pub use link::AsyncRemote;
+
 #[cfg_attr(docsrs, doc(cfg(feature = "server")))]
 #[cfg(feature = "server")]
 mod server;
