@@ -130,6 +130,10 @@ impl<F: Fn(usize, Status) + Send + Sync + 'static> AsyncLink for EtherCrab<F> {
         Ok(())
     }
 
+    async fn update(&mut self, _: &Geometry) -> Result<(), LinkError> {
+        Ok(())
+    }
+
     async fn send(&mut self, tx: Vec<TxMessage>) -> Result<(), LinkError> {
         <Self as Link>::send(self, tx)
     }
@@ -144,5 +148,9 @@ impl<F: Fn(usize, Status) + Send + Sync + 'static> AsyncLink for EtherCrab<F> {
 
     async fn alloc_tx_buffer(&mut self) -> Result<Vec<TxMessage>, LinkError> {
         <Self as Link>::alloc_tx_buffer(self)
+    }
+
+    fn ensure_is_open(&self) -> Result<(), LinkError> {
+        <Self as Link>::ensure_is_open(self)
     }
 }

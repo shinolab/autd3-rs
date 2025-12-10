@@ -110,5 +110,3 @@ impl Link for Audit {
         !self.cpus.is_empty()
     }
 }
-
-impl autd3_core::link::AsyncLink for Audit {}

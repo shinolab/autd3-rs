@@ -16,6 +16,10 @@ pub use crate::link::Nop;
 
 pub use crate::controller::{Controller, ParallelMode, SenderOption};
 
+#[cfg_attr(docsrs, doc(cfg(feature = "async")))]
+#[cfg(feature = "async")]
+pub use crate::controller::{AsyncController, AsyncSender, AsyncSleeper};
+
 pub use autd3_core::{
     devices::AUTD3,
     firmware::{

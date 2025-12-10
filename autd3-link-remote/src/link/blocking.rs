@@ -14,9 +14,9 @@ use autd3_core::{
     link::{Link, LinkError, RxMessage, TxBufferPoolSync, TxMessage},
 };
 
-const REMOTE_HANDSHAKE_LEN: usize =
+pub(crate) const REMOTE_HANDSHAKE_LEN: usize =
     size_of::<u8>() + size_of::<u16>() + REMOTE_PROTOCOL_MAGIC.len();
-const fn handshake_payload() -> [u8; REMOTE_HANDSHAKE_LEN] {
+pub(crate) const fn handshake_payload() -> [u8; REMOTE_HANDSHAKE_LEN] {
     let mut payload = [0u8; REMOTE_HANDSHAKE_LEN];
     payload[0] = MSG_HELLO;
 
@@ -268,8 +268,6 @@ impl Link for Remote {
         self.inner.is_some()
     }
 }
-
-impl autd3_core::link::AsyncLink for Remote {}
 
 #[cfg(test)]
 mod tests {

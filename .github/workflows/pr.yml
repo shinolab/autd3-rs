@@ -40,7 +40,7 @@ jobs:
           - os: windows-latest
           - os: macos-latest
           - os: ubuntu-latest
-            features: "all"
+            features: "async, all"
           - os: ubuntu-latest
             features: "use_meter left_handed"
     steps:

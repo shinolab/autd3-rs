@@ -98,7 +98,7 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
             self.handle_client(stream).await;
             tracing::info!("Client disconnected");
             if let Some(mut link) = self.link.take()
-                && let Err(e) = AsyncLink::close(&mut link).await
+                && let Err(e) = link.close().await
             {
                 tracing::error!("Error closing link: {}", e);
             }
@@ -197,7 +197,7 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
             tracing::info!("Opening link...");
 
             let mut link = (self.link_factory)();
-            AsyncLink::open(&mut link, &geometry).await?;
+            link.open(&geometry).await?;
             self.num_devices = geometry.num_devices();
             tracing::info!(
                 "Link opened with {} device{}",
@@ -216,7 +216,7 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
     async fn handle_update_geometry(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
         if let Some(link) = self.link.as_mut() {
             let geometry = Self::read_geometry(stream).await?;
-            AsyncLink::update(link, &geometry).await?;
+            link.update(&geometry).await?;
             stream.write_all(&[MSG_OK]).await?;
             Ok(())
         } else {
@@ -258,7 +258,7 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
 
     async fn handle_send_data(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
         if let Some(link) = self.link.as_mut() {
-            let mut tx = AsyncLink::alloc_tx_buffer(link).await?;
+            let mut tx = link.alloc_tx_buffer().await?;
 
             for tx_msg in tx.iter_mut() {
                 let bytes = unsafe {
@@ -270,7 +270,7 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
                 stream.read_exact(bytes).await?;
             }
 
-            AsyncLink::send(link, tx).await?;
+            link.send(tx).await?;
 
             stream.write_all(&[MSG_OK]).await?;
 
@@ -287,7 +287,7 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
             _ => vec![RxMessage::new(0, Ack::new(0, 0)); num_devices],
         };
         if let Some(link) = self.link.as_mut() {
-            AsyncLink::receive(link, &mut rx).await?;
+            link.receive(&mut rx).await?;
 
             let buffer_size = size_of::<u8>() + size_of::<RxMessage>() * rx.len();
             if self.read_buffer.len() < buffer_size {
@@ -313,7 +313,7 @@ impl<L: AsyncLink, F: Fn() -> L> RemoteServer<L, F> {
 
     async fn handle_close(&mut self, stream: &mut TcpStream) -> Result<(), LinkError> {
         if let Some(link) = self.link.as_mut() {
-            AsyncLink::close(link).await?;
+            link.close().await?;
             stream.write_all(&[MSG_OK]).await?;
             Ok(())
         } else {

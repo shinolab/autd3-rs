@@ -26,7 +26,7 @@ args = ["clippy", "--tests", "--workspace", "${@}", "--", "-D", "warnings"]
 env = { RUSTDOCFLAGS = "--cfg docsrs -D warnings" }
 toolchain = "nightly"
 command = "cargo"
-args = ["doc", "--workspace", "--no-deps"]
+args = ["doc", "--workspace", "--no-deps", "${@}"]
 
 [tasks.test]
 dependencies = ["test-lib", "test-doc"]

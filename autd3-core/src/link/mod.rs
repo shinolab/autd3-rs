@@ -78,54 +78,44 @@ impl Link for Box<dyn Link> {
     }
 }
 
-#[doc(hidden)]
-pub trait AsyncLink: Link {
+#[cfg(feature = "async")]
+/// A trait that provides the interface with the device.
+pub trait AsyncLink {
+    /// Opens the link.
     fn open(
         &mut self,
         geometry: &Geometry,
-    ) -> impl std::future::Future<Output = Result<(), LinkError>> {
-        async { <Self as Link>::open(self, geometry) }
-    }
+    ) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
-    fn close(&mut self) -> impl std::future::Future<Output = Result<(), LinkError>> {
-        async { <Self as Link>::close(self) }
-    }
+    /// Closes the link.
+    fn close(&mut self) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
-    fn update(
-        &mut self,
-        geometry: &Geometry,
-    ) -> impl std::future::Future<Output = Result<(), LinkError>> {
-        async { <Self as Link>::update(self, geometry) }
-    }
+    #[doc(hidden)]
+    fn update(&mut self, _: &Geometry) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
+    /// Allocate a sending buffer for the link.
     fn alloc_tx_buffer(
         &mut self,
-    ) -> impl std::future::Future<Output = Result<Vec<TxMessage>, LinkError>> {
-        async { <Self as Link>::alloc_tx_buffer(self) }
-    }
+    ) -> impl std::future::Future<Output = Result<Vec<TxMessage>, LinkError>>;
 
+    /// Sends a message to the device.
     fn send(
         &mut self,
         tx: Vec<TxMessage>,
-    ) -> impl std::future::Future<Output = Result<(), LinkError>> {
-        async { <Self as Link>::send(self, tx) }
-    }
+    ) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
+    /// Receives a message from the device.
     fn receive(
         &mut self,
         rx: &mut [RxMessage],
-    ) -> impl std::future::Future<Output = Result<(), LinkError>> {
-        async { <Self as Link>::receive(self, rx) }
-    }
+    ) -> impl std::future::Future<Output = Result<(), LinkError>>;
 
+    /// Checks if the link is open.
     #[must_use]
-    fn is_open(&self) -> bool {
-        <Self as Link>::is_open(self)
-    }
+    fn is_open(&self) -> bool;
 
-    fn ensure_is_open(&self) -> Result<(), LinkError> {
-        <Self as Link>::ensure_is_open(self)
-    }
+    /// Ensures that the link is open, returning an error if it is not.
+    fn ensure_is_open(&self) -> Result<(), LinkError>;
 }
 
 #[cfg(test)]
@@ -194,17 +184,15 @@ mod tests {
         }
     }
 
-    impl AsyncLink for MockLink {}
-
     #[test]
     fn open() -> Result<(), LinkError> {
         let mut link = MockLink::new();
         let geometry = Geometry::new(vec![]);
 
-        assert!(!AsyncLink::is_open(&link));
-        futures_lite::future::block_on(AsyncLink::open(&mut link, &geometry))?;
+        assert!(!Link::is_open(&link));
+        Link::open(&mut link, &geometry)?;
         assert!(link.open_called);
-        assert!(AsyncLink::is_open(&link));
+        assert!(Link::is_open(&link));
 
         Ok(())
     }
@@ -214,9 +202,9 @@ mod tests {
         let mut link = MockLink::new();
         link.is_open = true;
 
-        futures_lite::future::block_on(AsyncLink::close(&mut link))?;
+        Link::close(&mut link)?;
         assert!(link.close_called);
-        assert!(!AsyncLink::is_open(&link));
+        assert!(!Link::is_open(&link));
 
         Ok(())
     }
@@ -226,7 +214,7 @@ mod tests {
         let mut link = MockLink::new();
         let geometry = Geometry::new(vec![]);
 
-        futures_lite::future::block_on(AsyncLink::update(&mut link, &geometry))?;
+        Link::update(&mut link, &geometry)?;
         assert!(link.update_called);
 
         Ok(())
@@ -236,7 +224,7 @@ mod tests {
     fn alloc_tx_buffer() -> Result<(), LinkError> {
         let mut link = MockLink::new();
 
-        futures_lite::future::block_on(AsyncLink::alloc_tx_buffer(&mut link))?;
+        Link::alloc_tx_buffer(&mut link)?;
         assert!(link.alloc_called);
 
         Ok(())
@@ -247,7 +235,7 @@ mod tests {
         let mut link = MockLink::new();
         let tx = vec![];
 
-        futures_lite::future::block_on(AsyncLink::send(&mut link, tx))?;
+        Link::send(&mut link, tx)?;
         assert!(link.send_called);
 
         Ok(())
@@ -258,7 +246,7 @@ mod tests {
         let mut link = MockLink::new();
         let mut rx = vec![];
 
-        futures_lite::future::block_on(AsyncLink::receive(&mut link, &mut rx))?;
+        Link::receive(&mut link, &mut rx)?;
         assert!(link.receive_called);
 
         Ok(())
@@ -268,18 +256,18 @@ mod tests {
     fn is_open() {
         let mut link = MockLink::new();
 
-        assert!(!AsyncLink::is_open(&link));
+        assert!(!Link::is_open(&link));
         link.is_open = true;
-        assert!(AsyncLink::is_open(&link));
+        assert!(Link::is_open(&link));
     }
 
     #[test]
     fn ensure_is_open() {
         let mut link = MockLink::new();
 
-        let result = AsyncLink::ensure_is_open(&link);
+        let result = Link::ensure_is_open(&link);
         assert_eq!(Err(LinkError::closed()), result);
         link.is_open = true;
-        assert!(AsyncLink::ensure_is_open(&link).is_ok());
+        assert!(Link::ensure_is_open(&link).is_ok());
     }
 }

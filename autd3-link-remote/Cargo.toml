@@ -10,11 +10,12 @@ license = { workspace = true }
 repository = { workspace = true }
 
 [package.metadata.docs.rs]
-features = ["link", "server"]
+all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["link"]
+async = ["tokio", "autd3-core/async"]
+default = ["link", "async"]
 link = []
 server = ["autd3-core/devices", "tokio", "tracing"]
 
