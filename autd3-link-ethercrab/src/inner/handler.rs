@@ -396,6 +396,7 @@ impl EtherCrabHandler {
                     buffer_queue_sender,
                     inputs,
                     receiver,
+                    min_timer_resolution,
                 ));
             }
         })?;
@@ -434,6 +435,7 @@ impl EtherCrabHandler {
                     groups,
                     err_handler,
                     state_check_period,
+                    min_timer_resolution,
                 ));
             }
         });
