@@ -26,9 +26,11 @@ impl<F: Fn(usize, Status) + Send + Sync + 'static> EtherCrab<F> {
             runtime: None,
         }
     }
+}
 
+#[cfg(feature = "tokio")]
+impl<F: Fn(usize, Status) + Send + Sync + 'static> EtherCrab<F> {
     /// Creates a new [`EtherCrab`] with the given [`tokio::runtime::Runtime`].
-    #[cfg(feature = "tokio")]
     pub fn with_runtime(
         err_handler: F,
         option: impl Into<EtherCrabOptionFull>,
@@ -40,20 +42,24 @@ impl<F: Fn(usize, Status) + Send + Sync + 'static> EtherCrab<F> {
             runtime: Some(runtime),
         }
     }
+
+    fn runtime(&mut self) -> Result<tokio::runtime::Runtime, LinkError> {
+        if let Some(runtime) = self.runtime.take() {
+            Ok(runtime)
+        } else {
+            tokio::runtime::Builder::new_multi_thread()
+                .enable_time()
+                .build()
+                .map_err(|e| LinkError::new(format!("Failed to create Tokio runtime: {}", e)))
+        }
+    }
 }
 
 impl<F: Fn(usize, Status) + Send + Sync + 'static> Link for EtherCrab<F> {
     fn open(&mut self, geometry: &Geometry) -> Result<(), LinkError> {
         #[cfg(feature = "tokio")]
         {
-            let runtime = if let Some(runtime) = self.runtime.take() {
-                runtime
-            } else {
-                tokio::runtime::Builder::new_multi_thread()
-                    .enable_time()
-                    .build()
-                    .map_err(|e| LinkError::new(format!("Failed to create Tokio runtime: {}", e)))?
-            };
+            let runtime = self.runtime()?;
             runtime.block_on(<Self as AsyncLink>::open(self, geometry))?;
             self.runtime = Some(runtime);
         }
@@ -67,14 +73,7 @@ impl<F: Fn(usize, Status) + Send + Sync + 'static> Link for EtherCrab<F> {
     fn close(&mut self) -> Result<(), LinkError> {
         #[cfg(feature = "tokio")]
         {
-            let runtime = if let Some(runtime) = self.runtime.take() {
-                runtime
-            } else {
-                tokio::runtime::Builder::new_multi_thread()
-                    .enable_time()
-                    .build()
-                    .map_err(|e| LinkError::new(format!("Failed to create Tokio runtime: {}", e)))?
-            };
+            let runtime = self.runtime()?;
             runtime.block_on(<Self as AsyncLink>::close(self))?;
             self.runtime = Some(runtime);
         }
