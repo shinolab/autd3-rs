@@ -24,6 +24,5 @@ autd3-core = { workspace = true, features = ["derive", "gain", "link", "modulati
 rayon = { workspace = true, optional = true }
 
 [dev-dependencies]
-approx = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }

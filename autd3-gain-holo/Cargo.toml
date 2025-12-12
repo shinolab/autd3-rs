@@ -31,6 +31,5 @@ rayon = { workspace = true, optional = true }
 
 [dev-dependencies]
 approx = { workspace = true }
-autd3-driver = { workspace = true }
 rstest = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }

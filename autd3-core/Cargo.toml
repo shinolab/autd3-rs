@@ -44,4 +44,3 @@ time = { version = "0.3.41", default-features = false, optional = true, features
 approx = { workspace = true }
 rand = { workspace = true, features = ["thread_rng"] }
 rstest = { workspace = true }
-futures-lite = { version = "2.6.1", default-features = false }
