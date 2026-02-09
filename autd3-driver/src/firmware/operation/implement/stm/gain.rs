@@ -339,7 +339,6 @@ mod tests {
         derive::transition_mode,
         ethercat::DcSysTime,
         firmware::{Intensity, Phase},
-        link::TxMessage,
     };
 
     use rand::Rng;
@@ -645,146 +644,148 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_phase_half() {
-        const GAIN_STM_SIZE: usize = 9;
+    // TODO: This test causes "cycle detected when borrow-checking in `offset_of!`" error in Rust 1.93.0...
+    // See https://github.com/rust-lang/rust/issues/150464
+    // #[test]
+    // fn test_phase_half() {
+    //     const GAIN_STM_SIZE: usize = 9;
 
-        let device = crate::tests::create_device();
+    //     let device = crate::tests::create_device();
 
-        let mut tx = vec![TxMessage::new(); 1];
-        let tx = tx[0].payload_mut();
+    //     let mut tx = vec![TxMessage::new(); 1];
+    //     let tx = tx[0].payload_mut();
 
-        let mut rng = rand::rng();
+    //     let mut rng = rand::rng();
 
-        let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
-            .map(|_| {
-                (0..device.num_transducers())
-                    .map(|_| Drive {
-                        phase: Phase(rng.random_range(0x00..=0xFF)),
-                        intensity: Intensity(rng.random_range(0..=0xFF)),
-                    })
-                    .collect()
-            })
-            .collect();
+    //     let gain_data: VecDeque<Vec<Drive>> = (0..GAIN_STM_SIZE)
+    //         .map(|_| {
+    //             (0..device.num_transducers())
+    //                 .map(|_| Drive {
+    //                     phase: Phase(rng.random_range(0x00..=0xFF)),
+    //                     intensity: Intensity(rng.random_range(0..=0xFF)),
+    //                 })
+    //                 .collect()
+    //         })
+    //         .collect();
 
-        let freq_div = rng.random_range(0x0001..=0xFFFF);
-        let rep = rng.random_range(0x0000..0xFFFF);
-        let segment = Segment::S0;
-        let mut op = GainSTMOp::new(
-            STMIterator {
-                data: gain_data.clone(),
-            },
-            GAIN_STM_SIZE,
-            GainSTMMode::PhaseHalf,
-            SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
-            rep,
-            segment,
-            transition_mode::SyncIdx.params(),
-        );
+    //     let freq_div = rng.random_range(0x0001..=0xFFFF);
+    //     let rep = rng.random_range(0x0000..0xFFFF);
+    //     let segment = Segment::S0;
+    //     let mut op = GainSTMOp::new(
+    //         STMIterator {
+    //             data: gain_data.clone(),
+    //         },
+    //         GAIN_STM_SIZE,
+    //         GainSTMMode::PhaseHalf,
+    //         SamplingConfig::new(NonZeroU16::new(freq_div).unwrap()),
+    //         rep,
+    //         segment,
+    //         transition_mode::SyncIdx.params(),
+    //     );
 
-        assert_eq!(op.sent, 0);
+    //     assert_eq!(op.sent, 0);
 
-        // First frame
-        {
-            assert_eq!(
-                op.required_size(&device),
-                size_of::<GainSTMHead>() + device.num_transducers() * 2
-            );
+    //     // First frame
+    //     {
+    //         assert_eq!(
+    //             op.required_size(&device),
+    //             size_of::<GainSTMHead>() + device.num_transducers() * 2
+    //         );
 
-            assert_eq!(
-                op.pack(&device, tx),
-                Ok(size_of::<GainSTMHead>() + device.num_transducers() * 2)
-            );
+    //         assert_eq!(
+    //             op.pack(&device, tx),
+    //             Ok(size_of::<GainSTMHead>() + device.num_transducers() * 2)
+    //         );
 
-            assert_eq!(op.sent, 4);
+    //         assert_eq!(op.sent, 4);
 
-            assert_eq!(TypeTag::GainSTM as u8, tx[0]);
-            assert_eq!(
-                GainSTMControlFlags::BEGIN.0,
-                tx[offset_of!(GainSTMHead, flag)] & 0x3F
-            );
-            assert_eq!(3, tx[offset_of!(GainSTMHead, flag)] >> 6);
-            assert_eq!(
-                GainSTMMode::PhaseHalf as u8,
-                tx[offset_of!(GainSTMHead, mode)]
-            );
+    //         assert_eq!(TypeTag::GainSTM as u8, tx[0]);
+    //         assert_eq!(
+    //             GainSTMControlFlags::BEGIN.0,
+    //             tx[offset_of!(GainSTMHead, flag)] & 0x3F
+    //         );
+    //         assert_eq!(3, tx[offset_of!(GainSTMHead, flag)] >> 6);
+    //         assert_eq!(
+    //             GainSTMMode::PhaseHalf as u8,
+    //             tx[offset_of!(GainSTMHead, mode)]
+    //         );
 
-            tx[size_of::<GainSTMHead>()..]
-                .chunks(size_of::<Drive>())
-                .zip(gain_data[0].iter())
-                .zip(gain_data[1].iter())
-                .zip(gain_data[2].iter())
-                .zip(gain_data[3].iter())
-                .for_each(|((((d, g0), g1), g2), g3)| {
-                    assert_eq!(d[0] & 0x0F, g0.phase.0 >> 4);
-                    assert_eq!(d[0] >> 4, g1.phase.0 >> 4);
-                    assert_eq!(d[1] & 0x0F, g2.phase.0 >> 4);
-                    assert_eq!(d[1] >> 4, g3.phase.0 >> 4);
-                });
-        }
+    //         tx[size_of::<GainSTMHead>()..]
+    //             .chunks(size_of::<Drive>())
+    //             .zip(gain_data[0].iter())
+    //             .zip(gain_data[1].iter())
+    //             .zip(gain_data[2].iter())
+    //             .zip(gain_data[3].iter())
+    //             .for_each(|((((d, g0), g1), g2), g3)| {
+    //                 assert_eq!(d[0] & 0x0F, g0.phase.0 >> 4);
+    //                 assert_eq!(d[0] >> 4, g1.phase.0 >> 4);
+    //                 assert_eq!(d[1] & 0x0F, g2.phase.0 >> 4);
+    //                 assert_eq!(d[1] >> 4, g3.phase.0 >> 4);
+    //             });
+    //     }
 
-        // Second frame
-        {
-            assert_eq!(
-                op.required_size(&device),
-                size_of::<GainSTMSubseq>() + device.num_transducers() * 2
-            );
+    //     // Second frame
+    //     {
+    //         assert_eq!(
+    //             op.required_size(&device),
+    //             size_of::<GainSTMSubseq>() + device.num_transducers() * 2
+    //         );
 
-            assert_eq!(
-                op.pack(&device, tx),
-                Ok(size_of::<GainSTMSubseq>() + device.num_transducers() * 2)
-            );
+    //         assert_eq!(
+    //             op.pack(&device, tx),
+    //             Ok(size_of::<GainSTMSubseq>() + device.num_transducers() * 2)
+    //         );
 
-            assert_eq!(op.sent, 8);
+    //         assert_eq!(op.sent, 8);
 
-            assert_eq!(TypeTag::GainSTM as u8, tx[0]);
-            assert_eq!(
-                GainSTMControlFlags::NONE.0,
-                tx[offset_of!(GainSTMHead, flag)] & 0x3F
-            );
-            assert_eq!(3, tx[offset_of!(GainSTMHead, flag)] >> 6);
-            tx[size_of::<GainSTMSubseq>()..]
-                .chunks(size_of::<Drive>())
-                .zip(gain_data[4].iter())
-                .zip(gain_data[5].iter())
-                .zip(gain_data[6].iter())
-                .zip(gain_data[7].iter())
-                .for_each(|((((d, g0), g1), g2), g3)| {
-                    assert_eq!(d[0] & 0x0F, g0.phase.0 >> 4);
-                    assert_eq!(d[0] >> 4, g1.phase.0 >> 4);
-                    assert_eq!(d[1] & 0x0F, g2.phase.0 >> 4);
-                    assert_eq!(d[1] >> 4, g3.phase.0 >> 4);
-                });
-        }
+    //         assert_eq!(TypeTag::GainSTM as u8, tx[0]);
+    //         assert_eq!(
+    //             GainSTMControlFlags::NONE.0,
+    //             tx[offset_of!(GainSTMHead, flag)] & 0x3F
+    //         );
+    //         assert_eq!(3, tx[offset_of!(GainSTMHead, flag)] >> 6);
+    //         tx[size_of::<GainSTMSubseq>()..]
+    //             .chunks(size_of::<Drive>())
+    //             .zip(gain_data[4].iter())
+    //             .zip(gain_data[5].iter())
+    //             .zip(gain_data[6].iter())
+    //             .zip(gain_data[7].iter())
+    //             .for_each(|((((d, g0), g1), g2), g3)| {
+    //                 assert_eq!(d[0] & 0x0F, g0.phase.0 >> 4);
+    //                 assert_eq!(d[0] >> 4, g1.phase.0 >> 4);
+    //                 assert_eq!(d[1] & 0x0F, g2.phase.0 >> 4);
+    //                 assert_eq!(d[1] >> 4, g3.phase.0 >> 4);
+    //             });
+    //     }
 
-        // Final frame
-        {
-            assert_eq!(
-                op.required_size(&device),
-                size_of::<GainSTMSubseq>() + device.num_transducers() * 2
-            );
+    //     // Final frame
+    //     {
+    //         assert_eq!(
+    //             op.required_size(&device),
+    //             size_of::<GainSTMSubseq>() + device.num_transducers() * 2
+    //         );
 
-            assert_eq!(
-                op.pack(&device, tx),
-                Ok(size_of::<GainSTMSubseq>() + device.num_transducers() * 2)
-            );
+    //         assert_eq!(
+    //             op.pack(&device, tx),
+    //             Ok(size_of::<GainSTMSubseq>() + device.num_transducers() * 2)
+    //         );
 
-            assert_eq!(op.sent, GAIN_STM_SIZE);
+    //         assert_eq!(op.sent, GAIN_STM_SIZE);
 
-            assert_eq!(TypeTag::GainSTM as u8, tx[0]);
-            assert_eq!(
-                (GainSTMControlFlags::END | GainSTMControlFlags::TRANSITION).0,
-                tx[offset_of!(GainSTMHead, flag)] & 0x3F
-            );
-            assert_eq!(0, tx[offset_of!(GainSTMHead, flag)] >> 6);
-            tx[size_of::<GainSTMSubseq>()..]
-                .chunks(size_of::<Drive>())
-                .zip(gain_data[8].iter())
-                .for_each(|(d, g)| {
-                    assert_eq!(d[0] & 0x0F, g.phase.0 >> 4);
-                });
-        }
-    }
+    //         assert_eq!(TypeTag::GainSTM as u8, tx[0]);
+    //         assert_eq!(
+    //             (GainSTMControlFlags::END | GainSTMControlFlags::TRANSITION).0,
+    //             tx[offset_of!(GainSTMHead, flag)] & 0x3F
+    //         );
+    //         assert_eq!(0, tx[offset_of!(GainSTMHead, flag)] >> 6);
+    //         tx[size_of::<GainSTMSubseq>()..]
+    //             .chunks(size_of::<Drive>())
+    //             .zip(gain_data[8].iter())
+    //             .for_each(|(d, g)| {
+    //                 assert_eq!(d[0] & 0x0F, g.phase.0 >> 4);
+    //             });
+    //     }
+    // }
 
     #[rstest::rstest]
     #[case(Err(AUTDDriverError::GainSTMSizeOutOfRange(0)), 0)]
