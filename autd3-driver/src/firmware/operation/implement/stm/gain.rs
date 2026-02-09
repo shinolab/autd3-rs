@@ -341,7 +341,7 @@ mod tests {
         firmware::{Intensity, Phase},
     };
 
-    use rand::Rng;
+    use rand::RngExt;
 
     struct Impl {
         g: Vec<Drive>,

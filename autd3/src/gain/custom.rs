@@ -70,7 +70,7 @@ impl<'a, FT: Fn(&'a Transducer) -> Drive + Send + Sync, F: Fn(&'a Device) -> FT>
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
+    use rand::RngExt;
 
     use crate::tests::create_geometry;
 

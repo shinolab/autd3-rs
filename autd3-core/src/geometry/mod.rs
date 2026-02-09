@@ -131,7 +131,7 @@ impl core::ops::DerefMut for Geometry {
 #[cfg(test)]
 pub(crate) mod tests {
 
-    use rand::Rng;
+    use rand::RngExt;
 
     use crate::common::mm;
 

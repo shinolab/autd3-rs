@@ -69,7 +69,7 @@ mod tests {
         range_y: std::ops::Range<f32>,
         range_z: std::ops::Range<f32>,
     ) -> Vector3 {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         Vector3::new(
             rng.random_range(range_x),
@@ -84,7 +84,7 @@ mod tests {
         range_y: std::ops::Range<f32>,
         range_z: std::ops::Range<f32>,
     ) -> Point3 {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         Point3::new(
             rng.random_range(range_x),

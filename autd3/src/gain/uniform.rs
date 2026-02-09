@@ -47,7 +47,7 @@ mod tests {
     use crate::tests::create_geometry;
 
     use super::*;
-    use rand::Rng;
+    use rand::RngExt;
 
     #[test]
     fn uniform() {

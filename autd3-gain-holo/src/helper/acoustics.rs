@@ -34,7 +34,7 @@ pub fn propagate<D: Directivity>(
 mod tests {
     use super::*;
 
-    use rand::Rng;
+    use rand::RngExt;
 
     use autd3_core::{
         acoustics::directivity::Sphere,

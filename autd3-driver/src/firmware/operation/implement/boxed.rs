@@ -189,7 +189,7 @@ where
 pub mod tests {
     use super::*;
 
-    use rand::Rng;
+    use rand::RngExt;
 
     use autd3_core::geometry::{Point3, Transducer, UnitQuaternion};
 

@@ -33,7 +33,7 @@ impl<M: Modulation> Modulation for RadiationPressure<M> {
 mod tests {
     use crate::modulation::Custom;
     use autd3_driver::common::kHz;
-    use rand::Rng;
+    use rand::RngExt;
 
     use super::*;
 
