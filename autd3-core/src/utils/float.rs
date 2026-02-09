@@ -21,7 +21,7 @@ mod tests {
 
     #[test]
     fn is_integer_rand() {
-        use rand::Rng;
+        use rand::RngExt;
 
         const N: usize = 100000;
 

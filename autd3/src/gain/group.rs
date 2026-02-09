@@ -223,7 +223,7 @@ mod tests {
     use super::*;
 
     use autd3_driver::datagram::BoxedGain;
-    use rand::Rng;
+    use rand::RngExt;
 
     use crate::{
         gain::{Null, Uniform},

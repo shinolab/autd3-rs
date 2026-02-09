@@ -110,7 +110,7 @@ impl Gain<'_> for Bessel {
 
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
+    use rand::RngExt;
 
     use autd3_driver::common::PI;
 

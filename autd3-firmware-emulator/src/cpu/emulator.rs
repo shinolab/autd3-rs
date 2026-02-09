@@ -310,7 +310,7 @@ impl CPUEmulator {
 mod tests {
     use super::*;
 
-    use rand::Rng;
+    use rand::RngExt;
 
     #[test]
     fn cpu_idx() {

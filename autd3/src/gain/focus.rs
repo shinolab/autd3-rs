@@ -87,7 +87,7 @@ mod tests {
     use crate::tests::{create_geometry, random_point3};
 
     use super::*;
-    use rand::Rng;
+    use rand::RngExt;
     fn focus_check(
         mut b: Impl,
         pos: Point3,
