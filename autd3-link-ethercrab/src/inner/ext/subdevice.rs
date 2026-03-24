@@ -1,4 +1,5 @@
 use ethercrab::{Command, MainDevice, RegisterAddress, SubDevicePdi};
+use lock_api::RawRwLock;
 
 use super::state::State;
 
@@ -11,7 +12,9 @@ pub(crate) trait SubDeviceExt {
     ) -> Result<u16, ethercrab::error::Error>;
 }
 
-impl<const N: usize> SubDeviceExt for ethercrab::SubDeviceRef<'_, SubDevicePdi<'_, N>> {
+impl<const N: usize, R: RawRwLock> SubDeviceExt
+    for ethercrab::SubDeviceRef<'_, SubDevicePdi<'_, N, R>>
+{
     async fn read_state(&self) -> Result<State, ethercrab::error::Error> {
         self.register_read::<u16>(RegisterAddress::AlStatus)
             .await
