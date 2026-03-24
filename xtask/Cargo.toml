@@ -6,6 +6,8 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 keywords.workspace = true
+publish = false
+description = "Internal build tasks for autd3-rs"
 
 [dependencies]
 anyhow = "1.0.102"
