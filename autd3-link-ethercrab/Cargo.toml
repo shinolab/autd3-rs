@@ -14,15 +14,17 @@ features = ["core_affinity", "tracing", "tokio"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = ["core_affinity", "tracing", "tokio"]
+default = ["core_affinity", "tracing", "tokio", "io-uring"]
 core_affinity = ["dep:core_affinity"]
 tracing = ["dep:tracing"]
 tokio = ["dep:tokio"]
+io-uring = ["ethercrab/io-uring"]
 
 [dependencies]
 autd3-core = { workspace = true, features = ["link", "async"] }
 core_affinity = { version = "0.8.3", default-features = false, optional = true }
-ethercrab = { version = "0.7.0", default-features = false, features = ["std"] }
+lock_api = { version = "0.4.14", default-features = false }
+ethercrab = { version = "0.7.1", default-features = false, features = ["std"] }
 futures-util = { version = "0.3.31", default-features = false, features = ["std"] }
 thread-priority = { version = "3.0.0", default-features = false }
 tracing = { workspace = true, optional = true }

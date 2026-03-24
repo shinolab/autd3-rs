@@ -24,6 +24,7 @@ use ethercrab::{
     subdevice_group::{HasDc, NoDc, Op, PreOp, PreOpPdi, SafeOp},
 };
 use futures_util::stream::{FuturesOrdered, FuturesUnordered, StreamExt};
+use lock_api::RawRwLock;
 
 #[cfg(not(feature = "tokio"))]
 use std::time::Instant;
@@ -104,11 +105,11 @@ pub struct EtherCrabHandler {
 
 const SUB_GROUP_PDI_LEN: usize = (EC_OUTPUT_FRAME_SIZE + EC_INPUT_FRAME_SIZE) * 2;
 
-struct Groups<S = PreOp, DC = NoDc> {
-    groups: Vec<SubDeviceGroup<2, SUB_GROUP_PDI_LEN, S, DC>>,
+struct Groups<R: RawRwLock, S = PreOp, DC = NoDc> {
+    groups: Vec<SubDeviceGroup<2, SUB_GROUP_PDI_LEN, R, S, DC>>,
 }
 
-impl Default for Groups<PreOp, NoDc> {
+impl<R: RawRwLock> Default for Groups<R, PreOp, NoDc> {
     fn default() -> Self {
         Self {
             groups: Default::default(),
@@ -116,7 +117,7 @@ impl Default for Groups<PreOp, NoDc> {
     }
 }
 
-impl<S, DC> Groups<S, DC> {
+impl<R: RawRwLock, S, DC> Groups<R, S, DC> {
     fn len(&self) -> usize {
         self.groups.iter().map(|g| g.len()).sum()
     }
@@ -124,9 +125,9 @@ impl<S, DC> Groups<S, DC> {
     async fn transform<S2, DC2, E>(
         self,
         f: impl AsyncFn(
-            SubDeviceGroup<2, SUB_GROUP_PDI_LEN, S, DC>,
-        ) -> Result<SubDeviceGroup<2, SUB_GROUP_PDI_LEN, S2, DC2>, E>,
-    ) -> Result<Groups<S2, DC2>, E> {
+            SubDeviceGroup<2, SUB_GROUP_PDI_LEN, R, S, DC>,
+        ) -> Result<SubDeviceGroup<2, SUB_GROUP_PDI_LEN, R, S2, DC2>, E>,
+    ) -> Result<Groups<R, S2, DC2>, E> {
         #[allow(clippy::redundant_closure)]
         let mut tasks = self
             .groups
@@ -245,11 +246,15 @@ impl EtherCrabHandler {
             let mut idx = 0;
             Groups {
                 groups: main_device
-                    .init::<MAX_SUBDEVICES, _>(ethercat_now, |group: &GroupsArray, _sub_device| {
-                        let g = &group.groups[idx / 2];
-                        idx += 1;
-                        Ok(g)
-                    })
+                    .init::<MAX_SUBDEVICES, _>(
+                        ethercat_now,
+                        GroupsArray::default(),
+                        |group: &GroupsArray, _sub_device| {
+                            let g = &group.groups[idx / 2];
+                            idx += 1;
+                            Ok(g)
+                        },
+                    )
                     .await?
                     .groups
                     .into_iter()
@@ -293,7 +298,7 @@ impl EtherCrabHandler {
             });
 
         log::info!("Moving into PRE-OP with PDI");
-        let groups: Groups<PreOpPdi, NoDc> = groups
+        let groups: Groups<_, PreOpPdi, NoDc> = groups
             .transform(|group: SubDeviceGroup<_, _>| group.into_pre_op_pdi(&main_device))
             .await?;
         log::info!("Done. PDI available.");
@@ -311,24 +316,24 @@ impl EtherCrabHandler {
             "Configuring Sync0 with cycle time {:?}.",
             dc_configuration.sync0_period
         );
-        let groups: Groups<PreOpPdi, HasDc> = groups
+        let groups: Groups<_, PreOpPdi, HasDc> = groups
             .transform(|group: SubDeviceGroup<_, _, _, _>| {
                 group.configure_dc_sync(&main_device, dc_configuration)
             })
             .await?;
 
         log::info!("Checking if all devices are in SAFE-OP");
-        let groups: Groups<SafeOp, HasDc> = groups
-            .transform(|group: SubDeviceGroup<_, _, PreOpPdi, HasDc>| {
+        let groups: Groups<_, SafeOp, HasDc> = groups
+            .transform(|group: SubDeviceGroup<_, _, _, PreOpPdi, HasDc>| {
                 group.into_safe_op(&main_device)
             })
             .await?;
         log::info!("All devices are in SAFE-OP");
 
         log::info!("Setting all devices to OP");
-        let groups: Arc<Groups<Op, HasDc>> = Arc::new(
+        let groups: Arc<Groups<_, Op, HasDc>> = Arc::new(
             groups
-                .transform(|group: SubDeviceGroup<_, _, SafeOp, HasDc>| {
+                .transform(|group: SubDeviceGroup<_, _, _, SafeOp, HasDc>| {
                     group.request_into_op(&main_device)
                 })
                 .await?,
@@ -545,8 +550,8 @@ impl EtherCrabHandler {
     }
 }
 
-async fn wait_for_align(
-    group: &Groups<PreOpPdi, NoDc>,
+async fn wait_for_align<R: RawRwLock>(
+    group: &Groups<R, PreOpPdi, NoDc>,
     main_device: &MainDevice<'_>,
     sync_tolerance: Duration,
     sync_timeout: Duration,
@@ -617,9 +622,9 @@ async fn wait_for_align(
     Ok(())
 }
 
-async fn send_task(
+async fn send_task<R: RawRwLock>(
     main_device: &MainDevice<'_>,
-    group: &SubDeviceGroup<2, SUB_GROUP_PDI_LEN, Op, HasDc>,
+    group: &SubDeviceGroup<2, SUB_GROUP_PDI_LEN, R, Op, HasDc>,
     min_timer_resolution: Option<u32>,
 ) -> Result<bool, ethercrab::error::Error> {
     let start = Instant::now();
@@ -629,11 +634,11 @@ async fn send_task(
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn send_loop(
+async fn send_loop<R: RawRwLock>(
     running: Arc<AtomicBool>,
     all_op: Arc<AtomicBool>,
     main_device: Arc<MainDevice<'_>>,
-    group: Arc<Groups<Op, HasDc>>,
+    group: Arc<Groups<R, Op, HasDc>>,
     buffer_queue_sender: SyncSender<Vec<TxMessage>>,
     inputs: Arc<RwLock<Vec<u8>>>,
     receiver: Receiver<Vec<TxMessage>>,
@@ -697,8 +702,8 @@ async fn send_loop(
                     ethercrab::error::Error::WorkingCounter { .. } => {
                         log::warn!("Working counter error occurred");
                     }
-                    ethercrab::error::Error::Timeout => {
-                        log::trace!("Timeout occurred during DC synchronized Tx/Rx");
+                    ethercrab::error::Error::Timeout(_e) => {
+                        log::trace!("Timeout occurred during DC synchronized Tx/Rx: {}", _e);
                     }
                     _e => {
                         log::error!("Failed to perform DC synchronized Tx/Rx: {}", _e);
@@ -712,11 +717,11 @@ async fn send_loop(
     }
 }
 
-async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
+async fn error_handler<R: RawRwLock, F: Fn(usize, Status) + Send + Sync + 'static>(
     is_open: Arc<AtomicBool>,
     run: Arc<AtomicBool>,
     main_device: Arc<MainDevice<'_>>,
-    group: Arc<Groups<Op, HasDc>>,
+    group: Arc<Groups<R, Op, HasDc>>,
     err_handler: F,
     interval: Duration,
     min_timer_resolution: Option<u32>,
@@ -805,7 +810,7 @@ async fn error_handler<F: Fn(usize, Status) + Send + Sync + 'static>(
                         _received
                     );
                 }
-                Err(ethercrab::error::Error::Timeout) => {
+                Err(ethercrab::error::Error::Timeout(_e)) => {
                     all_op = false;
                     do_check_state = true;
                     if run.load(std::sync::atomic::Ordering::Relaxed) {
