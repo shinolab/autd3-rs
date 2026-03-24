@@ -18,4 +18,4 @@ jobs:
       - uses: obi1kenobi/cargo-semver-checks-action@v2
         with:
           feature-group: default-features
-      - run: cargo publish --workspace --exclude autd3-examples --no-verify --token ${{ secrets.CRATEIO_TOKEN }}
+      - run: cargo publish --workspace --exclude autd3-examples --exclude xtask --no-verify --token ${{ secrets.CRATEIO_TOKEN }}

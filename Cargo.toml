@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["autd3", "autd3-core", "autd3-derive", "autd3-driver", "autd3-firmware-emulator", "autd3-gain-holo", "autd3-link-ethercrab", "autd3-link-remote", "autd3-link-twincat", "examples"]
+members = ["autd3", "autd3-core", "autd3-derive", "autd3-driver", "autd3-firmware-emulator", "autd3-gain-holo", "autd3-link-ethercrab", "autd3-link-remote", "autd3-link-twincat", "examples", "xtask"]
 exclude = ["benches"]
 resolver = "3"
 

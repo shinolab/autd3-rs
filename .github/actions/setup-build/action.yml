@@ -26,10 +26,6 @@ runs:
         toolchain: ${{ inputs.toolchain }}
         components: ${{ inputs.components }}
 
-    - uses: taiki-e/install-action@v2
-      with:
-        tool: cargo-make
-
     - name: install dependencies
       shell: bash
       if: inputs.os == 'ubuntu-latest'
