@@ -1,6 +1,28 @@
 # Changelog
 
 
+# 38.1.0 (2026-03-24)
+
+## 🚀 Features
+
+- Add detection of lost state
+- Add `AsyncController`
+
+## ⬆️ Update Dependencies
+
+- Update rand requirement from 0.9.2 to 0.10.0 (#419)
+- Update ethercrab requirement from 0.6.0 to 0.7.1 (#421)
+
+## 🐛 Bug Fixes
+
+- Cannot compile with unresolved external symbol pcap_breakloop error in windows
+- Cannot build without `tokio` feature
+
+## ⚡ Performance
+
+- Avoid allocation in send loop
+
+
 # 38.0.1 (2025-11-25)
 
 ## 🐛 Bug Fixes
