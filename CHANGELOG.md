@@ -1,7 +1,7 @@
 # Changelog
 
 
-# 38.1.0 (2026-03-24)
+# 38.1.0 (2026-05-25)
 
 ## 🚀 Features
 
@@ -17,6 +17,7 @@
 
 - Cannot compile with unresolved external symbol pcap_breakloop error in windows
 - Cannot build without `tokio` feature
+- Skip loopback and wireless interfaces in AUTD device lookup
 
 ## ⚡ Performance
 
