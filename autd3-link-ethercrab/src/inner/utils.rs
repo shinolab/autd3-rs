@@ -61,6 +61,15 @@ pub async fn lookup_autd() -> Result<String, EtherCrabError> {
             interface.desc.as_deref().unwrap_or("No description")
         );
 
+        if interface.flags.is_loopback() {
+            log::debug!("Skipping loopback interface: {}", interface.name);
+            continue;
+        }
+        if interface.flags.is_wireless() {
+            log::debug!("Skipping wireless interface: {}", interface.name);
+            continue;
+        }
+
         let pdu_storage = PduStorageWrapper::new();
         let (tx, rx, pdu_loop) = match pdu_storage.try_split() {
             Ok((tx, rx, pdu_loop)) => (tx, rx, pdu_loop),
